@@ -1,0 +1,413 @@
+*
+* $Id$
+*
+* $Log$
+* Revision 1.1.1.1  1995/10/24 10:20:18  cernlib
+* Geant
+*
+*
+#include "geant321/pilot.h"
+#if defined(CERNLIB_DOC)
+*CMZ :  3.21/02 29/03/94  15.41.25  by  S.Giani
+*-- Author :
+*
+************************************************************************
+*                                                                      *
+*             Introduction to the Drawing package                      *
+*             -----------------------------------                      *
+*                                                                      *
+*                                                                      *
+* THE DRAWING PACKAGE                                                  *
+*                                                                      *
+* The drawing package has been designed mainly to:                     *
+*                                                                      *
+* - draw the detector                                                  *
+* - draw the detector geometrical tree                                 *
+* - draw particle trajectories                                         *
+* - draw hits.                                                         *
+*                                                                      *
+*  DRAWING THE DETECTOR                                                *
+*                                                                      *
+*  The detector  can be looked at  from any view point  and with any   *
+* scale factor (GDRAW, GDRVOL); appropriate attributes can be set in   *
+* order to see  only selected objects (so  avoiding messy pictures);   *
+* hidden line removal is available as well as surface shading.         *
+*  'Cut'  views,  i.e.  intersections  of a  given  plane  with  the   *
+* detector, can also be displayed (GDRAWC, GDRAWX).  This feature is   *
+* very useful to  see internal details that the  routine GDRAW would   *
+* not show.                                                            *
+*  When hidden line  removal is used, the possibility  exists to cut   *
+* the volume to be drawn with various shapes, to visualise the inner   *
+* details.                                                             *
+*                                                                      *
+* DRAWING THE GEOMETRICAL TREE                                         *
+*                                                                      *
+*  The geometrical tree (GDTREE) is  a representation of the overall   *
+* structure of the detector, namely the mother-daughter relationship   *
+* among  the  various  objects   composing  it.   Several  types  of   *
+* additional information are available on request: multiplicity of a   *
+* given  volume (i.e.  how  many  times it  is  positioned in  other   *
+* places, or  number of  subdivisions), detector  nature, visibility   *
+* flag, etc.  This  drawing tree capability can be  very useful when   *
+* tuning  the  detector  geometry.    If  used  interactively,  this   *
+* facility  allow to  invoke via  a click  of the  mouse the  GDSPEC   *
+* utility (see below) for any node of the tree.                        *
+*                                                                      *
+* DRAWING THE GEOMETRICAL SPECIFICATIONS                               *
+*                                                                      *
+*  The geometrical  specifications (GDSPEC) give a  detailed picture   *
+* of one  particular piece of  the detector.  Three drawings  of the   *
+* volume (a projection  view and two cut views), its  shape type and   *
+* numerical  parameters  (i.e.  dimensions),  and  a  scale  to  aid   *
+* geometric  calculations,  are  presented   together  in  a  single   *
+* graphics frame.  The set of  geometrical specifications of all the   *
+* descendants of  a given node on  the tree, can easily  be obtained   *
+* with the routine GDFSPC.                                             *
+*                                                                      *
+* DRAWING PARTICLE TRAJECTORIES                                        *
+*                                                                      *
+*  The tracks generated  by the tracking package, and  stored in the   *
+* data structure JXYZ, can be easily drawn with the routine GDXYZ.     *
+*  The names of the particles and/or  the track numbers can be drawn   *
+* as well (GDPART).                                                    *
+*  Four types of representations are  used to display the classes of   *
+* particles, with different colour and line style:                     *
+*                                                                      *
+* - red solid lines for charged particles (GTELEC, GTHADR)             *
+* - green dashed lines for muons (GTMUON)                              *
+* - black blank/dotted lines for neutral particles (GTNEUT)            *
+* - blue dotted lines for gammas (GTGAMA)                              *
+*                                                                      *
+*  A special routine has been  provided to display the tracks online   *
+* (GDCXYZ), if  called under  the DEBUG/SWITCH control  from GUSTEP.   *
+* That routine  shows the tracks exactly  at the same time  they are   *
+* trasorted by  the tracking package  of GEANT3, giving so  a useful   *
+* interactive debugging tool.                                          *
+*                                                                      *
+* DRAWING HITS                                                         *
+*                                                                      *
+*  The hits generated by the tracking package and stored in the        *
+* data structure JHITS, can be displayed by the hits routines,         *
+* with different functionality:                                        *
+*                                                                      *
+* - draw one hit (GDAHIT); called by user routines                     *
+* - draw all the hits of trajectory type sets/detectors (GDHITS)       *
+* - draw all the hits of calorimeter type sets/detectors (GDCHIT)      *
+*                                                                      *
+*  Different symbols for every subdetector can be used, chosen among   *
+* hardware characters  (dots), software  crosses, or from  the HPLOT   *
+* table of software characters.  The size of the software characters   *
+* and crosses is given as an  argument to GDAHIT/GDHITS, while it is   *
+* computed as a function of the hits value in GDCHIT.                  *
+*                                                                      *
+* THE VIEW BANKS                                                       *
+*                                                                      *
+*  The basic detector drawing  routines (GDRAW, GDRAWC, GDRAWX) have   *
+* to scan the  data structure JVOLUM repeatedly.   When the detector   *
+* is  described in  a  very  detailed way,  the  time  spent in  the   *
+* interpretation of  the JVOLUM bank  and in the  3D transformations   *
+* can  increase dramatically.   For a  detector with  more than  100   *
+* different volume names, for example, this time can reach real time   *
+* minutes on some machines, whereas  the specific time required just   *
+* by the  drawing would be only  a few seconds.  If  the hidden line   *
+* removal option is active, this  time can reach several minutes and   *
+* even  hours,  depending  on  the  speed of  the  machine  and  the   *
+* complexity of the drawing requested.                                 *
+*  In order to alleviate this  problem the 'bank-mode' routines have   *
+* been developed.  The basic idea  is to separate the interpretation   *
+* (i.e. the  JVOLUM scanning  to convert  the 3D  geometry structure   *
+* into a set of 2D lines) from the drawing itself.  In this way, the   *
+* interpretation is performed  only once and all  the 2D information   *
+* is stored in view banks  (data structure JDRAW) [DRAW 399].  These   *
+* views can then be looked at in  a quicker way, having only to draw   *
+* all 2D vectors  previously stored.  For a detector  with more than   *
+* 100 different volume  names, for example, this is  achieved at the   *
+* cost of only a few thousand words of memory for each view bank.      *
+*  One  can therefore  open a  view bank  (GDOPEN), identified  by a   *
+* number, perform appropriate drawings  (only interpretation will be   *
+* made, of course), close the bank  (GDCLOS) and finally look at the   *
+* picture stored in  it (GDSHOW).  When a view bank  has been closed   *
+* it cannot  be modified anymore,  but it  can be displayed  as many   *
+* times as wanted (GDSHOW) or deleted (GDELET).                        *
+*                                                                      *
+* OTHER FEATURES                                                       *
+*                                                                      *
+*  The user can  control some drawing options  (GDOPT), by selecting   *
+* for instance  to have  either parallel or  perspective projection,   *
+* either  Y-Z  or  R-Z  projection,  hidden  line  removal,  surface   *
+* shading, etc.                                                        *
+*  There is  a routine (GDZOOM) that,  if called, applies a  zoom to   *
+* everything (volumes, tracks, hits, etc.)  will be drawn from then.   *
+* This feature, in conjunction  with the interactive command MEASURE   *
+* [XINT 110], can be used for detailed viewing.                        *
+*  Another  tool that  could help  in the  interactive debugging  or   *
+* tuning of the detector geometry  is the routine GEDITV [DRAW 600],   *
+* by which it  is possible to modify  interactively some geometrical   *
+* parameters  set  by  the   user  routines  defining  the  detector   *
+* geometry.                                                            *
+*  It is possible to draw the axes of the 3D MAster Reference System   *
+* (GDAXIS) oriented in agreement with the current view point.          *
+*  Two other  routines draw a scale  (GDSCAL) or a profile  of a man   *
+* (GDMAN) in 2D  user coordinates to give an idea  of the dimensions   *
+* within current scale  factors.  A 2D text  (GDRAWT) using software   *
+* characters (hardware  characters should be implemented  later on),   *
+* 2D vectors (GDRAWV) or a frame header (GDHEAD) are also available.   *
+*  Attributes  like colour  (GDCOL)  and line  width  (GDLW) can  be   *
+* globally set for all 2D  drawings (i.e. text, vectors, man, etc.);   *
+* they are overridden in 3D drawings by volume attributes set by the   *
+* GSATT routine with 'COLO' or 'LWID' option.                          *
+*  A  graphics input  is available  (GDCURS)  to fetch  the 2D  user   *
+* coordinates  of the  graphics cursor  on the  screen, allowing  an   *
+* immediate user  interface with the interactive  version of GEANT3.   *
+* In  particular there  are interactive  commands to  zoom, measure,   *
+* pick tracks or hits points that make use of that routine.            *
+*  Various conversions from  3D to 3D, and 3D to  2D coordinates are   *
+* performed by GDFR3D and GD3D3D.                                      *
+*                                                                      *
+* BASIC AND ADVANCED GRAPHICS                                          *
+*                                                                      *
+*  The  underlying graphics  system  is completely  hidden from  the   *
+* GEANT program.  All  graphics call are made via  the HIGZ package.   *
+* Various implementations of the HIGZ package are available, notably   *
+* for X11, GKS, DI3000 and, shortly, PHIGS.                            *
+*                                                                      *
+*  RUNNING INSTRUCTIONS                                                *
+*                                                                      *
+*  Thanks to the HIGZ package,  it is possible to produce postscript   *
+* metafiles from the drawings.  When  the GKS implementation of HIGZ   *
+* is used, the possibility is there  to produce also a GKS metafile.   *
+*                                                                      *
+* SUMMARY                                                              *
+*                                                                      *
+*  The drawing package is initialized by (in the order):               *
+*  IGINIT    to initialize the HIGZ package and the underlying basic   *
+*            graphics software                                         *
+*  GDINIT    to initialize the GEANT drawing package                   *
+*                                                                      *
+*  Main drawing routines are:                                          *
+*  GDRAW     to draw a projection view of the detector                 *
+*  GDRVOL    to draw a projection view of the detector                 *
+*  GDRAWC    to draw a cut view of the detector (along one axis)       *
+*  GDRAWX    to draw a cut view of the detector (from any point)       *
+*  GDXYZ     to draw tracks at the end of the event                    *
+*  GDCXYZ    to draw tracks while the event is running                 *
+*  GDPART    to draw particle names and track numbers on tracks        *
+*  GDAHIT    to draw one single hit                                    *
+*  GDHITS    to draw hits for trajectory type detectors                *
+*  GDCHIT    to draw hits for calorimeter type detectors               *
+*                                                                      *
+*  Routines that show how the detector has been modeled are:           *
+*  GDTREE    to draw a picture with the geometrical tree               *
+*  GDSPEC    to draw a picture with volume specifications              *
+*  GDFSPC    to draw several GDSPEC pictures                           *
+*                                                                      *
+*  Routines that perform control operations on view banks are:         *
+*  GDOPEN    to open a given view bank, identified by a view number;   *
+*            in this way we enter in bank-mode                         *
+*  GDCLOS    to close  current view bank, i.e. the last  one opened,   *
+*            and restore screen-mode                                   *
+*  GDSHOW    to show all graphics information contained  in a  given   *
+*            view bank                                                 *
+*  GDELET    to delete a given view bank from memory                   *
+*                                                                      *
+*  Other routines are:                                                 *
+*  GDOPT     to set drawing options                                    *
+*  GDZOOM    to set the zoom parameters                                *
+*  GDAXIS    to draw the axes of  the MARS,  oriented according        *
+*            to the current view parameters                            *
+*  GDSCAL    to draw the current scale                                 *
+*  GDMAN     to draw a profile of a man  (or a woman) at the current   *
+*            scale                                                     *
+*  GDRAWT    to draw text, with software characters                    *
+*  GDRAWV    to draw polylines in 2D user coordinates                  *
+*  GDHEAD    to draw a frame header                                    *
+*  GDCOL     to set colour code                                        *
+*  GDLW      to set line width                                         *
+*  GDCURS    to have an input from the graphics cursor                 *
+*  GDFR3D    to convert from 3D coordinates (either in MARS or DRS)    *
+*            to 2D user coordinates                                    *
+*  GD3D3D    to convert from 3D MARS coordinates to  3D  Projection    *
+*            Reference System coordinates.                             *
+*                                                                      *
+*        Labelled COMMON blocks related to section DRAW                *
+*        ----------------------------------------------                *
+*                                                                      *
+*    COMMON/GCDRAW/NUMNOD,MAXNOD,NUMND1,LEVVER,LEVHOR,MAXV,IPICK,      *
+*   + MLEVV,MLEVH,NWCUT,JNAM,JMOT,JXON,JBRO,JDUP,JSCA,JDVM,JPSM,       *
+*   + JNAM1,JMOT1,JXON1,JBRO1,JDUP1,JSCA1,JULEV,JVLEV,                 *
+*   + LOOKTB(16),                                                      *
+*   + GRMAT0(10),GTRAN0(3),IDRNUM,GSIN(41),GCOS(41),SINPSI,COSPSI,     *
+*   + GTHETA,GPHI,GPSI,GU0,GV0,GSCU,GSCV,NGVIEW,                       *
+*   + ICUTFL,ICUT,CTHETA,CPHI,DCUT,NSURF,ISURF,                        *
+*   + GZUA,GZVA,GZUB,GZVB,GZUC,GZVC,PLTRNX,PLTRNY,                     *
+*   + LINATT,LINATP,ITXATT,ITHRZ,IPRJ,DPERS,ITR3D,IPKHIT,IOBJ,LINBUF,  *
+*   + MAXGU,MORGU,MAXGS,MORGS,MAXTU,MORTU,MAXTS,MORTS,                 *
+*   + IGU,IGS,ITU,ITS,NKVIEW,IDVIEW,                                   *
+*   + NOPEN,IGMR,IPIONS,ITRKOP,IHIDEN,                                 *
+*   + DDUMMY(18)                                                       *
+* C                                                                    *
+* NUMNOD  number of nodes in non-optimized tree                        *
+* MAXNOD  max. number of nodes of non-optimized tree.                  *
+* NUMND1  number of nodes in optimized tree                            *
+* LEVVER  vertical level in the tree currently scanned                 *
+* LEVHOR  horizontal node in the tree currently scanned                *
+* MAXV    max vertical levels in the tree to be scanned                *
+* IPICK   node selected by GDTREE                                      *
+* MLEVV   number of vertical levels in the last tree scanned           *
+* MLEVH   number of horizontal nodes in the last tree scanned          *
+* NWCUT   max. workspace allocated by cut routines                     *
+* JNAM-JVLEV   pointers used by the tree routines                      *
+* LOOKTB  colour look-up table, LOOKTB(I)=I,I=1,16                     *
+* GRMAT0  rotation matrix saved by GDRVOL                              *
+* GTRAN0  translation matrix saved by GDRVOL                           *
+* IDRNUM  flag for GDRAW, set to 1 when called by GDRVOL               *
+* GSIN    sine table                                                   *
+* GCOS    cosine table                                                 *
+* SINPSI  SIN(GPSI*DEGRAD)                                             *
+* COSPSI  COS(GPSI DEGRAD)                                             *
+* GTHETA  Theta angle of the parallel projection of 3-D images         *
+* GPHI    Phi angle of the parallel projection of 3-D images           *
+* GPSI    Psi angle of rotation of the image on the screen             *
+* GU0     U position (X in screen coordinates) of the origin           *
+* GV0     V position (Y in screen coordinates) of the origin           *
+* GSCU    scale factor for the U screen coordinate                     *
+* GSCV    scale factor for the V screen coordinate                     *
+* NGVIEW  flag for GDFR3D and GD3D3D if view point has changed         *
+* ICUTFL  flag for GDRAW if it was called by cut routines              *
+* ICUT    axis along which the cut is performed                        *
+* CTHETA  Theta angle of cut supplied to GDRAWX                        *
+* CPHI    Phi angle of cut supplied to GDRAWX                          *
+* DCUT    coordinate value at which the cut is performed               *
+* NSURF   number of surfaces stored in SURF                            *
+* ISURF   pointer for array SURF                                       *
+* GZUA    zoom parameter (horizontal scale factor)                     *
+* GZVA    zoom parameter (vertical scale factor)                       *
+* GZUB    zoom parameter                                               *
+* GZVB    zoom parameter                                               *
+* GZUC    zoom parameter                                               *
+* GZVC    zoom parameter                                               *
+* PLTRNX  screen and plotter X range                                   *
+* PLTRNY  screen and plotter Y range                                   *
+* LINATT  current line attributes                                      *
+* LINATP  permanent line attributes                                    *
+* ITXATT  current text attributes                                      *
+* ITHRZ   string containing the status of THRZ option                  *
+* IPRJ    string containing the status of PROJ option                  *
+* DPERS   distance from the origin for perspective view                *
+* ITR3D   track being scanned                                          *
+* IPKHIT  flag for GPHITS, if>0 then print only hit number             *
+* IOBJ    type of the object being drawn                               *
+* LINBUF  flag for GDRAWV if line buffering is active                  *
+* MAXGU   current physical number of words for graphic unit banks      *
+* MORGU   number of words to be pushed in graphic unit banks           *
+* MAXGS   current physical number of words for graphic segment banks   *
+* MORGS   number of words to be pushed in graphic segment banks        *
+* MAXTU   current physical number of words for text unit banks         *
+* MORTU   number of words to be pushed in text unit banks              *
+* MAXTS   current physical number of words for text segment banks      *
+* MORTS   number of words to be pushed in text segment banks           *
+* IGU     pointer to current graphic unit bank                         *
+* IGS     pointer to current graphic segment bank                      *
+* ITU     pointer to current text unit bank                            *
+* ITS     pointer to current text segment bank                         *
+* NKVIEW  number of view data banks                                    *
+* IGVIEW  current view bank number or 0 for screen                     *
+* NOPEN   unused                                                       *
+* IGMR    unused                                                       *
+* IPIONS  unused                                                       *
+* ITRKOP  status of TRAK option of GDOPT                               *
+* DDUMMY  array of dummy words                                         *
+*                                                                      *
+*                                                                      *
+*                                                                      *
+*                The View data structure JDRAW                         *
+*                -----------------------------                         *
+*                                                                      *
+* NKVIEW    Number of views                                            *
+* IVIEW     Current view selected                                      *
+* IGU       Current graphic unit pointer                               *
+* MAXGU     Number of graphic units                                    *
+* MORGU     Number of words to push in graphic unit bank               *
+* IGS       Current graphic segment pointer                            *
+* MAXGS     Number of graphic segments                                 *
+* MORGS     Number of words to push in graphic segment bank            *
+* ITU       Current text unit pointer                                  *
+* MAXTU     Number of text units                                       *
+* MORTU     Number of words to push in text unit bank                  *
+* ITS       Current text segment pointer                               *
+* MAXTS     Number of text segments                                    *
+* MORTS     Number of words to push in text segment bank               *
+* LENGU     Array containing: lengths for each graphic unit + LINATT   *
+*           (line attributes)                                          *
+* ADDGU     Array containing addresses for each graphic unit           *
+* ADDTU     Array containing addresses for each text unit              *
+* X         Array containing u-coordinates of graphic segments         *
+* Y         Array containing v-coordinates of graphic segments         *
+* ICUT      Cut axis (1,2,3 or 0 if no cut) of the view                *
+* LINWID    Text line width + ITXATT (text attributes)                 *
+* GTHETA,  GPHI,  GPSI,  GU0,  GV0,  GSCU,  GSCV,  are  the  viewing   *
+* parameters stored in /GCDRAW/.                                       *
+* U0, V0,  SIZE, ANGLE, IOPT, ITEXT  have the same meaning  of those   *
+* given as parameters in HPLSOF or GDRAWT routines.                    *
+*  A control word is stored  in Q(JDRAW+IVIEW), to identify the view   *
+* banks among three classes:                                           *
+*                                                                      *
+*  =1 for empty  banks (created just  to avoid gaps) or  for deleted   *
+*     banks;                                                           *
+*  =2 for all previously created banks (i.e. opened);                  *
+*  =3 for protected  banks (all banks  that can't be deleted  by the   *
+*     user with GDELET, because reserved for internal use).            *
+*                                                                      *
+*                           | JDRAW                                    *
+*                           |                                          *
+*     NKVIEW   IVIEW        v                 NKVIEW                   *
+*       ........................................                       *
+*       |     | |          | |  Control words  |                       *
+*       ........................................                       *
+*              |                                                       *
+*              | JV = LQ(JDRAW-IVIEW)                                  *
+*  6           v                                           22          *
+* ............................................................         *
+* | | | | | | | |igu,maxgu,morgu,igs,maxgs,morgs,itu,maxtu,  |         *
+* | | | | | | | |        mortu,its,maxts,morts,gtheta,gphi,  |         *
+* | | | | | | | |        gpsi,gu0,gv0,gscu,gscv,-,-,icut     |         *
+* ............................................................         *
+*  | | | | | |                                                         *
+*  | | | | | | JV1 = LQ(JV-1)                                          *
+*  | | | | | v                                          MAXGU          *
+*  | | | | |..................................................         *
+*  | | | | || | lengu(1) | .... | lengu(igu) | .... | lengu(mgu)       *
+*  | | | | |..................................................         *
+*  | | | | |                                                           *
+*  | | | | | JV2 = LQ(JV-2)                                            *
+*  | | | | v                                            MAXGU          *
+*  | | | |....................................................         *
+*  | | | || | addgu(1) | ..... | addgu(igu) | ..... | addgu(mgu)       *
+*  | | | |....................................................         *
+*  | | | |                                                             *
+*  | | | |  JV3 = LQ(JV-3)                                             *
+*  | | | v                                              MAXTU          *
+*  | | |......................................................         *
+*  | | || | addtu(1) | ...... | addtu(itu) | ...... | addtu(mtu)       *
+*  | | |......................................................         *
+*  | | |                                                               *
+*  | | | JV4 = LQ(JV-4)                                                *
+*  | | v                                                MAXGS          *
+*  | |........................................................         *
+*  | || |  x(1)  |  ......  |  x(igs)  |  ......  |  x(mgs)  |         *
+*  | |........................................................         *
+*  | |                                                                 *
+*  | | JV5 = LQ(JV-5)                                                  *
+*  | v                                                  MAXGS          *
+*  |..........................................................         *
+*  || |   y(1)  |  ......  |  y(igs)  |  ......  |  y(mgs)   |         *
+*  |..........................................................         *
+*  |                                                                   *
+*  | JV6 = LQ(JV-6)                                                    *
+*  v                                                    MAXTS          *
+* ............................................................         *
+* | |u0(1)|v0(1)|size(1)|angle(1)|linwid(1)|iopt(1)|itext(1)|nchar(1)|.*
+*  ............................................................        *
+*                                                                      *
+************************************************************************
+#endif

@@ -1,0 +1,155 @@
+*
+* $Id$
+*
+* $Log$
+* Revision 1.1.1.1  1995/10/24 10:21:19  cernlib
+* Geant
+*
+*
+#include "geant321/pilot.h"
+#if defined(CERNLIB_DOC)
+*CMZ :  3.21/02 29/03/94  15.41.21  by  S.Giani
+*-- Author :
+*
+************************************************************************
+*                                                                      *
+*                  Introduction to the section PHYS                    *
+*                  --------------------------------                    *
+*                                                                      *
+*                                                                      *
+* THE PHYSICS PROCESSES                                                *
+*                                                                      *
+*  The processes  currently implemented in GEANT3  can be classified   *
+* as follows:                                                          *
+*                                                                      *
+* - Decays in flight                                                   *
+* - Multiple scattering (Gaussian or Moliere)                          *
+* - Continuous electromagnetic processes                               *
+* - Discrete electromagnetic processes                                 *
+* - Hadronic interactions                                              *
+* - Muon nucleus-interactions.                                         *
+*                                                                      *
+*  The  fist  two  are  controlled  by  the  routines  GDECAY  which   *
+* generates the decay products and  GMULTS which computes the change   *
+* in  the angle  due to  multiple scattering  over a  given tracking   *
+* step.   The  others  are  reviewed  separately  in  the  following   *
+* paragraphs.                                                          *
+*  For  convenience the  particles are  given a  'tracking type'  in   *
+* GEANT, depending on their interaction with matter:                   *
+*                                                                      *
+*   ITRTYP = 1  photon                                                 *
+*            2  electron and positron                                  *
+*            3  neutral particles                                      *
+*            4  charged hadrons                                        *
+*            5  muon                                                   *
+*            6  'Geantino'                                             *
+*            7  Cerenkov photon                                        *
+*            8  Ion                                                    *
+*                                                                      *
+*  The  paragraph  5  gives  a  summary  of  the  physics  processes   *
+* activated for  each type  of particle with  the momentum  range of   *
+* validity when relevant.  GPHYSI controls the initialisation of the   *
+* various processes.                                                   *
+*                                                                      *
+* CONTINUOUS ELECTROMAGNETIC PROCESSES                                 *
+*                                                                      *
+* GMOLI     Initializes Moliere scattering                             *
+* GPROBI    initializes material 'constants'  used for computing the   *
+*           probability of various interactions.                       *
+* GDRELA    Control routine  to fill   DE/DX tables for  energy loss   *
+*           due to ionisation.                                         *
+* GDRELP    Calculates  energy loss  due to  ionisation for  charged   *
+*           particles other than electrons and positrons.              *
+* GDRELE    Calculates energy  loss due to ionisation  for electrons   *
+*           and  positrons.  As  Moller  and  Bhabba scattering  are   *
+*           treated  as discrete  processes the  energy loss  due to   *
+*           ionisation is a function  of the electron kinetic energy   *
+*           cut-off DCUTE below which these processes are treated as   *
+*           a continuous energy loss [BASE 030, common /GCPHYS/].      *
+* GBRELA    Initializes   Bremsstrahlung  cross-section   and  fills   *
+*           energy  loss tables  for Bremsstrahlung.   Both formulae   *
+*           depend on  the photon  energy cut-off BCUTE  below which   *
+*           Bremsstrahlung is  treated as  a continuous  energy loss   *
+*           [BASE 030, common /GCPHYS/].                               *
+* GPRELA    Fills  DE/DX  tables  for  energy loss  by  direct  pair   *
+*           production  for high  energy  muons.  The  corresponding   *
+*           discrete process is not considered.                        *
+* GRANGI    Calculates    the    stopping     range    tables    for   *
+*           electron/positron, muon and proton.                        *
+* GMULOF    Calculates the tables for the maximum step allowed to to   *
+*           continuous processes: Bending  in magnetic field, energy   *
+*           loss and multiple scattering.                              *
+* GCOEFF    Calculates  the   interpolation  coefficients   for  the   *
+*           energy/Range relation  to be used in  the calculation of   *
+*           the energy loss.                                           *
+*                                                                      *
+* DISCRETE ELECTROMAGNETIC PROCESSES                                   *
+*                                                                      *
+*   For the simulation of each  given discrete physics process three   *
+* tasks have to be performed:                                          *
+*                                                                      *
+* - The evaluation  of the step  length.  This is computed  from the   *
+*   updated  probability for  the  occurrence of  the process.   The   *
+*   corresponding code  has been  inserted directly in  the tracking   *
+*   routines for each tracking type as appropriate.                    *
+* - After transport  of the  particle, the  generation of  the final   *
+*   state particles (GEANT routines GPHOT, GCOMP, etc.)                *
+* - If the  particle survives  after the interaction,  recompute the   *
+*   probability.                                                       *
+*                                                                      *
+*   It should be outlined that the  evaluation of the step length is   *
+* made independently  for each  process which  can occur,  the final   *
+* step  size  being the  minimum  of  all  and the  process  finally   *
+* considered being the corresponding one.                              *
+*                                                                      *
+* GPHOTI    Tabulates  cross-section  for photo-electric  effect  at   *
+*           initialisation time                                        *
+* GPHOT     Simulates photo-electric mechanism                         *
+* GCOMPI    Tabulates  cross-section  for  Compton  intersection  at   *
+*           initialisation time                                        *
+* GCOMP     Simulates Compton scattering                               *
+* GPRSGA    Tabulates   cross-section   for   pair   production   at   *
+*           initialisation time                                        *
+* GPAIRG    Simulates electron pair production by photons              *
+* GBRSGA    Tabulates    cross-section    for   Bremsstrahlung    at   *
+*           initialisation time                                        *
+* GBREME    Simulates  hard  Bremsstrahlung   by  electrons.  -  see   *
+*           cut-off BCUTE in routine GBRELA above                      *
+* GDRSGA    Tabulates cross-section for  delta-ray at initialisation   *
+*           time                                                       *
+* GDRAY     Simulates delta rays (Moller or Bhabba scattering) - see   *
+*           cut-off DCUTE in routine GDRELE above                      *
+* GANNII    Tabulates  cross-section  for positron  annihilation  at   *
+*           initialisation time                                        *
+* GANNI     Simulates positron annihilation in flight                  *
+* GANNIR    Simulates positron annihilation at rest.                   *
+* GPFISI    Tabulates cross-section for photo-fission                  *
+* GPFIS     Simulates photo-fission                                    *
+*                                                                      *
+* HADRONIC PROCESSES                                                   *
+*                                                                      *
+*   For GHEISHA:                                                       *
+* GPGHEI    returns the hadronic cross section                         *
+* GHEISH    Simulates  hadronic  interactions, program  GHEISHA  (H.   *
+*           Fesefeldt) in GEANH file.                                  *
+*                                                                      *
+*   For FLUKA:                                                         *
+* FLDIST    returns the hadronic cross section                         *
+* FLUFIN    Simulates    hadronic   interactions,    program   FLUKA   *
+*           (A.Ferrari et al.) in GEANH file.                          *
+*                                                                      *
+* MUON INTERACTION                                                     *
+*                                                                      *
+* GBRELM    Tabulates energy loss by soft Bremsstrahlung               *
+* GBRSGM    Tabulates cross-section for hard Bremsstrahlung            *
+* GBREMM    Generates hard Bremsstrahlung                              *
+* GPAIRI    Tabulates cross-section for direct pair production         *
+* GPAIRM    Generate direct pair production                            *
+* GMUNUI    Tabulates cross-section for nuclear interaction            *
+* GMUNU     Generates nuclear interaction                              *
+* GDRELM    Tabulates energy loss by soft delta rays                   *
+* GDRSGA    Tabulates cross-section for hard delta rays                *
+* GDRAY     Generates delta rays                                       *
+*                                                                      *
+************************************************************************
+#endif

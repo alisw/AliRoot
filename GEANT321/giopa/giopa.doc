@@ -1,0 +1,131 @@
+*
+* $Id$
+*
+* $Log$
+* Revision 1.1.1.1  1995/10/24 10:21:16  cernlib
+* Geant
+*
+*
+#include "geant321/pilot.h"
+#if defined(CERNLIB_DOC)
+*CMZ :  3.21/02 29/03/94  15.41.20  by  S.Giani
+*-- Author :
+*
+************************************************************************
+*                                                                      *
+*                       The I/O service routines                       *
+*                       ------------------------                       *
+*                                                                      *
+*  The  I/O routines  permit  to  read and  write,  the GEANT3  data   *
+* structures.   The  possibility  exists  to  write  and  read  data   *
+* structures to/from  direct access  files, in machine  dependent or   *
+* independent format  and to/from direct  access files.  All  I/O is   *
+* done via the  ZEBRA I/O routines both for direct  access files (FZ   *
+* package) and for direct access files (RZ package).                   *
+*  Data can  be generated on one  type of machine, for  example full   *
+* detector simulation,  and the data  produced can be analyzed  on a   *
+* different machine.                                                   *
+*  The data structures written to tape or disk can be read either in   *
+* whole or in part.                                                    *
+*                                                                      *
+*                                                                      *
+*                     Routines to perform I/O                          *
+*                     -----------------------                          *
+*                                                                      *
+*       CALL GCLOSE(LUN, IER)                                          *
+*                                                                      *
+*   LUN       Logical unit number                                      *
+*   IER       Error flag                                               *
+*                                                                      *
+*  Close sequential  FZ file open  with logical unit LUN.   If LUN=0   *
+* close all  FZ files.  IER=1  if the file is  no FZ file  open with   *
+* logical unit LUN is found, 0 otherwise.                              *
+*                                                                      *
+*      CALL GFIN(LUN,CHOBJ,NKEYS,IDVERS,CHOPT,IER)                     *
+*                                                                      *
+*   LUN       Logical unit number                                      *
+*   CHOBJ     CHARACTER*4 array containing the data structures to be   *
+*             read (DIGI,DRAW,HEAD,HITS,KINE,MATE,PART,ROTM,RUNG,      *
+*             SETS,STAK,STAT,TMED,VERT,VOLU,JXYZ,SCAN). In addition    *
+*             the following keywords are defined:                      *
+*             INIT = DRAW,MATE,PART,ROTM,RUNG,SETS,TMED,VOLU,SCAN      *
+*             KINE = KINE,VERT                                         *
+*             TRIG = DIGI,HEAD,HITS,KINE,VERT,JXYZ                     *
+*   NKEYS     Number of valid elements in the array CHOBJ              *
+*   IDVERS    Version to be retrieved. If IDVERS=0 the first version   *
+*             found will be retrieved.                                 *
+*   CHOPT     Character option.                                        *
+*   IER       Error flag. -1 if nothing has been read in. >0  in not   *
+*             all the requested data structures have been read in.     *
+*                                                                      *
+*                                                                      *
+*                                                                      *
+*  Routine  to  read GEANT  object(s)  from    a  FZ file  The  data   *
+* structures from disk are read in memory.                             *
+*                                                                      *
+*      CALL GFOUT(LUN,CHOBJ,NKEYS,IDVERS,CHOPT,IER)                    *
+*                                                                      *
+*  See above for  the parameters.  Routine to  write GEANT object(s)   *
+* into a  FZ file  The data  structures are  written from  memory to   *
+* disk.                                                                *
+*                                                                      *
+*      CALL GOPEN(LUN,LUNTYP,LEN,IER)                                  *
+*                                                                      *
+*   LUN       Logical unit                                             *
+*   LUNTYP    CHARACTER variable specifying the format of the FZ       *
+*             file. Possible options are I,O,A,X. See the FZ manual    *
+*             for more information.                                    *
+*   LEN       Logical record length of the FZ file.                    *
+*   IER       Error flag. 0 if file has been open correctly.           *
+*                                                                      *
+*  Routine to open a FZ file for input or output.                      *
+*                                                                      *
+*      CALL GREND (LUN)                                                *
+*                                                                      *
+*    LUN      Logical unit                                             *
+*                                                                      *
+*  Routine to close the RZ direct access file opened with logical      *
+* unit LUN.                                                            *
+*                                                                      *
+*      CALL GRFILE(LUN,CHFILE,CHOPTT)                                  *
+*                                                                      *
+*    LUN      Logical unit number                                      *
+*    CHFILE   Name of the file to be open                              *
+*    CHOPTT   Character option                                         *
+*                                                                      *
+*  Routine to open an  RZ file for input or output.   If option I is   *
+* given, then  the INIT data structures  will be read from  the file   *
+* and if the option O is given they will be written to the file.       *
+*                                                                      *
+*      CALL GRIN(CHOBJT,IDVERS,CHOPT)                                  *
+*                                                                      *
+*   CHOBJT    CHARACTER*4 variable with the name of the data           *
+*             structure to be retrieved. See GFIN for more details.    *
+*   IDVERS    Version of the data structure to be retrieved. If 0      *
+*             the first found data structure will be retrieved.        *
+*   CHOPT     Option variable                                          *
+*                                                                      *
+*  Routine  to  read  from  a  RZ  direct  access  file  GEANT  data   *
+* structures.                                                          *
+*                                                                      *
+*      CALL GRLEAS(JBANK)                                              *
+*                                                                      *
+*   JBANK     Pointer to a data structure                              *
+*                                                                      *
+*  Routine to release unused space  in the data structure pointed to   *
+* by JBANK.                                                            *
+*                                                                      *
+*      CALL GRMDIR(CHDIR,CHOPT)                                        *
+*                                                                      *
+*    CHDIR    Name of the directory                                    *
+*    CHOPT    Character option                                         *
+*                                                                      *
+*  Routine to create a GEANT subdirectory in an RZ file.               *
+*                                                                      *
+*      CALL GROUT(CHOBJT,IDVERS,CHOPT)                                 *
+*                                                                      *
+*  Routine  to  write  to  a   RZ  direct  access  file  GEANT  data   *
+* structures.  See GRIN for explanations on the parameters.            *
+*                                                                      *
+************************************************************************
+#endif

@@ -1,0 +1,458 @@
+*
+* $Id$
+*
+* $Log$
+* Revision 1.1.1.1  1995/10/24 10:20:47  cernlib
+* Geant
+*
+*
+#include "geant321/pilot.h"
+#if defined(CERNLIB_DOC)
+*CMZ :  3.21/02 29/03/94  15.41.28  by  S.Giani
+*-- Author :
+*
+************************************************************************
+*                                                                      *
+*            Introduction to the Geometry package                      *
+*            ------------------------------------                      *
+*                                                                      *
+*                                                                      *
+* THE GEOMETRY PACKAGE                                                 *
+*                                                                      *
+*  The geometry package consists of subroutines which can be used in   *
+* the initialisation phase  of the program to  describe the geometry   *
+* of the  experimental set-up, and  of subroutines which  ensure the   *
+* communication  with   the  tracking   package  during   the  event   *
+* processing phase.                                                    *
+*  The  following paragraphs  review  the concepts  of the  geometry   *
+* package  and explain  how  the geometrical  information should  be   *
+* provided by the user.                                                *
+*  It  is important  to point  out that,  once the  set-up has  been   *
+* initialized, the tracking of particles through the different media   *
+* can proceed without  any other intervention from  the user [TRAK].   *
+* The  connection  between the  geometry  and  tracking packages  is   *
+* established  by the  subprograms  GMEDIA/GTMEDI, GNEXT/GTNEXT  and   *
+* GINVOL which answer respecti- vely the questions :                   *
+*                                                                      *
+* - In which medium is a given point ?                                 *
+* - What is the path length to the next medium ?                       *
+* - Is a given point still in the current medium ?                     *
+*                                                                      *
+* (The routines GTMEDI  and GTNEXT are used in a  dynamic context at   *
+* tracking  time,  where  information  about the  direction  of  the   *
+* particle can be used to save time).                                  *
+*                                                                      *
+* THE VOLUME DEFINITION                                                *
+*                                                                      *
+*  Experimental set-ups,  as complex  as the detectors  prepared for   *
+* LEP, can be described rather  accurately through the definition of   *
+* a  set of  simple VOLUMES.   Each VOLUME  is given  a NAME  and is   *
+* characterized by:                                                    *
+*                                                                      *
+* - a  SHAPE identifier,  specifying  one of  the basic  geometrical   *
+*   shapes  available [GEOM010],  the shape  parameters, giving  the   *
+*   dimensions of the volume,                                          *
+* - a local  reference system,  whose origin and  axes are  the ones   *
+*   defined for the given shape (cartesian, cylindrical or spherical   *
+*   coord.),                                                           *
+* - its physical  properties, given  by a set  of constants  for the   *
+*   homogeneous MATERIAL which fills the volume [CONS],                *
+* - additional  properties, known  as  'TRACKING MEDIUM'  constants,   *
+*   which depend  on the characteristics  of the volume  itself (the   *
+*   MATERIAL  identifier  is  one  of  the  constants)  and  on  its   *
+*   geometrical   and  physical   environment  (properties   of  the   *
+*   neighbour media, magnetic field, etc.) [CONS,TRAK],                *
+* - a set of attributes, in  connection with the drawing package and   *
+*   the detector response package [DRAW,HITS].                         *
+*                                                                      *
+*  As long as  it is not 'positioned' in a  given reference frame, a   *
+* VOLUME is an entity which has no spatial relation with the set-up.   *
+* By convention,  a unique  initial volume has  to be  defined which   *
+* should match  (or surround) the  outside boundaries of  the entire   *
+* set-up.  The reference frame attached to this volume is considered   *
+* to be the master reference frame.                                    *
+*                                                                      *
+* VOLUMES WITH CONTENTS                                                *
+*                                                                      *
+*  A VOLUME can be declared to have 'contents' and become a 'mother'   *
+* volume.   The contents  are  either predefined  volumes which  are   *
+* explicitly positioned inside the mother,  or new volumes which are   *
+* implicitly defined by a division  mechanism applied to the mother.   *
+*  Positioning a  volume with  given shape  and dimensions  inside a   *
+* mother  volume  is  achieved  by specifying  its  translation  and   *
+* rotation with  respect to  the mother  reference frame.   The user   *
+* should make  sure that  no volume overlaps  the boundaries  of its   *
+* mother.  When a volume is positioned,  the user gives it a NUMBER.   *
+* Multiple copies of a given  volume, with different numbers, can be   *
+* positioned inside  a mother  or inside  different mothers  and the   *
+* contents of the volume are reproduced implicitly in all copies.      *
+*  Divisions can  be performed along  any of  the three axes  of the   *
+* mother volume.   The definition of  the axes (X,Y,Z or  R..,.,Z or   *
+* R,.,.) depends on  the shape.  The mother volume  can be partially   *
+* or  totally divided.   The  division generates  a  cell, which  is   *
+* considered as  a new volume with  (usually) the same shape  as the   *
+* mother.   Its dimensions  are computed  according to  the declared   *
+* division number and/or  step size.  This cell, as  any volume, can   *
+* again  be divided  along any  of its  proper axes,  or have  other   *
+* volumes positioned into it.  Volumes  positioned within a cell are   *
+* reproduced implicitly in all cells.                                  *
+*  These operations permit a physical  tree to be defined of volumes   *
+* at deeper and deeper levels.                                         *
+*  It  is  assumed that  the  'tracking  medium' properties  of  the   *
+* contents replace  the ones of  the mother within the  space region   *
+* they occupy.                                                         *
+*  A  VOLUME  is  therefore  defined   not  only  by  its  intrinsic   *
+* characteristics but  also by the definition  of its 'descendants',   *
+* namely its contents, the contents of its contents, etc.              *
+*                                                                      *
+* OVERLAPPING VOLUMES                                                  *
+*                                                                      *
+*  The user  may define volumes  which have  nothing to do  with the   *
+* real physical structure.   It is sometimes convenient  to make use   *
+* of  such  volumes, to  artificially  delimit  regions with  simple   *
+* shapes.  As a consequence, it may happen that volumes overlap each   *
+* other.  (A volume  positioned  inside a  mother  is obviously  not   *
+* regarded as overlapping the mother).                                 *
+*  The handling  of overlapping  volumes has some  implications that   *
+* the user should be aware of:                                         *
+*  A flag  'ONLY/MANY' is attached  to each positioned  volume.  The   *
+* 'MANY' option  indicates that a point  found to be in  this volume   *
+* could also be in other volumes which are not direct descendants of   *
+* it.  The user is free to declare one of the overlapping volumes as   *
+* 'ONLY', in which  case the medium searching  subroutines will give   *
+* priority to this volume.                                             *
+*  If  a point  is inside  several  'MANY' volumes  and outside  all   *
+* 'ONLY' ones, priority  will be given to the first  volume found at   *
+* the  deepest  level  and,  in  order  to  avoid  ambiguities,  two   *
+* overlapping 'MANY' volumes should in  general be assigned the same   *
+* default tracking medium.                                             *
+*                                                                      *
+* THE PHYSICAL TREE                                                    *
+*                                                                      *
+*  The package accepts a maximum of 15 levels, which should be quite   *
+* enough to represent even the fine details of a complex set-up.       *
+*                                                                      *
+* THE DATA STRUCTURE JVOLUM AND THE COMMON BLOCK /GCVOLU/              *
+*                                                                      *
+*  In practice, the  physical tree is represented by  a logical tree   *
+* structure, the  JVOLUM data structure [GEOM  199], which describes   *
+* the arrangement of  volumes in a compact and  recurrent way.  Each   *
+* generic  volume  appears once,  and  once  only, and  carries  the   *
+* information relevant to the volume  itself and to its contents, if   *
+* any, by  reference to the  generic volumes corresponding  to those   *
+* contents.                                                            *
+*  In the situation  where division or multiple  copies occur, there   *
+* is no longer a one-to-one correspondence between a given volume in   *
+* the logical tree and a unique region in space.  Information has to   *
+* be kept at tracking time to  identify which division cell or which   *
+* copy was considered at each depth level along the path through the   *
+* physical  tree.   This information  is  stored  by the  subroutine   *
+* GTMEDI, for the current point of  the current track, in the COMMON   *
+* /GCVOLU/.   It contains  the current  LEVEL and,  for each  level,   *
+* starting   from   the   first  initial   reference   volume,   the   *
+* identification of  the corresponding  volume, e.g.:  NAME, NUMBER,   *
+* 'ONLY/MANY'  flag, translation  and rotation  with respect  to the   *
+* master reference  frame.  The SHAPE  parameters and the  number of   *
+* parameters  (initialy  stored  in  /GCVOLU/)  are  stored  in  the   *
+* separate structure JGPAR.                                            *
+*                                                                      *
+* THE BASIC USER TOOLS                                                 *
+*                                                                      *
+*  The rules of the game being  established, it is easy to introduce   *
+* the  set of  subroutines  which ensure  the  functionality of  the   *
+* package.   The user  can define  a volume  through a  call to  the   *
+* subroutine:                                                          *
+*                                                                      *
+* GSVOLU    Input arguments  specify the NAME, SHAPE  and parameters   *
+*           of the volume.  An  output argument returns the position   *
+*           of the volume inside the bank JVOLUM.                      *
+*                                                                      *
+* The user can position a volume through a call to either one of the   *
+* following subroutines:                                               *
+*                                                                      *
+* GSPOS     Input arguments specify the NAME  and copy NUMBER of the   *
+*           volume to  be positioned,  the NAME  of the  mother, the   *
+*           translation and the rotation matrix, and the 'ONLY/MANY'   *
+*           flag.                                                      *
+* GSPOSP    In case  the user has to  position , inside a  mother, a   *
+*           large  number  of  volumes   with  the  same  shape  but   *
+*           different dimensions  (lead glass blocks,  BGO crystals,   *
+*           etc.)  an  alternative  is proposed  which  consists  of   *
+*           defining  the generic  volume once,  with the  number of   *
+*           shape parameters  set to  zero, and  to call  GSPOSP for   *
+*           each volume  in turn, with  the same arguments  as GSPOS   *
+*           plus  the   shape  parameters.   The  volumes   will  be   *
+*           identified  by their  NAME+NUMBER  as  for the  multiple   *
+*           copies.                                                    *
+*                                                                      *
+* The user can divide  a volume through a call to  either one of the   *
+* following subroutines:                                               *
+*                                                                      *
+* GSDVN     Input arguments specify the NAME of the cell volume, the   *
+*           name  of  the  MOTHER   being  divided,  the  number  of   *
+*           divisions NDIV and the axis  along which the division is   *
+*           performed.   In  this  simple case,  the  cell  tracking   *
+*           medium is assumed to be the same as for the mother.        *
+* GSDVS     The division STEP is given  instead of NDIV and the cell   *
+*           tracking medium is specified.                              *
+* GSDVX     In addition  to both STEP and  NDIV , the origin  of the   *
+*           first cell and the cell tracking medium are specified.     *
+*                                                                      *
+* THE OPTIMISATION TOOLS                                               *
+*                                                                      *
+*  When a  track enters a volume  with contents, the search  time to   *
+* identify whether the  current point is in the mother  or in any of   *
+* the contents  is very short  when the contents are  division cells   *
+* (straightforward computation  along the relevant axis).   When the   *
+* contents have been positioned, the search time can be quite large.   *
+* In order  to save  time the  user can  make use  of either  of the   *
+* following facilities:                                                *
+*                                                                      *
+* GSORD/GGORD                                                          *
+*   From the  known position of  the contents inside a  given volume   *
+*   the subroutine  GGORD computes  fictitious boundaries  along the   *
+*   specified  coordinate, simulating  a division  with non  regular   *
+*   step size.  A binary search technique is used to identify within   *
+*   which pseudo-cell  the current  point is.   The slow  process of   *
+*   computing whether the point is inside or outside the contents is   *
+*   therefore limited  to the few  (if any) volumes sitting  in that   *
+*   pseudo-cell.  The  coordinate selected  for the  pseudo division   *
+*   can be any of X, Y, Z, Rxy, R, Phi or Theta.  GSORD is called by   *
+*   the user to  flag which volume should have  its contents ordered   *
+*   and along which axis.  GGORD is  called by GGCLOS.  The user can   *
+*   select via the data record OPTIM to automatically call GSORD for   *
+*   all the volumes with content.  In  this case the system will try   *
+*   to choose  the best axis  along which  to order the  contents of   *
+*   every mother in the tree.                                          *
+*                                                                      *
+* GSNEXT - GSNEAR                                                      *
+*   When a particle enters a mother volume, the contents are scanned   *
+*   initially in the  order they have been positioned,  and the user   *
+*   should  take  care  over  the  best  sequence  of  GSPOS  calls.   *
+*   However, when the particle comes back inside the mother from any   *
+*   one of the contents, it is  usually possible to limit the search   *
+*   to the neighbour contents.  The subroutines GSNEXT,GSNEAR permit   *
+*   the user to  inject at initialisation time, for  each content in   *
+*   turn, the  list of neighbours  to search  for.  A proper  use of   *
+*   this facility can reduce the search time significantly.            *
+*                                                                      *
+* GSUNEA/GUNEAR                                                        *
+*   To specify any user ordering for the contents of a given volume.   *
+*                                                                      *
+*       Labelled COMMON blocks related to section GEOM                 *
+*       ----------------------------------------------                 *
+*                                                                      *
+*       COMMON /GCPOLY/ IZSEC, IPSEC                                   *
+* C                                                                    *
+* IZSEC     Z-section number                                           *
+* IPSEC     Phi-sector number                                          *
+*                                                                      *
+*       COMMON/GCVOLU/NLEVEL,NAMES(15),NUMBER(15),                     *
+*      +LVOLUM(15),LINDEX(15),INFROM,NLEVMX,NLDEV(15),LINMX(15),       *
+*      +GTRAN(3,15),GRMAT(10,15),GONLY(15),GLX(3)                      *
+* C                                                                    *
+* NLEVEL    Level number at which the last medium search stopped.      *
+* NAMES     Volume names at each level.                                *
+* NUMBER    User volume numbers at each level.                         *
+* LVOLUM    System volume numbers at each level.                       *
+* LINDEX    Physical tree volume indices at each level.                *
+* INFROM    Number of  the content  a particle  has just left,  when   *
+*           relevant                                                   *
+* NLEVMX    Maximum number of levels in given geometry tree            *
+* NLDEV     Levels where local development take place, if non 0        *
+* LINMX     numbers of contents (position) or cells (division)         *
+* GTRAN     X,Y,Z    offsets    of   the    cumulative    coordinate   *
+*           transformation from  the master system to  the system at   *
+*           each level.                                                *
+* GRMAT     Rotation    matrix   elements    for   the    cumulative   *
+*           transformation from  the master system to  the system at   *
+*           each level.  GRMAT(10,LEVEL) equal  to 0.0 indicates the   *
+*           null rotation.                                             *
+* GONLY     Uniqueness flags at each level.                            *
+* GLS       Current point in the local coordinates of level NLEVEL.    *
+*                                                                      *
+*                     The System Shapes                                *
+*                     -----------------                                *
+*                                                                      *
+*  The system shapes supported at  present are as follows:             *
+*                                                                      *
+* 'BOX ' is a  box.  It has 3  parameters, the half lengths  in x, y   *
+*        and z.                                                        *
+* 'TRD1' is a trapezoid  with only the x length varying  with z.  It   *
+*        has  4 parameters,  the  half  length in  x  at  the low  z   *
+*        surface, that at  the high z surface, the half  length in y   *
+*        and in z.                                                     *
+* 'TRD2' is a  trapezoid with both x  and y lengths varying  with z.   *
+*        It has  5 parameters,  the half  length in x  at the  low z   *
+*        surface, that at  the high z surface, the half  length in y   *
+*        at the low z surface, that  at the high z surface, the half   *
+*        length in z.                                                  *
+* 'TRAP' is  a  general trapezoid,  i.e.  one  for which  the  faces   *
+*        perpendicular to z  are trapezia and their  centres are not   *
+*        at the same x, y.  It has 11 parameters: Dz the half length   *
+*        in z, Th & Phi the polar angles from the centre of the face   *
+*        at  z=-Dz to  that at  z=+Dz, H1  the half  length in  y at   *
+*        z=-Dz, LB1  the half length in  x at z=-Dz and  y=low edge,   *
+*        LH1 the half length in x at z=-Dz and y= high edge, Th1 the   *
+*        angle w.r.t. the  y axis from the centre of  the low y edge   *
+*        to the centre of the high y edge, and H2, LB2, LH2, Th2 the   *
+*        corresponding quantities to the 1s but at z=+Dz.              *
+* 'TUBE' is a  tube.  It  has 3 parameters,  the inside  radius, the   *
+*        outside radius and the half length in z.                      *
+* 'TUBS' is a phi segment of a  tube.  It has 5 parameters, the same   *
+*        3 as 'TUBE' plus the phi limits.  The segment starts at the   *
+*        first limit  and includes  increasing phi  value up  to the   *
+*        second limit or that plus 360 degrees.                        *
+* 'CONE' is a conical tube.  It has 5 parameters, the half length in   *
+*        z, the  inside and  outside radii  at the  low z  limit and   *
+*        those at the high z limit.                                    *
+* 'CONS' is a phi  segment of a conical tube.  It  has 7 parameters,   *
+*        the same 5 as 'CONE' plus the phi limits.                     *
+* 'SPHE' is a  segment of a  spherical shell.  It has  6 parameters,   *
+*        the inside radius, the outside radius, the theta limits and   *
+*        the phi limits.   At present, for the  drawing package only   *
+*        first  two parameters  are significant  (inside radius  and   *
+*        outside radius) and such a shape  is always drawn as a full   *
+*        sphere.                                                       *
+* 'PARA' is a parallelpiped.   It has 6 parameters,  the half length   *
+*        in x, the half length in y, the half length in z, the angle   *
+*        w.r.t. the y axis from the centre  of the low y edge to the   *
+*        centre of the  high y edge, and the theta  phi polar angles   *
+*        from the centre of the low z face to the centre of the high   *
+*        z face.                                                       *
+* 'PGON' is a polygon.  It has at least 10 parameters, the lower phi   *
+*        limit, the range  in phi, the number of  straight sides (of   *
+*        equal length)  between those  phi limits,  the number  of z   *
+*        planes (at least two) where the distances to the z axis are   *
+*        changing,  z  coordinate  of   first  plane,  the  shortest   *
+*        distances  RMIN  & RMAX  from  the  z  axis to  the  inside   *
+*        straight edge and  the outside straight edge  for the first   *
+*        plane, Z, RMIN, RMAX for the second plane, and so on.         *
+* 'PCON' is a polycone.  It has at least 9 parameters, the lower phi   *
+*        limit, the range  in phi, the number of z  planes (at least   *
+*        two) where  the radius are  changing, the z  coordinate and   *
+*        the minimum and maximum radius for each z boundary.           *
+* 'ELTU' is a  cylinder with  an elliptical  section.  It  has three   *
+*        parameters:  the  ellipse  semi-axis   in  X,  the  ellipse   *
+*        semi-axis in Y  and the half length in Z.   The equation of   *
+*        the conical curve is:                                         *
+*             X**2/PAR(1)**2  +  Y**2/PAR(2)**2  =  1                  *
+*        ELTU is not divisible.                                        *
+* 'HYPE' is a hyperbolic  tube, ie the inner and  outer surfaces are   *
+*        hyperboloids, as would be formed by a system of cylindrical   *
+*        wires  which were  then  rotated  tangentially about  their   *
+*        centres.  The 4  parameters are the inner  and outer radii,   *
+*        the  half lenght  in z,  and  the "stereo  angle" theta  in   *
+*        degrees,  such that  the hyperbolic  surfaces are  given by   *
+*        r**2 = (z*tan(theta))**2 + (r at z=0)**2                      *
+* 'CTUB' is a cut  tube with 11 parameters.  The  first 5 parameters   *
+*        are the same  as for the TUBS.  The  remaining 6 parameters   *
+*        are the director  cosines of the surfaces  cutting the tube   *
+*        respectively at the low and high Z values.                    *
+*                                                                      *
+*                  Shapes BOX,TRD1,TRD2,TRAP                           *
+*                  Shapes TUBE,TUBS,CONE,CONS                          *
+*                  Shapes PARA,SPHE,PGON,PCON                          *
+*                  Shapes ELTU,HYPE,CTUB                               *
+*                                                                      *
+*              The Volume data structure JVOLUM                        *
+*              --------------------------------                        *
+*                                                                      *
+* ISHAPE    system shape number                                        *
+* NIN       number of volumes imbedded in  the mother volume.  If it   *
+*           is negative then the volume is divided into slices         *
+* NMED      medium number for the volume                               *
+* NPAR      number of shape parameters                                 *
+* NATT      number of drawing attributes                               *
+* PAR       array of shape parameters                                  *
+* IAT       array of drawing attributes                                *
+* IAXIS     defines the direction of the  slices (1,2,3) in the case   *
+*           of slice division (NIN < 0):                               *
+* IVO       system volume number                                       *
+* NDIV      number of slices                                           *
+* C0        minimum coordinate limit                                   *
+* STEP      coordinate step from slice to slice                        *
+* IVO       system volume number  in the case  of  object  insertion   *
+*           (NIN > 0):                                                 *
+* NR        user number                                                *
+* IROT      rotation matrix  number defining the  orientation of the   *
+*           volume                                                     *
+* X,Y,Z     define the position of the volume                          *
+* KONLY     indicates  whether  it is  sufficient  to  find a  point   *
+*           within  this  volume  or   whether  there  may  be  some   *
+*           ambiguity with other volumes at the same level             *
+*                                                                      *
+*  User bits  in the bank  status word  are used with  the following   *
+* meaning (the least significant bit is number 1):                     *
+*                                                                      *
+*  Bit       Meaning when set                                          *
+*                                                                      *
+*    1       Content of the volume has been ordered by GSORD           *
+*    2       Content of the volume has been developed by GGDVLP        *
+*    3       Volume is convex                                          *
+*    4       User routines GSNEAR or GSNEXT have been called           *
+*    5       Bit used to exclude a volume from the search in the       *
+*            geometrical tree.                                         *
+*                                                                      *
+*                                                                      *
+*                           | JVOLUM                                   *
+* NVOLUM   IVO   IVO        v                 NVOLUM                   *
+*  .............................................        (*)            *
+*  |      | |   | |        | |  Volume names   |-->nlevmx              *
+*  .............................................                       *
+*          |     |                                                     *
+*          |     v JVO = LQ(JVOLUM-IVO)       {NIN < 0}                *
+*          |  ...........................................   (**)       *
+*          |  | | |ishape|nin|numed|npar|natt|pars|atts.|->dev         *
+*          |  ...........................................              *
+*          |   |                                                       *
+*          |   v JDIV=LQ(JVO-1)                                        *
+*          |  .................................                        *
+*          |  | | IAXIS |IVO |NDIV| C0 | STEP |                        *
+*          |  .................................                        *
+*          |                                                           *
+*          .....                                                       *
+*              |                                                       *
+*     NIN IN   v  JVO = LQ(JVOLUM-IVO)      {NIN>0}                    *
+* ........................................................  (**)       *
+* | | |  | |  | |ishape| nin |numed|npar|natt|pars.|atts.|->dev        *
+* ........................................................             *
+*  | |    |                                                            *
+*  | |    v   JIN = LQ(JVO-IN)                                         *
+*  | | .......................................................         *
+*  | | | | |-| ivo | nr |irot| x | y | z |konly|npar| pars.. |         *
+*  | | .......................................................         *
+*  | |  |                                                              *
+*  | |  v   JNUP = LQ(JIN-1)  option GSNEXT only                       *
+*  | | .............................                                   *
+*  | | | | nus | in(1) ... in(nus) |                                   *
+*  | | .............................                                   *
+*  | |                                                                 *
+*  | v   JNDW = LQ(JVO-NIN-1)       JSB = LQ(JNDW)                     *
+*  |............................   .............................       *
+*  || | nin | in(1) .. in(nin) | --| |IAXIS | NSB | C1..       |       *
+*  |............................   .............................       *
+*  |                                       option GSORD only           *
+*  |                                                                   *
+*  | JSC0 = LQ(JVO-NIN-2)  option GSORD only                           *
+*  ..............                                                      *
+*               |                                                      *
+*  NSB-1  IDIV  v                      NSB-1                           *
+*   ......................................                             *
+*   |    | |   | | NCONT1...             |                             *
+*   ......................................                             *
+*         |                                                            *
+*         |  JSCV = LQ(JSC0-IDIV)                                      *
+*         v                      NCONT                                 *
+*        ............................                                  *
+*        | |  IN1...                |                                  *
+*        ............................                                  *
+*                                                                      *
+* (*)                                                                  *
+* Next of same type of JVOLUM filled in by routine GGNLEV/GGCLOS       *
+* (**)                                                                 *
+* Next of same type of JVO, for local development, filled in by        *
+*  GGDVLP/GGCLOS                                                       *
+*                                                                      *
+************************************************************************
+#endif

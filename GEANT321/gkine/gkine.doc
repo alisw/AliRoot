@@ -1,0 +1,91 @@
+*
+* $Id$
+*
+* $Log$
+* Revision 1.1.1.1  1995/10/24 10:21:18  cernlib
+* Geant
+*
+*
+#include "geant321/pilot.h"
+#if defined(CERNLIB_DOC)
+*CMZ :  3.21/02 29/03/94  15.41.21  by  S.Giani
+*-- Author :
+*
+************************************************************************
+*            -----------------------------------------------           *
+*            The Kinematics data structures JVERTX and JKINE           *
+*            -----------------------------------------------           *
+*                                                                      *
+*                                          | JVERTX                    *
+*     NVERTX          IVERT                v                           *
+*      ...............................................                 *
+*      |              | |                 | | NVERTX |                 *
+*      ...............................................                 *
+*                      |                                               *
+*                      | JV                                            *
+*                      v                                               *
+*           ..........................                                 *
+*           | 1 |   VX               |                                 *
+*           |...|....................|                                 *
+*           | 2 |   VY               |                                 *
+*           |...|....................|                                 *
+*           | 3 |   VZ               |                                 *
+*           |...|....................|                                 *
+*           | 4 |   TOF              |                                 *
+*           |...|....................|                                 *
+*           | 5 |   NTBEAM           |                                 *
+*           |...|....................|                                 *
+*           | 6 |   NTTARG           |                                 *
+*           |...|....................|                                 *
+*           | 7 |   no. of tracks    |                                 *
+*           |...|....................|                                 *
+*           | 8 |   List of tracks   |                                 *
+*           |...|....................|                                 *
+*           | 9 |                    |                                 *
+*           ..........................                                 *
+*                                                                      *
+*  JV        = LQ(JVERTX-IVERT) pointer to parameters of vertex        *
+*            number IVERT                                              *
+*  Q(JV+1)   x coordinate of this vertex.                              *
+*                                                                      *
+*  The JVERTX  banks are filled  by the routine GSVERT.   The Vertex   *
+* parameters are retrieved by the routine GFVERT.                      *
+*                                                                      *
+*                                                                      *
+*                                          | JKINE                     *
+*     NTRACK          ITRA                 v                           *
+*      ...............................................                 *
+*      |              | |                 | | NTRACK |                 *
+*      ...............................................                 *
+*                      |                                               *
+*                      | JK                                            *
+*                      v                                               *
+*           ..........................                                 *
+*           | 1 |   PX               |                                 *
+*           |...|....................|                                 *
+*           | 2 |   PY               |                                 *
+*           |...|....................|                                 *
+*           | 3 |   PZ               |                                 *
+*           |...|....................|                                 *
+*           | 4 |   Energy           |                                 *
+*           |...|....................|                                 *
+*           | 5 |   IPART            |                                 *
+*           |...|....................|                                 *
+*           | 6 |   Vertex origin    |                                 *
+*           |...|....................|                                 *
+*           | 7 |   no. of vertices  |                                 *
+*           |...|....................|                                 *
+*           | 8 |   List of vertices |                                 *
+*           |...|....................|                                 *
+*           | 9 |                    |                                 *
+*           ..........................                                 *
+*                                                                      *
+*  JK        = LQ(JKINE-ITRA)   pointer to parameters  of track        *
+*            number ITRA                                               *
+*  Q(JK+1)   x component of the momentum for this track.               *
+*                                                                      *
+*  The  JKINE  banks  are  filled  by  the  routine  GSKINE.   Track   *
+* parameters are obtained by GFKINE.                                   *
+*                                                                      *
+************************************************************************
+#endif

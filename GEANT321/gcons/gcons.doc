@@ -1,0 +1,84 @@
+*
+* $Id$
+*
+* $Log$
+* Revision 1.1.1.1  1995/10/24 10:20:12  cernlib
+* Geant
+*
+*
+#include "geant321/pilot.h"
+#if defined(CERNLIB_DOC)
+*CMZ :  3.21/02 29/03/94  15.41.19  by  S.Giani
+*-- Author :
+************************************************************************
+*                                                                      *
+*                   Introduction to the section CONS                   *
+*                   --------------------------------                   *
+*                                                                      *
+*   THE SECTION CONS                                                   *
+*                                                                      *
+*  The  experimental   setup  is  represented  by   a  structure  of   *
+* geometrical volumes.  Each volume is  given a medium number by the   *
+* user.  Different volumes may have the same medium number [GEOM].     *
+*  A  medium is  defined  by  a set  of  parameters, the  so>-called   *
+* 'tracking  medium'  parameters,  which include  reference  to  the   *
+* material filling the volume.                                         *
+*  The tracking  of particles  through an experimental  setup [TRAK]   *
+* requires access to the data which describe                           *
+*       - the geometrical setup,                                       *
+*       - the characteristics of the materials used,                   *
+*       - the tracking medium parameters, and                          *
+*       - the particle properties.                                     *
+*  The section CONS contains all routines related to the storage and   *
+* retrieval of information for the materials, the tracking media and   *
+* the particles.                                                       *
+*                                                                      *
+*   MATERIALS                                                          *
+*                                                                      *
+*  The material  constants are  stored in  the data  structure JMATE   *
+* through  the routine  GMATE which  defines the  standard table  of   *
+* materials.   They can  be  accessed with  the  routine GFMATE  and   *
+* printed with the routine GPMATE.                                     *
+*  GMATE calls  the routine GSMATE  for each material in  turn.  The   *
+* user may directly use GSMATE instead  of, or in addition to, or to   *
+* partly override, GMATE.                                              *
+*  MIXTUREs of  basic materials, or COMPOUNDs,  molecules with atoms   *
+* from  different basic  materials, may  also be  defined and  their   *
+* characteristics  can be  stored  in the  structure JMATE,  through   *
+* calls  to the  routine  GSMIXT.  Mixtures  of  compounds are  also   *
+* accepted.                                                            *
+*  In addition,  some quantities computed during  the initialisation   *
+* of the physics processes are stored  in the structure JMATE , such   *
+* as energy loss and cross>-section tables [PHYS].                     *
+*                                                                      *
+* TRACKING MEDIUM PARAMETERS                                           *
+*                                                                      *
+*  For  each medium  in  turn, the  tracking  medium parameters  are   *
+* stored in  the data  structure JTMED  through the  routine GSTMED.   *
+* Details about these  parameters are given in [TRAK].   They can be   *
+* accessed  with the  routine GFTMED  and printed  with the  routine   *
+* GPTMED.                                                              *
+*  The correct setting  of the tracking media  parameters is crucial   *
+* for the  correctness of the  results of the simulation.   In GEANT   *
+* some  of  these parameters  are  calculated  automatically by  the   *
+* program by default.  This can be  disabled by the data record AUTO   *
+* 0, but only experienced users should use this option.                *
+*  The tracking cuts,  the physics cuts and the  flags which control   *
+* the physics processes, defined in  GINIT and possibly modified via   *
+* the relevant data  cards, are also stored in  the structure JTMED.   *
+* Any of  these additional  parameters can  be modified  through the   *
+* routine GSTPAR.                                                      *
+*                                                                      *
+* PARTICLES                                                            *
+*                                                                      *
+*  The particle  constants are  stored in  the data  structure JPART   *
+* through  the routine  GPART which  defines the  standard table  of   *
+* particles and, if relevant, the  branching ratios and decay modes.   *
+*  The standard particle constants can  be accessed with the routine   *
+* GFPART and printed with the routine GPPART.                          *
+*  GPART calls the routine GSPART (and GSDK for the decays) for each   *
+* particle  in turn.   The user  may call  directly GSPART  and GSDK   *
+* instead of, or in addition to, or to partly override, GPART.         *
+*                                                                      *
+************************************************************************
+#endif

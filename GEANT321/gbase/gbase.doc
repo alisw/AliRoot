@@ -1,0 +1,1147 @@
+*
+* $Id$
+*
+* $Log$
+* Revision 1.1.1.1  1995/10/24 10:20:06  cernlib
+* Geant
+*
+*
+#include "geant321/pilot.h"
+#if defined(CERNLIB_DOC)
+*CMZ :  3.21/02 29/03/94  15.41.19  by  S.Giani
+*-- Author :
+*
+************************************************************************
+*                                                                      *
+*                                                                      *
+*                         Introduction to GEANT3                       *
+*                         ----------------------                       *
+*                                                                      *
+*                                                                      *
+*    GEANT3 APPLICATIONS                                               *
+*                                                                      *
+*  The principal applications of GEANT3 are:                           *
+*                                                                      *
+*  - The  tracking of  particles  through an  experimental setup  for  *
+*    acceptance studies or simulation of detector response, and        *
+*  - the graphical  representation of the  setup and of  the particle  *
+*    trajectories.                                                     *
+*                                                                      *
+*  It is of course desirable and  very instructive to combine the two  *
+*  interactively since the observation of  what happens to a particle  *
+*  during the tracking may underline  the weaknesses of the setup and  *
+*  makes  the debugging  easier. In view  of these  applications, the  *
+*  GEANT3 system allows:                                               *
+*                                                                      *
+*  - to  describe an  experimental setup  in a  rather efficient  and  *
+*    simple  way.   The  setup  is  represented  by  a  structure  of  *
+*    geometrical VOLUMEs.  Each volume is  given a 'MEDIUM' number by  *
+*    the user.   Different volumes  may have  the same  medium number  *
+*    [GEOM].   A  medium is  defined  by  a  set of  parameters,  the  *
+*    so-called TRACKING MEDIUM parameters, which include reference to  *
+*    the MATERIAL filling the volume [CONS].                           *
+*  - to  generate   simulated  events   from  standard   Monte  Carlo  *
+*    generators [KINE].                                                *
+*  - to  control  the  transport  of particles  through  the  various  *
+*    regions of the setup, taking into account the geometrical volume  *
+*    boundaries and  all physical  effects due to  the nature  of the  *
+*    particles themselves, to their  interactions with the matter and  *
+*    to the magnetic field [TRAK, PHYS].                               *
+*  - to  record the  elements of  the particle  trajectories and  the  *
+*    response from the sensitive detectors [HITS],                     *
+*  - to visualize either interactively  or in batch the detectors and  *
+*    the particle trajectories [DRAW, XINT].                           *
+*                                                                      *
+*   Part of the  subroutines available in GEANT3  are integrated into  *
+*  program segments which perform these tasks.                         *
+*   The  program  segments may  contain  'dummy'  and 'default'  user  *
+*  subroutines  called  whenever  application dependent  actions  are  *
+*  expected.                                                           *
+*   Other  subroutines   provide  tools  either  to   perform  simple  *
+*  functions (control  print, debug, I/O,  etc.) or to  implement the  *
+*  operations required  for most of the  applications (description of  *
+*  the geometrical setup, handling of detector responses,etc.).        *
+*   It is the responsibility of  the user to assemble the appropriate  *
+*  program segments and tools into an executable program, to code the  *
+*  relevant  user subroutines,  to  provide the  data describing  the  *
+*  experimental environment and to  submit the appropriate data cards  *
+*  which control the  execution of the program.  The  section BASE of  *
+*  the User's Guide gives the information necessary to understand how  *
+*  to do this job.                                                     *
+*                                                                      *
+*  Note: as a  general convention the  names of the dummy  or default  *
+*        user subroutines have GU or UG  as first two letters and are  *
+*        printed in bold characters.                                   *
+*                                                                      *
+*  EVENT SIMULATION FRAMEWORK                                          *
+*                                                                      *
+*  The framework for  event simulation is described  in the following  *
+*  paragraphs to  familiarize the  reader with  the areas  where user  *
+*  interventions are expected.                                         *
+*   At  the same  time, the  GEANT3 data  structures are  introduced.  *
+*  This last point  is important as the coding to  be provided by the  *
+*  user  often consists  of  filling data  structures, or  extracting  *
+*  information from  them, or  saving them on  output, making  use of  *
+*  standard routines available in the system.                          *
+*   A main  program has to  be provided by  the user [BASE  100].  It  *
+*  allocates the dynamic memory for ZEBRA and HBOOK and gives control  *
+*  to the three phases of the run:                                     *
+*                                                                      *
+*  - Initialisation                                                    *
+*  - Event processing                                                  *
+*  - Termination.                                                      *
+*                                                                      *
+*  INITIALISATION                                                      *
+*                                                                      *
+*  The initialisation  phase is under  the control of the  user [BASE  *
+*  100].  It consists of the  following steps, most of them performed  *
+*  via calls to standard GEANT3 subroutines:                           *
+*                                                                      *
+*  - GINIT,  to  initialize the  GEANT3  common  blocks with  default  *
+*    values which the user should be aware of [BASE 030, 110].         *
+*  - GFFGO to read  'free format' data cards which  can override some  *
+*    of the  values defined in  GINIT the default options  [BASE 040,  *
+*    110].                                                             *
+*  - GZINIT to initialize the dynamic  core divisions, the link areas  *
+*    and the data structure JRUNG [BASE 110].                          *
+*  - GDINIT  to initialize the drawing package [DRAW].                 *
+*  - GPART  and auxiliaries,  to  generate the  data structure  JPART  *
+*    describing the standard particle properties [CONS].               *
+*  - GMATE  and auxiliaries,  to  generate the  data structure  JMATE  *
+*    describing  the  characteristics  of   the  most  commonly  used  *
+*    MATERIALs [CONS].                                                 *
+*  - <USER> to define the geometry of the different components of the  *
+*    experimental  setup [GEOM]  and the  tracking medium  parameters  *
+*    [CONS,TRAK], and  to generate the corresponding  data structures  *
+*    JROTM, JVOLUM and JTMED.                                          *
+*  - <USER> to specify which elements of the geometrical setup should  *
+*    be considered as 'sensitive detectors', giving a 'response' when  *
+*    hit by a particle [HITS].                                         *
+*  - GGCLOS to close the Geometry package (mandatory).                 *
+*  - GBHSTA to  book standard  GEANT3 histograms  as required  by the  *
+*    user with the data card HSTA [BASE 040, 110].                     *
+*  - GPHYSI to  compute energy loss  and cross section tables  and to  *
+*    store them in the data structure JMATE [CONS,PHYS].               *
+*                                                                      *
+*  EVENT PROCESSING                                                    *
+*                                                                      *
+*  The processing phase is triggered by  a call to the subroutine GRUN *
+*  which,  for each  event to  be  processed,  gives  control to  the  *
+*  subroutines:                                                        *
+*                                                                      *
+*  - GTRIGI, to  initialize the  event processing  and to  create the  *
+*    Header bank JHEAD.                                                *
+*  - GTRIG to process the event.                                       *
+*  - GTRIGC to clean up the event division                             *
+*                                                                      *
+*  and checks that enough time is left for the next event [BASE 200].  *
+*  The main  steps of GTRIG  consist of  calls to the  following user  *
+*  routines:                                                           *
+*                                                                      *
+*  - GUKINE generates the data structures JVERTX and JKINE describing  *
+*    the kinematics  of the current  event on input [KINE],  or reads  *
+*    them [IOPA].                                                      *
+*  - GUTREV (calls GTREVE) controls the  tracking for the whole event  *
+*    [TRAK].  Each particle  is tracked in turn and  when a sensitive  *
+*    detector is  hit, the user  may store any useful  information in  *
+*    the  data  structure JHITS  [HITS].   Before  tracking the  next  *
+*    particle, any  secondary products generated by  the current one,  *
+*    and stored  by the user  in the temporary data  structure JSTAK,  *
+*    are processed in the same way.                                    *
+*    Simultaneously,   the  data   structure  JXYZ,   containing  the  *
+*    coordinates  of space  points  along the  tracks  for the  whole  *
+*    event, can be filled by the user [TRAK].                          *
+*  - GUDIGI  simulates the  detector responses  for the  whole event,  *
+*    making use  of the information  previously recorded in  the data  *
+*    structure JHITS,  and stores the  results in the  data structure  *
+*    JDIGI [HITS].                                                     *
+*  - GUOUT outputs the relevant data structures for the current event  *
+*    [IOPA].                                                           *
+*                                                                      *
+*  Other user routines called during  the tracking phase triggered by  *
+*  GTREVE should be mentioned for completeness:                        *
+*                                                                      *
+*  - The hadronic processes activated by  default for the tracking of  *
+*    hadrons in  GEANT3 are  described by  the program  GHEISHA (file  *
+*    GEANH).  In  the subroutines GUPHAD  and GUHADR [TRAK]  the user  *
+*    may select, instead of GHEISHA,  the program FLUKA (file GEANF).  *
+*  - After each  tracking step of  a given  track in a  given medium,  *
+*    control is given to the subroutine GUSTEP.  From the information  *
+*    available  in  common  blocks  the  user is  able  to  take  the  *
+*    appropriate  action, such  as  storing a  hit or transferring  a  *
+*    secondary product  either in  the stack JSTAK  or in  the events  *
+*    structure JVERTX/JKINE.                                           *
+*  - The subroutine GUSWIM is called  by various tracking routines to  *
+*    select the appropriate  code for transport of  the particle over  *
+*    the given tracking  step.  A default version is  provided in the  *
+*    library for  this routine which in  normal cases need not  to be  *
+*    provided by the user.                                             *
+*  - The magnetic field,  unless constant with no  X- or Y-component,  *
+*    has to be returned by the user subroutine GUFLD.                  *
+*                                                                      *
+*  TERMINATION                                                         *
+*                                                                      *
+*   The  termination phase  is under  the control  of the  user [BASE  *
+*  300].  For trivial applications it may simply consist of a call to  *
+*  the subroutine  GLAST which  computes and prints  some statistical  *
+*  information (time per event, use of dynamic memory, etc.).          *
+*                                                                      *
+*                                                                      *
+************************************************************************
+*                                                                      *
+*                                                                      *
+*                  Simplified Program Flow Chart                       *
+*                  -----------------------------                       *
+*                                                                      *
+*  MAIN(user)                                                          *
+*  |                                                                   *
+*  |-GZEBRA  initialisation   of   ZEBRA  system, dynamic core         *
+*  |         allocation                                                *
+*  |-UGINIT  (user)                                                    *
+*  ||                                                                  *
+*  ||- GINIT    initialisation of GEANT3 variables                     *
+*  ||- GFFGO    interpretation of data cards                           *
+*  ||- GZINIT   initialisation  of ZEBRA  core  divisions and  link    *
+*  ||           areas                                                  *
+*  ||- GPART    creation of the 'particle' data structure JPART        *
+*  ||- GMATE    creation of the 'material' data structure JMATE        *
+*  ||- <USER>   description  of the geometrical setup,   of the        *
+*  ||           sensitive detectors and creation of data structures    *
+*  ||           JVOLUM, JTMED, JROTM, JSETS                            *
+*  ||- GGCLOS   close Geometry package                                 *
+*  ||- GPHYSI   preparation of cross-sections and energy loss tables   *
+*  |            for all used materials                                 *
+*  |                                                                   *
+*  |-GRUN (loop over events)                                           *
+*  ||                                                                  *
+*  ||- GTRIGI   initialisation for event processing                    *
+*  ||- GTRIG    event processing                                       *
+*  ||  |                                                               *
+*  ||  |- GUKINE (user)  generation (or input)  of  event initial      *
+*  ||  |                 kinematics                                    *
+*  ||  |- GUTREV (user)                                                *
+*  ||  |   |- GTREVE   (simplified flow for sequential tracking)       *
+*  ||  |      |- GSSTAK   store primary tracks in stack                *
+*  ||  |      |- Loop over tracks                                      *
+*  ||  |        |- GLTRAC   prepare commons for tracking               *
+*  ||  |            |- GMEDIA  find current volume /tracking medium    *
+*  ||  |        |- GUTRAK (user)                                       *
+*  ||  |          |- GTRACK                                            *
+*  ||  |            |- GTGAMA/GTELEC/...  tracking   of  particle      *
+*  ||  |                                  according to type            *
+*  ||  |                 |-   compute physical step size               *
+*  ||  |                 |- GTNEXT compute geometrical step size       *
+*  ||  |                 |-   propagate (GUSWIM..)                     *
+*  ||  |                 |-   test change of volume (GINVOL)           *
+*  ||  |            |- GUSTEP (user) recording of hits in data         *
+*  ||  |                      structure JHITS and of space points      *
+*  ||  |                      in structure JXYZ                        *
+*  ||  |- GUDIGI computation  of  digitisations  and recording  in     *
+*  ||  |         structure JDIGI                                       *
+*  ||  |- GUOUT  output of current event                               *
+*  ||                                                                  *
+*  ||- GTRIGC   clearing of memory for next event                      *
+*  |                                                                   *
+*  |-UGLAST (user)                                                     *
+*  ||                                                                  *
+*  ||- GLAST    standard GEANT3 termination.                           *
+*  |                                                                   *
+*  |                                                                   *
+*  STOP                                                                *
+*                                                                      *
+*                                                                      *
+************************************************************************
+************************************************************************
+*                                                                      *
+*                    Overview of COMMON Blocks                         *
+*                    -------------------------                         *
+*                                                                      *
+*                                                                      *
+*  INTRODUCTION                                                        *
+*                                                                      *
+*  The communication between program segments of the GEANT3 system is  *
+*  ensured by data structures and by 'long range' variables in common  *
+*  blocks.  In addition,within the  program segments, the subroutines  *
+*  communicate with each other  via  explicit arguments  and via  the  *
+*  common block variables.                                             *
+*   The data structures are described in separate sections. Here, the  *
+*  main features of the common  blocks used in GEANT3 are summarized,  *
+*  with special mention of the  variables initialized in GINIT and of  *
+*  the possibility to override them via data cards [BASE040].          *
+*   The  labelled   common  blocks  are  accessible   via  Patchy/CMZ  *
+*  sequences identified by the name  of the COMMON.  They are defined  *
+*  in the Patch GCDES.                                                 *
+*                                                                      *
+*  Note: Unless  otherwise specified  the  long  range variables  are  *
+*        initialized  in GINIT.   When not  zero, default  values are  *
+*        quoted between brackets.  If the value may be modified via a  *
+*        standard data  card the  card  keyword is also given between  *
+*        brackets.                                                     *
+*                                                                      *
+*  DYNAMIC CORE                                                        *
+*                                                                      *
+*  The  GEANT3 data  structures  are stored  in  the common  /GCBANK/  *
+*  accessible via the following Patchy sequence.                       *
+*                                                                      *
+*+KEEP,GCBANK                                                          *
+*     PARAMETER (KWBANK=69000,KWWORK=5200)                             *
+*     COMMON/GCBANK/NZEBRA,GVERSN,ZVERSN,IXSTOR,IXDIV,IXCONS,FENDQ(16) *
+*    +             ,LMAIN,LR1,WS(KWBANK)                               *
+*     DIMENSION IQ(2),Q(2),LQ(8000),IWS(2)                             *
+*     EQUIVALENCE (Q(1),IQ(1),LQ(9)),(LQ(1),LMAIN),(IWS(1),WS(1))      *
+*     EQUIVALENCE (JCG,JGSTAT)                                         *
+*     COMMON/GCLINK/JDIGI ,JDRAW ,JHEAD ,JHITS ,JKINE ,JMATE ,JPART    *
+*    +      ,JROTM ,JRUNG ,JSET  ,JSTAK ,JGSTAT,JTMED ,JTRACK,JVERTX   *
+*    +      ,JVOLUM,JXYZ  ,JGPAR ,JGPAR2,JSKLT                         *
+*                                                                      *
+*  The /GCLINK/ variables are pointers to the GEANT3 data structures.  *
+*  They belong  to a permanent  area declared in GZINIT.   The common  *
+*  /GCLINK/ alone may be accessed through the sequence GCLINK.         *
+*                                                                      *
+*  OTHER LABELLED COMMON BLOCKS                                        *
+*                                                                      *
+*        COMMON/GCCUTS/CUTGAM,CUTELE,CUTNEU,CUTHAD,CUTMUO,BCUTE,BCUTM) *
+*       +             ,DCUTE ,DCUTM ,PPCUTM,TOFMAX,GCUTS(5)            *
+*  C                                                                   *
+*  CUTGAM   Kinetic energy cut for gammas              (0.001, CUTS)   *
+*  CUTELE   Kinetic energy cut for electrons           (0.001, CUTS)   *
+*  CUTHAD   Kinetic energy cut for hadrons             (0.01, CUTS)    *
+*  CUTNEU   Kinetic energy cut for neutral hadrons     (0.01, CUTS)    *
+*  CUTMUO   Kinetic energy cut for muons               (0.01, CUTS)    *
+*  BCUTE    Kinetic energy cut for electron Brems.     (CUTGAM, CUTS)  *
+*  BCUTM    Kinetic energy cut for muon Brems.         (CUTGAM, CUTS)  *
+*  DCUTE    Kinetic energy cut for electron delta-rays (CUTELE, CUTS)  *
+*  DCUTM    Kinetic energy cut for muon delta-rays     (CUTELE, CUTS)  *
+*  PPCUTM   Kinetic energy cut for e+e- pair production by muons       *
+*                                                      (.01, CUTS)     *
+*  TOFMAX   Tracking cut on time of flight integrated from  primary    *
+*           interaction time                           (1.E+10, CUTS)  *
+*  GCUTS    For user applications                      (CUTS)          *
+*                                                                      *
+*  Note: The cuts BCUTE, BCUTM and DCUTE, DCUTM are given, in GPHYSI,  *
+*        the  respective  default  values CUTGAM  and  CUTELE.   Only  *
+*        experienced users should make use of the facility offered by  *
+*        the data card CUTS to  change BCUTE, DCUTE, BCUTM and DCUTM.  *
+*                                                                      *
+*     COMMON /GCDRAW/ .....                                            *
+*                     see GEANG Pam file                               *
+*                                                                      *
+*        COMMON/GCFLAG/IDEBUG,IDEMIN,IDEMAX,ITEST,IDRUN,IDEVT,IEORUN   *
+*       +        ,IEOTRI,IEVENT,ISWIT(10),IFINIT(20),NEVENT,NRNDM(2)   *
+*        COMMON/GCFLAX/BATCH, NOLOG                                    *
+*        LOGICAL BATCH, NOLOG                                          *
+*  C                                                                   *
+*  IDEBUG   Flag set equal to 1 to activate debug if IEVENT (below)    *
+*  IDEMIN            is greater or equal to IDEMIN                     *
+*  IDEMAX            and less or equal to IDEMAX             (DEBU)    *
+*  ITEST    Flag to request printing of IEVENT, IDEVT and NRNDM        *
+*           (below) every ITEST events                       (DEBU)    *
+*  IDRUN    Current user run number                        (1, RUN)    *
+*  IDEVT    Current user event number                         (RUN)    *
+*  IEORUN   Flag to terminate current run if non zero                  *
+*  IEOTRI   Flag to abort current event if non zero                    *
+*  IEVENT   Current event sequence number                       (1)    *
+*  ISWIT    Flags reserved for user in relation to debug     (SWIT)    *
+*  IFINIT   System flags to check initialisation of GEANT routines     *
+*  NEVENT   Number of events to be processed        (10000000,TRIG)    *
+*  NRNDM    Initial value of random number seeds NRNDM(1),             *
+*           NRNDM(2). If NRNDM(2) is 0, the independent sequence       *
+*           NRNDM(1) is used. If NRNDM(1) is 0, the default sequence   *
+*           is used. (9876, 54321, RNDM)                               *
+*  BATCH    Flag set to .TRUE. if the program is running in            *
+*           batch.                                                     *
+*  NOLOG    Flag set to .TRUE. if the no logon file has been           *
+*           requested.                                                 *
+*                                                                      *
+*        COMMON/GCJLOC/NJLOC(2),JTM,JMA,JLOSS,JPROB,JMIXT,JPHOT,JANNI  *
+*       +                  ,JCOMP,JBREM,JPAIR,JDRAY,JPFIS,JMUNU,JRAYL  *
+*       +                  ,JMULOF,JCOEF,JRANG                         *
+*  C                                                                   *
+*   For relocation of local pointers. Self-explanatory [CONS 199].     *
+*                                                                      *
+*        COMMON/GCKINE/IKINE,PKINE(10),ITRA,ISTAK,IVERT,IPART,ITRTYP   *
+*       +      ,NAPART(5),AMASS,CHARGE,TLIFE,VERT(3),PVERT(4),IPAOLD   *
+*  C                                                                   *
+*  IKINE    User flag(0, KINE)                                         *
+*  PKINE    User array(1E10, KINE)                                     *
+*  ITRA     Current track number                                       *
+*  ISTAK    Current stack-track number                                 *
+*  IVERT    Current vertex number                                      *
+*  IPART    Current particle number                                    *
+*  ITRTYP   Tracking type of current particle                          *
+*  NAPART   Name of current particle                                   *
+*  AMASS    Mass of current particle                                   *
+*  CHARGE   Charge of current particle                                 *
+*  TLIFE    Life-time of current particle                              *
+*  VERT     Coordinates of origin vertex for current track             *
+*  PVERT    Track kinematics at origin vertex (PVERT(4) no longer      *
+*           used)                                                      *
+*  IPAOLD   Particle number of the previous track.                     *
+*                                                                      *
+*        INTEGER MXGKIN                                                *
+*        PARAMETER (MXGKIN=100)                                        *
+*        COMMON/GCKING/KCASE,NGKINE,GKIN(5,MXGKIN),                    *
+*       +                           TOFD(MXGKIN),IFLGK(MXGKIN)         *
+*  KCASE     Mechanism having generated the secondary particles        *
+*  NGKINE    Number of generated secondaries                           *
+*  GKIN(1,I) Px      of I-th secondary                                 *
+*  GKIN(2,I) Py               " "                                      *
+*  GKIN(3,I) Pz               " "                                      *
+*  GKIN(4,I) E                " "                                      *
+*  GKIN(5,I) Particle number  " "                                      *
+*  TOFD(I)   Time delay introduced by the interaction.                 *
+*                                                                      *
+*     COMMON/GCLIST/NHSTA,NGET ,NSAVE,NSETS,NPRIN,NGEOM,NVIEW,NPLOT    *
+*    +       ,NSTAT,LHSTA(20),LGET (20),LSAVE(20),LSETS(20),LPRIN(20)  *
+*    +             ,LGEOM(20),LVIEW(20),LPLOT(20),LSTAT(20)            *
+*C                                                                     *
+*  NHSTA    Number of histograms declared on data card HSTA            *
+*  NGET     Number of data structures declared on data card GET        *
+*  NSAVE    Number of data structures declared on data card SAVE       *
+*  NSETS    Number of items described on data card SETS                *
+*  NPRIN    Number of items described on data card PRIN                *
+*  NGEOM    Number of items described on data card GEOM                *
+*  NVIEW    Number of items described on data card VIEW                *
+*  NPLOT    Number of items described on data card PLOT                *
+*  NSTAT    Number of items described on data card STAT                *
+*  LHSTA,...,LSTAT Corresponding user lists of items (HSTA,...,STAT)   *
+*                                                                      *
+*   See examples of utilisation of  the user lists in GEANT3 examples  *
+*  in  GEANX file.   LSTAT(1) is  reserved by  the system  for volume  *
+*  statistics.                                                         *
+*                                                                      *
+*        COMMON/GCMATE/NMAT,NAMATE(5),A,Z,DENS,RADL,ABSL               *
+*  C                                                                   *
+*  NMAT      Current material number                                   *
+*  NAMATE    Name of current material                                  *
+*  A         Atomic weight of current material                         *
+*  Z         Atomic number of current material                         *
+*  DENS      Density of current material                               *
+*  RADL      Radiation length of current material                      *
+*  ABSL      Absorption length of current material                     *
+*                                                                      *
+*     COMMON/GCMULO/SINMUL(101),COSMUL(101),SQRMUL(101),OMCMOL,CHCMOL  *
+*    +  ,EKMIN,EKMAX,NEKBIN,NEK1,EKINV,GEKA,GEKB,EKBIN(200),ELOW(200)  *
+*                                                                      *
+*   Pre-computed  quantities  for   multiple  scattering  and  energy  *
+*  binning [CONS 199]                                                  *
+*  SINMUL   Not used                                                   *
+*  COSMUL   Not used                                                   *
+*  SQRMUL   Not used                                                   *
+*  OMCMOL   Constant Omega for Moliere scattering                      *
+*  CHCMOL   Constant for Moliere scattering                            *
+*  EKMIN    Lower edge for the energy range           (1E-5, ERAN)     *
+*  EKMAX    Upper edge for the energy range           (1E+4, ERAN)     *
+*  NEKBIN   Number of energy bins to be used          (90, ERAN)       *
+*  NEK1     Number of energy bins to be used + 1                       *
+*  EKINV    \                                                          *
+*  GEKA      >Constants for the energy binning                         *
+*  GEKB     /                                                          *
+*  EKBIN    Lower edges of energy bins                                 *
+*  ELOW     Lower edges of logarithm of energy bins                    *
+*                                                                      *
+*        COMMON/GCNUM/NMATE ,NVOLUM,NROTM,NTMED,NTMULT,NTRACK,NPART    *
+*       +            ,NSTMAX,NVERTX,NHEAD,NBIT                         *
+*        COMMON /GCNUMX/ NALIVE,NTMSTO                                 *
+*  C                                                                   *
+*  NMATE    Number of Materials                                        *
+*  NVOLUM   Number of Volumes                                          *
+*  NROTM    Number of Rotation matrices                                *
+*  NTMED    Number of Tracking media                                   *
+*  NTMULT   Number of  tracks processed  in current  event (including  *
+*           secondaries), reset to 0 for each event                    *
+*  NTRACK   Number of tracks in JKINE banks for current event          *
+*  NPART    Number of Particle banks                                   *
+*  NSTMAX   Maximum  number of  tracks  in  stack JSTAK  for  current  *
+*           event, reset to 0 for each event                           *
+*  NVERTX   Number of Vertices in JVERTX banks for current event       *
+*  NHEAD    Number of data words in the JHEAD bank       (10)          *
+*  NBIT     Number of bits per word (initialized in GINIT via FFINIT   *
+*  NALIVE   Internal counter used for parallel tracking                *
+*  NTMSTO   Internal counter used for parallel tracking                *
+*                                                                      *
+**KEEP,GCONSP                                                          *
+*      DOUBLE PRECISION PI,TWOPI,PIBY2,DEGRAD,RADDEG,CLIGHT,BIG,EMASS  *
+*      DOUBLE PRECISION EMMU,PMASS,AVO                                 *
+*C                                                                     *
+*      PARAMETER (PI=3.14159265358979324)                              *
+*      PARAMETER (TWOPI=6.28318530717958648)                           *
+*      PARAMETER (PIBY2=1.57079632679489662)                           *
+*      PARAMETER (DEGRAD=0.0174532925199432958)                        *
+*      PARAMETER (RADDEG=57.2957795130823209)                          *
+*      PARAMETER (CLIGHT=29979245800.)                                 *
+*      PARAMETER (BIG=10000000000.)                                    *
+*      PARAMETER (EMASS=0.0005109990615)                               *
+*      PARAMETER (EMMU=0.105658387)                                    *
+*      PARAMETER (PMASS=0.9382723128)                                  *
+*      PARAMETER (AVO=0.60221367)                                      *
+*                                                                      *
+*  PI       Number PI                                                  *
+*  TWOPI    (2.*PI)                                                    *
+*  PIBY2    (PI/2.)                                                    *
+*  DEGRAD   Degree to radian conversion factor  (PI/180.)              *
+*  RADDEG   Radian to degree conversion factor  (180./PI)              *
+*  CLIGHT   Light velocity                                             *
+*  BIG      Arbitrary large number                                     *
+*  EMASS    Electron mass                                              *
+*  EMMU     Muon mass                                                  *
+*  PMASS    Proton mass                                                *
+*  AVO      Avogadro Number * 1E-24                                    *
+*                                                                      *
+*  Control of Geometry optimisation                                    *
+*     COMMON/GCOPTI/IOPTIM                                             *
+*  IOPTIM  -1 = No optimisation at all. GSORD calls disabled           *
+*           0 = No optimisation. Only user calls to GSORD kept         *
+*           1 = All non-ordered volumes are ordered along the best axis*
+*           2 = All volumes are ordered along the best axis            *
+*                                                                      *
+*   Control of physics processes.                                      *
+*        COMMON/GCPHYS/IPAIR,SPAIR,SLPAIR,ZINTPA,STEPPA                *
+*       +             ,ICOMP,SCOMP,SLCOMP,ZINTCO,STEPCO                *
+*       +             ,IPHOT,SPHOT,SLPHOT,ZINTPH,STEPPH                *
+*       +             ,IPFIS,SPFIS,SLPFIS,ZINTPF,STEPPF                *
+*       +             ,IDRAY,SDRAY,SLDRAY,ZINTDR,STEPDR                *
+*       +             ,IANNI,SANNI,SLANNI,ZINTAN,STEPAN                *
+*       +             ,IBREM,SBREM,SLBREM,ZINTBR,STEPBR                *
+*       +             ,IHADR,SHADR,SLHADR,ZINTHA,STEPHA                *
+*       +             ,IMUNU,SMUNU,SLMUNU,ZINTMU,STEPMU                *
+*       +             ,IDCAY,SDCAY,SLIFE ,SUMLIF,DPHYS1                *
+*       +             ,ILOSS,SLOSS,SOLOSS,STLOSS,DPHYS2                *
+*       +             ,IMULS,SMULS,SOMULS,STMULS,DPHYS3                *
+*       +             ,IRAYL,SRAYL,SLRAYL,ZINTRA,STEPRA                *
+*  *                                                                   *
+*  IPAIR    Controls pair production process               (1,PAIR)    *
+*           0 = no pair production                                     *
+*           1 = pair production with generation of secondaries         *
+*           2 = same without generation of secondaries                 *
+*  ICOMP    Controls Compton scattering process            (1,COMP)    *
+*           0 = no Compton scattering                                  *
+*           1 = Compton scattering with generation of secondaries      *
+*           2 = same without generation of secondaries                 *
+*  IPHOT    Controls photo-electric effect process         (1,PHOT)    *
+*           0 = no photo-electric effect                               *
+*           1 = photo-electric effect with generation of secondaries   *
+*           2 = same without generation of secondaries                 *
+*  IPFIS    Controls photofission process                  (0,PFIS)    *
+*           0 = no photofission                                        *
+*           1 = photofission with generation of secondaries            *
+*           2 = same without generation of secondaries                 *
+*  IDRAY    Controls delta rays process                    (1,DRAY)    *
+*           0 = no delta rays effect                                   *
+*           1 = delta rays with generation of secondaries              *
+*           2 = same without generation of secondaries                 *
+*  IANNI    Controls positron annihilation process         (1,ANNI)    *
+*           0 = no positron annihilation effect                        *
+*           1 = positron annihilation with generation of secondaries   *
+*           2 = same without generation of secondaries                 *
+*  IBREM    Controls Bremsstrahlung process                (1,BREM)    *
+*           0 = no Bremsstrahlung effect                               *
+*           1 = Bremsstrahlung with generation of secondaries          *
+*           2 = same without generation of secondaries                 *
+*  IHADR    Controls hadron interactions process           (1,HADR)    *
+*           0 = no hadron interactions effect                          *
+*           1 = hadron interactions with generation of secondaries     *
+*           2 = same without generation of secondaries                 *
+*  IMUNU    Controls muon nuclear interaction process       (0,MUNU)   *
+*           0 = no muon nuclear interaction effect                     *
+*           1 = muon nuclear interaction with generation of secondaries*
+*           2 = same without generation of secondaries                 *
+*  IDCAY    Controls decay process                          (1,DCAY)   *
+*           0 = no decay effect                                        *
+*           1 = decay with generation of secondaries                   *
+*           2 = same without generation of secondaries                 *
+*  ILOSS    Controls energy loss process                    (2,LOSS)   *
+*           0 = no energy loss effect                                  *
+*           1 = delta ray and reduced Landau fluctuations              *
+*           2 = full Landau fluctuations and no delta rays             *
+*           3 = same as 1                                              *
+*           4 = average Energy loss and no fluctuations                *
+*  IMULS    Controls multiple scattering                   (1,MULS)    *
+*           1 = Moliere or Coulomb scattering                          *
+*           2 = Moliere or Coulomb scattering                          *
+*           3 = Gaussian scattering                                    *
+*  IRAYL    0 = No Rayleigh scattering                                 *
+*           1 = Rayleigh scattering                                    *
+*                                                                      *
+*        COMMON/GCPOLY/IZSEC,IPSEC                                     *
+*  C                                                                   *
+*  Internal flags for polygon and polycone shapes. See GEANG file.     *
+*                                                                      *
+*        COMMON/GCPUSH/NCVERT,NCKINE,NCJXYZ,NPVERT,NPKINE,NPJXYZ       *
+*  C                                                                   *
+*  NCVERT   Initial size of mother bank JVERTX              (5)        *
+*  NCKINE   Initial size of mother bank JKINE              (50)        *
+*  NCJXYZ   Initial size of mother bank JXYZ               (50)        *
+*  NPVERT   Increment for size of mother bank JVERTX        (5)        *
+*  NPKINE   Increment for size of mother bank JKINE        (10)        *
+*  NPJXYZ   Increment for size of mother bank JXYZ         (10)        *
+*                                                                      *
+*        COMMON/GCSETS/IHSET,IHDET,ISET,IDET,IDTYPE,NVNAME,NUMBV(20)   *
+*  C                                                                   *
+*  IHSET    Set identifier                                             *
+*  IHDET    Detector identifier                                        *
+*  ISET     Position of set in bank JSET                               *
+*  IDET     Position of detector in bank JS=IB(JSET-IDET)              *
+*  IDTYPE   User defined detector type                                 *
+*  NVNAME   Number of elements in NUMBV                                *
+*  NUMBV    List of volume numbers to identify the detector            *
+*                                                                      *
+*      PARAMETER (NWSTAK=12,NWINT=11,NWREAL=12,NWTRAC=NWINT+NWREAL+5)  *
+*      COMMON /GCSTAK/ NJTMAX, NJTMIN, NTSTKP, NTSTKS, NDBOOK, NDPUSH, *
+*     +                NJFREE, NJGARB, NJINVO, LINSAV(15), LMXSAV(15)  *
+*C                                                                     *
+*  NTKSTP   Primary allocation for stack JSTAK                         *
+*  NTKSTS   Secondary allocation for stack JSTAK                       *
+*  NDBOOK   local variable for control of stack size                   *
+*  NDPUSH   local variable for control of stack size                   *
+*  (other variables used in parallel tracking only)                    *
+*                                                                      *
+*        COMMON/GCTIME/TIMINT,TIMEND,ITIME,IGDATE,IGTIME               *
+*        INTEGER ITIME,IGDATE,IGTIME                                   *
+*        REAL TIMINT,TIMEND                                            *
+*  C                                                                   *
+*  TIMINT   Total time left after initialization  (System, TIME)       *
+*  TIMEND   Time required for program termination phase (1., TIME)     *
+*  ITIME    Test on time left done every ITIME events (1, ITIME)       *
+*  IGDATE   Date of the day  YYMMDD  integer (e.g. 920407)             *
+*  IGTIME   Time of the day  HHMM    integer (e.g. 1425)               *
+*                                                                      *
+*      COMMON/GCTMED/NUMED,NATMED(5),ISVOL,IFIELD,FIELDM,TMAXFD,STEMAX *
+*     +      ,DEEMAX,EPSIL,STMIN,CFIELD,PREC,IUPD,ISTPAR,NUMOLD        *
+*  NUMED    Current tracking medium number                             *
+*  NATMED   Name of current tracking medium                            *
+*  ISVOL    Sensitive volume flag (if non zero)                        *
+*  IFIELD   Field map type (0 if no field)                             *
+*  FIELDM   Maximum field                                              *
+*  TMAXFD   Maximum field turning angle in one step                    *
+*  STEMAX   Maximum step allowed                                       *
+*  DEEMAX   Maximum energy loss gradient in one step                   *
+*  EPSIL    Boundary crossing accuracy                                 *
+*  STMIN    Minimum step size by energy loss, multiple scattering      *
+*           or field                                                   *
+*  CFIELD   Constant for field step evaluation                         *
+*  PREC     Initial step for boundary crossing (0.1*EPSIL)             *
+*  IUDP     0 If medium change, (1 otherwise)                          *
+*  ISTPAR   0 If standard tracking parameters                          *
+*  NUMOLD   Numed of the last medium.                                  *
+*                                                                      *
+*        PARAMETER (MAXMEC=30)                                         *
+*        COMMON/GCTRAK/VECT(7),GETOT,GEKIN,VOUT(7),NMEC,LMEC(MAXMEC)   *
+*       + ,NAMEC(MAXMEC),NSTEP ,MAXNST,DESTEP,DESTEL,SAFETY,SLENG      *
+*       + ,STEP  ,SNEXT ,SFIELD,TOFG  ,GEKRAT,UPWGHT,IGNEXT,INWVOL     *
+*       + ,ISTOP ,IGAUTO,IEKBIN, ILOSL, IMULL,INGOTO,NLDOWN,NLEVIN     *
+*       + ,NLVSAV,ISTORY                                               *
+*  VECT     Current track parameters (X,Y,Z,Px/P,Py/P,Pz/P,P)          *
+*  GETOT    Current track total energy                                 *
+*  GEKIN    Current track kinetic energy                               *
+*  VOUT     Local use                                                  *
+*  NMEC     Number of mechanisms for current step                      *
+*  LMEC     List of mechanism indices for current step                 *
+*  NAMEC    Mechanism names (See below)                                *
+*  NSTEP    Number of steps so far                                     *
+*  MAXNST   Maximum number of steps allowed (default = 10000)          *
+*  DESTEP   Total energy lost in current step                          *
+*  DESTEL   Continuous energy loss in current step                     *
+*  SAFETY   Overestimated distance to closest medium boundary          *
+*  SLENG    Track length at current point                              *
+*  STEP     Size of current tracking step                              *
+*  SNEXT    Straight distance to next current medium boundary          *
+*  SFIELD   Field turning angle step size evaluation                   *
+*  TOFG     Time of flight                                             *
+*  GEKRAT   Interpolation factor in table ELOW                         *
+*  UPWGHT   User particle weight                                       *
+*  IGNEXT   Flag set to 1 when SNEXT has been recomputed               *
+*  INWVOL   Flag set to 1 when entering a new volume,                  *
+*                       2 when leaving a volume and                    *
+*                       3 when leaving the experimental setup.         *
+*                       0 otherwise 0                                  *
+*  ISTOP    Flag set to 1 when track looses its identity               *
+*                       2 when energy below cut                        *
+*  IGAUTO   Automatic computation of DEEMAX,STMIN,TMAXFD,STEMAX        *
+*  IEKBIN   Current kinetic energy bin in table ELOW                   *
+*  ILOSL    Local value of ILOSS for current tracking medium           *
+*  IMULL    Local value of IMULS for current tracking medium           *
+*  INGOTO   Content number of limiting content when computing SNEXT    *
+*  NLDOWN   Lowest level reached down the tree (parallel tracking only)*
+*  NLEVIN   Number of levels currently filled and valid in /GCVOLU/    *
+*  NLVSAV   Current level (parallel tracking only)                     *
+*  ISTORY   User flag for current track history (reset to 0 in GLTRAC) *
+*  --------                                                            *
+*  NAMEC    List  of possible  mechanisms  for  step size  limitation  *
+*           filled in GINIT :                                          *
+*     DATA MEC/'NEXT','MULS','LOSS','FIEL','DCAY','PAIR','COMP','PHOT' *
+*    +        ,'BREM','DRAY','ANNI','HADR','ECOH','EVAP','FISS','ABSO' *
+*    +        ,'ANNH','CAPT','EINC','INHE','MUNU','TOFM','PFIS','SCUT' *
+*    +        ,'RAYL','PARA','PRED','LOOP','NULL','STOP'/              *
+*  *                                                                   *
+*                                                                      *
+*        COMMON/GCUNIT/LIN,LOUT,NUNITS,LUNITS(5)                       *
+*        INTEGER LIN,LOUT,NUNITS,LUNITS                                *
+*        COMMON/GCMAIL/CHMAIL                                          *
+*        CHARACTER*132 CHMAIL                                          *
+*  C                                                                   *
+*  LIN      Input unit to read data cards                              *
+*  LOUT     Line printer output unit                                   *
+*  NUNITS   Number of additional units                                 *
+*  LUNITS   List of additional units.                                  *
+*  CHMAIL   Internal string used for error messages                    *
+*   LIN and  LOUT are defined in  GINIT through calls to  the routine  *
+*  FFGET from  the standard  FFREAD package.   NUNITS and  LUNITS are  *
+*  reserved for user applications.                                     *
+*                                                                      *
+*     COMMON /GCVOLU/   ......                                         *
+*                     see GEANG Pam file                               *
+*                                                                      *
+*                                                                      *
+*                                                                      *
+************************************************************************
+*                                                                      *
+*                      Summary of Data Cards                           *
+*                      ---------------------                           *
+*                                                                      *
+*                                                                      *
+*  INTRODUCTION                                                        *
+*                                                                      *
+*  GEANT3 uses the standard FFREAD package to read 'free format' data  *
+*  cards in  the routine GFFGO.   The cards currently  interpreted by  *
+*  GFFGO can be classified into four categories:                       *
+*                                                                      *
+*  - General control of the run.                                       *
+*  - Control of the physics processes.                                 *
+*  - Debug and I/O operations.                                         *
+*  - User applications.                                                *
+*                                                                      *
+*  The data  cards are  listed below by  category with  the following  *
+*  information:                                                        *
+*                                                                      *
+*  - KEY, card  keyword, any  number of  characters truncated  to the  *
+*    first 4                                                           *
+*  - N, maximum expected number of variables NVAR,                     *
+*  - T,  TYPE of these variables (I=INTEGER,  R=REAL or M=MIXED)       *
+*                                                                      *
+*  for each variable in turn:                                          *
+*                                                                      *
+*      - VAR.., FORTRAN name                                           *
+*      - Short description (more detail in BASE 030)                   *
+*      - COMMON where it is stored, and                                *
+*      - Default value from GINIT.                                     *
+*                                                                      *
+*  When a  card is decoded,  the values  entered by the  user without  *
+*  explicit assignment are  assigned to the variables  in order.  The  *
+*  number of values can  be less than NVAR.  In case  of a MIXED type  *
+*  the values entered have to be in agreement with the default of the  *
+*  corresponding FORTRAN variable names.                               *
+*                                                                      *
+*  Example of data card:     RUN   5   201                             *
+*                                                                      *
+*  to  preset  the  current  run  and  event  number  to  5  and  201  *
+*  respectively.                                                       *
+*   In batch jobs  there is no need for any  special termination card  *
+*  and none of the cards mentioned below is mandatory.                 *
+*                                                                      *
+*  USER DEFINED DATA CARDS                                             *
+*                                                                      *
+*  Before  calling  GFFGO the  user  may  define private  data  cards  *
+*  through calls to FFKEY as follows:                                  *
+*      CALL FFKEY('KEY',VAR(1),NVAR,'TYPE')                            *
+*   They will be interpreted by GFFGO in the same way as the standard  *
+*  cards.                                                              *
+*                                                                      *
+*  SUMMARY OF THE MOST IMPORTANT GEANT3 DATA CARDS                     *
+*                                                                      *
+*  KEY   N  T  VAR..  Short description                COMMON  GINIT   *
+*  General control of the run:                                         *
+*  HSTA 20  M LHSTA   Names of required histograms     GCLIST    0     *
+*  PATR  4  I NJTMAX  Max number of tracks in parallel GCSTAK    0     *
+*                     tracking stack                                   *
+*             NJTMIN  Number of tracks above which        "      0     *
+*                     parallel tracking can be                         *
+*                     reactivated when frozen earlier                  *
+*             NTSTKP  Primary allocation for stack JSTAK  "    500     *
+*             NTSTKS  Secondary  ... (when parallel       "    100     *
+*                     tracking used)                                   *
+*  RNDM  2  I NRNDM   Initial random number seeds                      *
+*             NRNDM(1)                                 GCFLAG  9876    *
+*             NRNDM(2)                                 GCFLAG 54321    *
+*  RNDM  2  I NRNDM   Initial random number seeds      GCFLAG    0     *
+*  RUNG  2  I IDRUN   User run number                  GCFLAG    1     *
+*             IDEVT   User event number                GCFLAG    1     *
+*  TIME  3  M TIMINT  Time left after initialisation   GCTIME System   *
+*             TIMEND  Time required for termination    GCTIME   1.     *
+*             ITIME   Test every ITIME events          GCTIME   1      *
+*  TRIG  1  I NEVENT  Number of events to process      GCFLAG  1E7     *
+*  Geometry optimization:                                              *
+*  OPTI  1  I IOPTIM  Optimization level               GCOPTI   1      *
+*  SCAN process control:                                               *
+*  SCAN  8  M         SCAN granularity and mode                        *
+*           SCANFL    Scan processing flag (Logical)   GCSCAN  FALSE   *
+*           NPHI      Number of divisions in PHI       GCSCAN   90     *
+*           PHIMIN    Minimum value of PHI             GCSCAN   0.     *
+*           PHIMAX    Maximum value of PHI             GCSCAN 360.     *
+*           NTETA     Number of divisions in TETA      GCSCAN  90      *
+*           TETMIN    Minimum value of TETA            GCSCAN  0.      *
+*           TETMAX    Maximum value of TETA            GCSCAN 180.     *
+*           MODTET    Type of TETA division            GCSCAN   1      *
+*  SCAL 32  M SLIST   List of scanned volumes          GCSCAN  'XXXX'  *
+*  SCAP  6  R         SCAN parameters                                  *
+*           VX      SCAN vertex X coordinate           GCSCAN  0.0     *
+*           VY      SCAN vertex Y coordinate           GCSCAN  0.0     *
+*           VZ      SCAN vertex Z coordinate           GCSCAN  0.0     *
+*           FACTX0  Scale factor for SX0               GCSCAN  100.    *
+*           FACTL   Scale factor for SL                GCSCAN  1000.   *
+*           FACTR   Scale factor for R                 GCSCAN  100.    *
+*  Control of physics processes:                                       *
+*  AUTO  1  I IGAUTO  Automatic computation of STMIN   GCTRAK   1      *
+*                     STEMAX,DEEMAX,TMAXFD                             *
+*                     0 = Tracking media parameters                    *
+*                         taken from the argument list                 *
+*                         of GSTMED                                    *
+*                     1 = Tracking media parameters                    *
+*                         calculated by GEANT                          *
+*  ANNI  1  I IANNI   Annihilation flag                GCPHYS   1      *
+*  BREM  1  I IBREM   Bremsstrahlung flag              GCPHYS   1      *
+*  COMP  1  I ICOMP   Compton scattering flag          GCPHYS   1      *
+*  CUTS 15  R         Kinetic energy cuts :                            *
+*           CUTGAM    " "   for gammas                 GCCUTS   0.001  *
+*           CUTELE    " "   for electrons              GCCUTS   0.001  *
+*           CUTHAD    " "   for charged hadrons        GCCUTS   0.01   *
+*           CUTNEU    " "   for neutral hadrons        GCCUTS   0.01   *
+*           CUTMUO    " "   for muons                  GCCUTS   0.01   *
+*           BCUTE     " "   for electron brems.        GCCUTS   CUTGAM *
+*           BCUTM     " "   for muon Brems.            GCCUTS   CUTGAM *
+*           DCUTE     " "   for electron delta-rays    GCCUTS   CUTELE *
+*           DCUTM     " "   for muon delta-rays        CCUTS    CUTELE *
+*           PPCUTM    " "   for e+e- pairs by muons    CCUTS    10 MeV *
+*           TOFMAX  Time of flight cut                 GCCUTS   1.E+10 *
+*           GCUTS   5 user words                       GCCUTS   0.     *
+*  DCAY  1  I IDCAY   Decay flag                       GCPHYS   1      *
+*  DRAY  1  I IDRAY   delta-rays flag                  GCPHYS   1      *
+*  ERAN  3  M Cross section tables                                     *
+*           R EKMIN   Minimum energy for the tables    GCMULO  1E-5    *
+*           R EKMAX   Maximum energy for the tables    GCMULO  1E+4    *
+*           I NEKBIN  Number of bins in the table      GCMULO   90     *
+*  HADR  1  I IHADR   Hadronic process flag            GCPHYS   1      *
+*  LOSS  1  I ILOSS   Energy loss flag                 CGPHYS   2      *
+*  MULS  1  I IMULS   Multiple scattering flag         GCPHYS   1      *
+*  MUNU  1  I IMUNU   Muon nuclear interactions flag   GCPHYS   0      *
+*  PAIR  1  I IPAIR   Pair production flag             GCPHYS   1      *
+*  PFIS  1  I IPFIS   Photofission flag                GCPHYS   0      *
+*  PHOT  1  I IPHOT   Photo-electric effect flag       GCPHYS   1      *
+*  RAYL  1  I IRAYL   Rayleigh scattering flag         GCPHYS   0      *
+*                                                                      *
+*  Debug and I/O operations:                                           *
+*  DEBU 3  M IDEMIN  First event to debug              GCFLAG   0      *
+*            IDEMAX  Last event to debug               GCFLAG   0      *
+*            ITEST   Print control frequency           GCFLAG   0      *
+*  GET  20 M LGET    Names of data structure to get    GCLIST   ' '    *
+*  PRIN 20 M LPRIN   User keywords to print data       GCLIST   ' '    *
+*                   structures                                         *
+*  SAVE 20 M LSAVE   Names of data struct. to save     GCLIST   ' '    *
+*  SWIT 10 I ISWIT   User flags for debug or else      GCFLAG   0      *
+*                   User applications:                                 *
+*  KINE 11 M IKINE   User flag                         GCKINE   0      *
+*            PKINE   10 user words                     GCKINE 1.E+10   *
+*  SETS 20 M LSETS   User words for detector sets      GCLIST   ' '    *
+*  STAT 20 M LSTAT   1 system + 19 user words          GCLIST   ' '    *
+*  PLOT 20 M LPLOT   User words to control plots       GCLIST   ' '    *
+*  GEOM 20 M LGEOM   User words to control geometry    GCLIST   ' '    *
+*  VIEW 20 M LVIEW   User words to control View banks  GCLIST ' '      *
+*                                                                      *
+*                                                                      *
+*                                                                      *
+*                                                                      *
+*                                                                      *
+*                                                                      *
+************************************************************************
+*                                                                      *
+*               The Reference Systems and dimensional Units            *
+*               -------------------------------------------            *
+*                                                                      *
+*                                                                      *
+*  THE MASTER REFERENCE SYSTEM  (MARS)                                 *
+*                                                                      *
+*   The Master Reference  System (MARS) is determined by  the way the  *
+*  user  represents  the kinematical  quantities.   If  the axes  are  *
+*  labelled (X,Y,Z), then the point P(A,B,C) is represented by         *
+*                                                                      *
+*           Y |                                                        *
+*             |         * P(A,B,C)                                     *
+*             |                    * X                  A on axis X    *
+*             |                  *                      B on axis Y    *
+*             |                *                        C on axis Z    *
+*             |              *                                         *
+*             |            *                                           *
+*             |          *                                             *
+*             |        *                                               *
+*             |      *                                                 *
+*             |                                                        *
+*             |                                                        *
+*             ............................>                            *
+*                                         Z                            *
+*    The tracking is performed in  the MAster Reference System.  This  *
+*  implies that  the arguments  of the  user magnetic  field routine,  *
+*  space point  coordinates and field  components, are given  in this  *
+*  system.                                                             *
+*                                                                      *
+*  THE LOCAL REFERENCE SYSTEMS (MRS AND DRS)                           *
+*                                                                      *
+*   As explained in GEOM 001, the experimental set-up is described by  *
+*  the  definition  of  an   'initial  MOTHER'  volume  inside  which  *
+*  'DAUGHTER' volumes are positioned.   Other daughter volumes can be  *
+*  positioned  inside  these volumes  which  are  promoted as  mother  *
+*  volumes and so on, as russian dolls.                                *
+*   This  requires the  definition  of local  reference systems,  the  *
+*  Mother  Reference  Systems  (MRS,  Origin  O.)  and  the  Daughter  *
+*  Reference Systems (DRS, Origin O.).                                 *
+*   The  local  reference  system  of  the  'initial  mother'  volume  *
+*  coincides with the MAster Reference System.                         *
+*   The full description of a given  detector is usually given in the  *
+*  local reference system of the associated volume.                    *
+*   The transformation of a point from  the MRS (V.) to the DRS (V.),  *
+*  at any level, requires the knowledge  of a rotation matrix R and a  *
+*  translation vector T defined through the relation :                 *
+*              ( V. ) = [ R ] ( V. - T )                               *
+*   The components of  T are the projections of the  vector O.O. onto  *
+*  the MRS axes.                                                       *
+*   The rotation matrices  are computed from the  spherical angles of  *
+*  each of  the axes of  the daughter  reference system (I,  II, III)  *
+*  with respect to the mother reference system (1,2,3).                *
+*   The spherical angles  THETA and PHI of a direction  D are defined  *
+*  as follows :                                                        *
+*                                                                      *
+*  THETA     is the angle formed by the axis 3 and D (range : 0 to 180 *
+*            degrees)                                                  *
+*  PHI       is the angle formed by the axis 1 and the projection of D *
+*            onto the plane defined by the axes 1 and 2 (range : 0 to  *
+*            360 degrees)                                              *
+*  Examples are given in GEOM 200.                                     *
+*   The various rotation matrices required for a given set-up must be  *
+*  defined  during  the initialisation  stage,  usually  in the  user  *
+*  routine UGEOM.                                                      *
+*   A serial number is assigned to each matrix [GEOM 200].             *
+*   The translation parameters and the  serial number of the rotation  *
+*  matrix are specified  by the user when the  volumes are positioned  *
+*  inside the set-up [GEOM 110].                                       *
+*                                                                      *
+*  THE DIMENSIONAL UNITS                                               *
+*                                                                      *
+*  Unless  otherwise   specified,  the   following  units   are  used  *
+*  throughout the program :                                            *
+*                                                                      *
+*      -  CENTIMETER, SECOND, KILOGAUSS, GEV, GEV/C, DEGREE            *
+*                                                                      *
+************************************************************************
+*                                                                      *
+*        Examples of MAIN Program and User Initialisation              *
+*        ------------------------------------------------              *
+*                                                                      *
+*      PROGRAM MAIN                                                    *
+*  C                                                                   *
+*      PARAMETER (NG=100000,NH=10000)                                  *
+*      COMMON/PAWC/H(NH)                                               *
+*      COMMON/GCBANK/Q(NG)                                             *
+*  C                                                                   *
+*  C       Allocate memory for ZEBRA and HBOOK                         *
+*      CALL GZEBRA(NG)                                                 *
+*      CALL HLIMIT(-NH)                                                *
+*  C                                                                   *
+*  C       Initialize Graphics package                                 *
+*      CALL IGINIT(0)                                                  *
+*  C       Open metafile and define workstation type                   *
+*  C         (computer dependent)                                      *
+*                  ....                                                *
+*  C                                                                   *
+*  C       Initialisation phase                                        *
+*      CALL UGINIT                                                     *
+*  C                                                                   *
+*  C       Processing phase                                            *
+*      CALL GRUN                                                       *
+*  C                                                                   *
+*  C       Termination phase                                           *
+*      CALL UGLAST                                                     *
+*  C                                                                   *
+*      END                                                             *
+*      SUBROUTINE UGINIT                                               *
+*  C                                                                   *
+*  +SEQ,GCLIST                                                         *
+*  C                                                                   *
+*  C       Initialize GEANT variables                                  *
+*      CALL GINIT                                                      *
+*  C                                                                   *
+*  C       Read data cards                                             *
+*      CALL GFFGO                                                      *
+*  C                                                                   *
+*  C       Initialize data structures                                  *
+*      CALL GZINIT                                                     *
+*  C                                                                   *
+*  C       Initialize drawing package                                  *
+*      CALL GDINIT                                                     *
+*  C                                                                   *
+*  C       Open I/O buffers                                            *
+*      IF(NGET .GT.0)CALL GOPEN(1,'I',0,IER)                           *
+*      IF(NSAVE.GT.0)CALL GOPEN(2,'O',0,IER)                           *
+*  C                                                                   *
+*  C       Fetch permanent data structures (if any)                    *
+*      CALL GFIN(1,'INIT',1,IDENT,' ',IER)                             *
+*      IF(IER.LT.0) THEN                                               *
+*  C                                                                   *
+*  C       Define standard Particle and Material data                  *
+*         CALL GPART                                                   *
+*         CALL GMATE                                                   *
+*  C                                                                   *
+*  C       Define the geometrical set-up                               *
+*         CALL 'user code'                                             *
+*         CALL GGCLOS                                                  *
+*  C                                                                   *
+*  C       Compute cross-section and energy loss tables                *
+*         CALL GPHYSI                                                  *
+*       ENDIF                                                          *
+*  C                                                                   *
+*  C       Initialize standard histograms                              *
+*       CALL GBHSTA                                                    *
+*  C                                                                   *
+*       END                                                            *
+*                                                                      *
+*                                                                      *
+*                                                                      *
+************************************************************************
+*                                                                      *
+*               The System Initialisation routines                     *
+*               ----------------------------------                     *
+*                                                                      *
+*  Presets COMMON  block variables to default  values.  Preprocessing  *
+*  of  various  COMMON  block  variables.  See  'Overview  of  COMMON  *
+*  blocks' [BASE  030].  Reads a  set of  data cards with  the FFREAD  *
+*  package.  See 'Summary  of data cards' [BASE 040]  GFFGO should be  *
+*  called  after  GINIT.   Allocates   the  dynamic  core  divisions.  *
+*  Initialize the link areas and the data structure JRUNG [BASE 299].  *
+*  Initialize  exotic bank  formats.  GZINIT  should be  called after  *
+*  GFFGO.  To be called before the  user geometry routine if the user  *
+*  wants  to  open  VIEW   banks  there.   Initializes  any  standard  *
+*  histogram required by the user with the data record HSTA.           *
+*   The following histogram keywords may be used :                     *
+*  TIME     Time per event                                             *
+*  SIZE     Size of division LXDIV per event                           *
+*  MULT     Total number of tracks per event                           *
+*  NTRA     Number of 'long life' tracks per event                     *
+*  STAK     Maximum stack size per event                               *
+*                                                                      *
+*   GBHSTA should be called after GFFGO.                               *
+*                                                                      *
+*             Steering routines for Event Processing                   *
+*             --------------------------------------                   *
+*                                                                      *
+*   The following flow chart is  only valid for the 'batch' execution  *
+*  mode.   For  interactive  applications, see  section  XINT.   Main  *
+*  routine to control a run of events                                  *
+*                     .........                                        *
+*                 ...>|  TIMEX|                                        *
+*                 |   .........                                        *
+*                 |      Get    time   left    (TIMINT)    after       *
+*   initialisation                                                     *
+*                 |                                                    *
+*                 .............................                        *
+*                 |    ...........            |                        *
+*                 ... >| GTRIGI  |            |                        *
+*                 |    ...........            |                        *
+*                 |    ...........            |                        *
+*   ........ .    |.. >| GTRIG   |       ......... .                   *
+*   |        |    |    ......... .       |loop on  |                   *
+*   | GRUN   |... |    |                 |         |                   *
+*   ........ .    |    ......... .       | events  |                   *
+*                 |.. >| GTRIGC  |       ......... .                   *
+*                 |    ......... .            .                        *
+*                 |    ...................    |                        *
+*                 ... >| check time left |    |                        *
+*                 |    ...................    |                        *
+*                 .............................                        *
+*                                                                      *
+*   Resets to 0  the flag IEOTRI in /GCFLAG/ and  the counters NTRACK  *
+*  and NVERTX in /GCNUM/.  Sets the  debug flag IDEBUG in /GCFLAG/ to  *
+*  the value required for the current event.                           *
+*   Creates the Header bank for current event.                         *
+*   Prints  the sequence  number,  the event  number  and the  number  *
+*  random  generators, under  control of  the flag  ITEST (data  card  *
+*  DEBU).                                                              *
+*   Steering routine to process one event (trigger)                    *
+*                                                                      *
+*                      ..........................                      *
+*                      | Generates kinematics,  |                      *
+*                 ... >| or read event GUKINE   |                      *
+*                 |    ..........................                      *
+*                 |    ................                                *
+*                 |    | Tracking/hits|                                *
+*   ........ .    |.. >| GUTREV       |                                *
+*   | GTRIG  |.. >|    .............. .                                *
+*   ........ .    |    .............. .                                *
+*                 |.. >|                                               *
+*   Digitisations |                                                    *
+*                 |    | GUDIGI       |                                *
+*                 |    ................                                *
+*                 |    ................                                *
+*                 |    | Output event |                                *
+*                 ... >| GUOUT        |                                *
+*                      ................                                *
+*   The partition initialized  in GTRIGI is cleared.   The space used  *
+*  by the current event may be used by the next one.                   *
+*                                                                      *
+*                    The banks JRUNG and JHEAD                         *
+*                    -------------------------                         *
+*                                                                      *
+*  Run bank JRUNG:  1 user link, 30 data words                         *
+*  LQ(JRUNG-1)   user link                                             *
+*   IQ(JRUNG+1) IDRUN     Run number                                   *
+*    ""  +2/10)           Reserved for user applications               *
+*          +11) creation date for 'INIT' data structures               *
+*          +12) creation time for 'INIT' data structures               *
+*          +13) creation data for 'KINE'                               *
+*          +14) creation time for 'KINE'                               *
+*          +15) creation data for 'HITS'                               *
+*          +16) creation time for 'HITS'                               *
+*          +17) creation data for 'DIGI'                               *
+*          +18) creation time for 'DIGI'                               *
+*          +19) Random number seed 1                                   *
+*          +20) Random number seed 2                                   *
+*          +21) GEANT version number when 'INIT' created               *
+*          +22) ZEBRA version number when 'INIT' created               *
+*          +23) GEANT version number when 'KINE' created               *
+*          +24) ZEBRA version number when 'KINE' created               *
+*          +25) GEANT version number when 'HITS' created               *
+*          +26) ZEBRA version number when 'HITS' created               *
+*          +27) GEANT version number when 'DIGI' created               *
+*          +28) ZEBRA version number when 'DIGI' created               *
+*  Header bank JHEAD: 1 user link, NHEAD(=10) data words               *
+*   IQ(JHEAD+1) IDRUN     Run number                                   *
+*       ""  +2) IDEVT     Event number                                 *
+*       ""  +3) NRNDM(1)  Random number seed 1 at beginning of event   *
+*       ""  +4) NRNDM(2)          "     "                              *
+*     "" +5/10)           Reserved for user applications               *
+*                                                                      *
+************************************************************************
+*                                                                      *
+*                                                                      *
+*        Example of User Termination and related routines              *
+*        ------------------------------------------------              *
+*                                                                      *
+*     SUBROUTINE UGLAST                                                *
+*  C                                                                   *
+*  +SEQ,GCLIST                                                         *
+*  C                                                                   *
+*  C      Call standard GEANT termination routine                      *
+*     CALL GLAST                                                       *
+*  C                                                                   *
+*  C      Close HIGZ files                                             *
+*     CALL IGEND                                                       *
+*  C                                                                   *
+*  C      Close I/O buffers                                            *
+*     IF(NGET.EQ.0.AND.NSAVE.EQ.0) GO TO 5                             *
+*     CALL GCLOSE(0,IER)                                               *
+*  C                                                                   *
+*  C      Print histograms                                             *
+*   5 CALL HISTDO                                                      *
+*  C                                                                   *
+*     END                                                              *
+*                                                                      *
+*                                                                      *
+************************************************************************
+#endif

@@ -1,0 +1,165 @@
+*
+* $Id$
+*
+* $Log$
+* Revision 1.1.1.1  1995/10/24 10:21:08  cernlib
+* Geant
+*
+*
+#include "geant321/pilot.h"
+#if defined(CERNLIB_DOC)
+*CMZ :  3.21/02 29/03/94  15.41.20  by  S.Giani
+*-- Author :
+*
+************************************************************************
+*                                                                      *
+*           Introduction to the Detector Response package              *
+*           ---------------------------------------------              *
+*                                                                      *
+*                                                                      *
+* THE DETECTOR RESPONSE PACKAGE                                        *
+*                                                                      *
+* In the context of GEANT3:                                            *
+*                                                                      *
+* - a hit is  the user defined 'quantum of  information' recorded at   *
+*   tracking  time to  keep  track of  the  interaction between  one   *
+*   particle  and  a  given  sensitive  detector,  and  regarded  as   *
+*   necessary to compute the digitisations later.                      *
+*                                                                      *
+* - a  digitisation is  the  user defined  'quantum of  information'   *
+*   simulating  the  response of  a  given  detector element,  after   *
+*   tracking  of a  complete event.                                    *
+*                                                                      *
+*  The detector response package consists  of tools to store in, and   *
+* retrieve or print from, the  data structures JSET, JHITS and JDIGI   *
+* the information  relevant to  the hits  and digitisations.   A few   *
+* subroutines which  may help the  user to  solve some of  the usual   *
+* problems of  digitisation in simple  detectors have been  added to   *
+* the package,  e.g. the intersection of  a track with a  plane or a   *
+* cylinder  and  the  digitisation  of conventional  drift  and  MWP   *
+* chambers.                                                            *
+*  For complex  set-ups with different  types of detectors  the user   *
+* has normally  to define several  types of hits  and digitisations.   *
+* In addition to the hits generated  by all particles of the current   *
+* event,   computing  the   digitisations   requires  usually   some   *
+* information about the intrinsic characteristics and performance of   *
+* the detectors.                                                       *
+*  The information to be recorded  for the hits and digitisations is   *
+* highly  experiment dependent,  therefore only  a framework  can be   *
+* proposed  to  store  it.   The solution  adopted  here  should  be   *
+* satisfactory  for most  of  the applications.   Feedback from  the   *
+* users is needed and will be welcome.                                 *
+*  Two remarks can be made:                                            *
+*                                                                      *
+* - the stability of the information to be stored is usually reached   *
+*   much earlier for the hits than for the digitisations.  Therefore   *
+*   the user  may save computing  time by designing  an intermediate   *
+*   event output at the hits level.                                    *
+* - the scheme proposed for storing  the digitisations should in any   *
+*   case be considered  as an intermediate stage,   a reshuffling of   *
+*   the data  being necessary  if the  user wants  to simulate  more   *
+*   closely the specific format of the real data acquisition system.   *
+*                                                                      *
+* SETS AND DETECTORS                                                   *
+*                                                                      *
+* The reader is assumed to be  familiar with the way the geometrical   *
+* setup is described [GEOM 001],  in particular with the concepts of   *
+* logical volume structure  and of physical path  through the volume   *
+* tree.                                                                *
+*  The  user  is  required  to  classify  into  sets  all  sensitive   *
+* detectors for which  storing the hits in the  data structure JHITS   *
+* is wanted.                                                           *
+*  The 4-character names  which identify the sets  are user defined,   *
+* and the list of sets which the  user wants to activate for a given   *
+* run  can be  entered  through the  data card  SETS.   The user  is   *
+* entirely  free to  group  together,  in one  or  in several  sets,   *
+* detectors  of   the  same  type   or  of  different   types.   For   *
+* convenience, it is  recommended to have at least one  set for each   *
+* main   component  of   the   setup,   e.g.  hadron   calorimeters,   *
+* electromagnetic calorimeters, vertex chamber, etc.                   *
+*   A detector  can be  declared as  sensitive through  the tracking   *
+* medium  parameter  ISVOL,  and  allocated to  a  set  through  the   *
+* subroutine GSDET.   Currently, the active sets  and detectors have   *
+* to be  redefined for every run.   Tools will be provided  later to   *
+* read in part  or the whole of the information  from a previous run   *
+* and  to  update the  relevant  structures  according to  the  user   *
+* requirements.                                                        *
+*   Each (logical) detector is identified by the 4-character name of   *
+* the corresponding volume.  As a  given volume may describe several   *
+* similar  detectors   of  the   physical  setup,   some  additional   *
+* information is needed for associating  correctly the hits with the   *
+* physical detectors.  The user has  to enter the (shortest) list of   *
+* volume names,  the vector NAMESV, which  permits identification of   *
+* the  path through  the  physical  tree, even  in  the presence  of   *
+* multiple copies at  the volume level or at any  lower level in the   *
+* tree.   The  identification  will  be  achieved  when  needed,  by   *
+* specifying a list  of volume numbers, the vector NUMBV,  in one to   *
+* one  correspondence with  the above  list of  volume names.   This   *
+* list,  after  packing,  will  constitute  the  identifier  of  the   *
+* physical detector.                                                   *
+*                                                                      *
+* THE BASIC USER TOOLS                                                 *
+*                                                                      *
+* The  data structure  JSET is  built through  calls to  the routine   *
+* GSDET  which  allocates  detectors   to  sets  and  defines  their   *
+* parameters,  and  to the  auxiliary  routines  GSDETH, GSDETD  and   *
+* GSDETU which  store respectively in  the structure JSET,  for each   *
+* logical detector separately:                                         *
+*                                                                      *
+* - the parameters required  for the storage of the  hit elements in   *
+*   the  data  structure JHITS,  such  as  the packing  and  scaling   *
+*   conventions.                                                       *
+*                                                                      *
+* - the parameters required for the  storage of the digitisations in   *
+*   the structure JDIGI,  such as the packing  conventions. the user   *
+*   parameters, which  may consist,  for instance, of  the intrinsic   *
+*   detector characteristics needed for computing the digitisations.   *
+*                                                                      *
+*  To  permit storage  of more  than  one type  of hit  for a  given   *
+* sensitive  detector, detector  'aliases'  can  be defined  through   *
+* calls  to  the routine  GSDETA.   They  are  entered in  the  JSET   *
+* structure  as  additional  detectors, with  the  same  geometrical   *
+* characteristics  as the  original  one.  Then,  the  user has  the   *
+* possibility to  call the  appropriate routines GSDETH,  GSDETD and   *
+* GSDETU.                                                              *
+*  During  the   tracking,  for  each  step   inside  the  sensitive   *
+* detectors, under control of the subroutine GUSTEP, the hits can be   *
+* stored in the data structure  JHITS with the subroutine GSAHIT (or   *
+* GSCHIT,  more  appropriate for  calorimetry).   For  each hit  the   *
+* information consists of:                                             *
+*                                                                      *
+* - the reference to the track in the structure JKINE,                 *
+* - the packed identifier of the physical detector, and                *
+* - the packed data for the different elements of the hit.             *
+*                                                                      *
+*  When  the tracking  has been  completed for  the whole  event the   *
+* digitisations can be computed in  the user subroutine GUDIGI which   *
+* may  extract the  hits with  the subroutine  GFHITS and  store the   *
+* digitisations  in the  data structure  JDIGI, with  the subroutine   *
+* GSDIGI.   For each  digitisation the  information should  at least   *
+* consist of:                                                          *
+*                                                                      *
+* - the reference to the track(s),                                     *
+* - the packed identifier of the physical detector, and                *
+* - the packed data for the digitisation itself.                       *
+*                                                                      *
+* RETRIEVAL OF GEOMETRICAL INFORMATION                                 *
+*                                                                      *
+*  The packed  identifier of as  physical detector stored a  part of   *
+* the hit  (or digitisation) information, is  returned (unpacked) by   *
+* the routines GFHITS  or GFDIGI which extract  the information from   *
+* the JHITS  or JDIGI structures,  and may  be used to  retrieve the   *
+* identity and geometrical characteristics of the given detector.      *
+*   At  the  moment this  is  automatized  through  the use  of  the   *
+* routines GFPATH  (which assumes that the  sensitive detectors have   *
+* been declared  through the routine  GSDETV, not GSDET)  and GLVOLU   *
+* which fills the common /GCVOLU/.                                     *
+*   GFPATH prepares the lists LNAM  and LNUM required by the routine   *
+* GLVOLU [GEOM 001].                                                   *
+*   Worth  is in  progress in  this area  and might  lead to  a more   *
+* transparent approach.  Therefore, the  routines GSDETV, GGDETV and   *
+* GFPATH  and  their action  on  the  structure  JSETS will  not  be   *
+* documented in more detail now.                                       *
+*                                                                      *
+************************************************************************
+#endif

@@ -1,0 +1,202 @@
+*
+* $Id$
+*
+* $Log$
+* Revision 1.1.1.1  1995/10/24 10:21:40  cernlib
+* Geant
+*
+*
+#include "geant321/pilot.h"
+#if defined(CERNLIB_DOC)
+*CMZ :  3.21/02 29/03/94  15.41.23  by  S.Giani
+*-- Author :
+*
+************************************************************************
+*                                                                      *
+*                Introduction to the Tracking package                  *
+*                ------------------------------------                  *
+*                                                                      *
+*                                                                      *
+*  THE TRACKING PACKAGE                                                *
+*                                                                      *
+*  In  the context  of  simulation programs,  'tracking' a  particle   *
+* through matter consists of predicting the spatial coordinates of a   *
+* set of  points which  define the trajectory  and of  computing the   *
+* components  of  the  momentum  at each  point.   This  is  usually   *
+* achieved by integrating the  'equations of motion' over successive   *
+* steps and applying  corrections when necessary to  account for the   *
+* perturbations introduced by the interactions with matter.            *
+*  The tracking package contains mainly a subprogram which controls,   *
+* and effectively  performs, the transport  of all particles  in the   *
+* current  event and  of  the secondary  products  which they  might   *
+* possibly generate,  plus some  tools for  storing the  space point   *
+* coordinates computed along the corresponding trajectories.           *
+*                                                                      *
+* THE STEP SIZE                                                        *
+*                                                                      *
+*  When tracking particles through a complex medium structure one of   *
+* the critical tasks is the estimation  'a priori' of the step size.   *
+* This is performed automatically by the program.                      *
+*  For a particle with given  energy the step size depends primarily   *
+* on the properties  of the particle (mass,  charge, lifetime, etc.)   *
+* and of  the current medium in  which the particle is  moving.  The   *
+* dependence may come either  from (quasi)continuous processes which   *
+* usually  impose a  limit to  the interval  of integration  (energy   *
+* loss, multiple scattering or bending  in magnetic field) or to the   *
+* occurence of  a discrete process which  introduces a discontinuity   *
+* in   the   trajectory    (decay,   electromagnetic   or   hadronic   *
+* interaction).   In addition  to these  physical effects  there are   *
+* constraints of a geometrical nature, the step being limited by the   *
+* path length to the medium boundary.                                  *
+*  In  practice,  the step  size  depends  ultimately  on a  set  of   *
+* tolerances and cuts which should be  optimized by the user for the   *
+* given application, such as:                                          *
+*                                                                      *
+* - the maximum bending angle due to magnetic field permitted in one   *
+*   step,                                                              *
+* - the maximum fractional energy loss in one step,                    *
+* - the  maximum  step size  permitted  by  the multiple  scattering   *
+*   theory used                                                        *
+* - the accuracy for crossing medium boundaries and                    *
+* - the absolute maximum step allowed                                  *
+*                                                                      *
+*  The limitations imposed  by the first three  processes could lead   *
+* to extremely small steps for low energy particles.  To avoid this,   *
+* in  GEANT has  been introduced  a minimum  step due  to continuous   *
+* processes.   This represent  a lower  bound for  the maximum  step   *
+* which is very important for keeping  the time taken to develop and   *
+* follow a shower within reasonable limits.                            *
+*                                                                      *
+*  These  quantities are  part of  the so  called 'tracking  medium'   *
+* parameters.  They  are usually calculated automatically  by GEANT,   *
+* but may be provided by the user to be stored in the data structure   *
+* JTMED, through the  routine GSTMED [CONS].  Usually,  this is done   *
+* together with the initialisation  of the geometrical setup.  Users   *
+* are  suggested   to  begin  their  simulations   with  the  values   *
+* calculated by GEANT.   The optimisation is by no  means trivial as   *
+* the economy of  computing time should not lead  to an unacceptable   *
+* loss of accuracy.                                                    *
+*  Other  general information  required for  the computation  of the   *
+* step size is expected to be available in the data structures JPART   *
+* and  JMATE,  for  the  properties  of the  particles  and  of  the   *
+* materials,  and in  the  data structure  JVOLUM,  for the  current   *
+* medium and its geometrical  boundaries.  The communication between   *
+* the tracking package and the  structure JVOLUM is achieved through   *
+* the  basic subroutines  of the  geometry package  GMEDIA (GTMEDI),   *
+* GNEXT (GTNEXT) and GINVOL [GEOM,GTRAK]                               *
+*  Some additional information is computed  at tracking time such as   *
+* the probability  of occurence of an  interaction.  For convenience   *
+* every particle is assigned a 'tracking  type', 1 for the gammas, 2   *
+* for the  electrons and positrons,  3 for the neutral  hadrons (and   *
+* neutrinos!), 4 for the charged hadrons and 5 for the muons.  Which   *
+* physics processes  have potentially to  be considered for  a given   *
+* particle depends on its tracking type.  For the hadrons it depends   *
+* also, through  the subroutine GUPHAD, on  which hadronic processes   *
+* have been selected (GHEISHA is the default) [PHYS 001].              *
+*                                                                      *
+* THE SUBROUTINES GTREVE and  GTRACK                                   *
+*                                                                      *
+*  At  event level  the  tracking is  controlled  by the  subroutine   *
+* GTREVE called by  the subroutine GUTREV where the user  is free to   *
+* take any other action.  GTREVE  loops over all vertices and stores   *
+* all tracks  from the current vertex  in the stack JSTAK,  then for   *
+* each  one  in  turn,  calls  GLTRAC to  prepare  the  commons  for   *
+* tracking,  and starts  tracking through  a call  to GUTRAK,  which   *
+* calls GTRACK.                                                        *
+*  The subroutine GTRACK  tracks the particle up to the  end : stop,   *
+* decay, interaction  or escape.   During this  phase it  may happen   *
+* that secondary products  are generated and stored by  the user, as   *
+* explained  below, in  the stack, and if  wanted, in  the permanent   *
+* structure JKINE.                                                     *
+*  The subroutine GTRACK loops over  all geometrical volumes seen by   *
+* the  current  track,  first identifying,  through  the  subroutine   *
+* GTMEDI, the new volume which  the particle has reached and storing   *
+* the corresponding  material and  tracking medium constants  in the   *
+* common blocks /GCMATE/ and /GCTMED/; the tracking is controlled by   *
+* the  type-dependent  routines  GTELEC,GTGAMA,GTHADR,GTMUON,GTNEUT.   *
+* These compute  the physical step  size according to  the activated   *
+* physics processes, and compute the geometrical limit for the step,   *
+* only when  necessary, through  GTNEXT, and propagate  the particle   *
+* over the computed step.                                              *
+*                                                                      *
+* MAGNETIC FIELD ROUTINES                                              *
+*                                                                      *
+*  As mentioned before,  the effective propagation of the particles is *
+* controlled by the routines GTGAMA, GTELEC, etc., which call GUSWIM.  *
+* Depending on the  value chosen by the user for  the tracking medium  *
+* parameter IFIELD the routine GUSWIM calls either                     *
+*                                                                      *
+* GRKUTA    for inhomogeneous fields, IFIELD=1                         *
+* GHELIX    for quasi-homogeneous fields tilted w.r.t. the reference   *
+*           frame, IFIELD=2, or                                        *
+* GHELX3    for one-component fields along the z axis, IFIELD=3        *
+*                                                                      *
+*  GRKUTA and  GHELIX call the  default user subroutine  GUFLD where   *
+* the  components of  the field  at  the given  point are  computed.   *
+* GHELX3  takes  the value  of  the  field  in the  tracking  medium   *
+* parameter FIELDM.                                                    *
+*                                                                      *
+* INFORMATION AVAILABLE AT TRACKING TIME, AND THE SUBROUTINE GUSTEP    *
+*                                                                      *
+*  At any  moment the  current track parameters  are available  in the *
+* common block  /GCTRAK/ as well  as all  variables which have  to be  *
+* preserved by  the tracking  routines for  the control  of the  step  *
+* size.  In  addition a  few flags  and variables  are stored  in the  *
+* common block /GCTRAK/ to record the history of the current step:     *
+*                                                                      *
+* INWVOL    is initialized  to 1 when  entering a new volume,  it is   *
+*           set to  0 for all steps  inside the volume, to  2 if the   *
+*           particle has reached  the volume boundary and  to 3 when   *
+*           the particle is leaving the experimental setup.            *
+* ISTOP     is initialized to 0 and set  to 1 if the particle looses   *
+*           its identity or to 2 if it stops.                          *
+*                                                                      *
+*  The effect  which is responsible  for the limitation of  the step   *
+* size as well as the corrective  effects which have been applied at   *
+* the end of the step, if any,  are recorded in the first NMEC words   *
+* of the mechanism vector LMEC and this is most useful to understand   *
+* and debug the program.                                               *
+*  The  total energy  loss for  the current  step is  stored in  the   *
+* variable DESTEP, and the continuous energy loss in DESTEL.           *
+*  This information  is necessary  for the user  to take  the proper   *
+* actions in the subroutine GUSTEP which  is called by GTRACK at the   *
+* end of every step.                                                   *
+*  In addition, the  number NGKINE of secondary  products which have   *
+* possibly been  generated and  their characteristics are  stored in   *
+* the common  block /GCKING/ together with  an identification (array   *
+* LMEC)  of   which  process  is  responsible.    Depending  on  the   *
+* application  and on  the particle  type,  the user  may decide  in   *
+* GUSTEP through the routine GSKING,                                   *
+*                                                                      *
+* - to discard the newly produced secondaries                          *
+* - to  enter them  in  the  temporary JSTAK  data  structure to  be   *
+*   tracked                                                            *
+* - to  store them  in  the  permanent JKINE  data  structure to  be   *
+*   tracked                                                            *
+*                                                                      *
+* CONNECTION WITH THE DETECTOR RESPONSE PACKAGE                        *
+*                                                                      *
+*  The loop over the volumes in  GTRACK makes the interface with the   *
+* detector response  package simple [HITS].  By  construction of the   *
+* geometrical setup  there is  a correspondance between  the volumes   *
+* seen by  the particle and  the components of the  detectors.  When   *
+* entering a new volume (in GTRACK) the subroutine GFINDS is called.   *
+* If  the volume  has  been  declared by  the  user  as a  sensitive   *
+* detector   through  appropriate   calls  to   GSDET  and   if  the   *
+* corresponding tracking  medium constant ISVOL is  non zero, GFINDS   *
+* returns in the  common block /GCSETS/ the  information to identify   *
+* uniquely the detector component.  This  enables the user in GUSTEP   *
+* to  record the  hits  properly  as well  as  the energy  deposited   *
+* [HITS].                                                              *
+*                                                                      *
+* CONNECTION WITH THE DRAWING PACKAGE                                  *
+*                                                                      *
+*  The coordinates of the space points generated during the tracking   *
+* are  available at  each step  in  the common  block /GCTRAK/.   In   *
+* GUSTEP the user can store them in the structure JXYZ with the help   *
+* of the subroutine  GSXYZ.  This information can be  used later for   *
+* debug (subroutine  GPCXYZ) or for the  graphical representation of   *
+* the trajectories [DRAW].                                             *
+*                                                                      *
+************************************************************************
+#endif
