@@ -29,7 +29,9 @@
 #include <TArrayI.h>
 #include <TFile.h>
 #include <TList.h>
-#include "TBrowser.h"
+#include <TBrowser.h>
+#include <TSystem.h>
+#include <TError.h>
 
 ClassImp(AliOADBContainer);
 
@@ -345,3 +347,19 @@ void AliOADBContainer::Browse(TBrowser *b)
       TObject::Browse(b);
 }
 
+//______________________________________________________________________________
+const char* AliOADBContainer::GetOADBPath()
+{
+// returns the path of the OADB
+// this static function just depends on environment variables
+
+   static TString oadbPath;
+
+   if (gSystem->Getenv("OADB_PATH"))
+      oadbPath = gSystem->Getenv("OADB_PATH");
+   else if (gSystem->Getenv("ALICE_ROOT"))
+      oadbPath.Form("%s/OADB", gSystem->Getenv("ALICE_ROOT"));
+   else
+   ::Fatal("AliAnalysisManager::GetOADBPath", "Cannot figure out AODB path. Define ALICE_ROOT or OADB_PATH!");
+   return oadbPath;
+}

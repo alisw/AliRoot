@@ -50,6 +50,8 @@ class AliOADBContainer : public TNamed {
   virtual Bool_t	IsFolder() const { return kTRUE; }
   void Browse(TBrowser *b);
   Int_t GetIndexForRun(Int_t run) const;
+//
+  static const char*   GetOADBPath();
  private:
   Int_t HasOverlap(Int_t lower, Int_t upper) const;
  private :
