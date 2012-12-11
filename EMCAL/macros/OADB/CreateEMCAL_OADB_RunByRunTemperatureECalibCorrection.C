@@ -3,6 +3,12 @@
 // ******* on Temperature variations
 // Author : Gustavo Conesa Balbastre (LPSC-Grenoble)
 
+// rescale some 2011 runs slightly (0.5%):
+//const Float_t rescaleFactor = 1.005;
+const Float_t rescaleFactor = 0.9975;
+const Int_t kFirst = 156620;
+const Int_t kLast = 162740;
+
 void CreateEMCAL_OADB_RunByRunTemperatureECalibCorrection(Int_t opt = 1, Int_t runNumber = 170387)
 {
   if(opt == 0) Read(runNumber);
@@ -34,19 +40,25 @@ void Create()
  
   if (fList.good()) 
   {
+
     while(string.ReadLine(fList, kFALSE) && !fList.eof()) 
     {
       sscanf(string.Data(), "%d",&runNumber);
       
-      //printf("Run %d \n",runNumber);
-
       if     (runNumber < 140000) nSM = 4;
       else if(runNumber < 173000) nSM = 10;
-      if(runNumber==170387){
+      if(runNumber!=170387){
       // Access class that contains methods to read the content of 
       // the calibration file per run
       AliEMCALCalibTimeDepCorrection  *corr =  new AliEMCALCalibTimeDepCorrection();
       corr->ReadRootInfo(Form("CorrectionFiles/Run%d_Correction.root",runNumber));
+
+      Float_t multiplier = 10000; // allows us to store the values in TH1S with some precision
+      if (runNumber>=kFirst && runNumber<=kLast) { // rescale some runs
+	multiplier *= rescaleFactor;
+      }
+
+      printf("Run %d multiplier %5.0f\n", runNumber, multiplier);
       
       // Init the histogram
       TH1S *h = new TH1S(Form("h%d",runNumber),"",24*48*nSM,0,24*48*nSM);
@@ -62,9 +74,9 @@ void Create()
             Int_t absID = geom->GetAbsCellIdFromCellIndexes(ism, irow, icol);
             
             //if(recalFactor < 0.1) 
-              printf("ism %d, icol %d, irow %d,absID %d, corrections : factor %d\n",ism, icol, irow, absID, recalFactor*10000);
+	    //printf("ism %d, icol %d, irow %d,absID %d, corrections : factor %d\n",ism, icol, irow, absID, recalFactor*10000);
             
-            h->SetBinContent(absID,(Short_t)(recalFactor*10000));
+            h->SetBinContent(absID,(Short_t)(recalFactor*multiplier));
             //h->SetBinContent(absID,recalFactor);
             
           }
@@ -108,9 +120,35 @@ void Read(Int_t runNumber = 170387)
   
   TH1S *h=cont->GetObject(runNumber); //GetObject(int runnumber)
   
-  printf("h entries %d\n");
+  if (h) {
+    printf("runNumber %d found\n", runNumber);
+  }
+  else {
+    printf("runNumber %d not found\n", runNumber);
+    // let's get the closest runnumber
+    Int_t lower = 0;
+    Int_t ic = 0;
+    Int_t maxEntry = cont->GetNumberOfEntries();
+
+    while ( (ic < maxEntry) && (cont->UpperLimit(ic) < runNumber) ) {
+      lower = ic;
+      ic++; 
+    }
+
+    Int_t closest = lower;
+    if ( (ic<maxEntry) && 
+	 (cont->LowerLimit(ic)-runNumber) < (runNumber - cont->UpperLimit(lower)) ) {
+	 closest = ic;
+    }
+
+    cout << "found closest id " << closest 
+	 << " from run " << cont->LowerLimit(closest) << endl;
+    h = (TH1S*) cont->GetObjectByIndex(closest); 
+    h->Print(); // tmp debug
+    cout << endl;
+  }
   
-  
+
   AliEMCALGeometry* geom = AliEMCALGeometry::GetInstance("EMCAL_COMPLETE12SMV1");
   
   // Read parameter file line-by-line  
@@ -125,7 +163,7 @@ void Read(Int_t runNumber = 170387)
   }
   
   h->Draw();
-  
+
 }
 
 
