@@ -6,7 +6,9 @@ The histograms with badchannels can be made by a list of towers ID ( see the mac
 directly from the OCDB ( see AliEMCALOCDBTenderConverter.cxx from Jiri Kral )
 */
 // ******* Create OADB Container for EMCal Bad Channels
-void CreateEMCAL_OADB_BadChannels(const char *fileName10	=	"BadChannels2010.root",
+void CreateEMCAL_OADB_BadChannels(const char *fileName10_1	=	"BadChannels2010_1.root",
+				  const char *fileName10_2	=	"BadChannels2010_2.root",
+				  const char *fileName10_3	=	"BadChannels2010_3.root",
 				  const char *fileName11a	=	"BadChannels2011_11a.root", 
 				  const char *fileName11b	=	"BadChannels2011_11b.root",
 				  const char *fileName11c1	=	"BadChannels2011_11c1.root", 
@@ -33,7 +35,14 @@ void CreateEMCAL_OADB_BadChannels(const char *fileName10	=	"BadChannels2010.root
 				  const char *fileName12d1	=	"BadChannels2012_12d1.root",
 				  const char *fileName12d2	=	"BadChannels2012_12d2.root",
 				  const char *fileName12d3	=	"BadChannels2012_12d3.root",
-				  const char *fileName12d4	=	"BadChannels2012_12d4.root"				  
+				  const char *fileName12d4	=	"BadChannels2012_12d4.root",
+				  
+				  const char *fileName12e	=	"BadChannels2012_12e.root",
+				  const char *fileName12f	=	"BadChannels2012_12f.root",
+				  const char *fileName12g	=	"BadChannels2012_12g.root",
+				  const char *fileName12h	=	"BadChannels2012_12h.root",
+
+		  
 				)
 {
 
@@ -41,7 +50,9 @@ void CreateEMCAL_OADB_BadChannels(const char *fileName10	=	"BadChannels2010.root
     //gSystem->Load("libOADB"); //comment if compiled
       
     //LHC10
-    TObjArray array10(12);		array10.SetName("BadChannels10");
+    TObjArray array10_1(12);		array10_1.SetName("BadChannels10_1");
+    TObjArray array10_2(12);		array10_2.SetName("BadChannels10_2");
+    TObjArray array10_3(12);		array10_3.SetName("BadChannels10_3");
    
     //LHC11a
     TObjArray array11a(12);		array11a.SetName("BadChannels11a");
@@ -83,12 +94,26 @@ void CreateEMCAL_OADB_BadChannels(const char *fileName10	=	"BadChannels2010.root
     TObjArray array12c4(12);		array12c4.SetName("BadChannels12c4");
     
     //LHC12d
-    TObjArray array12d1(12);		array12c1.SetName("BadChannels12d1");
-    TObjArray array12d2(12);		array12c2.SetName("BadChannels12d2");
-    TObjArray array12d3(12);		array12c3.SetName("BadChannels12d3");
-    TObjArray array12d4(12);		array12c4.SetName("BadChannels12d4");
+    TObjArray array12d1(12);		array12d1.SetName("BadChannels12d1");
+    TObjArray array12d2(12);		array12d2.SetName("BadChannels12d2");
+    TObjArray array12d3(12);		array12d3.SetName("BadChannels12d3");
+    TObjArray array12d4(12);		array12d4.SetName("BadChannels12d4");
     
-    TFile	*f10	=	new TFile(fileName10,"read"); 
+    //LHC12e
+    TObjArray array12e(12);		array12e.SetName("BadChannels12e");
+    
+    //LHC12f
+    TObjArray array12f(12);		array12f.SetName("BadChannels12f");
+
+    //LHC12g
+    TObjArray array12g(12);		array12g.SetName("BadChannels12g");
+
+    //LHC12h
+    TObjArray array12h(12);		array12h.SetName("BadChannels12h");
+    
+    TFile	*f10_1	=	new TFile(fileName10_1,"read"); 
+    TFile	*f10_2	=	new TFile(fileName10_2,"read"); 
+    TFile	*f10_3	=	new TFile(fileName10_3,"read"); 
     TFile	*f11a	=	new TFile(fileName11a,"read");
     TFile	*f11b	=	new TFile(fileName11b,"read");
     TFile	*f11c1	=	new TFile(fileName11c1,"read");
@@ -112,7 +137,10 @@ void CreateEMCAL_OADB_BadChannels(const char *fileName10	=	"BadChannels2010.root
     TFile	*f12d2	=	new TFile(fileName12d2,"read");
     TFile	*f12d3	=	new TFile(fileName12d3,"read");
     TFile	*f12d4	=	new TFile(fileName12d4,"read");
-
+    TFile	*f12e	=	new TFile(fileName12e,"read");
+    TFile	*f12f	=	new TFile(fileName12f,"read");
+    TFile	*f12g	=	new TFile(fileName12g,"read");
+    TFile	*f12h	=	new TFile(fileName12h,"read");
     
     //Create OADB container for BadChannels
     AliOADBContainer* con = new AliOADBContainer("AliEMCALBadChannels");
@@ -124,7 +152,10 @@ void CreateEMCAL_OADB_BadChannels(const char *fileName10	=	"BadChannels2010.root
 	if (mod<4)  {
 	    sprintf(name,"EMCALBadChannelMap_Mod%d",mod);
 	    cout<<"BadChannels2010:"<<name<<endl;
-	    array10.Add(f10->Get(name));
+	    array10_1.Add(f10_1->Get(name));
+	    array10_2.Add(f10_2->Get(name));
+	    array10_3.Add(f10_3->Get(name));
+
 	}
 	    sprintf(name,"EMCALBadChannelMap_Mod%d",mod);
 	    cout<<"BadChannels 2011 and 2012:"<<name<<endl;
@@ -151,10 +182,15 @@ void CreateEMCAL_OADB_BadChannels(const char *fileName10	=	"BadChannels2010.root
 	    array12d2.Add(f12d2->Get(name));
 	    array12d3.Add(f12d3->Get(name));
 	    array12d4.Add(f12d4->Get(name));
-	    
-    } //mod
+	    array12e.Add(f12e->Get(name));
+	    array12f.Add(f12f->Get(name));
+	    array12g.Add(f12g->Get(name));
+	    array12h.Add(f12h->Get(name));
+   } //mod
     
-    con->AddDefaultObject(&array10);
+    con->AddDefaultObject(&array10_1);
+    con->AddDefaultObject(&array10_2);
+    con->AddDefaultObject(&array10_3);
     
     con->AddDefaultObject(&array11a);
     con->AddDefaultObject(&array11b);
@@ -179,10 +215,19 @@ void CreateEMCAL_OADB_BadChannels(const char *fileName10	=	"BadChannels2010.root
     con->AddDefaultObject(&array12d1);
     con->AddDefaultObject(&array12d2);
     con->AddDefaultObject(&array12d3);
-    con->AddDefaultObject(&array12d4);   
+    con->AddDefaultObject(&array12d4);     
+    con->AddDefaultObject(&array12e);   
+    con->AddDefaultObject(&array12f);   
+    con->AddDefaultObject(&array12g);   
+    con->AddDefaultObject(&array12h);   
     
     //Establishing run number with the correct objects
-    con->AppendObject(&array10,100000,140000);
+    con->AppendObject(&array10_1,112000,120742);
+    con->AppendObject(&array10_2,120743,121984);
+    con->AppendObject(&array10_1,121985,124186);
+    con->AppendObject(&array10_3,124187,125296);
+    con->AppendObject(&array10_1,125297,140000);
+
     con->AppendObject(&array11a,144871,146860);
     con->AppendObject(&array11b,148531,150629);
     con->AppendObject(&array11c1,151636,153569);
@@ -209,10 +254,16 @@ void CreateEMCAL_OADB_BadChannels(const char *fileName10	=	"BadChannels2010.root
     con->AppendObject(&array12c4,180289,182740); 
     con->AppendObject(&array12c1,182741,182744);
    
-    con->AppendObject(&array12d1,183913,184389);
-    con->AppendObject(&array12d2,184390,185846);
-    con->AppendObject(&array12d3,185847,185908);
+    con->AppendObject(&array12d1,183913,184481);
+    con->AppendObject(&array12d2,184482,185455);
+    con->AppendObject(&array12d3,185456,185784);
     con->AppendObject(&array12d4,185909,186035); 
+    con->AppendObject(&array12d2,186036,186320); 
+
+    con->AppendObject(&array12e,186365,186602); 
+    con->AppendObject(&array12f,186668,188123); 
+    con->AppendObject(&array12g,188356,188503); 
+    con->AppendObject(&array12h,189122,192732); 
 
     con->WriteToFile("BetaBadChannels.root");   
 }
