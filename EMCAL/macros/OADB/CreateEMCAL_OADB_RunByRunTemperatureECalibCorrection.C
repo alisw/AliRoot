@@ -4,8 +4,8 @@
 // Author : Gustavo Conesa Balbastre (LPSC-Grenoble)
 
 // rescale some 2011 runs slightly (0.5%):
-//const Float_t rescaleFactor = 1.005;
-const Float_t rescaleFactor = 0.9975;
+const Float_t rescaleFactor = 1.005;
+//const Float_t rescaleFactor = 0.9975;
 const Int_t kFirst = 156620;
 const Int_t kLast = 162740;
 
@@ -32,6 +32,7 @@ void Create()
   fList.open("CorrectionFiles/runlist.txt");
   
   Int_t runNumber  = 0;
+  Float_t multiplier = 10000; // allows us to store the values in TH1S with some precision
   TString string;
   Int_t nRuns=0;
   Int_t nSM = 12;
@@ -41,44 +42,36 @@ void Create()
   if (fList.good()) 
   {
 
-    while(string.ReadLine(fList, kFALSE) && !fList.eof()) 
+    while( string.ReadLine(fList, kFALSE) ) 
     {
       sscanf(string.Data(), "%d",&runNumber);
       
       if     (runNumber < 140000) nSM = 4;
-      else if(runNumber < 173000) nSM = 10;
-      if(runNumber!=170387){
+      else if(runNumber < 200000) nSM = 10;
+
+      if(runNumber>100000){
+
+      multiplier = 10000; // allows us to store the values in TH1S with some precision
+      if (runNumber>=kFirst && runNumber<=kLast) { // rescale some runs
+	multiplier *= rescaleFactor;
+      }
+      printf("Run %d multiplier %5.0f\n", runNumber, multiplier);
+
       // Access class that contains methods to read the content of 
       // the calibration file per run
       AliEMCALCalibTimeDepCorrection  *corr =  new AliEMCALCalibTimeDepCorrection();
       corr->ReadRootInfo(Form("CorrectionFiles/Run%d_Correction.root",runNumber));
 
-      Float_t multiplier = 10000; // allows us to store the values in TH1S with some precision
-      if (runNumber>=kFirst && runNumber<=kLast) { // rescale some runs
-	multiplier *= rescaleFactor;
-      }
-
-      printf("Run %d multiplier %5.0f\n", runNumber, multiplier);
-      
       // Init the histogram
       TH1S *h = new TH1S(Form("h%d",runNumber),"",24*48*nSM,0,24*48*nSM);
             
-      for(Int_t ism = 0; ism < nSM; ism++)
-      {
-        for(Int_t icol = 0; icol < 48; icol++)
-        {
-          for(Int_t irow = 0; irow < 24; irow++)
-          {
-            Float_t recalFactor = corr->GetCorrection(ism, icol,irow,0);
-            
+      for(Int_t ism = 0; ism < nSM; ism++) {
+        for(Int_t icol = 0; icol < 48; icol++) {
+          for(Int_t irow = 0; irow < 24; irow++) {
+            Float_t recalFactor = corr->GetCorrection(ism, icol,irow,0);            
             Int_t absID = geom->GetAbsCellIdFromCellIndexes(ism, irow, icol);
             
-            //if(recalFactor < 0.1) 
-	    //printf("ism %d, icol %d, irow %d,absID %d, corrections : factor %d\n",ism, icol, irow, absID, recalFactor*10000);
-            
             h->SetBinContent(absID,(Short_t)(recalFactor*multiplier));
-            //h->SetBinContent(absID,recalFactor);
-            
           }
         }
       }
@@ -94,14 +87,33 @@ void Create()
       }
     }
   }
-  
   fList.close();
-  
   printf(" *** nRuns ***  %d\n",nRuns);
+
+  // add dummy object at the end of file:
+  runNumber++;
+  multiplier = 10000;
+  // Init the histogram
+  printf("Dummy/extra Run %d at EOF multiplier %5.0f\n", runNumber, multiplier);  
+  TH1S *h = new TH1S(Form("h%d",runNumber),"",24*48*nSM,0,24*48*nSM);
+            
+  for(Int_t ism = 0; ism < nSM; ism++) {
+    for(Int_t icol = 0; icol < 48; icol++) {
+      for(Int_t irow = 0; irow < 24; irow++) {
+	Float_t recalFactor = 1;
+	Int_t absID = geom->GetAbsCellIdFromCellIndexes(ism, irow, icol);
+            
+	h->SetBinContent(absID,(Short_t)(recalFactor*multiplier));
+      }
+    }
+  }
+      
+  con->AddDefaultObject(h);    
+  //Establishing run number with the correct objects
+  con->AppendObject(h,runNumber,runNumber);
   
   con->WriteToFile("EMCALTemperatureCorrCalib.root");   
     
-
 }
 
 void Read(Int_t runNumber = 170387)
