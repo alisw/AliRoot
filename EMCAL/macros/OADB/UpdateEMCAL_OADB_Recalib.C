@@ -11,6 +11,9 @@ void UpdateEMCAL_OADB_Recalib(const char *fileNameOADB="$ALICE_ROOT/OADB/EMCAL/E
 
 gSystem->Load("libOADB");  
 
+Bool_t is2012=1;
+Bool_t is2013=1;
+
 AliOADBContainer *con	= new AliOADBContainer("");
 con->InitFromFile(fileNameOADB, "AliEMCALRecalib"); //Updating the original OADB file, output will be written into BetaRecalib.root 
 
@@ -21,6 +24,8 @@ TObjArray array12_13(10); // 2012--2013 ---> Same R.F. for both 2012 and 1013 pa
 array12_13.SetName("Recalib");
 
 char name[30];
+
+
 // Filling The objects above with the EMCALRecalFactors_SM Histos:
 for (Int_t mod=0;mod<10;mod++){
     cout<<"SM "<< mod<<endl;
@@ -28,8 +33,26 @@ for (Int_t mod=0;mod<10;mod++){
     sprintf(name,"EMCALRecalFactors_SM%d",mod);
     cout<<"Recalib2012 and 2013:"<<name<<endl;
     array12_13.Add(f12->Get(name));
-	    
     } //mod
+
+// So far, SM11 and SM12 receive 1. 
+TH2F *h0  = (TH2F*)f12->Get("EMCALRecalFactors_SM0");
+TH2F *h10 = (TH2F*)h0->Clone("EMCALRecalFactors_SM10");
+TH2F *h11 = (TH2F*)h0->Clone("EMCALRecalFactors_SM11");
+h10->SetName("EMCALRecalFactors_SM10");
+h10->SetTitle("EMCALRecalFactors_SM10");
+h11->SetName("EMCALRecalFactors_SM11");
+h11->SetTitle("EMCALRecalFactors_SM11");
+int nbinsx = h10->GetNbinsX();
+int nbinsy = h10->GetNbinsY();
+for(int i=0;i<nbinsx;i++)
+  for(int j=0;j<nbinsy;j++){
+      h10->SetBinContent(i,j,1.);
+      h11->SetBinContent(i,j,1.);
+  }
+if(is2012||is2013) array12_13.Add(h10);
+if(is2012||is2013) array12_13.Add(h11);
+
 //********************************************************************
 
 // ************** Establishing different configuration according to the pass ***********
