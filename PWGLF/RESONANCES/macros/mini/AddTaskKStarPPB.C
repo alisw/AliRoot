@@ -16,8 +16,9 @@ enum eventCutSet { kOld = -1,
 		   kPileUpMV, //=2
 		   kPileUpSPD3, //=3		      
 		   kDefaultVtx8, //=4
-		   kDefaultVtx5 //=5                    
-                 };
+		   kDefaultVtx5, //=5                    
+		   kMCEvtDefault //=6
+};
 
 enum eventMixConfig { kDisabled = -1,
 		      kMixDefault,//=0 //10 events, Dvz = 1cm, DC = 10
@@ -90,7 +91,12 @@ AliRsnMiniAnalysisTask * AddTaskKStarPPB
   
   if (evtCutSetID==eventCutSet::kDefaultVtx5){
     vtxZcut = 5.0; //cm
-  } 
+  }
+  
+  if (evtCutSetID==eventCutSet::kMCEvtDefault) {
+    rmFirstEvtChunk = kFALSE;
+    rejectPileUp = kFALSE;
+  }
   
   //-------------------------------------------
   //pair cuts
@@ -224,8 +230,8 @@ AliRsnMiniAnalysisTask * AddTaskKStarPPB
    //
    // -- CONFIG ANALYSIS --------------------------------------------------------------------------
    //   
-   gROOT->LoadMacro("$ALICE_ROOT/PWGLF/RESONANCES/macros/mini/ConfigTOFanalysisKStar.C");
-   if (!ConfigTOFanalysisKStar(task, isMC, isPP, "", cutsPair, aodFilterBit, customQualityCutsID, cutPiCandidate, cutKaCandidate, nsigmaPi, nsigmaKa, enableMonitor, isMC&IsMcTrueOnly, useMixLS, signedPdg, monitorOpt.Data(), yaxisvar)) return 0x0;
+   gROOT->LoadMacro("$ALICE_ROOT/PWGLF/RESONANCES/macros/mini/ConfigKStarPPB.C");
+   if (!ConfigKStarPPB(task, isMC, isPP, "", cutsPair, aodFilterBit, customQualityCutsID, cutPiCandidate, cutKaCandidate, nsigmaPi, nsigmaKa, enableMonitor, isMC&IsMcTrueOnly, useMixLS, signedPdg, monitorOpt.Data(), yaxisvar)) return 0x0;
    
    
    //
