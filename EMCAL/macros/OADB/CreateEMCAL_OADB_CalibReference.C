@@ -42,7 +42,7 @@ TObjArray *GetArrayEnergy(Int_t run=153323,TString name="Run113461_999999999_v3_
 
   TString pathOADB = "$ALICE_ROOT/OADB/EMCAL";
   gSystem->Load("libOADB");  
-  gROOT->LoadMacro("LoadLibraries.C");
+  //gROOT->LoadMacro("LoadLibraries.C");
   LoadLibraries();  
   // **** Loading the root files with Recalibration Factors:
   TFile* f	= new TFile(name);
@@ -78,10 +78,10 @@ TObjArray *GetArrayEnergy(Int_t run=153323,TString name="Run113461_999999999_v3_
     Float_t paramOADB = -1;
     if(cparam) {
     	paramOCDB = cparam->GetADCchannel(iSM,iCol,iRow);
-   		//paramOADB = divFactor!=1?paramOCDB/divFactor:paramOCDB;
+   		paramOADB = divFactor!=1?paramOCDB/divFactor:paramOCDB;
    		//printf("\n OCDB=%f and OADB=%f",paramOCDB,paramOADB);
     }
-  	if(h[iSM]) h[iSM]->SetBinContent(iCol,iRow,paramOCDB);
+  	if(h[iSM]) h[iSM]->SetBinContent(iCol,iRow,paramOADB);
   }
   
   for(int i=0;i<nSM;i++){
