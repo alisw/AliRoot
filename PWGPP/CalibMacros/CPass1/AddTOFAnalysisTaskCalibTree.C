@@ -1,49 +1,46 @@
-AliTOFAnalysisTaskCalibTree *AddTOFAnalysisTaskCalibTree()
-{
+AliTOFAnalysisTaskCalibTree *AddTOFAnalysisTaskCalibTree() {
 
-  // check analysis manager 
+  /* check analysis manager */
   AliAnalysisManager *mgr = AliAnalysisManager::GetAnalysisManager();
   if (!mgr) {
-    Error("AddTOFAnalysisTaskCalibTree", "cannot get analysis manager");
+    Error("AddAnalysisTaskEventTime", "cannot get analysis manager");
     return NULL;
   }
 
-  //check input event handler
+  /* check input event handler */
   if (!mgr->GetInputEventHandler()) {
-    Error("AddTOFAnalysisTaskCalibTree", "cannot get input event handler");
+    Error("AddAnalysisTaskEventTime", "cannot get input event handler");
     return NULL;
   }
   
-  // check input data type 
+  /* check input data type */
   TString str = mgr->GetInputEventHandler()->GetDataType();
   if (str.CompareTo("ESD")) {
-    Error("AddTOFAnalysisTaskCalibTree", "input data type is not \"ESD\"");
+    Error("AddAnalysisTaskEventTime", "input data type is not \"ESD\"");
     return NULL;
   }
 
-  // get common input data container
+  /* get common input data container */
   AliAnalysisDataContainer *inputc = mgr->GetCommonInputContainer();
   if (!inputc) {
-    Error("AddTOFAnalysisTaskCalibTree", "cannot get common input container");
+    Error("AddAnalysisTaskEventTime", "cannot get common input container");
     return NULL;
   }
   
+  /* create output data container */
   // setup output event handler
-
-  // old way: expecting to use AOD tree
-  // AliAODHandler *outputh = (AliAODHandler *)mgr->GetOutputEventHandler();
-  // outputh->SetCreateNonStandardAOD();
-  // outputh->SetOutputFileName("TOFcalibTree.root");
-
-  // new way:
   AliAnalysisDataContainer *coutput   = mgr->CreateContainer(Form("aodTree"), TTree::Class(), AliAnalysisManager::kOutputContainer, "TOFcalibTree.root"); // tree
   if (!coutput) {
     Error("AddTOFAnalysisTaskCalibTree", "cannot create output container");
     return NULL;
   }
 
-  //  create task and connect input/output 
+  /*  create task and connect input/output */
   AliTOFAnalysisTaskCalibTree *task = new AliTOFAnalysisTaskCalibTree();
+  Printf("After initializing the TOF task: task = %p", task);
+  // adding the task
+  mgr->AddTask(task);
+
   mgr->ConnectInput(task, 0, inputc);
   mgr->ConnectOutput(task, 1, coutput);
 
@@ -92,7 +89,7 @@ AliTOFAnalysisTaskCalibTree *AddTOFAnalysisTaskCalibTree()
   trackCuts->SetMaxDCAToVertexXY(2.4);
   trackCuts->SetDCAToVertex2D(kTRUE);
 
-  // return task 
+  /* return task */
   return task;
 
 }
