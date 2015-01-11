@@ -11,9 +11,9 @@ with CreateEMCAL_OADB_BadChannels, in order to create the OADB file.
 void CreateEMCAL_BadChannelsHistos()
 {
 gSystem->Load("libOADB");  
-gSystem->Load("libEMCALbase.so");
-gSystem->Load("libEMCALUtils.so");
-gSystem->Load("libEMCALrec.so");
+gSystem->Load("libEMCALbase");
+gSystem->Load("libEMCALUtils");
+gSystem->Load("libEMCALrec");
 
 AliEMCALGeometry   *fEMCALGeo=new AliEMCALGeometry();               //! EMCAL geometry
 AliEMCALRecoUtils  *fEMCALRecoUtils=new AliEMCALRecoUtils();         //! Pointer to EMCAL utilities for clusterization
