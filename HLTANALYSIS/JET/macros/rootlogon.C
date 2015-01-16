@@ -7,8 +7,8 @@ void rootlogon() {
    mycint->AddIncludePath("$ALICE_ROOT");
    mycint->AddIncludePath("$ALICE_ROOT/HLT/BASE");
    mycint->AddIncludePath("$ALICE_ROOT/HLT/BASE/util");
-   mycint->AddIncludePath("$ALICE_ROOT/HLT/JET");
-   mycint->AddIncludePath("$ALICE_ROOT/HLT/JET/cone");
+   mycint->AddIncludePath("$ALICE_ROOT/HLTJET");
+   mycint->AddIncludePath("$ALICE_ROOT/HLTJET/cone");
 
    gStyle->SetPalette(1);	
    gROOT->SetStyle("Plain");

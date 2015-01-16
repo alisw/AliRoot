@@ -17,10 +17,10 @@
 set(MODULE AliHLTJET)
 
 # Module include folder
-include_directories(${AliRoot_SOURCE_DIR}/HLT/JET
-                   ${AliRoot_SOURCE_DIR}/HLT/JET/analysis
-                   ${AliRoot_SOURCE_DIR}/HLT/JET/cone
-                   ${AliRoot_SOURCE_DIR}/HLT/JET/fastjet
+include_directories(${AliRoot_SOURCE_DIR}/HLTANALYSIS/JET
+                    ${AliRoot_SOURCE_DIR}/HLTANALYSIS/JET/analysis
+                    ${AliRoot_SOURCE_DIR}/HLTANALYSIS/JET/cone
+                    ${AliRoot_SOURCE_DIR}/HLTANALYSIS/JET/fastjet
                    )
 
 # Additional include folders in alphabetical order except ROOT
@@ -103,3 +103,6 @@ install(TARGETS ${MODULE}
         LIBRARY DESTINATION lib)
 
 install(FILES ${HDRS} DESTINATION include)
+
+# Status message
+message(STATUS "HLTJET enabled")
