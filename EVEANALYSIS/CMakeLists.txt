@@ -14,75 +14,30 @@
 # **************************************************************************
 
 # Module
-set(MODULE EveBase)
+set(MODULE EveAnalysis)
 
 # Module include folder
-include_directories(${AliRoot_SOURCE_DIR}/EVE/${MODULE})
+include_directories(${AliRoot_SOURCE_DIR}/EVEANALYSIS)
 
-# Additional include folders in alphabetical order
-include_directories(
+# Additional include folders in alphabetical order except ROOT
+include_directories(${ROOT_INCLUDE_DIRS}
                     ${AliRoot_SOURCE_DIR}/ANALYSIS/ANALYSIS
                     ${AliRoot_SOURCE_DIR}/ANALYSIS/ANALYSISalice
-                    ${AliRoot_SOURCE_DIR}/ITS/ITSbase
-                    ${AliRoot_SOURCE_DIR}/ITS/ITSrec
+                    ${AliRoot_SOURCE_DIR}/EVE/EveBase
                     ${AliRoot_SOURCE_DIR}/MONITOR/alistoragemanager
-                    ${AliRoot_SOURCE_DIR}/RAW/RAWDatabase
-                    ${AliRoot_SOURCE_DIR}/RAW/RAWDatarec
                     ${AliRoot_SOURCE_DIR}/OADB
-                    ${AliRoot_SOURCE_DIR}/STEER/AOD
-                    ${AliRoot_SOURCE_DIR}/STEER/CDB
+                    ${AliRoot_SOURCE_DIR}/RAW/RAWDatabase
                     ${AliRoot_SOURCE_DIR}/STEER/ESD
                     ${AliRoot_SOURCE_DIR}/STEER/STEER
-                    ${AliRoot_SOURCE_DIR}/STEER/STEERBase
-                    ${AliRoot_SOURCE_DIR}/TPC/TPCbase
-                    ${AliRoot_SOURCE_DIR}/TPC/TPCrec
-                    ${AliRoot_SOURCE_DIR}/TPC/TPCsim
                    )
 
-# Sources in alphabetical order
+# Sources
 set(SRCS
-    AliEveApplication.cxx
-    AliEveCascade.cxx
-    AliEveCascadeEditor.cxx
-    AliEveCascadeListEditor.cxx
-    AliEveConfigManager.cxx
-    AliEveCosmicRayFitter.cxx
-    AliEveCosmicRayFitterEditor.cxx
-    AliEveEventManager.cxx
-    AliEveEventManagerEditor.cxx
-    AliEveEventSelector.cxx
-    AliEveEventSelectorWindow.cxx
-    AliEveFileDialog.cxx
-    AliEveGedEditor.cxx
-    AliEveHF.cxx
-    AliEveHFEditor.cxx
-    AliEveHFListEditor.cxx
-    AliEveJetPlane.cxx
-    AliEveJetPlaneEditor.cxx
-    AliEveJetPlaneGL.cxx
-    AliEveKineTools.cxx
-    AliEveKink.cxx
-    AliEveKinkEditor.cxx
-    AliEveKinkListEditor.cxx
-    AliEveMacro.cxx
-    AliEveMacroEditor.cxx
-    AliEveMacroExecutor.cxx
-    AliEveMacroExecutorWindow.cxx
-    AliEveMagField.cxx
-    AliEveMainWindow.cxx
-    AliEveMultiView.cxx
-    AliEveTrackCounter.cxx
-    AliEveTrackCounterEditor.cxx
-    AliEveTrack.cxx
-    AliEveTrackFitter.cxx
-    AliEveTrackFitterEditor.cxx
-    AliEveTracklet.cxx
-    AliEveUtil.cxx
-    AliEveV0.cxx
-    AliEveV0Editor.cxx
-    AliEveV0ListEditor.cxx
-    AliEveVSDCreator.cxx
-   )
+    AliEveBeamsInfo.cxx
+    AliEveBeamsInfoEditor.cxx
+    AliEveLego.cxx
+    AliEveLegoEditor.cxx
+)
 
 # Headers from sources
 string(REPLACE ".cxx" ".h" HDRS "${SRCS}")
@@ -94,15 +49,17 @@ generate_dictionary("${MODULE}" "${MODULE}LinkDef.h" "${HDRS}" "${incdirs}")
 
 # Generate the ROOT map
 # Dependecies
-set(LIBDEPS STEERBase STEER ESD CDB AOD RAWDatabase RAWDatarec ANALYSIS ANALYSISalice ITSbase ITSrec TPCbase TPCrec TPCsim EG Eve Ged Gpad Graf Graf3d Gui Minuit Net RGL Rint)
+set(LIBDEPS STEERBase)
 generate_rootmap("${MODULE}" "${LIBDEPS}" "${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}LinkDef.h")
 
 # Add a library to the project using the specified source files
 add_library(${MODULE} SHARED ${SRCS} G__${MODULE}.cxx)
-target_link_libraries(${MODULE} STEERBase STEER ESD CDB AOD RAWDatabase RAWDatarec ANALYSIS ANALYSISalice ITSbase ITSrec TPCbase TPCrec TPCsim EG Eve Ged Gpad Graf Graf3d Gui Minuit Net RGL Rint)
 
 # Additional compilation flags
 set_target_properties(${MODULE} PROPERTIES COMPILE_FLAGS "")
+
+# Linking the library
+target_link_libraries(${MODULE} ${LIBDEPS})
 
 # System dependent: Modify the way the library is build
 if(${CMAKE_SYSTEM} MATCHES Darwin)
@@ -111,7 +68,8 @@ endif(${CMAKE_SYSTEM} MATCHES Darwin)
 
 # Installation
 install(TARGETS ${MODULE}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib)
-
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib)
 install(FILES ${HDRS} DESTINATION include)
+
+message(STATUS "${MODULE} enabled")
