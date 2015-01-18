@@ -14,29 +14,30 @@
 # **************************************************************************
 
 # Module
-set(MODULE EventMixing)
+set(MODULE EveAnalysis)
 
 # Module include folder
-include_directories(${AliRoot_SOURCE_DIR}/ANALYSIS/${MODULE})
+include_directories(${AliRoot_SOURCE_DIR}/EVEANALYSIS)
 
 # Additional include folders in alphabetical order except ROOT
 include_directories(${ROOT_INCLUDE_DIRS}
                     ${AliRoot_SOURCE_DIR}/ANALYSIS/ANALYSIS
                     ${AliRoot_SOURCE_DIR}/ANALYSIS/ANALYSISalice
-                    ${AliRoot_SOURCE_DIR}/STEER/AOD
+                    ${AliRoot_SOURCE_DIR}/EVE/EveBase
+                    ${AliRoot_SOURCE_DIR}/MONITOR/alistoragemanager
+                    ${AliRoot_SOURCE_DIR}/OADB
+                    ${AliRoot_SOURCE_DIR}/RAW/RAWDatabase
                     ${AliRoot_SOURCE_DIR}/STEER/ESD
-                    ${AliRoot_SOURCE_DIR}/STEER/STEERBase
+                    ${AliRoot_SOURCE_DIR}/STEER/STEER
                    )
 
 # Sources
 set(SRCS
-    AliAnalysisTaskMixInfo.cxx
-    AliMixEventCutObj.cxx
-    AliMixEventPool.cxx
-    AliMixInfo.cxx
-    AliMixInputEventHandler.cxx
-    AliMixInputHandlerInfo.cxx
-  )
+    AliEveBeamsInfo.cxx
+    AliEveBeamsInfoEditor.cxx
+    AliEveLego.cxx
+    AliEveLegoEditor.cxx
+)
 
 # Headers from sources
 string(REPLACE ".cxx" ".h" HDRS "${SRCS}")
@@ -48,12 +49,11 @@ generate_dictionary("${MODULE}" "${MODULE}LinkDef.h" "${HDRS}" "${incdirs}")
 
 # Generate the ROOT map
 # Dependecies
-set(LIBDEPS ANALYSIS ANALYSISalice AOD ESD STEERBase Core Gpad Hist RIO Tree)
+set(LIBDEPS STEERBase)
 generate_rootmap("${MODULE}" "${LIBDEPS}" "${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}LinkDef.h")
 
 # Add a library to the project using the specified source files
 add_library(${MODULE} SHARED ${SRCS} G__${MODULE}.cxx)
-target_link_libraries(${MODULE} ANALYSIS ANALYSISalice AOD ESD STEERBase Core Gpad Hist RIO Tree)
 
 # Additional compilation flags
 set_target_properties(${MODULE} PROPERTIES COMPILE_FLAGS "")
@@ -71,3 +71,5 @@ install(TARGETS ${MODULE}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib)
 install(FILES ${HDRS} DESTINATION include)
+
+message(STATUS "${MODULE} enabled")

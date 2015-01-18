@@ -14,57 +14,62 @@
 # **************************************************************************
 
 # Module
-set(MODULE TenderSupplies)
+set(MODULE AliHLTJET)
 
 # Module include folder
-include_directories(${AliRoot_SOURCE_DIR}/ANALYSIS/${MODULE})
+include_directories(${AliRoot_SOURCE_DIR}/HLTANALYSIS/JET
+                    ${AliRoot_SOURCE_DIR}/HLTANALYSIS/JET/analysis
+                    ${AliRoot_SOURCE_DIR}/HLTANALYSIS/JET/cone
+                    ${AliRoot_SOURCE_DIR}/HLTANALYSIS/JET/fastjet
+                   )
 
 # Additional include folders in alphabetical order except ROOT
 include_directories(${ROOT_INCLUDE_DIRS}
-                    ${AliRoot_SOURCE_DIR}/ANALYSIS/ANALYSIS
                     ${AliRoot_SOURCE_DIR}/ANALYSIS/ANALYSISalice
-                    ${AliRoot_SOURCE_DIR}/ANALYSIS/Tender
-                    ${AliRoot_SOURCE_DIR}/EMCAL/EMCALbase
-                    ${AliRoot_SOURCE_DIR}/EMCAL/EMCALrec
-                    ${AliRoot_SOURCE_DIR}/EMCAL/EMCALUtils
-                    ${AliRoot_SOURCE_DIR}/CORRFW
-                    ${AliRoot_SOURCE_DIR}/OADB
-                    ${AliRoot_SOURCE_DIR}/PHOS/PHOSbase
-                    ${AliRoot_SOURCE_DIR}/PHOS/PHOSrec
-                    ${AliRoot_SOURCE_DIR}/PHOS/PHOSUtils
+                    ${AliRoot_SOURCE_DIR}/HLT/BASE
+                    ${AliRoot_SOURCE_DIR}/HLT/BASE/util
+                    ${AliRoot_SOURCE_DIR}/JETAN/JETAN
                     ${AliRoot_SOURCE_DIR}/STEER/AOD
-                    ${AliRoot_SOURCE_DIR}/STEER/CDB
                     ${AliRoot_SOURCE_DIR}/STEER/ESD
-                    ${AliRoot_SOURCE_DIR}/STEER/STEER
                     ${AliRoot_SOURCE_DIR}/STEER/STEERBase
-                    ${AliRoot_SOURCE_DIR}/T0/T0rec
-                    ${AliRoot_SOURCE_DIR}/TOF/TOFbase
-                    ${AliRoot_SOURCE_DIR}/TOF/TOFrec
-                    ${AliRoot_SOURCE_DIR}/TPC/Base
-                    ${AliRoot_SOURCE_DIR}/TPC/TPCbase
-                    ${AliRoot_SOURCE_DIR}/TRD/TRDbase
-                    ${AliRoot_SOURCE_DIR}/VZERO/VZERObase
-                    ${AliRoot_SOURCE_DIR}/VZERO/VZEROrec
                    )
 
-# Sources
+# Sources in alphabetical order
 set(SRCS
-    AliAnalysisTaskVZEROEqFactorTask.cxx
-    AliEMCALTenderSupply.cxx
-    AliHMPIDTenderSupply.cxx
-    AliPHOSTenderSupply.cxx
-    AliPIDTenderSupply.cxx
-    AliT0TenderSupply.cxx
-    AliTOFTenderSupply.cxx
-    AliTPCTenderSupply.cxx
-    AliTrackFixTenderSupply.cxx
-    AliTRDTenderSupply.cxx
-    AliVtxTenderSupply.cxx
-    AliVZEROTenderSupply.cxx
-  )
+    AliHLTJETAgent.cxx
+    AliHLTJETBase.cxx
+    AliHLTJETJetCuts.cxx
+    AliHLTJETReader.cxx
+    AliHLTJETReaderHeader.cxx
+    AliHLTJETTrackCuts.cxx
+    analysis/AliHLTJETAnalysisBase.cxx
+    analysis/AliHLTJETAnalysisComponent.cxx
+    analysis/AliHLTJETAnalysisJets.cxx
+    analysis/AliHLTJETAnalysisMerge.cxx
+    cone/AliHLTJETConeEtaPhiCell.cxx
+    cone/AliHLTJETConeFinder.cxx
+    cone/AliHLTJETConeGrid.cxx
+    cone/AliHLTJETConeHeader.cxx
+    cone/AliHLTJETConeJetCandidate.cxx
+    cone/AliHLTJETConeJetComponent.cxx
+    cone/AliHLTJETConeSeedCuts.cxx
+   )
 
 # Headers from sources
 string(REPLACE ".cxx" ".h" HDRS "${SRCS}")
+
+# Check for FastJet installation to include proper headers
+if(FASTJET_FOUND)
+    set(HDRS ${HDRS}
+        fastjet/AliHLTJETFastJetHeader.h
+        fastjet/AliHLTJETFastJetFinder.h
+        fastjet/AliHLTJETFastJetComponent.h
+    )
+
+    include_directories(SYSTEM ${FASTJET_INCLUDE_DIR})
+    link_directories(${FASTJET_LIBS_DIR})
+    add_definitions(${FASTJET_DEFINITIONS})
+endif(FASTJET_FOUND)
 
 # Generate the dictionary
 # It will create G_ARG1.cxx and G_ARG1.h / ARG1 = function first argument
@@ -73,18 +78,19 @@ generate_dictionary("${MODULE}" "${MODULE}LinkDef.h" "${HDRS}" "${incdirs}")
 
 # Generate the ROOT map
 # Dependecies
-set(LIBDEPS ANALYSIS ANALYSISalice Tender EMCALbase EMCALrec EMCALUtils CORRFW OADB PHOSbase PHOSrec PHOSUtils AOD CDB ESD STEER STEERBase T0rec TOFbase TOFrec TPCbase TRDbase VZERObase VZEROrec Core Geom Gpad Graf Hist MathCore Matrix Physics RIO Tree)
+set(LIBDEPS STEERBase AOD ESD ANALYSISalice HLTbase AliHLTUtil JETAN)
 generate_rootmap("${MODULE}" "${LIBDEPS}" "${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}LinkDef.h")
 
 # Add a library to the project using the specified source files
 add_library(${MODULE} SHARED ${SRCS} G__${MODULE}.cxx)
-target_link_libraries(${MODULE} ANALYSIS ANALYSISalice Tender EMCALbase EMCALrec EMCALUtils CORRFW OADB PHOSbase PHOSrec PHOSUtils AOD CDB ESD STEER STEERBase T0rec TOFbase TOFrec TPCbase TRDbase VZERObase VZEROrec Core Geom Gpad Graf Hist MathCore Matrix Physics RIO Tree)
 
 # Additional compilation flags
 set_target_properties(${MODULE} PROPERTIES COMPILE_FLAGS "")
+target_link_libraries(${MODULE} STEERBase AOD ESD ANALYSISalice HLTbase AliHLTUtil JETAN)
 
-# Linking the library
-target_link_libraries(${MODULE} ${LIBDEPS})
+if(FASTJET_FOUND)
+    target_link_libraries(${MODULE} ${FASTJET_LIBS})
+endif(FASTJET_FOUND)
 
 # System dependent: Modify the way the library is build
 if(${CMAKE_SYSTEM} MATCHES Darwin)
@@ -93,10 +99,10 @@ endif(${CMAKE_SYSTEM} MATCHES Darwin)
 
 # Installation
 install(TARGETS ${MODULE}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib)
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib)
+
 install(FILES ${HDRS} DESTINATION include)
 
-# Install macros
-install(FILES AddTaskTender.C DESTINATION ANALYSIS/TenderSupplies)
-
+# Status message
+message(STATUS "HLTJET enabled")

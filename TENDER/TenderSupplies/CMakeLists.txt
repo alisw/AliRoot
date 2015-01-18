@@ -14,24 +14,53 @@
 # **************************************************************************
 
 # Module
-set(MODULE Tender)
+set(MODULE TenderSupplies)
 
 # Module include folder
-include_directories(${AliRoot_SOURCE_DIR}/ANALYSIS/${MODULE})
+include_directories(${AliRoot_SOURCE_DIR}/TENDER/${MODULE})
 
 # Additional include folders in alphabetical order except ROOT
 include_directories(${ROOT_INCLUDE_DIRS}
                     ${AliRoot_SOURCE_DIR}/ANALYSIS/ANALYSIS
                     ${AliRoot_SOURCE_DIR}/ANALYSIS/ANALYSISalice
+                    ${AliRoot_SOURCE_DIR}/TENDER/Tender
+                    ${AliRoot_SOURCE_DIR}/EMCAL/EMCALbase
+                    ${AliRoot_SOURCE_DIR}/EMCAL/EMCALrec
+                    ${AliRoot_SOURCE_DIR}/EMCAL/EMCALUtils
+                    ${AliRoot_SOURCE_DIR}/CORRFW
+                    ${AliRoot_SOURCE_DIR}/OADB
+                    ${AliRoot_SOURCE_DIR}/PHOS/PHOSbase
+                    ${AliRoot_SOURCE_DIR}/PHOS/PHOSrec
+                    ${AliRoot_SOURCE_DIR}/PHOS/PHOSUtils
+                    ${AliRoot_SOURCE_DIR}/STEER/AOD
                     ${AliRoot_SOURCE_DIR}/STEER/CDB
                     ${AliRoot_SOURCE_DIR}/STEER/ESD
+                    ${AliRoot_SOURCE_DIR}/STEER/STEER
                     ${AliRoot_SOURCE_DIR}/STEER/STEERBase
+                    ${AliRoot_SOURCE_DIR}/T0/T0rec
+                    ${AliRoot_SOURCE_DIR}/TOF/TOFbase
+                    ${AliRoot_SOURCE_DIR}/TOF/TOFrec
+                    ${AliRoot_SOURCE_DIR}/TPC/Base
+                    ${AliRoot_SOURCE_DIR}/TPC/TPCbase
+                    ${AliRoot_SOURCE_DIR}/TRD/TRDbase
+                    ${AliRoot_SOURCE_DIR}/VZERO/VZERObase
+                    ${AliRoot_SOURCE_DIR}/VZERO/VZEROrec
                    )
 
-# Sources in alphabetical order
+# Sources
 set(SRCS
-    AliTender.cxx
-    AliTenderSupply.cxx
+    AliAnalysisTaskVZEROEqFactorTask.cxx
+    AliEMCALTenderSupply.cxx
+    AliHMPIDTenderSupply.cxx
+    AliPHOSTenderSupply.cxx
+    AliPIDTenderSupply.cxx
+    AliT0TenderSupply.cxx
+    AliTOFTenderSupply.cxx
+    AliTPCTenderSupply.cxx
+    AliTrackFixTenderSupply.cxx
+    AliTRDTenderSupply.cxx
+    AliVtxTenderSupply.cxx
+    AliVZEROTenderSupply.cxx
   )
 
 # Headers from sources
@@ -44,15 +73,18 @@ generate_dictionary("${MODULE}" "${MODULE}LinkDef.h" "${HDRS}" "${incdirs}")
 
 # Generate the ROOT map
 # Dependecies
-set(LIBDEPS ANALYSIS ANALYSISalice CDB ESD STEERBase Core RIO)
+set(LIBDEPS ANALYSIS ANALYSISalice Tender EMCALbase EMCALrec EMCALUtils CORRFW OADB PHOSbase PHOSrec PHOSUtils AOD CDB ESD STEER STEERBase T0rec TOFbase TOFrec TPCbase TRDbase VZERObase VZEROrec Core Geom Gpad Graf Hist MathCore Matrix Physics RIO Tree)
 generate_rootmap("${MODULE}" "${LIBDEPS}" "${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}LinkDef.h")
 
 # Add a library to the project using the specified source files
 add_library(${MODULE} SHARED ${SRCS} G__${MODULE}.cxx)
-target_link_libraries(${MODULE} ANALYSIS ANALYSISalice CDB ESD STEERBase Core RIO)
+target_link_libraries(${MODULE} ANALYSIS ANALYSISalice Tender EMCALbase EMCALrec EMCALUtils CORRFW OADB PHOSbase PHOSrec PHOSUtils AOD CDB ESD STEER STEERBase T0rec TOFbase TOFrec TPCbase TRDbase VZERObase VZEROrec Core Geom Gpad Graf Hist MathCore Matrix Physics RIO Tree)
 
 # Additional compilation flags
 set_target_properties(${MODULE} PROPERTIES COMPILE_FLAGS "")
+
+# Linking the library
+target_link_libraries(${MODULE} ${LIBDEPS})
 
 # System dependent: Modify the way the library is build
 if(${CMAKE_SYSTEM} MATCHES Darwin)
@@ -64,4 +96,7 @@ install(TARGETS ${MODULE}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib)
 install(FILES ${HDRS} DESTINATION include)
+
+# Install macros
+install(FILES AddTaskTender.C DESTINATION TENDER/TenderSupplies)
 

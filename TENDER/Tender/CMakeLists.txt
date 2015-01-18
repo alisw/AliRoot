@@ -14,62 +14,28 @@
 # **************************************************************************
 
 # Module
-set(MODULE AliHLTJET)
+set(MODULE Tender)
 
 # Module include folder
-include_directories(${AliRoot_SOURCE_DIR}/HLT/JET
-                   ${AliRoot_SOURCE_DIR}/HLT/JET/analysis
-                   ${AliRoot_SOURCE_DIR}/HLT/JET/cone
-                   ${AliRoot_SOURCE_DIR}/HLT/JET/fastjet
-                   )
+include_directories(${AliRoot_SOURCE_DIR}/TENDER/${MODULE})
 
 # Additional include folders in alphabetical order except ROOT
 include_directories(${ROOT_INCLUDE_DIRS}
+                    ${AliRoot_SOURCE_DIR}/ANALYSIS/ANALYSIS
                     ${AliRoot_SOURCE_DIR}/ANALYSIS/ANALYSISalice
-                    ${AliRoot_SOURCE_DIR}/HLT/BASE
-                    ${AliRoot_SOURCE_DIR}/HLT/BASE/util
-                    ${AliRoot_SOURCE_DIR}/JETAN/JETAN
-                    ${AliRoot_SOURCE_DIR}/STEER/AOD
+                    ${AliRoot_SOURCE_DIR}/STEER/CDB
                     ${AliRoot_SOURCE_DIR}/STEER/ESD
                     ${AliRoot_SOURCE_DIR}/STEER/STEERBase
                    )
 
 # Sources in alphabetical order
 set(SRCS
-    AliHLTJETAgent.cxx
-    AliHLTJETBase.cxx
-    AliHLTJETJetCuts.cxx
-    AliHLTJETReader.cxx
-    AliHLTJETReaderHeader.cxx
-    AliHLTJETTrackCuts.cxx
-    analysis/AliHLTJETAnalysisBase.cxx
-    analysis/AliHLTJETAnalysisComponent.cxx
-    analysis/AliHLTJETAnalysisJets.cxx
-    analysis/AliHLTJETAnalysisMerge.cxx
-    cone/AliHLTJETConeEtaPhiCell.cxx
-    cone/AliHLTJETConeFinder.cxx
-    cone/AliHLTJETConeGrid.cxx
-    cone/AliHLTJETConeHeader.cxx
-    cone/AliHLTJETConeJetCandidate.cxx
-    cone/AliHLTJETConeJetComponent.cxx
-    cone/AliHLTJETConeSeedCuts.cxx
-   )
+    AliTender.cxx
+    AliTenderSupply.cxx
+  )
 
 # Headers from sources
 string(REPLACE ".cxx" ".h" HDRS "${SRCS}")
-
-# Check for FastJet installation to include proper headers
-if(FASTJET_FOUND)
-    set(HDRS ${HDRS}
-        fastjet/AliHLTJETFastJetHeader.h
-        fastjet/AliHLTJETFastJetFinder.h
-        fastjet/AliHLTJETFastJetComponent.h
-    )
-
-    include_directories(SYSTEM ${FASTJET_INCLUDE_DIR})
-    link_directories(${FASTJET_LIBS_DIR})
-    add_definitions(${FASTJET_DEFINITIONS})
-endif(FASTJET_FOUND)
 
 # Generate the dictionary
 # It will create G_ARG1.cxx and G_ARG1.h / ARG1 = function first argument
@@ -78,19 +44,15 @@ generate_dictionary("${MODULE}" "${MODULE}LinkDef.h" "${HDRS}" "${incdirs}")
 
 # Generate the ROOT map
 # Dependecies
-set(LIBDEPS STEERBase AOD ESD ANALYSISalice HLTbase AliHLTUtil JETAN)
+set(LIBDEPS ANALYSIS ANALYSISalice CDB ESD STEERBase Core RIO)
 generate_rootmap("${MODULE}" "${LIBDEPS}" "${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}LinkDef.h")
 
 # Add a library to the project using the specified source files
 add_library(${MODULE} SHARED ${SRCS} G__${MODULE}.cxx)
+target_link_libraries(${MODULE} ANALYSIS ANALYSISalice CDB ESD STEERBase Core RIO)
 
 # Additional compilation flags
 set_target_properties(${MODULE} PROPERTIES COMPILE_FLAGS "")
-target_link_libraries(${MODULE} STEERBase AOD ESD ANALYSISalice HLTbase AliHLTUtil JETAN)
-
-if(FASTJET_FOUND)
-    target_link_libraries(${MODULE} ${FASTJET_LIBS})
-endif(FASTJET_FOUND)
 
 # System dependent: Modify the way the library is build
 if(${CMAKE_SYSTEM} MATCHES Darwin)
@@ -99,7 +61,7 @@ endif(${CMAKE_SYSTEM} MATCHES Darwin)
 
 # Installation
 install(TARGETS ${MODULE}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib)
-
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib)
 install(FILES ${HDRS} DESTINATION include)
+
