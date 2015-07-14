@@ -6,134 +6,96 @@ The histograms with badchannels can be made by a list of towers ID ( see the mac
 directly from the OCDB ( see AliEMCALOCDBTenderConverter.cxx from Jiri Kral )
 */
 // ******* Create OADB Container for EMCal Bad Channels
-void UpdateEMCAL_OADB_BadChannels(const char *fileNameOADB	="$ALICE_ROOT/OADB/EMCAL/EMCALBadChannels.root",
-				  const char *fileName13b	="BadChannels2013_13b.root",
-				  const char *fileName13c	="BadChannels2013_13b.root",
-				  const char *fileName13d	="BadChannels2013_13b.root",
-				  const char *fileName13e	="BadChannels2013_13b.root",
-				  const char *fileName13f	="BadChannels2013_13b.root",
-				  const char *fileName13f1	="BadChannels2013_13f1.root",
-				  const char *fileName13f2	="BadChannels2013_13f2.root",
-				  const char *fileName13f3	="BadChannels2013_13f3.root",
-				  const char *fileName13f4	="BadChannels2013_13f4.root",
-				  const char *fileName13g	="BadChannels2013_13g.root"
-				)
+
+TObjArray GetHistoObject( Int_t runNum, Bool_t LocalOCDB=0){
+	Int_t i;
+	char buf[100];
+
+	TH2D *histo;
+
+	TFile *outFile;
+	
+	AliCDBManager *man;
+	AliCDBStorage *stor;
+	AliCaloCalibPedestal *ped;
+
+	// created the OCDB manager
+	man = AliCDBManager::Instance();
+	if(LocalOCDB) stor = man->GetStorage( "local://$ALICE_ROOT/OCDB"); //if you download the OCDB files locally.
+	else {  
+	  man->SetDefaultStorage("raw://");
+	  man->SetRun(runNum);
+	  stor = man->GetDefaultStorage();
+	}
+	ped = (AliCaloCalibPedestal*)(stor->Get("EMCAL/Calib/Pedestals", runNum)->GetObject());
+
+	// get the array of histos
+	TObjArray map = ped->GetDeadMap();
+	for(int i = 0; i < map.GetEntries(); i++ ){
+		histo = (TH2D*)(map[i]);
+		printf("\n !!! EMCALBadChannelMap_Mod%d",i );
+		histo->SetName( Form("EMCALBadChannelMap_Mod%d", i ));
+		histo->SetTitle( Form("EMCALBadChannelMap_Mod%d", i ));
+	}
+
+	return map;
+}
+
+void UpdateEMCAL_OADB_BadChannels(const char *fileNameOADB="$ALICE_PHYSICS/OADB/EMCAL/EMCALBadChannels.root",Bool_t LocalOCDB=0)
 {
 
-    gSystem->Load("libOADB");      
+ ///   gSystem->Load("libOADB");      
     //gSystem->Load("libOADB"); //comment if compiled
 
     //Create OADB container for BadChannels
     AliOADBContainer *con=new AliOADBContainer("");
     con->InitFromFile(Form(fileNameOADB),"AliEMCALBadChannels"); 
 
-    //! List of arrays to be updated (new histograms and/or new run range
-    TObjArray *array13b = (TObjArray*)con->GetObject(195345,"BadChannels13b");
-    TObjArray *array13c = (TObjArray*)con->GetObject(195529,"BadChannels13c");
-    TObjArray *array13d = (TObjArray*)con->GetObject(195681,"BadChannels13d");
-    TObjArray *array13e = (TObjArray*)con->GetObject(195935,"BadChannels13e");
-    TObjArray *array13f = (TObjArray*)con->GetObject(196433,"BadChannels13f");
-    TObjArray *array13f1 = (TObjArray*)con->GetObject(196563,"BadChannels13f1");
-    TObjArray *array13f2 = (TObjArray*)con->GetObject(196646,"BadChannels13f2");     
-    TObjArray *array13f3 = (TObjArray*)con->GetObject(197094,"BadChannels13f3");
-    TObjArray *array13f4 = (TObjArray*)con->GetObject(197348,"BadChannels13f4");
-    array13b->Clear();
-    array13c->Clear();
-    array13d->Clear();
-    array13e->Clear();
-    array13f->Clear();
-    array13f1->Clear();
-    array13f2->Clear();
-    array13f3->Clear();
-    array13f4->Clear();
-    
-    
+//AliOADBContainer* con = new AliOADBContainer("AliEMCALBadChannels");
+
     //! List of brand new arrays
     //LHC13g
-    TObjArray *array13g = new TObjArray(12);		array13g->SetName("BadChannels13g");
-    
-    
-    TFile	*f13b	=	new TFile(fileName13b,"read");
-    TFile	*f13c	=	new TFile(fileName13c,"read");
-    TFile	*f13d	=	new TFile(fileName13d,"read");
-    TFile	*f13e	=	new TFile(fileName13e,"read");
-    
-    TFile	*f13f	=	new TFile(fileName13f,"read");
-    TFile	*f13f1	=	new TFile(fileName13f1,"read");
-    TFile	*f13f2	=	new TFile(fileName13f2,"read");
-    TFile	*f13f3	=	new TFile(fileName13f3,"read");
-    TFile	*f13f4	=	new TFile(fileName13f4,"read");
-
-    TFile	*f13g	=	new TFile(fileName13g,"read");
-      
+    TObjArray *array = new TObjArray(12);		
+    array->SetName("BadChannels");
+   // 'AliEMCALOCDBTenderConverter.cxx(176326,"BadChannels2012_12a1.root")
     char name[30];
+
+    TObjArray array12a1 = GetHistoObject(176326,LocalOCDB);// Run176326_176700_v4_s0.root
+    TObjArray array12a2 = GetHistoObject(176701,LocalOCDB);// Run176701_176714_v4_s0.root
+    TObjArray array12a3 = GetHistoObject(176715,LocalOCDB);// Run176715_176729_v4_s0.root
+    TObjArray array12a4 = GetHistoObject(176730,LocalOCDB);// Run176730_176858_v4_s0.root
+    TObjArray array12a5 = GetHistoObject(176859,LocalOCDB);// Run176859_177295_v4_s0.root
     
+    TObjArray array12b1 = GetHistoObject(177320,LocalOCDB);// Run177320_999999999_v2_s0 --> 177381-177383
+    TObjArray array12b2 = GetHistoObject(177384,LocalOCDB);// Run177384_178220_v5_s0.root
+    TObjArray array12b3 = GetHistoObject(177444,LocalOCDB);// Run177444_177682_v6_s0.root
+    TObjArray array12b4 = GetHistoObject(177844,LocalOCDB);// Run177844_177849_v6_s0.root     
+    TObjArray array12b5 = GetHistoObject(178220,LocalOCDB);// Run177384_178220_v5_s0.root
 
-
+        
+    con->AddDefaultObject(&array12a1);
+    con->AddDefaultObject(&array12a2);
+    con->AddDefaultObject(&array12a3);
+    con->AddDefaultObject(&array12a4);
+    con->AddDefaultObject(&array12a5);
+    con->UpdateObject(con->GetIndexForRun(176326),&array12a1,176326,176700);
+    con->AppendObject(&array12a2,176701,176714);
+    con->AppendObject(&array12a3,176715,176729);
+    con->AppendObject(&array12a4,176730,176858);
+    con->AppendObject(&array12a5,176859,177295);
+ 
+    con->AddDefaultObject(&array12b1);
+    con->AddDefaultObject(&array12b2);
+    con->AddDefaultObject(&array12b3);
+    con->AddDefaultObject(&array12b4);
+    con->AddDefaultObject(&array12b5);
     
-    for (Int_t mod=0;mod<12;mod++){
-	cout<<"SM "<< mod<<endl;
+   con->UpdateObject(con->GetIndexForRun(177383),&array12b1,177320,177383);
+   con->UpdateObject(con->GetIndexForRun(177384),&array12b2,177384,177443);
+   con->UpdateObject(con->GetIndexForRun(177444),&array12b3,177444,177682);
+   con->UpdateObject(con->GetIndexForRun(177844),&array12b4,177844,177849);
+   con->UpdateObject(con->GetIndexForRun(177850),&array12b5,177850,178220);
 
-	    sprintf(name,"EMCALBadChannelMap_Mod%d",mod);
-	    cout<<"BadChannels 2012 and 2013:"<<name<<endl;
-	    
-	    array13b->Add(f13b->Get(name));
-	    array13c->Add(f13c->Get(name));
-	    array13d->Add(f13d->Get(name));
-	    array13e->Add(f13e->Get(name));
-	    array13f->Add(f13f->Get(name));
-	    array13f1->Add(f13f1->Get(name));
-	    array13f2->Add(f13f2->Get(name));
-	    array13f3->Add(f13f3->Get(name));
-	    array13f4->Add(f13f4->Get(name));
-	    array13g->Add(f13g->Get(name));
-	    
-    } //mod
-    
-    //con->AddDefaultObject(&array12i1);
-    //con->AddDefaultObject(&array12i2);
-    
-//     con->AddDefaultObject(*&array13c);
-//     con->AddDefaultObject(*&array13d);
-//     con->AddDefaultObject(*&array13e);
-//     con->AddDefaultObject(*&array13f);
-//     con->AddDefaultObject(*&array13f1);
-//     con->AddDefaultObject(*&array13f2);
-//     con->AddDefaultObject(*&array13f3);
-//     con->AddDefaultObject(*&array13f4);
-//     con->AddDefaultObject(*&array13g);
-
-//     con->AddDefaultObject(*&array13c);
-    
-    con->UpdateObject(con->GetIndexForRun(195344),*&array13b,195344,195483);
-    con->UpdateObject(con->GetIndexForRun(195529),*&array13c,195529,195677);
-    con->UpdateObject(con->GetIndexForRun(195681),*&array13d,195681,195873);
-    con->UpdateObject(con->GetIndexForRun(195935),*&array13e,195935,196311);
-    con->UpdateObject(con->GetIndexForRun(196433),*&array13f,196433,196535);
-    con->UpdateObject(con->GetIndexForRun(196563),*&array13f1,196563,196608);
-    con->UpdateObject(con->GetIndexForRun(196646),*&array13f2,196646,197092);     
-    con->UpdateObject(con->GetIndexForRun(197094),*&array13f3,197094,197099);
-    con->UpdateObject(con->GetIndexForRun(197138),*&array13f2,197138,197302);
-    con->UpdateObject(con->GetIndexForRun(197341),*&array13f,197341,197342);
-    con->UpdateObject(con->GetIndexForRun(197348),*&array13f4,197348,197388);
-
-    //Establishing run number with the correct objects
-    
-    //con->AppendObject(&array13b,195344,195483);
-    //con->AppendObject(&array13c,195529,195677);
-    //con->AppendObject(&array13d,195681,195873);
-    //con->AppendObject(&array13e,195935,196311);
-    //con->AppendObject(&array13f,196433,196535);
-    //con->AppendObject(&array13f1,196563,196608);
-    //con->AppendObject(&array13f2,196646,197092);     
-    //con->AppendObject(&array13f3,197094,197099);
-    //con->AppendObject(&array13f2,197138,197302);
-    //con->AppendObject(&array13f,197341,197342);
-    //con->AppendObject(&array13f4,197348,197388);
-
-    con->AppendObject(*&array13g,197470,197692);
-
-//     delete array13b;
     
     
     con->WriteToFile("BetaBadChannels.root");   
