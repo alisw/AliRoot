@@ -4,7 +4,7 @@
 
 // Author : Gustavo Conesa Balbastre (LPSC-CNRS)
 
-void CompareAODB_OCDB(Int_t run = 160000, TString pathOADB = "$ALICE_ROOT/OADB/EMCAL",
+void CompareAODB_OCDB(Int_t run = 160000, TString pathOADB = "$ALICE_PHYSICS/OADB/EMCAL",
                       Int_t checkObject = 2, TString pass = "pass1", Bool_t printAll = kFALSE)
 {  
 
@@ -24,8 +24,8 @@ void CompareAODB_OCDB(Int_t run = 160000, TString pathOADB = "$ALICE_ROOT/OADB/E
   else                  geom = AliEMCALGeometry::GetInstance("EMCAL_COMPLETE12SMV1_DCAL_8SM"); // Run2
   
   if     (checkObject == 0) CheckBadChannels            (run, pathOADB, storage, geom,     printAll);
-  else if(checkObject == 1) CheckEnergyCalibration      (run, pathOADB, storage, geom,pass,printAll);
-  else if(checkObject == 2) CheckEnergyOnlineCalibration(run, pathOADB, storage, geom,     printAll);
+ // else if(checkObject == 1) CheckEnergyCalibration      (run, pathOADB, storage, geom,pass,printAll);
+  //else if(checkObject == 2) CheckEnergyOnlineCalibration(run, pathOADB, storage, geom,     printAll);
   else printf("non existing object option\n");
   
   printf("*** Comparisons ended *** \n");
