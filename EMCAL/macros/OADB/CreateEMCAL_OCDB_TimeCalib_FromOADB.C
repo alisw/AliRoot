@@ -23,8 +23,8 @@ void CreateEMCAL_OCDB_TimeCalib_FromOADB(TString pass = "pass1")
 
   CreatePeriod(122195,126437,"LHC10d, pp, 7 TeV",2010); 
   CreatePeriod(136851,140000,"LHC10h, Pb-Pb, 2.76 TeV",2010); 
-  CreatePeriod(146686,148860,"LHC11a, pp, 2.76 TeV",2011);
   CreatePeriod(144871,146459,"LHC11a, pp, 7 TeV",2011);
+  CreatePeriod(146686,146860,"LHC11a, pp, 2.76 TeV",2011);
   CreatePeriod(148531,150629,"LHC11b, pp, 7 TeV",2011);
   CreatePeriod(151636,155384,"LHC11c, pp, 7 TeV",2011);
   CreatePeriod(156477,159635,"LHC11d, pp, 7 TeV",2011);
@@ -108,7 +108,7 @@ void CreatePeriod(Int_t runmin, Int_t runmax, TString period, Int_t year)
   AliCDBId id("EMCAL/Calib/Time",runmin,runmax); // create in EMCAL/Calib/Time dbFolder
   
   AliCDBManager* man = AliCDBManager::Instance();
-  AliCDBStorage* loc = man->GetStorage(Form("local://%d",year));
+  AliCDBStorage* loc = man->GetStorage(Form("local://%d/OCDB",year));
   loc->Put(calibti, id, &md);
   
 }
