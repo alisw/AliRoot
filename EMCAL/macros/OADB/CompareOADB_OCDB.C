@@ -14,14 +14,15 @@
 /// \param pass: for some objects, pass string is needed
 /// \param printAll: option to print messages
 ///
-void CompareOADB_OCDB(Int_t run = 159582, TString pathOADB = "$ALICE_PHYSICS/OADB/EMCAL",
+void CompareOADB_OCDB(Int_t run = 196000, TString pathOADB = "$ALICE_PHYSICS/OADB/EMCAL",
                       Int_t checkObject = 3, TString pass = "pass3", Bool_t printAll = kFALSE)
 {  
   gSystem->Load("libOADB");
-//  TGrid::Connect("alien://");
+  TGrid::Connect("alien://");
   
   AliCDBManager* man = AliCDBManager::Instance();
-  man->SetDefaultStorage("local://");
+  man->SetDefaultStorage("raw://");
+  //man->SetDefaultStorage("local://2013/OCDB");
   man->SetRun(run);
   AliCDBStorage *storage = man->GetDefaultStorage();
   
@@ -311,10 +312,10 @@ void CheckTimeCalibration(Int_t run, TString pathOADB, AliCDBStorage * storage, 
   AliEMCALCalibTime* cparam = (AliEMCALCalibTime*) (storage->Get("EMCAL/Calib/Time", run)->GetObject());
 
   // Access directly the OCDB file and not the latest version
-//  TFile * f = TFile::Open("/AliceSoft/aliroot/master/src/EMCAL/macros/OADB/2011/EMCAL/Calib/Time/Run156477_159635_v0_s0.root","READ");
-
-  AliCDBEntry * cdb = (AliCDBEntry*) f->Get("AliCDBEntry");
-  AliEMCALCalibTime* cparam = (AliEMCALCalibTime*)  cdb->GetObject();
+//  TFile * f = TFile::Open("2010/OCDB/EMCAL/Calib/Time/Run122195_126437_v0_s1.root","READ");
+//
+//  AliCDBEntry * cdb = (AliCDBEntry*) f->Get("AliCDBEntry");
+//  AliEMCALCalibTime* cparam = (AliEMCALCalibTime*)  cdb->GetObject();
 
   if(!cparam)
   {
