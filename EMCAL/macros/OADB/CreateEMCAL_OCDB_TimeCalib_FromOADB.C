@@ -1,12 +1,20 @@
-// Compare the contents of the calibration, bad channels, etc in OCDB and AODB
-// You need connexion to the grid to run this macro
-// The OADB file can be in a place different than the default in aliroot
-
-// Author : Gustavo Conesa Balbastre (LPSC-CNRS)
+/// \file CreateEMCAL_OCDB_TimeCalib_FromOADB.C
+/// \brief Create time calibration OCDB from OADB
+///
+/// Compare the contents of the calibration, bad channels, etc in OCDB and AODB
+/// You need connexion to the grid to run this macro
+/// The OADB file can be in a place different than the default in aliroot
+///
+/// \author Gustavo Conesa Balbastre, <Gustavo.Conesa.Balbastre@cern.ch>, LPSC-CNRS
+///
 
 AliEMCALGeometry * geom = 0;
 AliOADBContainer *contTRF = 0;
 
+/// Main method
+/// Create OCDB for different periods at the same time.
+/// 
+/// \param pass: string with pass name
 void CreateEMCAL_OCDB_TimeCalib_FromOADB(TString pass = "pass1")
 {  
   // Instantiate EMCAL geometry for the first time
@@ -35,6 +43,14 @@ void CreateEMCAL_OCDB_TimeCalib_FromOADB(TString pass = "pass1")
   CreatePeriod(195344,197692,"LHC13b-g",2013);
 }
 
+///
+/// Create OCDF file for a given period
+///
+/// \param runmin: minimum run interval
+/// \param runmax: maximum run interval
+/// \param period: period name added to comment
+/// \param year: year to set SM number and file location
+///
 void CreatePeriod(Int_t runmin, Int_t runmax, TString period, Int_t year)
 {
   printf("*** Create OCDB for period %d-%d ***\n",runmin,runmax);

@@ -1,9 +1,11 @@
-// Compare the contents of the calibration, bad channels, etc in OCDB and OADB
-// You need connexion to the grid to run this macro
-// The OADB file can be in a place different than the default in aliroot
-
-// Author : Gustavo Conesa Balbastre (LPSC-CNRS)
-
+/// \file CompareOADB_OCDB.C
+/// \brief Compare contents in OADB and OCDB
+///
+/// Compare the contents of the calibration, bad channels, etc in OCDB and OADB
+/// You need connexion to the grid to run this macro
+/// The OADB file can be in a place different than the default in aliroot
+///
+/// \author Gustavo Conesa Balbastre, <Gustavo.Conesa.Balbastre@cern.ch>, LPSC-CNRS
 ///
 /// Main method
 /// Executes the for the selected run and parameter
@@ -42,12 +44,12 @@ void CompareOADB_OCDB(Int_t run = 196000, TString pathOADB = "$ALICE_PHYSICS/OAD
   printf("*** Comparisons ended *** \n");
 }  
 
-//___________________________
+///
+/// Check energy recalibration.
+//__________________________
 void CheckEnergyCalibration(Int_t run, TString pathOADB, AliCDBStorage * storage, AliEMCALGeometry *geom,
                             TString pass,Bool_t printAll = kTRUE)
-{
-  // Check energy recalibration, Uncomplete
-  
+{  
   AliOADBContainer *contRF=new AliOADBContainer("");
   contRF->InitFromFile(Form("%s/EMCALRecalib.root",pathOADB.Data()),"AliEMCALRecalib");
   
@@ -151,12 +153,12 @@ void CheckEnergyCalibration(Int_t run, TString pathOADB, AliCDBStorage * storage
   if(!printAll) printf("Total number of different channels %d / %d\n",nDiff,nSM*24*48);//, origin %d\n",nDiff,nSM*24*48,nDiff2);
 }
 
+///
+/// Check energy online calibration
 //___________________________
 void CheckEnergyOnlineCalibration(Int_t run, TString pathOADB, AliCDBStorage * storage, AliEMCALGeometry *geom,
                             Bool_t printAll = kTRUE)
-{
-  // Check energy recalibration, Uncomplete
-  
+{  
   AliOADBContainer *contRF=new AliOADBContainer("");
   contRF->InitFromFile(Form("%s/EMCALCalibOnlineRef.root",pathOADB.Data()),"AliEMCALRecalib");
   
@@ -236,11 +238,11 @@ void CheckEnergyOnlineCalibration(Int_t run, TString pathOADB, AliCDBStorage * s
   if(!printAll) printf("Total number of different channels %d / %d\n",nDiff,nSM*24*48);//, origin %d\n",nDiff,nSM*24*48,nDiff2);
 }
 
-//_____________________
+///
+/// Get the OCDB bad channels and compare to the OADB ones.
+//____________________
 void CheckBadChannels(Int_t run, TString pathOADB, AliCDBStorage * storage, AliEMCALGeometry *geom, Bool_t printAll = kTRUE)
-{
-  // Get the OCDB bad channels and compare to the OADB ones
-  
+{  
   //const Int_t nSM = static_const (geom->GetNumberOfSuperModules());
   const Int_t nSM = static_cast<const Int_t> (geom->GetNumberOfSuperModules());
 
@@ -303,12 +305,13 @@ void CheckBadChannels(Int_t run, TString pathOADB, AliCDBStorage * storage, AliE
   }
 }
 
-//_____________________
+///
+/// Get the OCDB time calibration shifts and compare to the OADB ones.
+//________________________
 void CheckTimeCalibration(Int_t run, TString pathOADB, AliCDBStorage * storage, AliEMCALGeometry *geom, TString pass, Bool_t printAll = kTRUE)
 {
-  
   // Get the OCDB object
-  
+
   AliEMCALCalibTime* cparam = (AliEMCALCalibTime*) (storage->Get("EMCAL/Calib/Time", run)->GetObject());
 
   // Access directly the OCDB file and not the latest version
@@ -385,8 +388,5 @@ void CheckTimeCalibration(Int_t run, TString pathOADB, AliCDBStorage * storage, 
     // end
     
   } // bunch crossing loop
-
-  
-  
 }
 
