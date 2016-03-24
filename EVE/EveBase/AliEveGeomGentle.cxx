@@ -11,6 +11,7 @@
 #include <TFile.h>
 #include <TSystem.h>
 #include <iostream>
+#include <TEnv.h>
 
 using namespace std;
 
@@ -41,7 +42,7 @@ TEveGeoShape* AliEveGeomGentle::GetSimpleGeom(char* detector)
     {
         detector = "TPC";
     }
-    
+
     DrawDeep(gsre,
              settings.GetValue(Form("%s.color",detector),-1),
              settings.GetValue(Form("%s.trans",detector),-1),
