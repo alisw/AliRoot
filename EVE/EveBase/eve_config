@@ -102,7 +102,7 @@ SDD.trans:                              50
 SSD.trans:                              50
 TOF.trans:                              60
 MFT.trans:                              80
-T00.trans:                              20
+T00.trans:                              70
 
 
 MCH.line.color:                         920
