@@ -58,7 +58,7 @@ primary.vertex.spd.cross:               0
 momentum.histograms.show:               0
 momentum.histograms.all.events.show:    0
 
-simple.geom.path:                       ${ALICE_ROOT}/EVE/resources/geometry/run2/
+simple.geom.path:                       ${ALICE_ROOT}/EVE/resources/geometry/run3/
 
 PHS.draw:                               1
 TPC.draw:                               1
@@ -72,7 +72,8 @@ SDD.draw:                               1
 SSD.draw:                               1
 TOF.draw:                               1
 MFT.draw:                               1
-T00.draw:                               1
+T00.draw:                               0
+FIT.draw:                               1
 
 
 PHS.color:                              53
@@ -88,6 +89,7 @@ SSD.color:                              53
 TOF.color:                              634
 MFT.color:                              920
 T00.color:                              2
+FIT.color:                              2
 
 
 PHS.trans:                              70
@@ -103,6 +105,7 @@ SSD.trans:                              50
 TOF.trans:                              60
 MFT.trans:                              80
 T00.trans:                              70
+FIT.trans:                              40
 
 
 MCH.line.color:                         920
@@ -117,6 +120,7 @@ SDD.line.color:                         1
 SSD.line.color:                         1
 MFT.line.color:                         0
 T00.line.color:                         1
+FIT.line.color:                         1
 
 
 clusters.show:                          0
