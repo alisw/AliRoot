@@ -130,7 +130,7 @@ fPath(path)
     {
         if(settings.GetValue(Form("%s.draw",detectorsList[i].c_str()), true))
         {
-            if(detectorsList[i]=="TPC" || detectorsList[i]=="MCH" || detectorsList[i]=="MFT")
+            if(detectorsList[i]=="TPC" || detectorsList[i]=="MCH" || detectorsList[i]=="MTR"|| detectorsList[i]=="MID" || detectorsList[i]=="MFT")
             {
                 // don't load MUON+MFT and standard TPC to R-Phi view
                 mv->InitSimpleGeom(geomGentle->GetSimpleGeom((char*)detectorsList[i].c_str()),false);
