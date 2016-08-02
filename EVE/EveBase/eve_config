@@ -74,6 +74,7 @@ TOF.draw:                               1
 MFT.draw:                               1
 T00.draw:                               0
 FIT.draw:                               1
+AD0.draw:                               1
 
 
 PHS.color:                              53
@@ -90,6 +91,7 @@ TOF.color:                              634
 MFT.color:                              920
 T00.color:                              2
 FIT.color:                              2
+AD0.color:                              5
 
 
 PHS.trans:                              70
@@ -106,6 +108,7 @@ TOF.trans:                              60
 MFT.trans:                              80
 T00.trans:                              70
 FIT.trans:                              40
+AD0.trans:                              40
 
 
 MCH.line.color:                         920
@@ -121,6 +124,7 @@ SSD.line.color:                         1
 MFT.line.color:                         0
 T00.line.color:                         1
 FIT.line.color:                         1
+AD0.line.color:                         1
 
 
 clusters.show:                          0
