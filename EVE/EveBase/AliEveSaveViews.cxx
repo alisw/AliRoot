@@ -254,7 +254,7 @@ void AliEveSaveViews::SaveForAmore()
     compositeImg->DrawText(750, fHeight-1.33*fHeightInfoBar+4 ,fTriggerClasses[0], 16, "#FFFFFF", "FreeSansBold.otf");
     compositeImg->DrawText(750, fHeight-1.33*fHeightInfoBar+24,fTriggerClasses[1], 16, "#FFFFFF", "FreeSansBold.otf");
     compositeImg->DrawText(750, fHeight-1.33*fHeightInfoBar+44,fTriggerClasses[2], 16, "#FFFFFF", "FreeSansBold.otf");
-    compositeImg->DrawText(200, 0.2*fHeight-100, "PRELIMINARY", 200, "#80FF0000", "Arial.ttf",TImage::kPlain,0,30.);
+    compositeImg->DrawText(200, 0.2*fHeight-150, "PRELIMINARY", 200, "#30FFFFFF", "FreeSansBold.otf",TImage::kPlain,0,30.);
     compositeImg->EndPaint();
     // put clusters description in green bar on the bottom:
     compositeImg->Gradient( 90, "#1BDD1B #1DDD1D #01DD01", 0, 0, fHeight-0.33*fHeightInfoBar, fWidth, 0.33*fHeightInfoBar);
