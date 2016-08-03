@@ -31,11 +31,14 @@ void AddNodes(TGeoNode *node, TEveGeoNode *parent, Int_t depth, Int_t depthmax,T
     
     TObjString *nname = (TObjString*)list->At(depthmax-depth); // name of required node in current level
     
+    cout<<"name:"<<nname->GetString()<<endl;
+    
     // MFT sensor with increased thickness for better visibility
     TGeoVolume *sensMFTv; // volume
     TGeoBBox *sensMFTs;   // shape
     Double_t sensMFTd[3]; // dimensions
     const Double_t sensMFTht = 0.1; // visualization half thickness [cm]
+    //
     
     for (int i = 0; i < nlist->GetEntries(); i++)
     {   // loop over nodes in current level and find the one with matching name
@@ -48,24 +51,24 @@ void AddNodes(TGeoNode *node, TEveGeoNode *parent, Int_t depth, Int_t depthmax,T
             {
                 son = new TEveGeoNode(node2);
 
-		// increase thickness for the MFT silicon sensors
-		if (strncmp(nname->GetName(),"MFTSensor",9) == 0) {
-		  sensMFTd[0] = ((TGeoBBox*)(node2->GetVolume()->GetShape()))->GetDX();
-		  sensMFTd[1] = ((TGeoBBox*)(node2->GetVolume()->GetShape()))->GetDY();
-		  sensMFTd[2] = ((TGeoBBox*)(node2->GetVolume()->GetShape()))->GetDZ();
-		  if (sensMFTd[2] < sensMFTht) {
-		    sensMFTv = node2->GetVolume()->CloneVolume();
-		    sensMFTs = (TGeoBBox*)(sensMFTv->GetShape());
-		    sensMFTd[2] = sensMFTht;
-		    sensMFTs->SetDimensions(sensMFTd);
-		    son->GetNode()->SetVolume(sensMFTv);
-		    sensMFTd[0] = sensMFTs->GetDX();
-		    sensMFTd[1] = sensMFTs->GetDY();
-		    sensMFTd[2] = sensMFTs->GetDZ();
-		  }
-
-		}
-
+                // increase thickness for the MFT silicon sensors
+                if (strncmp(nname->GetName(),"MFTSensor",9) == 0) {
+                    sensMFTd[0] = ((TGeoBBox*)(node2->GetVolume()->GetShape()))->GetDX();
+                    sensMFTd[1] = ((TGeoBBox*)(node2->GetVolume()->GetShape()))->GetDY();
+                    sensMFTd[2] = ((TGeoBBox*)(node2->GetVolume()->GetShape()))->GetDZ();
+                    if (sensMFTd[2] < sensMFTht) {
+                        sensMFTv = node2->GetVolume()->CloneVolume();
+                        sensMFTs = (TGeoBBox*)(sensMFTv->GetShape());
+                        sensMFTd[2] = sensMFTht;
+                        sensMFTs->SetDimensions(sensMFTd);
+                        son->GetNode()->SetVolume(sensMFTv);
+                        sensMFTd[0] = sensMFTs->GetDX();
+                        sensMFTd[1] = sensMFTs->GetDY();
+                        sensMFTd[2] = sensMFTs->GetDZ();
+                    }
+                }
+                //
+                
                 parent->AddElement(son);
             }
             AddNodes(node2,son, depth, depthmax, list);
@@ -118,7 +121,7 @@ void simple_geom_generate(char *detectorName="", int runNumber=0)
     AliEveInit::GetConfig(&settings);
     
     // set OCDB path from config and set run number for which we want to generate geometry
-    AliCDBManager::Instance()->SetDefaultStorage(settings.GetValue("OCDB.default.path","local://$ALICE_ROOT/../src/OCDB"));
+    AliCDBManager::Instance()->SetDefaultStorage(settings.GetValue("OCDB.default.path","local://$ALICE_ROOT/OCDB"));
     AliCDBManager::Instance()->SetRun(runNumber);
     
     // load geometry from OCDB

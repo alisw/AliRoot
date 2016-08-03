@@ -31,6 +31,8 @@ void AddNodes(TGeoNode *node, TEveGeoNode *parent, Int_t depth, Int_t depthmax,T
     
     TObjString *nname = (TObjString*)list->At(depthmax-depth); // name of required node in current level
     
+    cout<<"name:"<<nname->GetString()<<endl;
+    
     for (int i = 0; i < nlist->GetEntries(); i++)
     {   // loop over nodes in current level and find the one with matching name
         TGeoNode *node2 = (TGeoNode*) nlist->At(i);
