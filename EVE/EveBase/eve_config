@@ -75,6 +75,7 @@ MFT.draw:                               1
 T00.draw:                               0
 FIT.draw:                               1
 AD0.draw:                               1
+ITS.draw:                               0
 
 
 PHS.color:                              53
