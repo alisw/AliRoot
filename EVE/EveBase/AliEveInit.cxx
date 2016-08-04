@@ -379,7 +379,6 @@ void AliEveInit::AddMacros()
     bool drawRawData      = settings.GetValue("rawData.show",false);           // show raw data
     bool drawHits         = settings.GetValue("hits.show",false);              // show hits
     bool drawDigits       = settings.GetValue("digits.show",false);            // show digits
-    bool drawAD           = settings.GetValue("AD.show",false);                // show AD hits
     
     if(drawHits)
     {
@@ -433,7 +432,6 @@ void AliEveInit::AddMacros()
         }
 
     }
-    //    exec->AddMacro(new AliEveMacro("ESD AD", "ad_esd.C", "ad_esd", "", drawAD));
     if(showEMCal){
         exec->AddMacro(new AliEveMacro("ESD EMCal", "emcal_esdclustercells.C", "emcal_esdclustercells", ""));
     }
