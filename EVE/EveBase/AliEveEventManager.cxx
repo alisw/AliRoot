@@ -529,6 +529,8 @@ void AliEveEventManager::AfterNewEventLoaded()
     TEnv settings;
     AliEveInit::GetConfig(&settings);
     
+    bool beamKnown = false;
+    
     if(fCurrentData->fESD && fHasEvent)
     {
         if(settings.GetValue("momentum.histograms.show",false)){fMomentumHistogramsDrawer->Draw();}
@@ -582,6 +584,8 @@ void AliEveEventManager::AfterNewEventLoaded()
         AliESDEvent *esd = fCurrentData->fESD;
         esd->GetPrimaryVertex()->GetXYZ(x);
         
+        if(strcmp(esd->GetBeamType(),"Unknown")!=0 && strcmp(esd->GetBeamType(),"")!=0) beamKnown = true;
+        
         TTimeStamp ts(esd->GetTimeStamp());
         TString win_title("Eve Main Window -- Timestamp: ");
         win_title += ts.AsString("s");
@@ -598,7 +602,6 @@ void AliEveEventManager::AfterNewEventLoaded()
         Double_t x[3] = { 0, 0, 0 };
         
         AliAODEvent *aod = fCurrentData->fAOD;
-        
         aod->GetPrimaryVertex()->GetXYZ(x);
         
         TTimeStamp ts(aod->GetTimeStamp());
@@ -618,16 +621,8 @@ void AliEveEventManager::AfterNewEventLoaded()
     gEve->FullRedraw3D();
     gSystem->ProcessEvents();
     
-    bool saveViews = settings.GetValue("ALICE_LIVE.send",false);
-    
-    if(saveViews  && fCurrentData->fESD->GetNumberOfTracks()>0)
-    {
-        fViewsSaver->SaveForAmore();
-        fViewsSaver->SendToAmore();
-    }
-    
     // animate tracks
-    if(settings.GetValue("tracks.byType.animate",false)){
+    if(settings.GetValue("tracks.byType.animate",false) && beamKnown){
         TEveElementList *tracks = (TEveElementList*)gEve->GetCurrentEvent()->FindChild("ESD Tracks by PID");
         
         vector<TEveTrackPropagator*> propagators;
@@ -648,6 +643,14 @@ void AliEveEventManager::AfterNewEventLoaded()
             gSystem->ProcessEvents();
             gEve->Redraw3D();
         }
+    }
+    
+    bool saveViews = settings.GetValue("ALICE_LIVE.send",false);
+    
+    if(saveViews  && fCurrentData->fESD->GetNumberOfTracks()>0)
+    {
+        fViewsSaver->SaveForAmore();
+        fViewsSaver->SendToAmore();
     }
 }
 
