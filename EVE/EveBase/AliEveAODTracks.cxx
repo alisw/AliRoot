@@ -157,7 +157,7 @@ TEveElementList* AliEveAODTracks::ByPID()
         if(trackSelection == "ITSin_noTPCin"){
             good_cont = at->IsOn(AliESDtrack::kITSin && !at->IsOn(AliESDtrack::kTPCin));
         }
-        else if(trackSelection == "noTISpureSA"){
+        else if(trackSelection == "noITSpureSA"){
             good_cont = !at->IsOn(AliESDtrack::kITSpureSA);
         }
         else if(trackSelection == "TPCrefit"){

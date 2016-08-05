@@ -53,13 +53,16 @@ void ReadShapes(TEveGeoShapeExtract *shapeExtract,TString parent)
              if(name.Contains("BSEG")){materialName = "lambert-MUON-TRD";}
         else if(name.Contains("HMPID")){materialName = "lambert-HMPID";}
         else if(name.Contains("TPC")){materialName = "lambert-TPC";}
-        else if(name.Contains("EMCAL")){materialName = "lambert-EMCAL";}
+        else if(name.Contains("EMC")){materialName = "lambert-EMCAL";}
         else if(name.Contains("PHOS")){materialName = "lambert-EMCAL";}
-        else if(name.Contains("IT34")){materialName = "lambert-TPC";}
-        else if(name.Contains("IT56")){materialName = "lambert-EMCAL";}
-        else if(name.Contains("MUON")){materialName = "lambert-MUON-TRD";}
-        else if(name.Contains("B076")){materialName = "lambert-TOF";}
-        else {materialName = "default_lambert";}
+        else if(name.Contains("SDD")){materialName = "lambert-TPC";}
+        else if(name.Contains("SSD")){materialName = "lambert-EMCAL";}
+        else if(name.Contains("MCH")){materialName = "lambert-MUON-TRD";}
+        else if(name.Contains("TOF")){materialName = "lambert-TOF";}
+        else {
+            cout<<"unknown material for:"<<name<<endl;
+            materialName = "default_lambert";
+        }
         
         // add shape to Collada buffer
         colladaBuffer->AddShape(name,shapeExtract,parent,materialName.c_str());
@@ -108,15 +111,21 @@ void aliceToCollada(const char* outFile="aliceGeom.dae")
     AliEveInit::GetConfig(&settings);
     
     vector<string> detectorsList;
-    TSystemDirectory dir(Form("%s/../src/%s",gSystem->Getenv("ALICE_ROOT"),settings.GetValue("simple.geom.path","EVE/resources/geometry/run2/")),
-                         Form("%s/../src/%s",gSystem->Getenv("ALICE_ROOT"),settings.GetValue("simple.geom.path","EVE/resources/geometry/run2/")));
+    string geomPath = settings.GetValue("simple.geom.path","${ALICE_ROOT}/EVE/resources/geometry/run2/");
+    string alirootBasePath = gSystem->Getenv("ALICE_ROOT");
+    size_t alirootPos = geomPath.find("${ALICE_ROOT}");
     
+    if(alirootPos != string::npos){
+        geomPath.replace(alirootPos,alirootPos+13,alirootBasePath);
+    }
+    
+    TSystemDirectory dir(geomPath.c_str(),geomPath.c_str());
     TList *files = dir.GetListOfFiles();
     
     if (files)
     {
-        TRegexp e("simple_geom_[A-Z][A-Z][A-Z].root");
-        TRegexp e2("[A-Z][A-Z][A-Z]");
+        TRegexp e("simple_geom_[A-Z,0-9][A-Z,0-9][A-Z,0-9].root");
+        TRegexp e2("[A-Z,0-9][A-Z,0-9][A-Z,0-9]");
         
         TSystemFile *file;
         TString fname;
