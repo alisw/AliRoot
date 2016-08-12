@@ -80,8 +80,10 @@ AliEveFMDLoader* AliEveFMDLoader::Instance()
 {
   // Get the singleton instance.  If the instance has not been
   // instantised yet, it will be after this call.
-  if (!fgInstance) 
+  if (!fgInstance) {
+    gStyle->SetPalette(1);    
     fgInstance = new AliEveFMDLoader();
+  }
   return fgInstance;
 }
 
@@ -91,7 +93,7 @@ AliEveFMDLoader::AliEveFMDLoader(const char* name, Bool_t useBoxes,
   : TEveElementList(name, 0), 
     fHitPalette(0, 1000),
     fDigitPalette(0, 1023), 
-    fMultPalette(0, 20),
+    fMultPalette(0, 100),
     fUseBoxDigits(useBoxes), 
     fHitCache("AliFMDHit",0),
     fDigitCache("AliFMDDigit", 0),
@@ -107,10 +109,12 @@ AliEveFMDLoader::AliEveFMDLoader(const char* name, Bool_t useBoxes,
   IncDenyDestroy();
   
   // Increase reference counts on palettes 
-  fHitPalette.IncRefCount();
+  fHitPalette  .IncRefCount();
   fDigitPalette.IncRefCount();
-  fMultPalette.IncRefCount();
-  
+  fMultPalette .IncRefCount();
+  fHitPalette  .SetupColorArray();
+  fDigitPalette.SetupColorArray();
+  fMultPalette .SetupColorArray();
   
   // Initialize the FMD geometry manager 
   TGeoManager* geoMan  = AliEveEventManager::Instance()->AssertGeometry();
@@ -128,12 +132,16 @@ AliEveFMDLoader::AliEveFMDLoader(const char* name, Bool_t useBoxes,
   pars->Init(kFALSE, 0);
 
   // Get shapes
-  TGeoShape* inner = static_cast<TGeoShape*>(gGeoManager->GetListOfShapes()
-					     ->FindObject("FMDI_physical_sensor"));
-  if (!inner) throw TEveException("Shape of inner type sensors not found");
-  TGeoShape* outer = static_cast<TGeoShape*>(gGeoManager->GetListOfShapes()
-					     ->FindObject("FMDO_physical_sensor"));
-  if (!outer) throw TEveException("Shape of outer type sensors not found");
+  TGeoShape* inner =
+    static_cast<TGeoShape*>(gGeoManager->GetListOfShapes()
+			    ->FindObject("FMDI_physical_sensor"));
+  if (!inner)
+    throw TEveException("Shape of inner type sensors not found");
+  TGeoShape* outer =
+    static_cast<TGeoShape*>(gGeoManager->GetListOfShapes()
+			    ->FindObject("FMDO_physical_sensor"));
+  if (!outer)
+    throw TEveException("Shape of outer type sensors not found");
 
   // Emulate reference counting 
   inner->SetUniqueID(1000);
@@ -143,8 +151,8 @@ AliEveFMDLoader::AliEveFMDLoader(const char* name, Bool_t useBoxes,
   for (UShort_t d = 1; d <= 3; d++) { 
     AliFMDDetector*  detector = geom->GetDetector(d);
     if (!detector) continue;
-    TEveElementList* ed       = new TEveElementList(Form(kDetector, 
-							 detector->GetId()));
+    TString nd; nd.Form(kDetector, detector->GetId());
+    TEveElementList* ed       = new TEveElementList(nd);
     AddElement(ed);
     ed->IncDenyDestroy();
     ed->SetUserData(detector);
@@ -156,9 +164,8 @@ AliEveFMDLoader::AliEveFMDLoader(const char* name, Bool_t useBoxes,
       AliFMDRing* ring = detector->GetRing(*pr);
       pr++;
       if (!ring) continue;
-      TEveElementList* er      = new TEveElementList(Form(kRing, 
-							  detector->GetId(),
-							  ring->GetId()));
+      TString nr; nr.Form(kRing, detector->GetId(), ring->GetId());
+      TEveElementList* er      = new TEveElementList(nr);
       ed->AddElement(er);
       er->IncDenyDestroy();
       er->SetUserData(ring);
@@ -167,11 +174,10 @@ AliEveFMDLoader::AliEveFMDLoader(const char* name, Bool_t useBoxes,
       // UShort_t      nstr    = ring->GetNStrips();
       UShort_t         nmod    = ring->GetNModules();
       // Loop over modules 
-      for (UShort_t m = 0; m < nmod; m++) { 
-	TEveGeoShape* em = new TEveGeoShape(Form(kModule, 
-						 detector->GetId(),
-						 ring->GetId(), 
-						 2*m, 2*m+1));
+      for (UShort_t m = 0; m < nmod; m++) {
+	TString nm; nm.Form(kModule, detector->GetId(),ring->GetId(), 
+			    2*m, 2*m+1);
+	TEveGeoShape* em = new TEveGeoShape(nm);
 	er->AddElement(em);
 	em->SetTransMatrix(*(detector->FindTransform(ring->GetId(), 2*m)));
 	em->SetShape(ring->GetId() == 'I' ? inner : outer);
@@ -180,6 +186,7 @@ AliEveFMDLoader::AliEveFMDLoader(const char* name, Bool_t useBoxes,
 	em->IncDenyDestroy();
 	ModuleData* data = new ModuleData;
 	data->fScaledSum = 0;
+	data->fMaxStr    = 2*(*pr == 'I' ? 512 : 256);
 	em->SetUserData(data);
 
 #if 0
@@ -215,7 +222,7 @@ AliEveFMDLoader::RemoveFromListTrees(TEveElement* el)
   // @param el Tree to remove from.
 
   // Since we're most likely setting up for a new event, we clear all
-  // signals here - a little tricky, but it works(tm). 
+  // signals here - a little tricky, but it works(tm).
   ClearDigitSets("All");
   
   // Do normal TEveElement::RemoveElement
@@ -245,7 +252,7 @@ AliEveFMDLoader::MakeDigitSet(const char* name, UShort_t nstr)
   // Return 
   //    newly allocated digit set
   TEveDigitSet* ret = 0;
-  if (fUseBoxDigits) { 
+  if (fUseBoxDigits) {
     TEveBoxSet* boxes = new TEveBoxSet(name);
     // boxes->Reset(TEveBoxSet::kBT_AABox, kFALSE, nstr);
     boxes->Reset(TEveBoxSet::kBT_FreeBox, kFALSE, nstr);
@@ -273,27 +280,40 @@ AliEveFMDLoader::ClearDigitSets(const char* type)
   //     - Raw    Raw 
   //     - ESD    ESD 
   TString stype(type);
-
-  for (TEveElement::List_i di = BeginChildren(); 
-       di != EndChildren(); ++di) { 
-    for (TEveElement::List_i ri = (*di)->BeginChildren(); 
-	 ri != (*di)->EndChildren(); ++ri) { 
-      for (TEveElement::List_i mi = (*ri)->BeginChildren();
-	   mi != (*ri)->EndChildren(); ++mi) { 
-	ModuleData* data = static_cast<ModuleData*>((*mi)->GetUserData());
+  
+  for (TEveElement::List_ci di = BeginChildren(); 
+       di != EndChildren(); ++di) {
+    TEveElement* dl = (*di);
+    for (TEveElement::List_ci ri = dl->BeginChildren();
+	 ri != dl->EndChildren(); ++ri) { 
+      TEveElement* rl = (*ri);
+      for (TEveElement::List_ci mi = rl->BeginChildren();
+	   mi != rl->EndChildren(); ++mi) {
+	TEveElement* ml   = *mi;
+	ModuleData*  data = static_cast<ModuleData*>(ml->GetUserData());
 	data->fScaledSum = 0;
-	(*mi)->SetMainColor(Color_t(kGray));
+	ml  ->SetMainColor(Color_t(kGray));
 	if (stype == "All") {
-	  (*mi)->RemoveElements();
+	  ml->RemoveElements();
 	  continue;
 	}
-	for (TEveElement::List_i si = (*mi)->BeginChildren(); 
-	     si != (*mi)->EndChildren(); ++si) { 
-	  TEveDigitSet* signals = static_cast<TEveDigitSet*>((*si));
+	Int_t nChild = ml->NumChildren();
+	Int_t iChild = 0;
+	TEveElement::List_t toRemove;
+	for (TEveElement::List_ci si = ml->BeginChildren(); 
+	     si != ml->EndChildren(); ++si, ++iChild) {
+	  TEveElement*  here    = *si;
+	  TEveDigitSet* signals = static_cast<TEveDigitSet*>(here);	  
 	  if (!signals) continue;
 	  TString s(signals->GetName());
-	  if (!s.Contains(type)) continue;
-	  (*mi)->RemoveElement(signals);
+	  if (!s.Contains(type)) continue;	  
+	  // Printf("Removing %s", s.Data());
+	  toRemove.push_back(signals);
+	}
+	for (TEveElement::List_ci si = toRemove.begin(); si != toRemove.end();
+	     ++si) {
+	  TEveElement* here    = *si;	  
+	  ml->RemoveElement(here);
 	}
       }
     }
@@ -325,7 +345,8 @@ AliEveFMDLoader::FindDigitSet(const char* t, UShort_t d, Char_t r, UShort_t s)
   }
   
   Int_t mod = 2*(s/2);
-  TEveElement* module = ring->FindChild(Form(kModule, d, r, mod, mod+1));
+  TString nm; nm.Form(kModule, d, r, mod, mod+1);
+  TEveElement* module = ring->FindChild(nm);
   if (!module) { 
     AliError(Form("Module %s not found", Form(kModule, d, r, s, s+1)));
     return 0;
@@ -335,7 +356,8 @@ AliEveFMDLoader::FindDigitSet(const char* t, UShort_t d, Char_t r, UShort_t s)
   TEveDigitSet* signal = static_cast<TEveDigitSet*>(sector);
   if (!sector) { 
     AliFMDRing* rng = AliFMDGeometry::Instance()->GetRing(r);
-    signal = MakeDigitSet(Form(kSector, d, r, s, t), rng->GetNStrips());
+    TString sn; sn.Form(kSector, d, r, s, t);
+    signal = MakeDigitSet(sn, rng->GetNStrips());
     module->AddElement(signal);
     signal->SetEmitSignals(kFALSE);
     signal->SetPickable(kTRUE);
@@ -412,14 +434,14 @@ AliEveFMDLoader::AddSignal(const char* t,
   Float_t  scaled = TMath::Min((signal - min) / (max - min) * 10., 10.);
   if ((scaled - min) < 1e-6) { 
     // Very small (scalled) signals are ignored 
-    AliDebug(10, Form("Skipping small %s signal at FMD%d%c[%02d,%03d]=%f (s-min=%f<1e-6)", 
-		      t, det, rng, sec, str, signal, scaled-min));
+    AliDebugF(10,"Skipping small %s signal at FMD%d%c[%02d,%03d]=%f "
+	      "(s-min=%f<1e-6)", t, det, rng, sec, str, signal, scaled-min);
     return;
   }
   Double_t w      = 2*ring->GetPitch();
-  Int_t    value  = int(TMath::Nint(signal));
-  AliDebug(5, Form("New %s signal at FMD%d%c[%02d,%03d]=%f (v=%d, s=%f)", 
-		   t, det, rng, sec, str, signal, value, scaled));
+  Int_t    value  = int(signal+.5); // TMath::Nint(signal));
+  AliDebugF(5, "New %s signal at FMD%d%c[%02d,%03d]=%f (v=%d, s=%f)", 
+	    t, det, rng, sec, str, signal, value, scaled);
   AddDigit(signals, x, y, z, w, scaled, value, ref);
 }
 
@@ -440,19 +462,20 @@ AliEveFMDLoader::AddDigit(TEveDigitSet* signals,
   // @param scaled Scaled value 
   // @param value  Signal value 
   // @param ref    Reference object
+  TEveDigitSet* set = 0;
   if (fUseBoxDigits) { 
     TEveBoxSet* boxes = static_cast<TEveBoxSet*>(signals);
-    Float_t fw   = w;
-    Float_t zc   = (z > 0 ? -1 : 1) * scaled + z;
-    Float_t vs[] = { -fw, -5*fw, zc-scaled,   // Lower back  left
-		     +fw, -5*fw, zc-scaled,   // Lower back  right
-		     +fw, +5*fw, zc-scaled,   // Lower front right
-		     -fw, +5*fw, zc-scaled,   // Lower front left 
-		     -fw, -5*fw, zc+scaled,   // Upper back  left
-		     +fw, -5*fw, zc+scaled,   // Upper back  right
-		     +fw, +5*fw, zc+scaled,   // Upper front right
-		     -fw, +5*fw, zc+scaled }; // Upper front left
-    Float_t ang  = TMath::ATan2(y,x);
+    Float_t fw        = w;
+    Float_t zc        = (z > 0 ? -1 : 1) * scaled + z;
+    Float_t vs[]      = { -fw, -5*fw, zc-scaled,   // Lower back  left
+			  +fw, -5*fw, zc-scaled,   // Lower back  right
+			  +fw, +5*fw, zc-scaled,   // Lower front right
+			  -fw, +5*fw, zc-scaled,   // Lower front left 
+			  -fw, -5*fw, zc+scaled,   // Upper back  left
+			  +fw, -5*fw, zc+scaled,   // Upper back  right
+			  +fw, +5*fw, zc+scaled,   // Upper front right
+			  -fw, +5*fw, zc+scaled }; // Upper front left
+    Float_t ang       = TMath::ATan2(y,x);
     for (size_t i = 0; i < 8; i++) { 
       Float_t bx = vs[3*i+0];
       Float_t by = vs[3*i+1];
@@ -463,27 +486,32 @@ AliEveFMDLoader::AddDigit(TEveDigitSet* signals,
     }
     // boxes->AddBox(x, y, (z > 0 ? -scaled : 0) + z , 5*w, w, scaled);
     boxes->AddBox(vs);
-    boxes->DigitValue(value);
-    if (ref) boxes->DigitId(ref);
+    set = boxes;
   }
   else { 
     TEveQuadSet* quads = static_cast<TEveQuadSet*>(signals);
     quads->AddQuad(x,y,z,w,w);
-    quads->QuadValue(value);
-    if (ref) quads->QuadId(ref);
+    set = quads;
   }
+  set->DigitValue(value);
+  if (ref) set->DigitId(ref);
+  
   TEveElement* par  = *(signals->BeginParents());
   ModuleData*  data = static_cast<ModuleData*>(par->GetUserData());
-  int          maxD = 0;
+#if 0
+  int          maxD = 0;  
   switch (signals->GetName()[4]) { 
   case 'I': case 'i': maxD = 2 * 512; break;
   case 'O': case 'o': maxD = 2 * 256; break;
   default:  return;
   }
   data->fScaledSum += scaled / maxD;
+#else
+  data->fScaledSum += scaled;
+#endif 
 }
 //____________________________________________________________________
-void
+Float_t
 AliEveFMDLoader::SummarizeModule(TEveElement* module)
 {
   // Modify color of module according to the summed signal
@@ -492,9 +520,9 @@ AliEveFMDLoader::SummarizeModule(TEveElement* module)
   if (sum <= 1e-6) {
     module->SetMainColor(Color_t(kGray));
     module->SetMainAlpha(0);
-    return;
+    return 0;
   }
-
+  Float_t      scaled = sum / data->fMaxStr;
 
   /* The sum stored is 
    * 
@@ -520,11 +548,14 @@ AliEveFMDLoader::SummarizeModule(TEveElement* module)
    */
   int min  = fMultPalette.GetMinVal();
   int max  = fMultPalette.GetMaxVal();
-  int cidx = int(sum/10 * (max-min) + min);
+  int cidx = int(scaled/10 * (max-min) + min);
   UChar_t pix[3];
   fMultPalette.ColorFromValue(cidx, pix, false);
   module->SetMainColorRGB(pix[0], pix[1], pix[2]);
   module->SetMainAlpha(0.33);
+  TEveElementList* ml = dynamic_cast<TEveElementList*>(module);  
+  Printf("Module %s sum=%f", (ml ? ml->GetName() : "?"), sum);
+  return sum;
 }
 
 //____________________________________________________________________
@@ -533,7 +564,7 @@ AliEveFMDLoader::SummarizeModules()
 {
   // Summarize the signals in the all the modules, and modify 
   // the module colour accordingly 
-  
+  Float_t total = 0;
   for (TEveElement::List_i di = BeginChildren(); 
        di != EndChildren(); ++di) { 
     for (TEveElement::List_i ri = (*di)->BeginChildren(); 
@@ -542,10 +573,11 @@ AliEveFMDLoader::SummarizeModules()
 	   mi != (*ri)->EndChildren(); ++mi) { 
 
 	TEveElement* module = *mi;
-	SummarizeModule(module);
+	total += SummarizeModule(module);
       }
     }
   }
+  Printf("FMD total scaled: %f", total);
 }
 //____________________________________________________________________
 void
@@ -568,7 +600,7 @@ AliEveFMDLoader::LoadHits()
 
   AliRunLoader* rl =  AliEveEventManager::AssertRunLoader();
   if (!rl) { 
-    AliError("No run loader");
+    AliWarning("No run loader");
     return;
   }
   
@@ -597,7 +629,6 @@ AliEveFMDLoader::LoadHits()
     for (Int_t j = 0; j < nHit; j++) {
       AliFMDHit* hit = static_cast<AliFMDHit*>(hits->At(j));
       if (!hit) continue;
-  
       AddSignal(kHits, 
 		hit->Detector(), hit->Ring(), hit->Sector(), hit->Strip(),
 		hit->X(), hit->Y(), hit->Z(), int(hit->Edep()*1000), 
@@ -637,7 +668,7 @@ AliEveFMDLoader::LoadDigits()
 
   AliRunLoader* rl =  AliEveEventManager::AssertRunLoader();
   if (!rl) { 
-    AliError("No run-loader");
+    AliWarning("No run-loader");
     return;
   }
   
@@ -670,7 +701,7 @@ AliEveFMDLoader::LoadRaw()
 
   AliRawReader* rr =  AliEveEventManager::AssertRawReader();
   if (!rr) { 
-    AliError("No raw-reader");
+    AliWarning("No raw-reader");
     return;
   }
   rr->Reset();
@@ -693,7 +724,7 @@ AliEveFMDLoader::LoadESD()
 
   AliESDEvent* esd =  AliEveEventManager::Instance()->AssertESD();
   if (!esd) { 
-    AliError("No ESD");
+    AliWarning("No ESD");
     return;
   }
 
@@ -717,24 +748,64 @@ AliEveFMDLoader::LoadESD()
 	  if (mult == AliESDFMD::kInvalidMult) continue;
 	  Float_t eta  = fmd->Eta(det,*rng,sec,str);
 	  
-        // As it was before, it causes big memory leak:
-//        AddSignal(kESD, det, *rng, sec, str, mult, min, max,
-//                  new TNamed(Form("FMD%d%c[%02d,%03d]", det, *rng, sec, str),
-//                             Form("Mch=%f, eta=%f", mult, eta)));
+	  // As it was before, it causes big memory leak:
+	  //  AddSignal(kESD, det, *rng, sec, str, mult, min, max,
+	  //             new TNamed(Form("FMD%d%c[%02d,%03d]",
+	  //                             det, *rng, sec, str),
+	  //                        Form("Mch=%f, eta=%f", mult, eta)));
                 
-        // I propose to replace it with:
-        TNamed *tmpNamed = new TNamed(Form("FMD%d%c[%02d,%03d]", det, *rng, sec, str),Form("Mch=%f, eta=%f", mult, eta));
-        AddSignal(kESD, det, *rng, sec, str, mult, min, max,tmpNamed);
-        if(tmpNamed)delete tmpNamed;
-        //
-        
+	  // I propose to replace it with:
+	  TNamed* id =
+	    new TNamed(Form("FMD%d%c[%02d,%03d]", det, *rng, sec, str),
+		       Form("Mch=%f, eta=%f", mult, eta));
+	  AddSignal(kESD, det, *rng, sec, str, 10*mult, min, max,id);
+	  // The digit set owns the IDs, so we cannot delete the
+	  // temporary object here.
+	  //  if (tmpNamed) delete tmpNamed;
+	  
 	}
       }
     }
   }
   CheckAdd();
 }
-  
+
+namespace {
+  /**
+   * A guard to inhibit redrawing.  On construction redrawing is
+   * disable.  On destruction, redrawing is (re-)enabled.  If the
+   * caller sets fRedraw to false, then the manager will not be asked
+   * to do a redraw.
+   */
+  struct RedrawGuard
+  {
+    Bool_t fRedraw;
+    RedrawGuard()
+      : fRedraw(true)
+    {
+      AliEveEventManager::Instance()->DisableRedraw();
+    }
+    ~RedrawGuard()
+    {
+      if (fRedraw) AliEveEventManager::Instance()->Redraw3D();
+      AliEveEventManager::Instance()->EnableRedraw();
+    }
+  };
+}
+
+//____________________________________________________________________
+void AliEveFMDLoader::Visualize(UShort_t type)
+{
+  RedrawGuard g;
+  switch (type) {
+  case AliEveEventManager::kRaw:  LoadRaw();  break;
+  case AliEveEventManager::kHits: LoadHits(); break;
+  case AliEveEventManager::kESD:  LoadESD();  break;
+  default: g.fRedraw = false; break;
+  }
+}
+
+
 //____________________________________________________________________
 //
 // EOF
