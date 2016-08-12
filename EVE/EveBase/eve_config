@@ -1,3 +1,4 @@
+# -*- conf-colon -*- 
 #===============================================================#
 #           This is Event Display config file.                  #
 #                                                               #
@@ -10,6 +11,8 @@ trigger.class.filter:                   none
 HLTESDtree.show:                        0
 MUON.show:                              1
 EMCal.show:                             1
+AD.show:                                1
+FMD.show:                               1
 axes.show:                              1
 fullscreen.mode:                        0
 
@@ -76,7 +79,7 @@ T00.draw:                               0
 FIT.draw:                               1
 AD0.draw:                               1
 ITS.draw:                               0
-
+FMD.draw:                               1
 
 PHS.color:                              53
 TPC.color:                              3
@@ -93,7 +96,7 @@ MFT.color:                              920
 T00.color:                              2
 FIT.color:                              2
 AD0.color:                              5
-
+FMD.color:                              906
 
 PHS.trans:                              70
 TPC.trans:                              60
@@ -110,7 +113,7 @@ MFT.trans:                              80
 T00.trans:                              70
 FIT.trans:                              40
 AD0.trans:                              40
-
+FMD.trans:                              50
 
 MCH.line.color:                         920
 TPC.line.color:                         1
@@ -126,7 +129,7 @@ MFT.line.color:                         0
 T00.line.color:                         1
 FIT.line.color:                         1
 AD0.line.color:                         1
-
+FMD.line.color:                         907
 
 clusters.show:                          0
 kinks.show:                             0
@@ -151,11 +154,15 @@ AD0.maxCharge.Raw:                      1023
 AD0.maxCharge.ESD:                      300
 AD0.showLegend:                         0
 
+FMD.raw:                                1
+FMD.hits:                               1
+FMD.esd:                                1
+
 events.autoload.set:                    0
 save.on.autoload:                       0
 ALICE_LIVE.send:                        0
 
-OCDB.default.path:                      local://$(ALICE_ROOT)/../src/OCDB/
+OCDB.default.path:                      local://$(ALICE_ROOT)/OCDB/
 
 logbook.host:                           logbook_host
 logbook.port:                           0000
@@ -163,11 +170,15 @@ logbook.db:                             logbook_db
 logbook.user:                           logbook_user
 logbook.pass:                           logbook_pass
 
-screenshot.logo.draw                    1
-screenshot.info.draw                    1
-screenshot.projections.draw             1
-screenshot.force.energy                 Energy: 13 TeV
-screenshot.force.system                 System: Pb-Pb
+screenshot.logo.draw:                   1
+screenshot.info.draw:                   1
+screenshot.projections.draw:            1
+screenshot.force.energy:                Energy: 13 TeV
+screenshot.force.system:                System: Pb-Pb
 
 HLT.ZMQ.proxy:                          tcp://localhost:60201
-offline.base.path                       /home/user_name/events/
+offline.base.path:                      /home/user_name/events/
+
+#
+# EOF
+#
