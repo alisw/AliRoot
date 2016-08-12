@@ -46,6 +46,14 @@ public:
   virtual void LoadRaw();
   /** Load and display ESD */
   virtual void LoadESD();
+  /** 
+   * Master function to visualize data.  This will be called directly
+   * from the relevant macros.  The argument @a type should be
+   * convertable to a AliEveEventManager::EDataType
+   * 
+   * @param type Type of data to visualize 
+   */
+  void Visualize(UShort_t type);
   /** @} */
 
   /** @{ 
@@ -74,6 +82,7 @@ protected:
   struct ModuleData 
   {
     Float_t  fScaledSum;
+    Int_t    fMaxStr;
   };
   /** Constructor 
       @param name     Name of the folder. 
@@ -172,7 +181,7 @@ protected:
       @name Various service functions */
   /** check if we shoul re-add ourselves to the current event node */
   virtual void CheckAdd();
-  void SummarizeModule(TEveElement* module);
+  Float_t SummarizeModule(TEveElement* module);
   void SummarizeModules();
   /** @} */
 
