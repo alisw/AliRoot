@@ -16,6 +16,8 @@
 
 class TFile;
 
+using namespace AliZMQhelpers;
+
 class AliHLTZMQsource : public AliHLTComponent, public AliOptionParser  {
   public:
     AliHLTZMQsource();

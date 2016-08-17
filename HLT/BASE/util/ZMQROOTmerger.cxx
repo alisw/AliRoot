@@ -35,6 +35,8 @@
 //zmq payloads, maybe a AliZMQmessage class which would by default be multipart and provide
 //easy access to payloads based on topic or so (a la HLT GetFirstInputObject() etc...)
 
+using namespace AliZMQhelpers;
+
 //methods
 Int_t ProcessOptionString(TString arguments);
 Int_t InitZMQ();

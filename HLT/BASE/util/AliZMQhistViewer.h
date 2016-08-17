@@ -27,6 +27,8 @@ class TPRegexp;
 class TCollection;
 class AliAnalysisDataContainer;
 
+using namespace AliZMQhelpers;
+
 struct ZMQviewerObject {
   TObject* object;
   TObject* previous;

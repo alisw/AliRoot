@@ -46,6 +46,7 @@
 #include "AliGRPManager.h"
 
 using namespace std;
+using namespace AliZMQhelpers;
 
 //configuration vars
 Bool_t  fVerbose = kFALSE;

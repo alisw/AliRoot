@@ -19,18 +19,20 @@
 #include "TStreamerInfo.h"
 #include "TClass.h"
 
+using namespace AliZMQhelpers;
+
 //init the shared context to null
 void* AliZMQhelpers::gZMQcontext = NULL;
 
 //_______________________________________________________________________________________
-void* alizmq_context()
+void* AliZMQhelpers::alizmq_context()
 {
   if (!AliZMQhelpers::gZMQcontext) AliZMQhelpers::gZMQcontext=zmq_ctx_new();
   return AliZMQhelpers::gZMQcontext;
 }
 
 //_______________________________________________________________________________________
-int alizmq_detach (void *self, const char *endpoints, bool serverish)
+int AliZMQhelpers::alizmq_detach (void *self, const char *endpoints, bool serverish)
 {
     assert (self);
     if (!endpoints)
@@ -73,7 +75,7 @@ int alizmq_detach (void *self, const char *endpoints, bool serverish)
 }
 
 //_______________________________________________________________________________________
-int alizmq_attach (void *self, const char *endpoints, bool serverish)
+int AliZMQhelpers::alizmq_attach (void *self, const char *endpoints, bool serverish)
 {
     assert (self);
     if (!endpoints)
@@ -115,7 +117,7 @@ int alizmq_attach (void *self, const char *endpoints, bool serverish)
 }
 
 //_______________________________________________________________________________________
-int alizmq_socket_state(void* socket)
+int AliZMQhelpers::alizmq_socket_state(void* socket)
 {
   int events=0;
   size_t len = sizeof(events);
@@ -124,7 +126,7 @@ int alizmq_socket_state(void* socket)
 }
 
 //_______________________________________________________________________________________
-int alizmq_socket_type(void* socket)
+int AliZMQhelpers::alizmq_socket_type(void* socket)
 {
   //get the type of the socket
   int type=-1;
@@ -136,7 +138,7 @@ int alizmq_socket_type(void* socket)
 }
 
 //_______________________________________________________________________________________
-int alizmq_socket_type(std::string config)
+int AliZMQhelpers::alizmq_socket_type(std::string config)
 {
   if (config.compare(0,3,"PUB")==0) return ZMQ_PUB;
   else if (config.compare(0,3,"SUB")==0) return ZMQ_SUB;
@@ -156,7 +158,7 @@ int alizmq_socket_type(std::string config)
 }
 
 //_______________________________________________________________________________________
-const char* alizmq_socket_name(int socketType)
+const char* AliZMQhelpers::alizmq_socket_name(int socketType)
 {
   switch (socketType)
   {
@@ -177,7 +179,7 @@ const char* alizmq_socket_name(int socketType)
 }
 
 //_______________________________________________________________________________________
-int alizmq_socket_close(void*& socket, int linger)
+int AliZMQhelpers::alizmq_socket_close(void*& socket, int linger)
 {
   zmq_setsockopt(socket, ZMQ_LINGER, &linger, sizeof(linger));
   int rc = zmq_close(socket);
@@ -186,7 +188,7 @@ int alizmq_socket_close(void*& socket, int linger)
 }
 
 //_______________________________________________________________________________________
-int alizmq_socket_init(void*& socket, void* context, std::string config, int timeout, int highWaterMark)
+int AliZMQhelpers::alizmq_socket_init(void*& socket, void* context, std::string config, int timeout, int highWaterMark)
 {
   int rc = 0;
   int zmqSocketMode = 0;
@@ -278,7 +280,7 @@ int alizmq_socket_init(void*& socket, void* context, std::string config, int tim
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_add(aliZMQmsg* message, const std::string& topic, const std::string& data)
+int AliZMQhelpers::alizmq_msg_add(aliZMQmsg* message, const std::string& topic, const std::string& data)
 {
   //add a frame to the mesage
   int rc = 0;
@@ -311,7 +313,7 @@ int alizmq_msg_add(aliZMQmsg* message, const std::string& topic, const std::stri
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, void* data, int size)
+int AliZMQhelpers::alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, void* data, int size)
 {
   //add a frame to the mesage
   int rc = 0;
@@ -344,7 +346,7 @@ int alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, void* data,
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, const std::string& data)
+int AliZMQhelpers::alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, const std::string& data)
 {
   //add a frame to the mesage
   int rc = 0;
@@ -377,7 +379,7 @@ int alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, const std::
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, TObject* object,
+int AliZMQhelpers::alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, TObject* object,
                    int compression, aliZMQrootStreamerInfo* streamers)
 {
   //add a frame to the mesage
@@ -422,7 +424,7 @@ int alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, TObject* ob
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_send(aliZMQmsg* message, void* socket, int flagsUser)
+int AliZMQhelpers::alizmq_msg_send(aliZMQmsg* message, void* socket, int flagsUser)
 {
   int nBytes=0;
   int rc = 0;
@@ -447,7 +449,7 @@ int alizmq_msg_send(aliZMQmsg* message, void* socket, int flagsUser)
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_send(std::string topic, std::string data, void* socket, int flags)
+int AliZMQhelpers::alizmq_msg_send(std::string topic, std::string data, void* socket, int flags)
 {
   int rc = 0;
   zmq_msg_t topicMsg;
@@ -475,7 +477,7 @@ int alizmq_msg_send(std::string topic, std::string data, void* socket, int flags
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_prepend_streamer_infos(aliZMQmsg* message, aliZMQrootStreamerInfo* streamers)
+int AliZMQhelpers::alizmq_msg_prepend_streamer_infos(aliZMQmsg* message, aliZMQrootStreamerInfo* streamers)
 {
   //prepend the streamer info to the message as first block.
   int rc = 0;
@@ -513,7 +515,7 @@ int alizmq_msg_prepend_streamer_infos(aliZMQmsg* message, aliZMQrootStreamerInfo
 }
 
 //_______________________________________________________________________________________
-void alizmq_update_streamerlist(aliZMQrootStreamerInfo* streamers, const TObjArray* newStreamers)
+void AliZMQhelpers::alizmq_update_streamerlist(aliZMQrootStreamerInfo* streamers, const TObjArray* newStreamers)
 {
   //update the list of streamers used
   if (!streamers) return;
@@ -541,7 +543,7 @@ void alizmq_update_streamerlist(aliZMQrootStreamerInfo* streamers, const TObjArr
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_iter_init_streamer_infos(aliZMQmsg::iterator it)
+int AliZMQhelpers::alizmq_msg_iter_init_streamer_infos(aliZMQmsg::iterator it)
 {
   int rc = 0;
   TObject* obj = NULL;
@@ -598,7 +600,7 @@ int alizmq_msg_iter_init_streamer_infos(aliZMQmsg::iterator it)
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_send(const AliHLTDataTopic& topic, TObject* object, void* socket, int flags, 
+int AliZMQhelpers::alizmq_msg_send(const AliHLTDataTopic& topic, TObject* object, void* socket, int flags, 
                     int compression, aliZMQrootStreamerInfo* streamers)
 {
   int rc = 0;
@@ -633,7 +635,7 @@ int alizmq_msg_send(const AliHLTDataTopic& topic, TObject* object, void* socket,
 }
 
 //______________________________________________________________________________
-int alizmq_msg_send(const AliHLTDataTopic& topic, const std::string& data, void* socket, int flags)
+int AliZMQhelpers::alizmq_msg_send(const AliHLTDataTopic& topic, const std::string& data, void* socket, int flags)
 {
   int rc = 0;
   rc = zmq_send( socket, &topic, sizeof(topic), ZMQ_SNDMORE );
@@ -657,7 +659,7 @@ int alizmq_msg_send(const AliHLTDataTopic& topic, const std::string& data, void*
 }
 
 //______________________________________________________________________________
-void alizmq_deleteTObject(void*, void* object)
+void AliZMQhelpers::alizmq_deleteTObject(void*, void* object)
 {
   //delete the TBuffer, for use in zmq_msg_init_data(...) only.
   //printf("deleteObject called! ZMQ just sent and destroyed the message!\n");
@@ -666,7 +668,7 @@ void alizmq_deleteTObject(void*, void* object)
 }
 
 //______________________________________________________________________________
-void alizmq_deleteTopic(void*, void* object)
+void AliZMQhelpers::alizmq_deleteTopic(void*, void* object)
 {
   //delete the TBuffer, for use in zmq_msg_init_data(...) only.
   //printf("deleteObject called! ZMQ just sent and destroyed the message!\n");
@@ -676,7 +678,7 @@ void alizmq_deleteTopic(void*, void* object)
 
 
 //_______________________________________________________________________________________
-int alizmq_msg_close(aliZMQmsg* message)
+int AliZMQhelpers::alizmq_msg_close(aliZMQmsg* message)
 {
   int rc = 0;
   for (aliZMQmsg::iterator i=message->begin(); i!=message->end(); ++i)
@@ -691,7 +693,7 @@ int alizmq_msg_close(aliZMQmsg* message)
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_iter_check(aliZMQmsg::iterator it, const AliHLTDataTopic& topic)
+int AliZMQhelpers::alizmq_msg_iter_check(aliZMQmsg::iterator it, const AliHLTDataTopic& topic)
 {
   AliHLTDataTopic actualTopic;
   alizmq_msg_iter_topic(it, actualTopic);
@@ -700,7 +702,7 @@ int alizmq_msg_iter_check(aliZMQmsg::iterator it, const AliHLTDataTopic& topic)
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_iter_check_id(aliZMQmsg::iterator it, const AliHLTDataTopic& topic)
+int AliZMQhelpers::alizmq_msg_iter_check_id(aliZMQmsg::iterator it, const AliHLTDataTopic& topic)
 {
   AliHLTDataTopic actualTopic;
   alizmq_msg_iter_topic(it, actualTopic);
@@ -709,7 +711,7 @@ int alizmq_msg_iter_check_id(aliZMQmsg::iterator it, const AliHLTDataTopic& topi
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_iter_check_id(aliZMQmsg::iterator it, const std::string& topic)
+int AliZMQhelpers::alizmq_msg_iter_check_id(aliZMQmsg::iterator it, const std::string& topic)
 {
   AliHLTDataTopic actualTopic;
   alizmq_msg_iter_topic(it, actualTopic);
@@ -718,7 +720,7 @@ int alizmq_msg_iter_check_id(aliZMQmsg::iterator it, const std::string& topic)
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_iter_topic(aliZMQmsg::iterator it, std::string& topic)
+int AliZMQhelpers::alizmq_msg_iter_topic(aliZMQmsg::iterator it, std::string& topic)
 {
   zmq_msg_t* message = it->first;
   topic.assign((char*)zmq_msg_data(message),zmq_msg_size(message));
@@ -726,7 +728,7 @@ int alizmq_msg_iter_topic(aliZMQmsg::iterator it, std::string& topic)
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_iter_data(aliZMQmsg::iterator it, std::string& data)
+int AliZMQhelpers::alizmq_msg_iter_data(aliZMQmsg::iterator it, std::string& data)
 {
   zmq_msg_t* message = it->second;
   data.assign((char*)zmq_msg_data(message),zmq_msg_size(message));
@@ -734,7 +736,7 @@ int alizmq_msg_iter_data(aliZMQmsg::iterator it, std::string& data)
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_iter_topic(aliZMQmsg::iterator it, AliHLTDataTopic& topic)
+int AliZMQhelpers::alizmq_msg_iter_topic(aliZMQmsg::iterator it, AliHLTDataTopic& topic)
 {
   zmq_msg_t* message = it->first;
   memcpy(&topic, zmq_msg_data(message),std::min(zmq_msg_size(message),sizeof(topic)));
@@ -742,7 +744,7 @@ int alizmq_msg_iter_topic(aliZMQmsg::iterator it, AliHLTDataTopic& topic)
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_iter_data(aliZMQmsg::iterator it, TObject*& object)
+int AliZMQhelpers::alizmq_msg_iter_data(aliZMQmsg::iterator it, TObject*& object)
 {
   zmq_msg_t* message = it->second;
   size_t size = zmq_msg_size(message);
@@ -753,7 +755,7 @@ int alizmq_msg_iter_data(aliZMQmsg::iterator it, TObject*& object)
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_copy(aliZMQmsg* dst, aliZMQmsg* src)
+int AliZMQhelpers::alizmq_msg_copy(aliZMQmsg* dst, aliZMQmsg* src)
 {
   //copy (append) src to dst
   int numberOfMessages=0;
@@ -786,7 +788,7 @@ int alizmq_msg_copy(aliZMQmsg* dst, aliZMQmsg* src)
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_recv(aliZMQmsg* message, void* socket, int flags)
+int AliZMQhelpers::alizmq_msg_recv(aliZMQmsg* message, void* socket, int flags)
 {
   int rc = -1;
   int receiveStatus=0;
@@ -829,7 +831,7 @@ int alizmq_msg_recv(aliZMQmsg* message, void* socket, int flags)
 }
 
 //_______________________________________________________________________________________
-int alizmq_msg_recv(aliZMQmsgStr* message, void* socket, int flags)
+int AliZMQhelpers::alizmq_msg_recv(aliZMQmsgStr* message, void* socket, int flags)
 {
   int rc = -1;
   int receiveStatus=0;
@@ -877,7 +879,7 @@ int alizmq_msg_recv(aliZMQmsgStr* message, void* socket, int flags)
 }
 
 //_______________________________________________________________________________________
-TString AliOptionParser::GetFullArgString(int argc, char** argv)
+TString AliZMQhelpers::AliOptionParser::GetFullArgString(int argc, char** argv)
 {
   TString argString;
   TString argument="";
@@ -893,7 +895,7 @@ TString AliOptionParser::GetFullArgString(int argc, char** argv)
 }
 
 //______________________________________________________________________________
-int AliOptionParser::ProcessOptionString(TString arguments)
+int AliZMQhelpers::AliOptionParser::ProcessOptionString(TString arguments)
 {
   //process passed options, return number of processed valid options
   aliStringVec* options = TokenizeOptionString(arguments);
@@ -914,7 +916,7 @@ int AliOptionParser::ProcessOptionString(TString arguments)
 }
 
 //______________________________________________________________________________
-aliStringVec* AliOptionParser::TokenizeOptionString(const TString strIn)
+aliStringVec* AliZMQhelpers::AliOptionParser::TokenizeOptionString(const TString strIn)
 {
   //options have the form:
   // -option value
@@ -994,9 +996,10 @@ aliStringVec* AliOptionParser::TokenizeOptionString(const TString strIn)
   return options;
 }
 
+//______________________________________________________________________________
 //tokenize a std::string
 using namespace std;
-vector<string> TokenizeString(const string input, const string delimiters)
+vector<string> AliZMQhelpers::TokenizeString(const string input, const string delimiters)
 {
   vector<string> output;
   output.reserve(10);
@@ -1015,9 +1018,10 @@ vector<string> TokenizeString(const string input, const string delimiters)
   return output;
 }
 
+//______________________________________________________________________________
 //tokenize a string delimited by semi-colons and return a map
 //of key value pairs, "KEY=VALUE;key2=value2"
-stringMap ParseParamString(const string paramString)
+stringMap AliZMQhelpers::ParseParamString(const string paramString)
 {
   vector<string> tokens = TokenizeString( paramString, ";");
   stringMap output;
@@ -1037,8 +1041,9 @@ stringMap ParseParamString(const string paramString)
   return output;
 }
 
+//______________________________________________________________________________
 //a much faster version of the param string parser - just gives you one value
-std::string GetParamString(const std::string param, const std::string paramstring)
+std::string AliZMQhelpers::GetParamString(const std::string param, const std::string paramstring)
 {
   size_t start = paramstring.find(param+"=");
   if (start==std::string::npos) return "";
@@ -1047,5 +1052,25 @@ std::string GetParamString(const std::string param, const std::string paramstrin
   size_t end = paramstring.find_first_of(";", start);
   start++;
   return paramstring.substr(start,end-start);
+}
+
+//______________________________________________________________________________
+int AliZMQhelpers::LoadROOTlibs(string libString, bool verbose)
+{
+  //load specified libraries, return number of loaded libs or negative in case of error
+  int nLibs=0;
+  vector<string> libs = TokenizeString(libString, ",");
+  for (vector<string>::iterator i=libs.begin(); i!=libs.end(); ++i)
+  {
+    if (verbose) { printf("...loading %s", i->c_str()); }
+    if (gSystem->Load(i->c_str())<0) {
+      nLibs = -1;
+      if (verbose) { printf(" ERROR!\n"); }
+      break;
+    }
+    if (verbose) { printf(" OK\n"); }
+    nLibs++;
+  }
+  return nLibs;
 }
 

@@ -27,6 +27,8 @@
 #include "signal.h"
 class MySignalHandler;
 
+using namespace AliZMQhelpers;
+
 //this is meant to become a class, hence the structure with global vars etc.
 //Also the code is rather flat - it is a bit of a playground to test ideas.
 //TODO structure this at some point, e.g. introduce a SIMPLE unified way of handling

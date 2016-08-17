@@ -52,6 +52,8 @@ using std::endl;
 #define SYSTEM_ERROR 2
 #define FATAL_ERROR 3
 
+using namespace AliZMQhelpers;
+
 
 /**
  * The signal handler class is used to trap quit and interupt signals from

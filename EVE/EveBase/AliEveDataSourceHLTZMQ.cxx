@@ -27,6 +27,7 @@
 
 
 using namespace std;
+using namespace AliZMQhelpers;
 
 AliEveDataSourceHLTZMQ::AliEveDataSourceHLTZMQ(bool storageManager) :
     AliEveDataSource("HLT"),

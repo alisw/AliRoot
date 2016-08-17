@@ -9,6 +9,8 @@ const char* fUSAGE = "example, needs one argument, e.g. in=PULL@ipc:///tmp/examp
 
 int ProcessOptionString(TString arguments);
 
+using namespace AliZMQhelpers;
+
 //_______________________________________________________________________________________
 int main(int argc, char** argv)
 {
