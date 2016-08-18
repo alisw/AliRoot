@@ -1822,6 +1822,32 @@ void AliESDEvent::WriteToTree(TTree* tree) const {
 }
 
 //______________________________________________________________________________
+void AliESDEvent::AddToTree(TTree* tree)
+{
+    // Use this method to add an event to an existing tree
+
+    TString branchname;
+    TIter next(fESDObjects);
+    TObject *obj = 0;
+
+    while ((obj = next()))
+    {
+        // construct a branch name the same way as in WriteToTree(...)
+        branchname.Form("%s", obj->GetName());
+        if(branchname.CompareTo("AliESDfriend")==0)branchname = "ESDfriend.";
+        if (!obj->InheritsFrom(TClonesArray::Class())){if(!branchname.EndsWith("."))branchname += ".";}
+
+        // set addresses
+        tree->SetBranchAddress(branchname,fESDObjects->GetObjectRef(obj));
+    }
+
+    tree->SetBranchAddress("fDetectorStatus",&fDetectorStatus);
+    tree->SetBranchAddress("fDAQDetectorPattern",&fDAQDetectorPattern);
+    tree->SetBranchAddress("fDAQAttributes",&fDAQAttributes);
+    tree->SetBranchAddress("fNTPCClusters",&fNTPCClusters);
+}
+
+//______________________________________________________________________________
 void AliESDEvent::ReadFromTree(TTree *tree, Option_t* opt){
 //
 // Connect the ESDEvent to a tree
