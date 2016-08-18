@@ -95,7 +95,7 @@ void AliStorageDatabase::InsertEvent(int runNumber,
     TSQLRow *row = nullptr;
     if(res) row = res->Next();
     
-    cout<<"AliStorageDatabse -- insterting:"<<Form("REPLACE INTO %s (run_number,event_number,system,multiplicity,permanent,file_path,trigger_mask,trigger_mask_next) VALUES (%d,%d,'%s',%d,0,'%s',%llu,%llu);",fTable.c_str(),runNumber,eventNumber,system,multiplicity,filePath,triggerMask,triggerMaskNext50)<<endl;
+//    cout<<"AliStorageDatabse -- insterting:"<<Form("REPLACE INTO %s (run_number,event_number,system,multiplicity,permanent,file_path,trigger_mask,trigger_mask_next) VALUES (%d,%d,'%s',%d,0,'%s',%llu,%llu);",fTable.c_str(),runNumber,eventNumber,system,multiplicity,filePath,triggerMask,triggerMaskNext50)<<endl;
     
     if(!row)
     {

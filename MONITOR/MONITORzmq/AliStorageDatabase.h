@@ -27,10 +27,11 @@ public:
     bool UpdateEventPath(struct eventStruct event,const char *newPath);
     void RemoveEvent(struct eventStruct event);
     void RemoveEventsWithPath(std::string path);
-    std::string GetFilePath(struct eventStruct event);
-    struct eventStruct GetOldestEvent();
-    std::vector<serverListStruct> GetList(struct listRequestStruct listStruct);
-    std::vector<int> GetListOfRuns();   // returns list of run numbers stored in the database
+    
+    std::string                     GetFilePath(struct eventStruct event);
+    struct eventStruct              GetOldestEvent();
+    std::vector<serverListStruct>   GetList(struct listRequestStruct listStruct);
+    std::vector<int>                GetListOfRuns();   // returns list of run numbers stored in the database
     
     AliESDEvent* GetEvent(struct eventStruct event);
     AliESDEvent* GetNextEvent(struct eventStruct event);

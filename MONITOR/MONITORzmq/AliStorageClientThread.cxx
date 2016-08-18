@@ -1,5 +1,5 @@
 #include "AliStorageClientThread.h"
-    #include "AliZMQManager.h"
+#include "AliZMQManager.h"
 
 #include <signal.h>
 #include <fstream>
@@ -30,7 +30,7 @@ fRemoveEventsPercentage(0)
     sa.sa_handler = GotSignalClient;
     sigfillset(&sa.sa_mask);
     sigaction(SIGINT,&sa,NULL);
-   
+    
     ifstream configFile (GetConfigFilePath());
     if (configFile.is_open())
     {
@@ -60,7 +60,7 @@ fRemoveEventsPercentage(0)
         if(configFile.eof()){configFile.clear();}
         configFile.close();
     }
-    else{cout<<"CLIENT -- Unable to open config file"<<endl;}
+    else{cout<<"AliStorageClientThread -- Unable to open config file"<<endl;}
     
     //create directory for storage if it doesn't exist
     gSystem->Exec(Form("mkdir -p %s",fStoragePath.c_str()));
@@ -73,7 +73,6 @@ fRemoveEventsPercentage(0)
 AliStorageClientThread::~AliStorageClientThread()
 {
     while(!gClientQuit){sleep(1);}
-    cout<<"\n\nClosing\n\n"<<endl;
     AliZMQManager::GetInstance()->Close();
     if(fDIMListenerThread){delete fDIMListenerThread;}
     fEventsCollectorThread->Kill();
