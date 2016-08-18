@@ -18,6 +18,7 @@ public:
     void Kill();
 private:
     AliStorageClientThread *fManager;
+    int fCurrentRunNumber;
     
     static void* Dispatch(void *arg)
     {
@@ -27,7 +28,6 @@ private:
     void CollectorHandle();
     TThread *fCollectorThread;
     
-    TFile *fCurrentFile;
     AliStorageDatabase *fDatabase;
     void CheckCurrentStorageSize();
     Long64_t GetSizeOfAllChunks();

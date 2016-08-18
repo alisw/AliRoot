@@ -691,7 +691,7 @@ int AliZMQManager::Get(vector<string100>* &result,storageSockets socket)
 /// \return Returns true in case of success, false in case of failure
 int AliZMQManager::Get(AliESDEvent* &result, storageSockets socket)
 {
-    //reveive buffer
+    //receive buffer
     zmq_msg_t buffer;
     if(!zmqInit(&buffer)){return 0;}
     int recvStatus = zmqRecv(&buffer,fSockets[socket],0);
@@ -714,9 +714,7 @@ int AliZMQManager::Get(AliESDEvent* &result, storageSockets socket)
     AliESDEvent* data = (AliESDEvent*)(mess->ReadObjectAny(AliESDEvent::Class()));
     if (data)
     {
-        cout<<"MANAGER -- received valid event"<<endl;
         data->GetStdContent();
-        cout<<"MANAGER -- reading std content:"<<data->GetEventNumberInFile()<<endl;
         zmq_msg_close(&buffer);
         result = data;
         return 1;

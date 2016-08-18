@@ -38,7 +38,7 @@ void AliCommunicationThread::CommunicationHandle()
     struct clientRequestStruct *request;
     struct clientRequestStruct *response = new struct clientRequestStruct;
     
-    cout<<"COMMUNICATION -- Communication stated"<<endl;
+    cout<<"AliCommunicationThread -- Communication stated"<<endl;
     
     // mutex mtx;
     int receiveStatus = false;
@@ -46,7 +46,7 @@ void AliCommunicationThread::CommunicationHandle()
     
     while(1)
     {
-        cout<<"COMMUNICATION -- waiting for requests"<<endl;
+        cout<<"AliCommunicationThread -- waiting for requests"<<endl;
         
         receiveStatus = eventManager->Get(request,socket);
 
@@ -57,7 +57,7 @@ void AliCommunicationThread::CommunicationHandle()
             break;
         }
 
-        cout<<"COMMUNICATION -- received request"<<endl;
+        cout<<"AliCommunicationThread -- received request"<<endl;
         switch(request->messageType)
         {
             case REQUEST_CONNECTION:
@@ -94,7 +94,7 @@ void AliCommunicationThread::CommunicationHandle()
                 sendStatus = eventManager->Send(true,socket);
                 break;
             default:
-                cout<<"COMMUNICATION -- unknown request"<<endl;
+                cout<<"AliCommunicationThread -- unknown request"<<endl;
                 sendStatus = false;
                 break;
         }
@@ -150,6 +150,6 @@ void AliCommunicationThread::SetStorageParams(int maxStorageSize,int maxOccupati
         tmpFile.close();
         rename("tmpFile.bla",GetConfigFilePath());
     }
-    else{cout<<"CLIENT -- Unable to open config file"<<endl;}
+    else{cout<<"AliCommunicationThread -- Unable to open config file"<<endl;}
     TThread::UnLock();
 }

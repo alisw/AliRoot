@@ -46,13 +46,13 @@ fStoragePath("")
     TThread::UnLock();
     
     //start communication on socket
-    cout<<"Starting server's communication"<<endl;
+    cout<<"AliStorageServerThread -- Starting server's communication"<<endl;
     StartCommunication();
 }
 
 AliStorageServerThread::~AliStorageServerThread()
 {
-    cout<<"SERVER -- AliStorageServerThread destructor called";
+    cout<<"AliStorageServerThread -- AliStorageServerThread destructor called";
     if (fDatabase) {delete fDatabase;}
     cout<<" --- OK"<<endl;
 }
@@ -70,7 +70,7 @@ void AliStorageServerThread::StartCommunication()
     
     while(1)
     {
-        cout<<"Server waiting for requests"<<endl;
+        cout<<"AliStorageServerThread -- Server waiting for requests"<<endl;
 
         receiveStatus = eventManager->Get(request,socket);
         
@@ -81,12 +81,12 @@ void AliStorageServerThread::StartCommunication()
             break;
         }
         
-        cout<<"Server received request:"<<request->messageType<<endl;
+        cout<<"AliStorageServerThread -- Server received request:"<<request->messageType<<endl;
         switch(request->messageType)
         {
             case REQUEST_LIST_EVENTS:
             {
-                cout<<"SERVER -- received request for list of events"<<endl;
+                cout<<"AliStorageServerThread -- received request for list of events"<<endl;
                 struct listRequestStruct list;
                 list.runNumber[0] = request->runNumber[0];
                 list.runNumber[1] = request->runNumber[1];
@@ -101,10 +101,10 @@ void AliStorageServerThread::StartCommunication()
                 strcpy(list.triggerClass,request->triggerClass);
                 
                 vector<serverListStruct> result = fDatabase->GetList(list);
-                cout<<"SERVER -- got list from database"<<endl;
+                cout<<"AliStorageServerThread -- got list from database"<<endl;
                 sendStatus = eventManager->Send(result,socket);
                 if(sendStatus){cout<<"SERVER -- list was sent"<<endl;}
-                else{cout<<"SERVER -- couldn't send list"<<endl;}
+                else{cout<<"AliStorageServerThread -- couldn't send list"<<endl;}
                 break;
             }
             case REQUEST_GET_EVENT:
@@ -182,7 +182,7 @@ void AliStorageServerThread::StartCommunication()
             }
             default:
             {
-                cout<<"SERVER -- unknown request message"<<endl;
+                cout<<"AliStorageServerThread -- unknown request message"<<endl;
                 sendStatus = false;
                 break;
             }
@@ -206,7 +206,7 @@ bool AliStorageServerThread::MarkEvent(struct eventStruct event)
     TFile *tmpFile = new TFile(pathToFile.c_str(),"read");
     if(!tmpFile)
     {
-        cout<<"SERVER -- couldn't open temp file"<<endl;
+        cout<<"AliStorageServerThread -- couldn't open temp file"<<endl;
         return false;
     }
     
@@ -215,17 +215,17 @@ bool AliStorageServerThread::MarkEvent(struct eventStruct event)
     AliESDEvent *eventToMark = (AliESDEvent*)gDirectory->Get(Form("event%d",event.eventNumber));
     if(!eventToMark)
     {
-        cout<<"SERVER -- couldn't find such event"<<endl;
+        cout<<"AliStorageServerThread -- couldn't find such event"<<endl;
         if(tmpFile){tmpFile->Close();delete tmpFile;}
         return false;
     }
-    cout<<"SERVER -- Marking event:"<<eventToMark->GetEventNumberInFile()<<endl;
+    cout<<"AliStorageServerThread -- Marking event:"<<eventToMark->GetEventNumberInFile()<<endl;
     
     TFile *permFile = new TFile(Form("%s/permEvents.root",fStoragePath.c_str()),"update");//open/create perm file
     
     if(!permFile)
     {
-        cout<<"SERVER -- Couldn't open perm file"<<endl;
+        cout<<"AliStorageServerThread -- Couldn't open perm file"<<endl;
         if(tmpFile){tmpFile->Close();delete tmpFile;}
         if(eventToMark){delete eventToMark;}
         return false;
@@ -235,19 +235,19 @@ bool AliStorageServerThread::MarkEvent(struct eventStruct event)
     TDirectory *currentRun;
     if((currentRun = permFile->mkdir(Form("run%d",event.runNumber))))
     {
-        cout<<"SERVER -- creating new directory for this run"<<endl;
+        cout<<"AliStorageServerThread -- creating new directory for this run"<<endl;
         currentRun->cd();
     }
     else
     {
-        cout<<"SERVER -- opening existing directory for this run"<<endl;
+        cout<<"AliStorageServerThread -- opening existing directory for this run"<<endl;
         permFile->cd(Form("run%d",event.runNumber));
     }
     
     //try to add record to the database
     if(!fDatabase->MarkEvent(event))
     {
-        cout<<"SERVER -- could not mark event in the database"<<endl;
+        cout<<"AliStorageServerThread -- could not mark event in the database"<<endl;
         if(tmpFile){delete tmpFile;}
         if(eventToMark){delete eventToMark;}
         if(permFile){delete permFile;}

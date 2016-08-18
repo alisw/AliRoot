@@ -10,21 +10,21 @@ using namespace std;
 
 AliEventsCollectorThread::AliEventsCollectorThread(AliStorageClientThread *onlineReconstructionManager) :
 fManager(onlineReconstructionManager),
+fCurrentRunNumber(-1),
 fCollectorThread(0),
-fCurrentFile(0),
 fDatabase(0)
 {
     fDatabase = new AliStorageDatabase();
     
     if(!fDatabase){
-        cout<<"\n\nCould not connect to database!\n\n"<<endl;
+        cout<<"AliEventsCollectorThread -- FATAL\n\nCould not connect to database!\n\n"<<endl;
         exit(0);
     }
     else{
-        cout<<"\n\nConnected to database\n\n"<<endl;
+        cout<<"AliEventsCollectorThread -- connected to database"<<endl;
     }
     
-//    CheckCurrentStorageSize();
+    CheckCurrentStorageSize();
     
     // start collecting events in a thread
     fCollectorThread = new TThread("fCollectorThread",Dispatch,(void*)this);
@@ -35,11 +35,6 @@ fDatabase(0)
 AliEventsCollectorThread::~AliEventsCollectorThread()
 {
     if(fCollectorThread){delete fCollectorThread;}
-    
-    if(fCurrentFile){
-        fCurrentFile->Close();
-        delete fCurrentFile;
-    }
     if(fDatabase){delete fDatabase;}
     if(fManager){delete fManager;}
 }
@@ -57,7 +52,6 @@ void AliEventsCollectorThread::CollectorHandle()
     AliZMQManager *eventManager = AliZMQManager::GetInstance();
     eventManager->CreateSocket(EVENTS_SERVER_SUB);
     
-    int runNumber=-1;
     int receiveStatus = false;
     
     AliESDEvent *event = NULL;
@@ -67,7 +61,9 @@ void AliEventsCollectorThread::CollectorHandle()
     
     while(1)
     {
-        cout<<"CLIENT -- waiting for event..."<<endl;
+        if(event){ delete event; event = 0; }
+        
+        cout<<"AliEventsCollectorThread -- waiting for event..."<<endl;
         receiveStatus = eventManager->Get(event,EVENTS_SERVER_SUB);
         
         if (receiveStatus == 0){ // timeout
@@ -78,46 +74,40 @@ void AliEventsCollectorThread::CollectorHandle()
         }
         else if(event && receiveStatus)
         {
-            cout<<"CLIENT -- Received event:"<<event->GetEventNumberInFile()<<"\trun:"<<event->GetRunNumber()<<endl;
+            cout<<"AliEventsCollectorThread -- Received event:"<<event->GetEventNumberInFile()<<"\trun:"<<event->GetRunNumber()<<endl;
             
-            if(event->GetRunNumber() != runNumber)// first event in a new run
+            if(event->GetRunNumber() != fCurrentRunNumber)// first event in a new run
             {
-                cout<<"CLIENT -- new run started"<<endl;
-                runNumber = event->GetRunNumber();
-                gSystem->Exec(Form("mkdir -p %s/run%d",fManager->fStoragePath.c_str(),runNumber));
+                cout<<"AliEventsCollectorThread -- new run stars"<<endl;
+                fCurrentRunNumber = event->GetRunNumber();
+                gSystem->Exec(Form("mkdir -p %s/run%d",fManager->fStoragePath.c_str(),fCurrentRunNumber));
                 
-                if(esdFile){
-                    esdFile->Write();
-                    esdFile->Close();
-                    delete esdFile;
-                    esdFile = 0;
-                }
-            
                 // create new empty file for ESD events
-                esdFile = TFile::Open(Form("%s/run%d/AliESDs.root",fManager->fStoragePath.c_str(),runNumber), "RECREATE");
+                esdFile = TFile::Open(Form("%s/run%d/AliESDs.root",fManager->fStoragePath.c_str(),fCurrentRunNumber), "RECREATE");
                 esdTree = new TTree("esdTree", "Tree with ESD objects");
                 event->WriteToTree(esdTree);
                 esdTree->Fill();
                 esdTree->Write();
-                esdFile->Close();
-                cout<<"file created"<<endl;
             }
             else
             {
-                esdFile = TFile::Open(Form("%s/run%d/AliESDs.root",fManager->fStoragePath.c_str(),runNumber), "UPDATE");
-    //
+                esdFile = TFile::Open(Form("%s/run%d/AliESDs.root",fManager->fStoragePath.c_str(),fCurrentRunNumber), "UPDATE");
                 esdTree = (TTree*)esdFile->Get("esdTree");
                 
                 event->AddToTree(esdTree);
                 esdTree->Fill();
                 esdTree->Write(0,TObject::kWriteDelete,0);
-                
-                delete esdTree;
-                esdFile->Close();
             }
             
-            /*
-//          CheckCurrentStorageSize();
+            if(esdTree){ delete esdTree; esdTree = 0; }
+            
+            if(esdFile){ // close the file after each new event
+                esdFile->Close();
+                delete esdFile;
+                esdFile = 0;
+            }
+            
+            CheckCurrentStorageSize();
 
             TThread::Lock();
             
@@ -134,8 +124,6 @@ void AliEventsCollectorThread::CollectorHandle()
             cout<<"AliEventsCollectorThread -- event inserted to the database"<<endl;
             
             TThread::UnLock();
-            */
-//            delete event;event=0;
         }
         else
         {
@@ -155,51 +143,51 @@ Long64_t AliEventsCollectorThread::GetSizeOfAllChunks()
     TList *listOfDirectories = dir.GetListOfFiles();
     
     if (!listOfDirectories){
-        cout<<"CLIENT -- Storage directory is empty"<<endl;
+        cout<<"AliEventsCollectorThread -- Storage directory is empty"<<endl;
         return 0;
     }
+    
     TIter nextDirectory(listOfDirectories);
     TSystemFile *runDirectory;
     string directoryName;
+    const char *size;
     
     while ((runDirectory=(TSystemFile*)nextDirectory()))
     {
         directoryName=runDirectory->GetName();
         if (runDirectory->IsDirectory() && directoryName.find("run")==0)
         {
-            TSystemDirectory dirChunks(Form("%s/%s",fManager->fStoragePath.c_str(),directoryName.c_str()),Form("%s/%s",fManager->fStoragePath.c_str(),directoryName.c_str()));
-            TList *listOfChunks = dirChunks.GetListOfFiles();
             
-            if(listOfChunks)
+            TSystemDirectory dirRun(Form("%s/%s",fManager->fStoragePath.c_str(),directoryName.c_str()),
+                                    Form("%s/%s",fManager->fStoragePath.c_str(),directoryName.c_str()));
+            TList *listOfFiles = dirRun.GetListOfFiles();
+            
+            if(listOfFiles)
             {
-                TIter nextChunk(listOfChunks);
-                TSystemFile *chunk;
-                string chunkFileName;
+                TIter nextFile(listOfFiles);
+                TSystemFile *file;
+                string fileName;
                 
-                while((chunk=(TSystemFile*)nextChunk()))
+                while((file=(TSystemFile*)nextFile()))
                 {
-                    chunkFileName = chunk->GetName();
-                    if(!chunk->IsDirectory() && chunkFileName.find("chunk")==0)
+                    fileName = file->GetName();
+                    if(!file->IsDirectory() && fileName.find("AliESDs.root")==0)
                     {
-                        TFile *tmpFile = new TFile(Form("%s/%s/%s",fManager->fStoragePath.c_str(),directoryName.c_str(),chunkFileName.c_str()),"read");
-                        if(tmpFile)
-                        {
-                            totalStorageSize+=tmpFile->GetSize();
-                            tmpFile->Close();
-                            delete tmpFile;
-                        }
+                        size = gSystem->GetFromPipe(Form("wc -c < %s/%s/%s",fManager->fStoragePath.c_str(),directoryName.c_str(), fileName.c_str())).Data();
+                        
+                        totalStorageSize += atoi(size);
                     }
                 }
-                if(chunk){delete chunk;}
+                if(file){delete file;}
             }
-            if(listOfChunks){delete listOfChunks;}
+            if(listOfFiles){delete listOfFiles;}
         }
     }
     
     if(listOfDirectories){delete listOfDirectories;}
     if(runDirectory){delete runDirectory;}
     
-    printf("CLIENT -- Total storage size:%lld\t(%.2f MB)\n",totalStorageSize,(float)totalStorageSize/(1000.*1000.));
+    printf("AliEventsCollectorThread -- Total storage size:%lld\t(%.2f MB)\n",totalStorageSize,(float)totalStorageSize/(1000.*1000.));
     
     return totalStorageSize;
 }
@@ -216,8 +204,14 @@ void AliEventsCollectorThread::CheckCurrentStorageSize()
             struct eventStruct oldestEvent = fDatabase->GetOldestEvent();
             string oldestEventPath = fDatabase->GetFilePath(oldestEvent);
             TThread::UnLock();
+            
+            if(oldestEvent.runNumber == fCurrentRunNumber){
+                cout<<"AliEventsCollectorThread -- Can't remove file for current run"<<endl;
+                return;
+            }
+            
             //remove oldest event
-            cout<<"CLIENT -- Removing old events:"<<oldestEventPath<<endl;
+            cout<<"AliEventsCollectorThread -- Removing old events:"<<oldestEventPath<<endl;
             gSystem->Exec(Form("rm -f %s",oldestEventPath.c_str()));
             TThread::Lock();
             fDatabase->RemoveEventsWithPath(oldestEventPath);
