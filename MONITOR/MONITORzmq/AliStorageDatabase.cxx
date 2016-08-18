@@ -20,15 +20,12 @@
 using namespace std;
 
 AliStorageDatabase::AliStorageDatabase() :
-fHost(""),
-fPort(""),
-fDatabase(""),
-fUID(""),
-fPassword(""),
 fTable(""),
 fServer(0),
 fStoragePath("")
 {
+    string host, port, database, UID, password;
+    
     TThread::Lock();
     ifstream configFile (GetConfigFilePath());
     if (configFile.is_open())
@@ -40,20 +37,21 @@ fStoragePath("")
             getline(configFile,line);
             from = line.find("\"")+1;
             to = line.find_last_of("\"");
+            
             if(line.find("HOST=")==0){
-                fHost=line.substr(from,to-from);
+                host=line.substr(from,to-from);
             }
             else if(line.find("PORT=")==0){
-                fPort=line.substr(from,to-from);
+                port=line.substr(from,to-from);
             }
             else if(line.find("DATABASE=")==0){
-                fDatabase=line.substr(from,to-from);
+                database=line.substr(from,to-from);
             }
             else if(line.find("USER=")==0){
-                fUID=line.substr(from,to-from);
+                UID=line.substr(from,to-from);
             }
             else if(line.find("PASS=")==0){
-                fPassword=line.substr(from,to-from);
+                password=line.substr(from,to-from);
             }
             else if(line.find("TABLE=")==0){
                 fTable=line.substr(from,to-from);
@@ -61,18 +59,24 @@ fStoragePath("")
             else if(line.find("STORAGE_PATH=")==0){
                 fStoragePath=line.substr(from,to-from);
             }
-            
         }
         if(configFile.eof()){configFile.clear();}
         configFile.close();
     }
-    else{cout << "DATABASE -- Unable to open file" <<endl;}
+    else{cout<<"AliStorageDatabse -- Unable to open config file" <<endl;}
     
-    cout<<"DATABASE -- connecting to server:"<<Form("mysql://%s:%s/%s",fHost.c_str(),fPort.c_str(),fDatabase.c_str())<<fUID.c_str()<<fPassword.c_str()<<endl;
-    fServer = TSQLServer::Connect(Form("mysql://%s:%s/%s",fHost.c_str(),fPort.c_str(),fDatabase.c_str()),fUID.c_str(),fPassword.c_str());
+    fServer = TSQLServer::Connect(Form("mysql://%s:%s/%s",host.c_str(),port.c_str(),database.c_str()),UID.c_str(),password.c_str());
+    
+    if(!fServer)
+    {
+        cout<<"AliStorageDatabase -- could not connect to the database!"<<endl;
+        cout<<"mysql://"<<host.c_str()<<":"<<port.c_str()<<"\t"<<database.c_str()<<"\t"<<UID.c_str()<<"\t"<<endl;
+        cout<<"Maybe you forgot to build ROOT with --enable-mysql ?"<<endl;
+        exit(0);
+    }
     
     TThread::UnLock();
-    cout<<"Connected"<<endl;
+    cout<<"AliStorageDatabse -- connected to the database"<<endl;
 }
 
 AliStorageDatabase::~AliStorageDatabase(){
@@ -88,9 +92,10 @@ void AliStorageDatabase::InsertEvent(int runNumber,
                                      ULong64_t triggerMaskNext50)
 {
     TSQLResult *res = fServer->Query(Form("select * FROM %s WHERE run_number = %d AND event_number = %d AND permanent = 1;",fTable.c_str(),runNumber,eventNumber));
-    TSQLRow *row = res->Next();
+    TSQLRow *row = nullptr;
+    if(res) row = res->Next();
     
-    cout<<"DATABASE -- insterting:"<<Form("REPLACE INTO %s (run_number,event_number,system,multiplicity,permanent,file_path,trigger_mask,trigger_mask_next) VALUES (%d,%d,'%s',%d,0,'%s',%llu,%llu);",fTable.c_str(),runNumber,eventNumber,system,multiplicity,filePath,triggerMask,triggerMaskNext50)<<endl;
+    cout<<"AliStorageDatabse -- insterting:"<<Form("REPLACE INTO %s (run_number,event_number,system,multiplicity,permanent,file_path,trigger_mask,trigger_mask_next) VALUES (%d,%d,'%s',%d,0,'%s',%llu,%llu);",fTable.c_str(),runNumber,eventNumber,system,multiplicity,filePath,triggerMask,triggerMaskNext50)<<endl;
     
     if(!row)
     {
@@ -107,25 +112,25 @@ bool AliStorageDatabase::MarkEvent(struct eventStruct event)
     res = fServer->Query(Form("UPDATE %s SET permanent = 1 WHERE run_number = %d AND event_number = %d;",fTable.c_str(),event.runNumber,event.eventNumber));
     if(!res)
     {
-        cout<<"DATABASE -- couldn't update permanent flag"<<endl;
+        cout<<"AliStorageDatabase -- couldn't update permanent flag"<<endl;
         delete res;
         return 0;
     }
     else
     {
-        cout<<"DATABASE -- permanent flag updated"<<endl;
+        cout<<"AliStorageDatabase -- permanent flag updated"<<endl;
         
         res = fServer->Query(Form("UPDATE %s SET file_path = '%s' WHERE run_number = %d AND event_number = %d;",fTable.c_str(),Form("%s/permEvents.root",fStoragePath.c_str()), event.runNumber,event.eventNumber));
         if(!res)
         {
-            cout<<"DATABASE -- couldn't update file's path. Unsetting permanent flag"<<endl;
+            cout<<"AliStorageDatabase -- couldn't update file's path. Unsetting permanent flag"<<endl;
             res = fServer->Query(Form("UPDATE %s SET permanent = 0 WHERE run_number = %d AND event_number = %d;",fTable.c_str(),event.runNumber,event.eventNumber));
             delete res;
             return 0;
         }
         else
         {
-            cout<<"DATABASE -- event marked"<<endl;
+            cout<<"AliStorageDatabase -- event marked"<<endl;
             delete res;
             return 1;
         }
@@ -138,13 +143,13 @@ bool AliStorageDatabase::UpdateEventPath(struct eventStruct event,const char *ne
     res = fServer->Query(Form("UPDATE %s SET file_path = '%s' WHERE run_number = %d AND event_number = %d;",fTable.c_str(),newPath,event.runNumber,event.eventNumber));
     if(!res)
     {
-        cout<<"DATABASE -- couldn't update file's path"<<endl;
+        cout<<"AliStorageDatabase -- couldn't update file's path"<<endl;
         delete res;
         return 0;
     }
     else
     {
-        cout<<"DATABASE -- path updated for event:"<<event.eventNumber<<endl;
+        cout<<"AliStorageDatabase -- path updated for event:"<<event.eventNumber<<endl;
         delete res;
         return 1;
     }
@@ -313,21 +318,21 @@ vector<serverListStruct> AliStorageDatabase::GetList(struct listRequestStruct li
 
 AliESDEvent* AliStorageDatabase::GetEvent(struct eventStruct event)
 {
-    cout<<"database - get event:"<<event.runNumber<<"\t"<<event.eventNumber<<endl;
+    cout<<"AliStorageDatabase - get event:"<<event.runNumber<<"\t"<<event.eventNumber<<endl;
     string pathToFile = GetFilePath(event);
     
-    cout<<"DATABASE -- path to file:"<<pathToFile<<endl;
+    cout<<"AliStorageDatabase -- path to file:"<<pathToFile<<endl;
     
     if(!strcmp(pathToFile.c_str(),""))
     {
-        cout<<"DATABASE -- no such file in database"<<endl;
+        cout<<"AliStorageDatabase -- no such file in database"<<endl;
         return NULL;
     }
     
     TFile *tmpFile = new TFile(pathToFile.c_str(),"read");
     if(!tmpFile)
     {
-        cout<<"DATABASE -- couldn't open temp file"<<endl;
+        cout<<"AliStorageDatabase -- couldn't open temp file"<<endl;
         return NULL;
     }
     tmpFile->cd(Form("run%d",event.runNumber));
@@ -337,11 +342,11 @@ AliESDEvent* AliStorageDatabase::GetEvent(struct eventStruct event)
     
     if(data)
     {
-        cout<<"DATABASE -- read event:"<<data->GetEventNumberInFile()<<endl;
+        cout<<"AliStorageDatabase -- read event:"<<data->GetEventNumberInFile()<<endl;
     }
     else
     {
-        cout<<"DATABASE -- event is corrupted"<<endl;
+        cout<<"AliStorageDatabase -- event is corrupted"<<endl;
     }
     
     return data;
@@ -401,7 +406,7 @@ vector<int> AliStorageDatabase::GetListOfRuns()
 
 AliESDEvent* AliStorageDatabase::GetNextEvent(struct eventStruct event)
 {
-    cout<<"Database:"<<event.runNumber<<"\t"<<event.eventNumber<<endl;
+    cout<<"AliStorageDatabase -- "<<event.runNumber<<"\t"<<event.eventNumber<<endl;
     
     TSQLResult *result = fServer->Query(Form("SELECT * FROM %s ORDER BY run_number,event_number;",fTable.c_str()));
     
@@ -474,7 +479,7 @@ struct eventStruct AliStorageDatabase::GetOldestEvent()
     }
     else
     {
-        cout<<"DATABASE -- NO OLDEST EVENT FOUND. Storage may be corrupted."<<endl;
+        cout<<"AliStorageDatabase -- NO OLDEST EVENT FOUND. Storage may be corrupted."<<endl;
     }
     return oldestEvent;
 }
@@ -492,14 +497,13 @@ AliESDEvent* AliStorageDatabase::GetLastEvent()
         lastEvent.eventNumber = atoi(row->GetField(1));
         delete row;
     }
-    cout<<"Last event is:"<<lastEvent.eventNumber<<endl;
+    cout<<"AliStorageDatabase -- Last event is:"<<lastEvent.eventNumber<<endl;
     return GetEvent(lastEvent);
     
 }
 
 AliESDEvent* AliStorageDatabase::GetFirstEvent()
 {
-    cout<<"Database - first"<<endl;
     TSQLResult *result = fServer->Query(Form("SELECT * FROM %s ORDER BY run_number,event_number DESC;",fTable.c_str()));
     
     TSQLRow *row;
@@ -511,7 +515,7 @@ AliESDEvent* AliStorageDatabase::GetFirstEvent()
         firstEvent.eventNumber = atoi(row->GetField(1));
         delete row;
     }
-    cout<<"First event is:"<<firstEvent.eventNumber<<endl;
+    cout<<"AliStorageDatabase -- First event is:"<<firstEvent.eventNumber<<endl;
     return GetEvent(firstEvent);
     
 }

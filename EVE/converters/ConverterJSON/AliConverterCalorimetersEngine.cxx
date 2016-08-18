@@ -86,7 +86,7 @@ void AliConverterCalorimetersEngine::AddPHOSCalClusterToEvent(AliMinimalisticEve
         fGeomPH->AbsToRelNumbering(id, relId);
         fGeomPH->RelPosInModule(relId, xCell, zCell);
 
-        cout << "PHOS\tEta: " << fClusterMomentum.Eta() << "\tPhi: " << GetPhi(fClusterMomentum.Phi()) << "\tE: " << fClusterMomentum.Energy() << endl;
+//        cout << "PHOS\tEta: " << fClusterMomentum.Eta() << "\tPhi: " << GetPhi(fClusterMomentum.Phi()) << "\tE: " << fClusterMomentum.Energy() << endl;
         AliMinimalisticCaloCluster cluster(
                 fGeomEM->GetIPDistance(),
                 GetPhi(fClusterMomentum.Phi()),
@@ -108,7 +108,7 @@ void AliConverterCalorimetersEngine::AddEMCALClustersToEvent(
         amp = fCellsEM->GetCellAmplitude(id); // GeV
 
         fGeomEM->EtaPhiFromIndex(id, eta, phi);
-        cout << "Eta: " << eta << "\tPhi: " << GetPhi(phi) << "\tE: " << amp << endl;
+//        cout << "Eta: " << eta << "\tPhi: " << GetPhi(phi) << "\tE: " << amp << endl;
         AliMinimalisticCaloCluster cluster(
                 fGeomEM->GetIPDistance(),
                 GetPhi(phi),
