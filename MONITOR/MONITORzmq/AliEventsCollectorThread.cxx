@@ -14,9 +14,17 @@ fCollectorThread(0),
 fCurrentFile(0),
 fDatabase(0)
 {
-  fDatabase = new AliStorageDatabase();
+    fDatabase = new AliStorageDatabase();
     
-    CheckCurrentStorageSize();
+    if(!fDatabase){
+        cout<<"\n\nCould not connect to database!\n\n"<<endl;
+        exit(0);
+    }
+    else{
+        cout<<"\n\nConnected to database\n\n"<<endl;
+    }
+    
+//    CheckCurrentStorageSize();
     
     // start collecting events in a thread
     fCollectorThread = new TThread("fCollectorThread",Dispatch,(void*)this);
@@ -49,15 +57,13 @@ void AliEventsCollectorThread::CollectorHandle()
     AliZMQManager *eventManager = AliZMQManager::GetInstance();
     eventManager->CreateSocket(EVENTS_SERVER_SUB);
     
-    int chunkNumber=0;
-    int previousChunkNumber=-1;
-    int eventsInChunk=0;
-    int previousRunNumber=-1;
-    AliESDEvent *event = NULL;
-    vector<struct eventStruct> eventsToUpdate;
-    struct eventStruct currentEvent;
-    
+    int runNumber=-1;
     int receiveStatus = false;
+    
+    AliESDEvent *event = NULL;
+    
+    TFile *esdFile = NULL;
+    TTree *esdTree = NULL;
     
     while(1)
     {
@@ -72,151 +78,68 @@ void AliEventsCollectorThread::CollectorHandle()
         }
         else if(event && receiveStatus)
         {
-            cout<<"CLIENT -- received event"<<endl;
-            fManager->fReceivingStatus=STATUS_OK;
+            cout<<"CLIENT -- Received event:"<<event->GetEventNumberInFile()<<"\trun:"<<event->GetRunNumber()<<endl;
             
-            if(event->GetRunNumber() != previousRunNumber)//when new run starts
+            if(event->GetRunNumber() != runNumber)// first event in a new run
             {
                 cout<<"CLIENT -- new run started"<<endl;
-                previousRunNumber = event->GetRunNumber();
-                gSystem->Exec(Form("mkdir -p %s/run%d",fManager->fStoragePath.c_str(),event->GetRunNumber()));
-                chunkNumber=0;
-                eventsInChunk=0;
+                runNumber = event->GetRunNumber();
+                gSystem->Exec(Form("mkdir -p %s/run%d",fManager->fStoragePath.c_str(),runNumber));
                 
-                TSystemDirectory dir(Form("%s/run%d",fManager->fStoragePath.c_str(),event->GetRunNumber()),
-                                     Form("%s/run%d",fManager->fStoragePath.c_str(),event->GetRunNumber()));
-                TList *files = dir.GetListOfFiles();
-                if (files)
-                {
-                    TSystemFile *file;
-                    string fname;
-                    TIter next(files);
-                    
-                    while ((file=(TSystemFile*)next()))
-                    {
-                        fname = file->GetName();
-                        
-                        if (!file->IsDirectory())
-                        {
-                            int from = fname.find("chunk")+5;
-                            int to = fname.find(".root");
-                            
-                            int maxChunkNumber = atoi(fname.substr(from,to-from).c_str());
-                            
-                            if(maxChunkNumber > chunkNumber)
-                            {
-                                chunkNumber = maxChunkNumber;
-                            }
-                        }
-                    }
-                    chunkNumber++;
+                if(esdFile){
+                    esdFile->Write();
+                    esdFile->Close();
+                    delete esdFile;
+                    esdFile = 0;
                 }
-            }
             
-            cout<<"CLIENT -- Received data. Event:"<<event->GetEventNumberInFile()<<"\trun:"<<event->GetRunNumber()<<endl;
-            
-            if(chunkNumber != previousChunkNumber)//when new chunk needs to be created
-            {
-                if(fCurrentFile)
-                {
-                    fCurrentFile->Close();
-                    delete fCurrentFile;
-                    fCurrentFile=0;
-                }
-                for(unsigned int i=0;i<eventsToUpdate.size();i++)
-                {
-		  TThread::Lock();
-                    fDatabase->UpdateEventPath(eventsToUpdate[i],Form("%s/run%d/chunk%d.root",
-                                                    fManager->fStoragePath.c_str(),
-                                                    event->GetRunNumber(),
-                                                    chunkNumber-1));
-		    TThread::UnLock();
-                }
-                eventsToUpdate.clear();
-                
-                CheckCurrentStorageSize();
-                
-                fCurrentFile = new TFile(Form("%s/run%d/chunk%d.root", fManager->fStoragePath.c_str(),event->GetRunNumber(),chunkNumber),"recreate");
-                
-                previousChunkNumber = chunkNumber;
-            }
-            
-            //create new directory for this run
-            TDirectory *currentRun;
-            if((currentRun = fCurrentFile->mkdir(Form("run%d",event->GetRunNumber()))))
-            {
-                cout<<"CLIENT -- creating new directory for this run"<<endl;
-                currentRun->cd();
+                // create new empty file for ESD events
+                esdFile = TFile::Open(Form("%s/run%d/AliESDs.root",fManager->fStoragePath.c_str(),runNumber), "RECREATE");
+                esdTree = new TTree("esdTree", "Tree with ESD objects");
+                event->WriteToTree(esdTree);
+                esdTree->Fill();
+                esdTree->Write();
+                esdFile->Close();
+                cout<<"file created"<<endl;
             }
             else
             {
-                cout<<"CLIENT -- opening existing directory for this run"<<endl;
-                fCurrentFile->cd(Form("run%d",event->GetRunNumber()));
+                esdFile = TFile::Open(Form("%s/run%d/AliESDs.root",fManager->fStoragePath.c_str(),runNumber), "UPDATE");
+    //
+                esdTree = (TTree*)esdFile->Get("esdTree");
+                
+                event->AddToTree(esdTree);
+                esdTree->Fill();
+                esdTree->Write(0,TObject::kWriteDelete,0);
+                
+                delete esdTree;
+                esdFile->Close();
             }
             
-            if(0 != event->Write(Form("event%d",event->GetEventNumberInFile())))
-                //fCurrentFile->WriteObject(event,Form("event%d",event->GetEventNumberInFile())))//if event was written to file
-            {
-                eventsInChunk++;
-                
-                if(eventsInChunk == fManager->fNumberOfEventsInFile)//if max events number in file was reached
-                {
-                    chunkNumber++;
-                    eventsInChunk=0;
-                }
-                
-                if(fManager->fSavingStatus!=STATUS_OK){fManager->fSavingStatus=STATUS_OK;}
-            }
-            else if(fManager->fSavingStatus!=STATUS_ERROR){fManager->fSavingStatus=STATUS_ERROR;}
+            /*
+//          CheckCurrentStorageSize();
+
+            TThread::Lock();
             
-            // save to event file as well:
-            TFile *eventFile = new TFile(Form("%s/run%d/event%d.root", fManager->fStoragePath.c_str(),event->GetRunNumber(),eventsInChunk),"recreate");
+            fDatabase->InsertEvent(event->GetRunNumber(),
+                                   event->GetEventNumberInFile(),
+                                   (char*)event->GetBeamType(),
+                                   event->GetMultiplicity()->GetNumberOfTracklets(),
+                                   Form("%s/run%d/AliESDs.root",fManager->fStoragePath.c_str(),
+                                        event->GetRunNumber()),
+                                   event->GetTriggerMask(),
+                                   event->GetTriggerMaskNext50()
+                                   );
             
-            if((currentRun = eventFile->mkdir(Form("run%d",event->GetRunNumber()))))
-            {
-                cout<<"CLIENT -- creating new directory for this run"<<endl;
-                currentRun->cd();
-            }
-            else
-            {
-                cout<<"CLIENT -- opening existing directory for this run"<<endl;
-                eventFile->cd(Form("run%d",event->GetRunNumber()));
-            }
+            cout<<"AliEventsCollectorThread -- event inserted to the database"<<endl;
             
-            if(0 == event->Write(Form("event%d",event->GetEventNumberInFile())) &&
-               fManager->fSavingStatus!=STATUS_ERROR)
-            {
-                fManager->fSavingStatus=STATUS_ERROR;
-            }
-            else
-            {
-                eventFile->Close();
-                delete eventFile;
-		TThread::Lock();
-                
-                cout<<"COLLECTOR -- events mask:"<<event->GetTriggerMask()<<endl;
-                cout<<"COLLECTOR -- events mask next 50:"<<event->GetTriggerMaskNext50()<<endl;
-                
-                fDatabase->InsertEvent(event->GetRunNumber(),
-                                       event->GetEventNumberInFile(),
-                                       (char*)event->GetBeamType(),
-                                       event->GetMultiplicity()->GetNumberOfTracklets(),
-                                       Form("%s/run%d/event%d.root",fManager->fStoragePath.c_str(),
-                                            event->GetRunNumber(),
-                                            eventsInChunk),
-                                       event->GetTriggerMask(),
-                                       event->GetTriggerMaskNext50()
-                                       );
-		TThread::UnLock();
-                currentEvent.runNumber = event->GetRunNumber();
-                currentEvent.eventNumber = event->GetEventNumberInFile();
-                eventsToUpdate.push_back(currentEvent);
-            }
-            delete event;event=0;
+            TThread::UnLock();
+            */
+//            delete event;event=0;
         }
         else
         {
-            cout<<"CLIENT -- ERROR -- NO DATA!"<<endl;
+            cout<<"AliEventsCollectorThread -- ERROR -- NO DATA!"<<endl;
             if(fManager->fReceivingStatus!=STATUS_ERROR){fManager->fReceivingStatus=STATUS_ERROR;}
         }
     }
@@ -272,7 +195,7 @@ Long64_t AliEventsCollectorThread::GetSizeOfAllChunks()
             if(listOfChunks){delete listOfChunks;}
         }
     }
-
+    
     if(listOfDirectories){delete listOfDirectories;}
     if(runDirectory){delete runDirectory;}
     
@@ -289,16 +212,16 @@ void AliEventsCollectorThread::CheckCurrentStorageSize()
     {
         while(GetSizeOfAllChunks() > (float)fManager->fRemoveEventsPercentage/100. * fManager->fMaximumStorageSize)
         {
-	  TThread::Lock();
+            TThread::Lock();
             struct eventStruct oldestEvent = fDatabase->GetOldestEvent();
             string oldestEventPath = fDatabase->GetFilePath(oldestEvent);
-	    TThread::UnLock();
+            TThread::UnLock();
             //remove oldest event
             cout<<"CLIENT -- Removing old events:"<<oldestEventPath<<endl;
             gSystem->Exec(Form("rm -f %s",oldestEventPath.c_str()));
-	    TThread::Lock();
+            TThread::Lock();
             fDatabase->RemoveEventsWithPath(oldestEventPath);
-	    TThread::UnLock();
+            TThread::UnLock();
         }
     }
 }

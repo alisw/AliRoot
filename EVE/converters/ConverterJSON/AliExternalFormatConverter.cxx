@@ -22,6 +22,7 @@
 #include <AliMUONGeometryTransformer.h>
 #include <AliConverterCalorimetersEngine.h>
 
+using namespace std;
 
 /// Default constructor for the converter
 AliExternalFormatConverter::AliExternalFormatConverter()
@@ -74,7 +75,7 @@ void AliExternalFormatConverter::LoadFiles(TFile *ESDFile, TFile *friendFile)
 {
     LoadESDFile(ESDFile);
     fESDTree->AddFriend("esdFriendTree", friendFile);
-    fESDTree->SetBranchStatus("ESDfriend");
+    fESDTree->SetBranchStatus("ESDfriend.");
     fESDFriend = dynamic_cast<AliESDfriend *>(fESDEvent->FindListObject("AliESDfriend"));
 }
 
@@ -130,7 +131,7 @@ void AliExternalFormatConverter::LoadEvent()
 void AliExternalFormatConverter::LoadESDFriends(const Char_t *friendPath)
 {
     fESDTree->AddFriend("esdFriendTree", friendPath);
-    fESDTree->SetBranchStatus("ESDfriend");
+    fESDTree->SetBranchStatus("ESDfriend.",1);
     fESDFriend = dynamic_cast<AliESDfriend *>(fESDEvent->FindListObject("AliESDfriend"));
     
     if (fESDFriend) {
