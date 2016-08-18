@@ -564,6 +564,7 @@ public:
   TObject* FindListObject(const char *name) const;
   AliESD *GetAliESDOld(){return fESDOld;}
   void WriteToTree(TTree* tree) const;
+  void AddToTree(TTree* tree);
   void GetStdContent();
   void ResetStdContent();
   void CreateStdContent();
