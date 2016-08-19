@@ -212,7 +212,7 @@ void AliEventsCollectorThread::CheckCurrentStorageSize()
             
             //remove oldest event
             cout<<"AliEventsCollectorThread -- Removing old events:"<<oldestEventPath<<endl;
-            gSystem->Exec(Form("rm -f %s",oldestEventPath.c_str()));
+            gSystem->Exec(Form("rm -fr dirname %s",oldestEventPath.c_str()));
             TThread::Lock();
             fDatabase->RemoveEventsWithPath(oldestEventPath);
             TThread::UnLock();
