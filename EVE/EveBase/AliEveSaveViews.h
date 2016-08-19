@@ -20,7 +20,7 @@
 class AliEveSaveViews
 {
 public:
-    AliEveSaveViews(int width=1440,int height=900,int heightInfoBar=65,bool showLiveBar=true);
+    AliEveSaveViews(int width=3840,int height=2160,bool showLiveBar=true);
     ~AliEveSaveViews();
     
     void SaveForAmore();

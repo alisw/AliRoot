@@ -32,8 +32,8 @@
 using namespace std;
 
 
-AliEveSaveViews::AliEveSaveViews(int width,int height,int heightInfoBar,bool showLiveBar) :
-fHeightInfoBar(heightInfoBar),
+AliEveSaveViews::AliEveSaveViews(int width,int height,bool showLiveBar) :
+fHeightInfoBar(0.0722*height),
 fWidth(width),
 fHeight(height),
 fShowLiveBar(showLiveBar)
@@ -129,32 +129,40 @@ void AliEveSaveViews::SaveForAmore()
     }
     
     TEveViewerList* viewers = gEve->GetViewers();
-    int Nviewers = 2; // remark: 3D view is counted twice
+    int Nviewers = viewers->NumChildren()-2; // remark: 3D view is counted twice
     
     TASImage *compositeImg = new TASImage(fWidth, fHeight);
     
     // 3D View size
-    int width3DView = TMath::FloorNint((float)Nviewers*fWidth/(float)(Nviewers+1)); // the width of the 3D view
+    int width3DView = TMath::FloorNint(2.*fWidth/3.); // the width of the 3D view
     int height3DView= fHeight-fHeightInfoBar;                                       // the height of the 3D view
     float aspectRatio = (float)width3DView/(float)height3DView;                     // 3D View aspect ratio
     
     // Children View Size
-    int heightChildView = TMath::FloorNint((float)height3DView/(float)Nviewers);
-    int widthChildView  = TMath::FloorNint(aspectRatio*heightChildView); // has the same aspect ratio as the 3D view
+    int heightChildView = TMath::FloorNint((float)fHeight/Nviewers);
+    int widthChildView  = TMath::FloorNint((float)fWidth/3.);
+    float childAspectRatio = (float)widthChildView/(float)heightChildView; // 3D View aspect ratio
     
     int index=0;            // iteration counter
     int x = width3DView;    // x position of the child view
     int y = 0;              // y position of the child view
     TString viewFilename;   // save view to this file
     
-    for(TEveElement::List_i i = (++viewers->BeginChildren()); index < Nviewers+1; i++)
+     for(TEveElement::List_i i = viewers->BeginChildren(); i != viewers->EndChildren(); i++)
     { // NB: this skips the first children (first 3D View)
         TEveViewer* view = ((TEveViewer*)*i);
+        
+        if((strcmp(view->GetName(),"3D View MV")!=0) &&
+           (strcmp(view->GetName(),"RPhi View")!=0) &&
+           (strcmp(view->GetName(),"RhoZ View")!=0)){
+            continue;
+        }
+        
         viewFilename = Form("view-%d.png", index);
         
         // Save OpenGL view in file and read it back using BB (missing method in Root returning TASImage)
-        view->GetGLViewer()->SavePictureUsingBB(viewFilename);
-        TASImage *viewImg = new TASImage(viewFilename);
+//        view->GetGLViewer()->SavePictureUsingBB(viewFilename);
+//        TASImage *viewImg = new TASImage(viewFilename);
         
         //        tempImg = (TASImage*)view->GetGLViewer()->GetPictureUsingBB();
         
@@ -171,6 +179,13 @@ void AliEveSaveViews::SaveForAmore()
         //         tempImg = (TASImage*)view->GetGLViewer()->GetPictureUsingFBO(widthChildView, heightChildView);
         //         }
         //
+        TASImage *viewImg;
+        if(index==0){
+            viewImg = (TASImage*)view->GetGLViewer()->GetPictureUsingFBO(width3DView, height3DView);
+        }
+        else {
+            viewImg = (TASImage*)view->GetGLViewer()->GetPictureUsingFBO(widthChildView, heightChildView);
+        }
         
         if(viewImg){
             // copy view image in the composite image
@@ -191,12 +206,18 @@ void AliEveSaveViews::SaveForAmore()
                 viewImg->CopyArea(compositeImg, 0,0, width3DView, height3DView);
                 
             }
-            else {
-                viewImg->Crop((currentWidth-widthChildView)*0.5,
-                              (currentHeight-heightChildView)*0.5,
-                              widthChildView,
-                              heightChildView);
-                viewImg->CopyArea(compositeImg, 0,0, widthChildView, heightChildView, x,y);
+            else
+            {
+                if(currentWidth < aspectRatio*currentHeight)
+                {
+                    viewImg->Crop(0,(currentHeight-currentWidth/childAspectRatio)*0.5,currentWidth,currentWidth/childAspectRatio);
+                }
+                else
+                {
+                    viewImg->Crop((currentWidth-currentHeight*childAspectRatio)*0.5,0,currentHeight*childAspectRatio,currentHeight);
+                }
+                viewImg->Scale(widthChildView,heightChildView);
+                viewImg->CopyArea(compositeImg,0,0, widthChildView, heightChildView, x,y);
                 compositeImg->DrawRectangle(x,y, widthChildView, heightChildView, "#C0C0C0"); // draw a border around child views
             }
             delete viewImg;viewImg=0;
@@ -219,21 +240,21 @@ void AliEveSaveViews::SaveForAmore()
         
         TString gmtNow = TString::Format("%u-%.2u-%.2u %.2u:%.2u:%.2u",year,month,day,hour,minute,second);
         
-        compositeImg->Gradient( 90, "#EAEAEA #D2D2D2 #FFFFFF", 0, 45, 0, 299, 95);
-        compositeImg->Gradient( 90, "#D6D6D6 #242424 #000000", 0, 125, 60, 212, 26);
+        compositeImg->Gradient( 90, "#EAEAEA #D2D2D2 #FFFFFF", 0, 0.03*fWidth, 0.000*fHeight, 0.20*fWidth, 0.10*fHeight);
+        compositeImg->Gradient( 90, "#D6D6D6 #242424 #000000", 0, 0.08*fWidth, 0.066*fHeight, 0.15*fWidth, 0.03*fHeight);
         compositeImg->BeginPaint();
-        compositeImg->DrawRectangle(20,0, 324, 94);
-        compositeImg->DrawText(152, 6, "LIVE", 75, "#FF2D00", "FreeSansBold.otf");
-        compositeImg->DrawText(132, 65, gmtNow, 16, "#FFFFFF", "arial.ttf");
-        compositeImg->DrawText(282, 61, "Geneva", 13, "#FFFFFF", "arial.ttf");
-        compositeImg->DrawText(292, 74, "time", 13, "#FFFFFF", "arial.ttf");
+        compositeImg->DrawRectangle(0.01*fWidth,0*fHeight, 0.23*fWidth, 0.1*fHeight);
+        compositeImg->DrawText(0.11*fWidth, 0.005*fHeight, "LIVE", 0.08*fHeight, "#FF2D00", "FreeSansBold.otf");
+        compositeImg->DrawText(0.09*fWidth, 0.073*fHeight, gmtNow, 0.02*fHeight, "#FFFFFF", "arial.ttf");
+        compositeImg->DrawText(0.20*fWidth, 0.073*fHeight, "Geneva", 0.01*fHeight, "#FFFFFF", "arial.ttf");
+        compositeImg->DrawText(0.20*fWidth, 0.083*fHeight, "time", 0.01*fHeight, "#FFFFFF", "arial.ttf");
         compositeImg->EndPaint();
         //include ALICE Logo
         TASImage *aliceLogo = new TASImage(Form("%s/EVE/resources/alice_logo.png",gSystem->Getenv("ALICE_ROOT")));
         if(aliceLogo)
         {
-            aliceLogo->Scale(64,87);
-            compositeImg->Merge(aliceLogo, "alphablend", 52, 4);
+            aliceLogo->Scale(0.037*fWidth,319./236.*0.037*fWidth);
+            compositeImg->Merge(aliceLogo, "alphablend", 0.034*fWidth, 0.004*fHeight);
             delete aliceLogo;aliceLogo=0;
         }
     }
@@ -249,17 +270,18 @@ void AliEveSaveViews::SaveForAmore()
     // put event's info in blue bar on the bottom:
     compositeImg->Gradient( 90, "#1B58BF #1D5CDF #0194FF", 0, 0,fHeight-1.33*fHeightInfoBar, fWidth, fHeightInfoBar);
     compositeImg->BeginPaint();
-    compositeImg->DrawText(10, fHeight-1.33*fHeightInfoBar+15, fEventInfo, 28, "#FFFFFF", "FreeSansBold.otf");
+    compositeImg->DrawText(0.007*fWidth, 1.0166*fHeight-1.33*fHeightInfoBar, fEventInfo, 0.03*fHeight, "#FFFFFF", "FreeSansBold.otf");
     // put trigger classes in blue bar on the bottom:
-    compositeImg->DrawText(750, fHeight-1.33*fHeightInfoBar+4 ,fTriggerClasses[0], 16, "#FFFFFF", "FreeSansBold.otf");
-    compositeImg->DrawText(750, fHeight-1.33*fHeightInfoBar+24,fTriggerClasses[1], 16, "#FFFFFF", "FreeSansBold.otf");
-    compositeImg->DrawText(750, fHeight-1.33*fHeightInfoBar+44,fTriggerClasses[2], 16, "#FFFFFF", "FreeSansBold.otf");
-    compositeImg->DrawText(200, 0.2*fHeight-150, "PRELIMINARY", 200, "#30FFFFFF", "FreeSansBold.otf",TImage::kPlain,0,30.);
+    compositeImg->DrawText(0.52 *fWidth, 1.0044*fHeight-1.33*fHeightInfoBar, fTriggerClasses[0], 0.0177*fHeight, "#FFFFFF", "FreeSansBold.otf");
+    compositeImg->DrawText(0.52 *fWidth, 1.0244*fHeight-1.33*fHeightInfoBar, fTriggerClasses[1], 0.0177*fHeight, "#FFFFFF", "FreeSansBold.otf");
+    compositeImg->DrawText(0.52 *fWidth, 1.0488*fHeight-1.33*fHeightInfoBar, fTriggerClasses[2], 0.0177*fHeight, "#FFFFFF", "FreeSansBold.otf");
+    compositeImg->DrawText(0.007*fWidth, 0.9333*fHeight-1.33*fHeightInfoBar, "Preliminary reconstruction", 0.03*fHeight, "#60FFFFFF", "FreeSansBold.otf");
+    compositeImg->DrawText(0.007*fWidth, 0.9666*fHeight-1.33*fHeightInfoBar, "(not for publication)", 0.03*fHeight, "#60FFFFFF", "FreeSansBold.otf");
     compositeImg->EndPaint();
     // put clusters description in green bar on the bottom:
     compositeImg->Gradient( 90, "#1BDD1B #1DDD1D #01DD01", 0, 0, fHeight-0.33*fHeightInfoBar, fWidth, 0.33*fHeightInfoBar);
     compositeImg->BeginPaint();
-    compositeImg->DrawText(10,fHeight-0.33*fHeightInfoBar+2,fClustersInfo, 16, "#000000", "FreeSansBold.otf");
+    compositeImg->DrawText(0.007*fWidth,fHeight-0.33*fHeightInfoBar+2,fClustersInfo, 0.0177*fHeight, "#000000", "FreeSansBold.otf");
     compositeImg->EndPaint();
     
     // write composite image to disk
