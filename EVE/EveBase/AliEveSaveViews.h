@@ -20,7 +20,7 @@
 class AliEveSaveViews
 {
 public:
-    AliEveSaveViews(int width=3840,int height=2160,bool showLiveBar=true);
+    AliEveSaveViews(int width=3840,int height=2160);
     ~AliEveSaveViews();
     
     void SaveForAmore();
@@ -36,7 +36,6 @@ private:
     int fRunNumber;
     int fCurrentFileNumber;
     int fMaxFiles;
-    bool fShowLiveBar;
     int fNumberOfClusters;
     TString fCompositeImgFileName;
     
