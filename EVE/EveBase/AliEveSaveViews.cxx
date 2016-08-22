@@ -32,11 +32,10 @@
 using namespace std;
 
 
-AliEveSaveViews::AliEveSaveViews(int width,int height,bool showLiveBar) :
+AliEveSaveViews::AliEveSaveViews(int width,int height) :
 fHeightInfoBar(0.0722*height),
 fWidth(width),
-fHeight(height),
-fShowLiveBar(showLiveBar)
+fHeight(height)
 {
     fRunNumber=-1;
     fCurrentFileNumber=0;
@@ -131,7 +130,7 @@ void AliEveSaveViews::SaveForAmore()
     TEveViewerList* viewers = gEve->GetViewers();
     int Nviewers = viewers->NumChildren()-2; // remark: 3D view is counted twice
     
-    TASImage *compositeImg = new TASImage(fWidth, fHeight);
+    TASImage *compositeImg = new TASImage(fWidth, fHeight+1.33*fHeightInfoBar);
     
     // 3D View size
     int width3DView = TMath::FloorNint(2.*fWidth/3.); // the width of the 3D view
@@ -228,36 +227,37 @@ void AliEveSaveViews::SaveForAmore()
         index++;
     }
     
-    // show LIVE bar
-    if(fShowLiveBar)
+    //---------------------------------------------------
+    //              show LIVE bar
+    //---------------------------------------------------
+    
+    TTimeStamp ts;
+    UInt_t year,month,day;
+    UInt_t hour,minute,second;
+    
+    ts.GetDate(kFALSE, 0, &year, &month,&day);
+    ts.GetTime(kFALSE, 0, &hour, &minute,&second);
+    
+    TString gmtNow = TString::Format("%u-%.2u-%.2u %.2u:%.2u:%.2u",year,month,day,hour,minute,second);
+    
+    compositeImg->Gradient( 90, "#EAEAEA #D2D2D2 #FFFFFF", 0, 0.03*fWidth, 0.000*fHeight, 0.20*fWidth, 0.10*fHeight);
+    compositeImg->Gradient( 90, "#D6D6D6 #242424 #000000", 0, 0.08*fWidth, 0.066*fHeight, 0.15*fWidth, 0.03*fHeight);
+    compositeImg->BeginPaint();
+    compositeImg->DrawRectangle(0.01*fWidth,0*fHeight, 0.23*fWidth, 0.1*fHeight);
+    compositeImg->DrawText(0.11*fWidth, 0.005*fHeight, "LIVE", 0.08*fHeight, "#FF2D00", "FreeSansBold.otf");
+    compositeImg->DrawText(0.09*fWidth, 0.073*fHeight, gmtNow, 0.02*fHeight, "#FFFFFF", "arial.ttf");
+    compositeImg->DrawText(0.20*fWidth, 0.073*fHeight, "Geneva", 0.01*fHeight, "#FFFFFF", "arial.ttf");
+    compositeImg->DrawText(0.20*fWidth, 0.083*fHeight, "time", 0.01*fHeight, "#FFFFFF", "arial.ttf");
+    compositeImg->EndPaint();
+    //include ALICE Logo
+    TASImage *aliceLogo = new TASImage(Form("%s/EVE/resources/alice_logo.png",gSystem->Getenv("ALICE_ROOT")));
+    if(aliceLogo)
     {
-        TTimeStamp ts;
-        UInt_t year,month,day;
-        UInt_t hour,minute,second;
-        
-        ts.GetDate(kFALSE, 0, &year, &month,&day);
-        ts.GetTime(kFALSE, 0, &hour, &minute,&second);
-        
-        TString gmtNow = TString::Format("%u-%.2u-%.2u %.2u:%.2u:%.2u",year,month,day,hour,minute,second);
-        
-        compositeImg->Gradient( 90, "#EAEAEA #D2D2D2 #FFFFFF", 0, 0.03*fWidth, 0.000*fHeight, 0.20*fWidth, 0.10*fHeight);
-        compositeImg->Gradient( 90, "#D6D6D6 #242424 #000000", 0, 0.08*fWidth, 0.066*fHeight, 0.15*fWidth, 0.03*fHeight);
-        compositeImg->BeginPaint();
-        compositeImg->DrawRectangle(0.01*fWidth,0*fHeight, 0.23*fWidth, 0.1*fHeight);
-        compositeImg->DrawText(0.11*fWidth, 0.005*fHeight, "LIVE", 0.08*fHeight, "#FF2D00", "FreeSansBold.otf");
-        compositeImg->DrawText(0.09*fWidth, 0.073*fHeight, gmtNow, 0.02*fHeight, "#FFFFFF", "arial.ttf");
-        compositeImg->DrawText(0.20*fWidth, 0.073*fHeight, "Geneva", 0.01*fHeight, "#FFFFFF", "arial.ttf");
-        compositeImg->DrawText(0.20*fWidth, 0.083*fHeight, "time", 0.01*fHeight, "#FFFFFF", "arial.ttf");
-        compositeImg->EndPaint();
-        //include ALICE Logo
-        TASImage *aliceLogo = new TASImage(Form("%s/EVE/resources/alice_logo.png",gSystem->Getenv("ALICE_ROOT")));
-        if(aliceLogo)
-        {
-            aliceLogo->Scale(0.037*fWidth,319./236.*0.037*fWidth);
-            compositeImg->Merge(aliceLogo, "alphablend", 0.034*fWidth, 0.004*fHeight);
-            delete aliceLogo;aliceLogo=0;
-        }
+        aliceLogo->Scale(0.037*fWidth,319./236.*0.037*fWidth);
+        compositeImg->Merge(aliceLogo, "alphablend", 0.034*fWidth, 0.004*fHeight);
+        delete aliceLogo;aliceLogo=0;
     }
+    
     
     //---------------------------------------------------
     //              show Information bar
@@ -268,26 +268,26 @@ void AliEveSaveViews::SaveForAmore()
     BuildClustersInfoString();
     
     // put event's info in blue bar on the bottom:
-    compositeImg->Gradient( 90, "#1B58BF #1D5CDF #0194FF", 0, 0,fHeight-1.33*fHeightInfoBar, fWidth, fHeightInfoBar);
+    compositeImg->Gradient( 90, "#1B58BF #1D5CDF #0194FF", 0, 0,fHeight, fWidth, fHeightInfoBar);
     compositeImg->BeginPaint();
-    compositeImg->DrawText(0.007*fWidth, 1.0166*fHeight-1.33*fHeightInfoBar, fEventInfo, 0.03*fHeight, "#FFFFFF", "FreeSansBold.otf");
+    compositeImg->DrawText(0.007*fWidth, 1.0166*fHeight, fEventInfo, 0.03*fHeight, "#FFFFFF", "FreeSansBold.otf");
     // put trigger classes in blue bar on the bottom:
-    compositeImg->DrawText(0.52 *fWidth, 1.0044*fHeight-1.33*fHeightInfoBar, fTriggerClasses[0], 0.0177*fHeight, "#FFFFFF", "FreeSansBold.otf");
-    compositeImg->DrawText(0.52 *fWidth, 1.0244*fHeight-1.33*fHeightInfoBar, fTriggerClasses[1], 0.0177*fHeight, "#FFFFFF", "FreeSansBold.otf");
-    compositeImg->DrawText(0.52 *fWidth, 1.0488*fHeight-1.33*fHeightInfoBar, fTriggerClasses[2], 0.0177*fHeight, "#FFFFFF", "FreeSansBold.otf");
-    compositeImg->DrawText(0.007*fWidth, 0.9333*fHeight-1.33*fHeightInfoBar, "Preliminary reconstruction", 0.03*fHeight, "#60FFFFFF", "FreeSansBold.otf");
-    compositeImg->DrawText(0.007*fWidth, 0.9666*fHeight-1.33*fHeightInfoBar, "(not for publication)", 0.03*fHeight, "#60FFFFFF", "FreeSansBold.otf");
+    compositeImg->DrawText(0.52 *fWidth, 1.0044*fHeight, fTriggerClasses[0], 0.0177*fHeight, "#FFFFFF", "FreeSansBold.otf");
+    compositeImg->DrawText(0.52 *fWidth, 1.0244*fHeight, fTriggerClasses[1], 0.0177*fHeight, "#FFFFFF", "FreeSansBold.otf");
+    compositeImg->DrawText(0.52 *fWidth, 1.0488*fHeight, fTriggerClasses[2], 0.0177*fHeight, "#FFFFFF", "FreeSansBold.otf");
+    compositeImg->DrawText(0.007*fWidth, 0.9333*fHeight, "Preliminary reconstruction", 0.03*fHeight, "#60FFFFFF", "FreeSansBold.otf");
+    compositeImg->DrawText(0.007*fWidth, 0.9666*fHeight, "(not for publication)", 0.03*fHeight, "#60FFFFFF", "FreeSansBold.otf");
     compositeImg->EndPaint();
     // put clusters description in green bar on the bottom:
-    compositeImg->Gradient( 90, "#1BDD1B #1DDD1D #01DD01", 0, 0, fHeight-0.33*fHeightInfoBar, fWidth, 0.33*fHeightInfoBar);
+    compositeImg->Gradient( 90, "#1BDD1B #1DDD1D #01DD01", 0, 0, fHeight+fHeightInfoBar, fWidth, 0.33*fHeightInfoBar);
     compositeImg->BeginPaint();
-    compositeImg->DrawText(0.007*fWidth,fHeight-0.33*fHeightInfoBar+2,fClustersInfo, 0.0177*fHeight, "#000000", "FreeSansBold.otf");
+    compositeImg->DrawText(0.007*fWidth,fHeight+fHeightInfoBar+2,fClustersInfo, 0.0177*fHeight, "#000000", "FreeSansBold.otf");
     compositeImg->EndPaint();
     
     // write composite image to disk
     fCompositeImgFileName = Form("online-viz-%03d", fCurrentFileNumber);
-    TASImage *imgToSave = new TASImage(fWidth,fHeight);
-    compositeImg->CopyArea(imgToSave, 0,0, fWidth, fHeight);
+    TASImage *imgToSave = new TASImage(fWidth,fHeight+1.33*fHeightInfoBar);
+    compositeImg->CopyArea(imgToSave, 0,0, fWidth, fHeight+1.33*fHeightInfoBar);
     
     imgToSave->WriteImage(Form("%s.png", fCompositeImgFileName.Data()));
     
