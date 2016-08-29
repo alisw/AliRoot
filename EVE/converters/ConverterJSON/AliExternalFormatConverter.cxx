@@ -139,7 +139,7 @@ void AliExternalFormatConverter::LoadESDFriends(const Char_t *friendPath)
     } else {
         std::cerr <<
         "An error ocurred. AliESDfriend has not been loaded. Please check the path" << std::endl;
-        exit(EXIT_FAILURE);
+	// exit(EXIT_FAILURE);
     }
 }
 
