@@ -107,6 +107,8 @@ void AliEveSaveViews::ChangeRun()
 
 void AliEveSaveViews::SaveForAmore()
 {
+    cout<<"\n\nSaving views for AMORE\n"<<endl;
+    
     gEve->GetBrowser()->RaiseWindow();
     gEve->FullRedraw3D();
     gSystem->ProcessEvents();
@@ -171,13 +173,6 @@ void AliEveSaveViews::SaveForAmore()
         // but is causes a bug (moving mouse over views makes them disappear
         // on new event being loaded
         
-        //         if(index==0){
-        //         tempImg = (TASImage*)view->GetGLViewer()->GetPictureUsingFBO(width3DView, height3DView);
-        //         }
-        //         else {
-        //         tempImg = (TASImage*)view->GetGLViewer()->GetPictureUsingFBO(widthChildView, heightChildView);
-        //         }
-        //
         TASImage *viewImg;
         if(index==0){
             viewImg = (TASImage*)view->GetGLViewer()->GetPictureUsingFBO(width3DView, height3DView);
@@ -290,6 +285,14 @@ void AliEveSaveViews::SaveForAmore()
     compositeImg->CopyArea(imgToSave, 0,0, fWidth, fHeight+1.33*fHeightInfoBar);
     
     imgToSave->WriteImage(Form("%s.png", fCompositeImgFileName.Data()));
+    
+    cout<<"Fix the scale"<<endl;
+    TEveBrowser *browser = gEve->GetBrowser();
+    browser->MoveResize(browser->GetX(), browser->GetY(), browser->GetWidth(),browser->GetHeight());
+    gEve->FullRedraw3D();
+    gSystem->ProcessEvents();
+    gEve->Redraw3D(true);
+    cout<<"rescaled"<<endl;
     
     if(compositeImg){delete compositeImg;compositeImg=0;}
     if(imgToSave){delete imgToSave;imgToSave=0;}
