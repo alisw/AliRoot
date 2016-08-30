@@ -284,7 +284,7 @@ AliRawReader* AliEveEventManager::AssertRawReader()
 //==============================================================================
 
 AliMagF* AliEveEventManager::AssertMagField()
-{
+{    
     // Make sure AliMagF is initialized and returns it.
     // Throws exception in case magnetic field is not available.
     // Static utility for macros.
