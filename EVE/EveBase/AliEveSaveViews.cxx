@@ -147,7 +147,6 @@ void AliEveSaveViews::SaveForAmore()
     int index=0;            // iteration counter
     int x = width3DView;    // x position of the child view
     int y = 0;              // y position of the child view
-    TString viewFilename;   // save view to this file
     
      for(TEveElement::List_i i = viewers->BeginChildren(); i != viewers->EndChildren(); i++)
     { // NB: this skips the first children (first 3D View)
@@ -158,22 +157,18 @@ void AliEveSaveViews::SaveForAmore()
            (strcmp(view->GetName(),"RhoZ View")!=0)){
             continue;
         }
-        
-        viewFilename = Form("view-%d.png", index);
-        
-        // Save OpenGL view in file and read it back using BB (missing method in Root returning TASImage)
-//        view->GetGLViewer()->SavePictureUsingBB(viewFilename);
-//        TASImage *viewImg = new TASImage(viewFilename);
-        
-        //        tempImg = (TASImage*)view->GetGLViewer()->GetPictureUsingBB();
-        
-        
-        // Second option is to use FBO instead of BB
-        // This improves the quality of pictures in some specific cases
-        // but is causes a bug (moving mouse over views makes them disappear
-        // on new event being loaded
-        
+    
         TASImage *viewImg;
+    
+        // We can use either get picture using FBO or BB
+        // FBO improves the quality of pictures in some specific cases
+        // but there were some problems with it:
+        // - moving mouse over views makes them disappear on new event being loaded
+        // - scale of the view can be broken after getting the picture
+        // - scale of the resulting image can be incorrect
+        
+        // viewImg = (TASImage*)view->GetGLViewer()->GetPictureUsingBB();
+        
         if(index==0){
             viewImg = (TASImage*)view->GetGLViewer()->GetPictureUsingFBO(width3DView, height3DView);
         }
@@ -351,7 +346,6 @@ void AliEveSaveViews::Save(bool withDialog,char* filename)
     int index=0;            // iteration counter
     int x = width3DView;    // x position of the child view
     int y = 0;              // y position of the child view
-    TString viewFilename;   // save view to this file
     
     for(TEveElement::List_i i = viewers->BeginChildren(); i != viewers->EndChildren(); i++)
     { // NB: this skips the first children (first 3D View)
@@ -363,22 +357,17 @@ void AliEveSaveViews::Save(bool withDialog,char* filename)
             continue;
         }
         
-        viewFilename = Form("view-%d.png", index);
-        
-        
-        // Save OpenGL view in file and read it back using BB (missing method in Root returning TASImage)
-        //        view->GetGLViewer()->SavePictureUsingBB(viewFilename);
-        //        TASImage *viewImg = new TASImage(viewFilename);
-        
-        //        tempImg = (TASImage*)view->GetGLViewer()->GetPictureUsingBB();
-        
-        
-        // Second option is to use FBO instead of BB
-        // This improves the quality of pictures in some specific cases
-        // but is causes a bug (moving mouse over views makes them disappear
-        // on new event being loaded
-        
         TASImage *viewImg;
+        
+        // We can use either get picture using FBO or BB
+        // FBO improves the quality of pictures in some specific cases
+        // but there were some problems with it:
+        // - moving mouse over views makes them disappear on new event being loaded
+        // - scale of the view can be broken after getting the picture
+        // - scale of the resulting image can be incorrect
+
+        // viewImg = (TASImage*)view->GetGLViewer()->GetPictureUsingBB();
+        
         if(index==0){
             viewImg = (TASImage*)view->GetGLViewer()->GetPictureUsingFBO(width3DView, height3DView);
         }
