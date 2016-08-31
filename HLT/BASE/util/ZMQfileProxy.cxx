@@ -1,5 +1,5 @@
 #include "zmq.h"
-#include "AliZMQhelpers.h"
+#include "AliHLTZMQhelpers.h"
 #include <iostream>
 #include "TTimeStamp.h"
 #include "AliHLTDataTypes.h"

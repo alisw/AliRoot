@@ -27,7 +27,7 @@
 #include "TStreamerInfo.h"
 #include "TCollection.h"
 #include "TList.h"
-#include "AliZMQhelpers.h"
+#include "AliHLTZMQhelpers.h"
 
 using namespace std;
 
@@ -168,8 +168,8 @@ int AliHLTZMQsink::DoProcessing( const AliHLTComponentEventData& evtData,
   
   //create a default selection of any data:
   int requestTopicSize=-1;
-  char requestTopic[kAliHLTComponentDataTypeTopicSize];
-  memset(requestTopic, '*', kAliHLTComponentDataTypeTopicSize);
+  char requestTopic[kDataTypeTopicSize];
+  memset(requestTopic, '*', kDataTypeTopicSize);
 
   int rc = 0;
   Bool_t doSend = kTRUE;
@@ -179,7 +179,7 @@ int AliHLTZMQsink::DoProcessing( const AliHLTComponentEventData& evtData,
   AliCDBEntry* cdbEntry = NULL;
   
   //cache an ECS param topic
-  char ecsParamTopic[kAliHLTComponentDataTypeTopicSize];
+  char ecsParamTopic[kDataTypeTopicSize];
   DataType2Topic(kAliHLTDataTypeECSParam, ecsParamTopic);
   TString requestedCDBpath;
 
@@ -196,7 +196,7 @@ int AliHLTZMQsink::DoProcessing( const AliHLTComponentEventData& evtData,
       size_t moreSize=sizeof(more);
       do //request could be multipart, get all parts
       {
-        requestTopicSize = zmq_recv (fZMQout, requestTopic, kAliHLTComponentDataTypeTopicSize, 0);
+        requestTopicSize = zmq_recv (fZMQout, requestTopic, kDataTypeTopicSize, 0);
         zmq_getsockopt(fZMQout, ZMQ_RCVMORE, &more, &moreSize);
         zmq_msg_t requestMsg;
         int requestSize=-1;
@@ -360,7 +360,7 @@ int AliHLTZMQsink::DoProcessing( const AliHLTComponentEventData& evtData,
       }
 
       //check if the data type matches the request
-      char blockTopic[kAliHLTComponentDataTypeTopicSize];
+      char blockTopic[kDataTypeTopicSize];
       DataType2Topic(inputBlock->fDataType, blockTopic);
       if (Topicncmp(requestTopic, blockTopic, requestTopicSize))
       {

@@ -21,7 +21,7 @@
 #include "AliCDBEntry.h"
 
 #ifdef ZMQ
-#include "AliZMQhelpers.h"
+#include "AliHLTZMQhelpers.h"
 #include "zmq.h"
 #endif
 

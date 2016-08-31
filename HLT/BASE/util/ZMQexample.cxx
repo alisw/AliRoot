@@ -1,5 +1,5 @@
 #include "zmq.h"
-#include "AliZMQhelpers.h"
+#include "AliHLTZMQhelpers.h"
 #include "AliHLTDataTypes.h"
 #include "TObject.h"
 

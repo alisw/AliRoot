@@ -36,7 +36,7 @@
 #include "TSystem.h"
 #include "TTimeStamp.h"
 #include "zmq.h"
-#include "AliZMQhelpers.h"
+#include "AliHLTZMQhelpers.h"
 #include <vector>
 #include <iostream>
 #include <sys/ioctl.h>

@@ -74,6 +74,7 @@ if(ZEROMQ_FOUND)
   set(SRCS
       ${SRCS}
       AliZMQhelpers.cxx
+      AliHLTZMQhelpers.cxx
       AliZMQhistViewer.cxx
       AliZMQMTviewerGUI.cxx
      )

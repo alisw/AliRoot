@@ -16,7 +16,7 @@
 #include <sys/time.h>
 #include <string>
 #include <map>
-#include "AliZMQhelpers.h"
+#include "AliHLTZMQhelpers.h"
 #include "TCollection.h"
 #include "AliLog.h"
 #include "AliAnalysisDataContainer.h"
