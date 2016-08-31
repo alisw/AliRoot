@@ -22,11 +22,15 @@ class AliEveSaveViews
 public:
     AliEveSaveViews(int width=3840,int height=2160);
     ~AliEveSaveViews();
+    // 3,840 × 2,160 (4K)
+    // 7,680 × 4,320 (8K)
+    // 15,360 × 8,640 (16K)
     
     void SaveForAmore();
     void Save(bool withDialog=true,char* filename="");
     int SendToAmore();
 private:
+    TASImage* GetPicture(int width, int heigth, int height3DView, bool projections=true);
     void ChangeRun();
     
     void BuildEventInfoString();
