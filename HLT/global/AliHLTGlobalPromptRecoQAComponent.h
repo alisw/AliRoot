@@ -9,9 +9,7 @@
 #include <vector>
 #include <map>
 #include "TH1.h"
-#include "AliZMQhelpers.h"
-
-using namespace AliZMQhelpers;
+#include "AliOptionParser.h"
 
 // forward declarations
 class AliESDEvent;

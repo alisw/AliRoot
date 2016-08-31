@@ -2,6 +2,7 @@
 #include "AliHLTZMQhelpers.h"
 #include "AliHLTDataTypes.h"
 #include "TObject.h"
+#include "AliOptionParser.h"
 
 void* fChannelIN;
 TString fConfigIN;

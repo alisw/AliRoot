@@ -15,6 +15,7 @@
 #include <map>
 #include <string>
 #include "TRegexp.h"
+#include "AliOptionParser.h"
 
 using namespace AliZMQhelpers;
 

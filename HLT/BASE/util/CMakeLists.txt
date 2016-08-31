@@ -64,16 +64,17 @@ set(SRCS
     AliHLTRootFileWriterComponent.cxx
     AliHLTRootSchemaEvolutionComponent.cxx
     AliHLTObjectRenamer.cxx
+    AliOptionParser.cxx
    )
 
 if(ZEROMQ_FOUND) 
   include_directories(
                       ${ZEROMQ_INCLUDE_DIR}
+                      ${AliRoot_SOURCE_DIR}/HLT/ZMQ
                       )
 
   set(SRCS
       ${SRCS}
-      AliZMQhelpers.cxx
       AliHLTZMQhelpers.cxx
       AliZMQhistViewer.cxx
       AliZMQMTviewerGUI.cxx
@@ -124,19 +125,19 @@ if(ZEROMQ_FOUND)
                       )
 
   add_executable(ZMQfileProxy ZMQfileProxy.cxx)
-  target_link_libraries(ZMQfileProxy HLTbase AliHLTGlobal RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core)
+  target_link_libraries(ZMQfileProxy HLTbase AliHLTGlobal AliZMQhelpers RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core)
   add_executable(ZMQROOTmerger ZMQROOTmerger.cxx)
-  target_link_libraries(ZMQROOTmerger HLTbase AliHLTGlobal RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core pthread)
+  target_link_libraries(ZMQROOTmerger HLTbase AliHLTGlobal AliZMQhelpers RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core pthread)
   add_executable(ZMQhistSource ZMQhistSource.cxx)
-  target_link_libraries(ZMQhistSource HLTbase AliHLTGlobal RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core)
+  target_link_libraries(ZMQhistSource HLTbase AliHLTGlobal AliZMQhelpers RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core)
   add_executable(ZMQhistViewer ZMQhistViewer.cxx)
-  target_link_libraries(ZMQhistViewer HLTbase AliHLTGlobal AliHLTUtil RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core Hist Rint)
+  target_link_libraries(ZMQhistViewer HLTbase AliHLTGlobal AliZMQhelpers AliHLTUtil RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core Hist Rint X11)
   add_executable(ZMQproxy ZMQproxy.cxx)
-  target_link_libraries(ZMQproxy HLTbase AliHLTGlobal RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core)
+  target_link_libraries(ZMQproxy HLTbase AliHLTGlobal AliZMQhelpers RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core)
   add_executable(ZMQHLTchain ZMQHLTchain.cxx)
-  target_link_libraries(ZMQHLTchain HLTbase AliHLTGlobal RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core)
+  target_link_libraries(ZMQHLTchain HLTbase AliHLTGlobal AliZMQhelpers RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core)
   add_executable(ZMQexample ZMQexample.cxx)
-  target_link_libraries(ZMQexample HLTbase AliHLTGlobal RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core)
+  target_link_libraries(ZMQexample HLTbase AliHLTGlobal AliZMQhelpers RAWDatabase Geom Graf MathCore Net Tree EG Gpad Matrix Minuit Physics VMC Thread STEERBase XMLParser Graf3d RIO Hist Core)
   
   # Installation of 
   install(TARGETS ZMQexample ZMQfileProxy ZMQROOTmerger ZMQhistSource ZMQhistViewer ZMQproxy ZMQHLTchain RUNTIME DESTINATION bin)

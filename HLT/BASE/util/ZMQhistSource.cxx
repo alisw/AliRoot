@@ -24,7 +24,8 @@
 #include "TTimeStamp.h"
 #include "TSystem.h"
 #include "TObjArray.h"
-#include "AliAnalysisDataContainer.h"
+#include "AliHLTObjArray.h"
+#include "AliOptionParser.h"
 
 using namespace AliZMQhelpers;
 

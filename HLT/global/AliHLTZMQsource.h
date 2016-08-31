@@ -12,6 +12,7 @@
 
 #include "AliHLTComponent.h"
 #include "AliZMQhelpers.h"
+#include "AliOptionParser.h"
 #include <TList.h>
 
 class TFile;

@@ -25,6 +25,7 @@
 #include "TSystem.h"
 #include "TStyle.h"
 #include "signal.h"
+#include "AliOptionParser.h"
 class MySignalHandler;
 
 using namespace AliZMQhelpers;

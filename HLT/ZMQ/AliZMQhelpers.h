@@ -174,23 +174,6 @@ const DataTopic kDataTypeConfig("CONFIG__","***\n",0);
 const DataTopic kDataTypeTObject("ROOTTOBJ","***\n",0);
 const DataTopic kDataTypeTH1("ROOTHIST","***\n",0);
 
-//simple option parser class
-class AliOptionParser {
-public:
-  AliOptionParser() {}
-  virtual ~AliOptionParser() {}
-  //implement this to process one option at a time
-  virtual int ProcessOption(TString /*option*/, TString /*value*/) {return 0;}
-  
-  //call this to parse the args
-  int ProcessOptionString(TString arguments);
-  int ProcessOptionString(int argc, char** argv) { return ProcessOptionString(GetFullArgString(argc,argv)); }
-
-  //convert argc/argv into a TString of options
-  static TString GetFullArgString(int argc, char** argv);
-  static aliStringVec* TokenizeOptionString(const TString str);
-};
-
 //a general utility to tokenize strings
 std::vector<std::string> TokenizeString(const std::string input, const std::string delimiters);
 //parse 

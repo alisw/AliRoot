@@ -17,6 +17,7 @@
 #include <deque>
 #include "TQObject.h"
 #include "TObject.h"
+#include "AliOptionParser.h"
 
 class TVirtualPad;
 class TString;

@@ -6,9 +6,7 @@
 
 #include "AliHLTProcessor.h"
 #include "AliHLTComponentBenchmark.h"
-#include "AliZMQhelpers.h"
-
-using namespace AliZMQhelpers;
+#include "AliOptionParser.h"
 
 class AliHLTTPCReverseTransformInfoV1;
 class AliHLTExternalTrackParam;

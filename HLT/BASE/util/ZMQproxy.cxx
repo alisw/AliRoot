@@ -16,6 +16,7 @@
 #include <string>
 #include <map>
 #include "AliZMQhelpers.h"
+#include "AliOptionParser.h"
 
 //this is meant to become a class, hence the structure with global vars etc.
 //Also the code is rather flat - it is a bit of a playground to test ideas.

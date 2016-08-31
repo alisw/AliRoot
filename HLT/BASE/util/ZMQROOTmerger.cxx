@@ -17,6 +17,7 @@
 #include <string>
 #include <map>
 #include "AliHLTZMQhelpers.h"
+#include "AliOptionParser.h"
 #include "TCollection.h"
 #include "AliLog.h"
 #include "AliAnalysisDataContainer.h"
