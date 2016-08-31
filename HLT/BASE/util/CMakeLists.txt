@@ -95,7 +95,7 @@ set(LIBDEPS STEERBase STEER AOD CDB ESD RAWDatabase RAWDatarec ANALYSISalice HLT
 generate_rootmap("${MODULE}" "${LIBDEPS}" "${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}LinkDef.h")
 
 if(ZEROMQ_FOUND)
-  set(LIBDEPS ${LIBDEPS} ${ZEROMQ_LIBRARIES})
+  set(LIBDEPS ${LIBDEPS} ${ZEROMQ_LIBRARIES} AliZMQhelpers)
 endif(ZEROMQ_FOUND)
 
 # Add a library to the project using the specified source files
