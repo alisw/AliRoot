@@ -10,7 +10,9 @@
 #include <TEveTrack.h>
 #include <TEveManager.h>
 #include <TInterpreter.h>
+#include <TEnv.h>
 
+#include <AliEveInit.h>
 #include <AliEveTrack.h>
 #include <AliEveMUONTrack.h>
 #include <AliESDcascade.h>
