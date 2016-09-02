@@ -36,14 +36,14 @@ include_directories(
                    )
 
 # aliceToJson executable
-if(ROOT_HTTP_FOUND)
+#if(ROOT_HTTP_FOUND)
     include_directories(
         ${AliRoot_SOURCE_DIR}/EVE/aliceToJson
         ${AliRoot_SOURCE_DIR}/EVE/converters/ConverterJSON
         )
     add_executable(aliceToJson aliceToJson.cxx)
     target_link_libraries(aliceToJson ConverterJSON STEERBase STEER ESD)
-endif(ROOT_HTTP_FOUND)
+#endif(ROOT_HTTP_FOUND)
 
 # alieve executable
 add_executable(alieve alieve_main.cxx)
@@ -63,6 +63,6 @@ endif(ZEROMQ_FOUND)
 # Installation
 install(TARGETS alieve RUNTIME DESTINATION bin)
 
-if(ROOT_HTTP_FOUND)
+#if(ROOT_HTTP_FOUND)
     install(TARGETS aliceToJson RUNTIME DESTINATION bin)
-endif(ROOT_HTTP_FOUND)
+#endif(ROOT_HTTP_FOUND)
