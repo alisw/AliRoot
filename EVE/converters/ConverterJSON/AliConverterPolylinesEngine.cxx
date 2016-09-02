@@ -66,7 +66,12 @@ void AliConverterPolylinesEngine::AssertMagField() const
 {
     // setup CDB
     AliCDBManager* cdb = AliCDBManager::Instance();
-    cdb->SetDefaultStorage(Form("local://%s/../src/OCDB",gSystem->Getenv("ALICE_ROOT")));
+    
+    TEnv settings;
+    AliEveInit::GetConfig(&settings);
+     TString ocdbStorage = settings.GetValue("OCDB.default.path",Form("local://%s/OCDB",gSystem->Getenv("ALICE_ROOT")));
+    
+    cdb->SetDefaultStorage(ocdbStorage);
     if (!cdb->IsDefaultStorageSet())
     {
         std::cerr<<"\n\nCould not set CDB.\n\n"<<std::endl;

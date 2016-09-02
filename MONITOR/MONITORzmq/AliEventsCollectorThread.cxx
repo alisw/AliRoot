@@ -75,7 +75,7 @@ void AliEventsCollectorThread::CollectorHandle()
         else if(event && receiveStatus)
         {
             cout<<"AliEventsCollectorThread -- Received event:"<<event->GetEventNumberInFile()<<"\trun:"<<event->GetRunNumber()<<endl;
-            
+            /*
             if(event->GetRunNumber() != fCurrentRunNumber)// first event in a new run
             {
                 cout<<"AliEventsCollectorThread -- new run stars"<<endl;
@@ -108,13 +108,13 @@ void AliEventsCollectorThread::CollectorHandle()
             }
             
             CheckCurrentStorageSize();
-
+*/
             TThread::Lock();
             
             fDatabase->InsertEvent(event->GetRunNumber(),
                                    event->GetEventNumberInFile(),
                                    (char*)event->GetBeamType(),
-                                   event->GetMultiplicity()->GetNumberOfTracklets(),
+                                   event->GetNumberOfTracks(),
                                    Form("%s/run%d/AliESDs.root",fManager->fStoragePath.c_str(),
                                         event->GetRunNumber()),
                                    event->GetTriggerMask(),

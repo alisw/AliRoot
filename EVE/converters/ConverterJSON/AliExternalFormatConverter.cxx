@@ -215,7 +215,7 @@ AliMinimalisticEvent AliExternalFormatConverter::GenerateMinimalisticEvent()
     const char *beamType = fESDEvent->GetBeamType();
     time_t time_stamp = fESDEvent->GetTimeStamp();
     Float_t energy = fESDEvent->GetBeamEnergy();
-    Int_t multiplicity = fESDEvent->GetMultiplicity()->GetNumberOfTracklets();
+    Int_t multiplicity = fESDEvent->GetNumberOfTracks();
     AliMinimalisticEvent event(energy, multiplicity, beamType, time_stamp);
     PopulateEvent(event);
     return event;

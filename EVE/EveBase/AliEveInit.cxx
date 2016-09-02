@@ -50,7 +50,7 @@ fPath(path)
     bool autoloadEvents   = settings.GetValue("events.autoload.set",false);   // set autoload by default
     bool fullscreen       = settings.GetValue("fullscreen.mode",false);       // hide left and bottom tabs
     
-    TString ocdbStorage   = settings.GetValue("OCDB.default.path","local://$ALICE_ROOT/../src/OCDB");// default path to OCDB
+    TString ocdbStorage   = settings.GetValue("OCDB.default.path","local://$ALICE_ROOT/OCDB");// default path to OCDB
     
     
     Info("AliEveInit",Form("\n\nOCDB path:%s\n\n",ocdbStorage.Data()));
