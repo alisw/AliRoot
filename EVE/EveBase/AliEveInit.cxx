@@ -133,7 +133,7 @@ fPath(path)
             if(detectorsList[i]=="TPC" || detectorsList[i]=="MCH" || detectorsList[i]=="MTR"|| detectorsList[i]=="MID" || detectorsList[i]=="MFT" || detectorsList[i]=="AD0" || detectorsList[i]=="FMD")
             {
                 // don't load MUON+MFT and AD and standard TPC to R-Phi view
-                mv->InitSimpleGeom(geomGentle->GetSimpleGeom((char*)detectorsList[i].c_str()),false);
+                mv->InitSimpleGeom(geomGentle->GetSimpleGeom((char*)detectorsList[i].c_str()),true,false);
             }
             else if(detectorsList[i]=="RPH")
             {
