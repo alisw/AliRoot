@@ -242,9 +242,12 @@ void AliEveSaveViews::Save(bool withDialog,char* filename)
         const char *timeStamp = Form("Timestamp:%s(UTC)",ts.AsString("s"));
         const char *system;
         
-        if(strcmp(fESDEvent->GetBeamType(),"")!=0)
+        cout<<"Beam:"<<fESDEvent->GetBeamType()<<endl;
+        cout<<"Energy:"<<fESDEvent->GetBeamEnergy()<<endl;
+        
+        if(strcmp(fESDEvent->GetBeamType(),"")!=0) // if not empty
         {
-            if(strcmp(fESDEvent->GetBeamType(),"A-A"))
+            if(strcmp(fESDEvent->GetBeamType(),"A-A")==0)
             {
                 system = "Colliding system:Pb-Pb";
             }
@@ -253,19 +256,17 @@ void AliEveSaveViews::Save(bool withDialog,char* filename)
                 system = Form("Colliding system:%s",fESDEvent->GetBeamType());
             }
         }
-        else
+        else // if beam info empty
         {
             const char *systemLabel= settings.GetValue("screenshot.force.system","System: unknown");
             if(strcmp(systemLabel,"")==0)systemLabel="System: unknown";
             system = systemLabel;
         }
         
-        system = "Colliding system:p-p";
-        
         const char *energy;
         if(fESDEvent->GetBeamEnergy()>=0.0000001)
         {
-            energy = Form("Energy:%.0f TeV",2*fESDEvent->GetBeamEnergy()/1000);
+            energy = Form("Energy:%.2f TeV",2*fESDEvent->GetBeamEnergy()/1000.);
         }
         else
         {
