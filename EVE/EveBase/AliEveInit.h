@@ -23,6 +23,7 @@ public:
     ~AliEveInit(){};
     
     static void GetConfig(TEnv *settings);
+    static void SetupGeometry();
     static void AddMacros();
 private:
     const TString& fPath;

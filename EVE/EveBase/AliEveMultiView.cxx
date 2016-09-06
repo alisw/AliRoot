@@ -122,6 +122,15 @@ AliEveMultiView::~AliEveMultiView()
     delete fRhoZMgr;
 }
 
+AliEveMultiView* AliEveMultiView::Instance()
+{
+    if(fgInstance) return fgInstance;
+    else{
+        new AliEveMultiView();
+        return fgInstance;
+    }
+}
+
 void AliEveMultiView::InitSimpleGeom(TEveGeoShape* geom, bool threeD, bool rPhi, bool rhoZ)
 {
     if(!geom)

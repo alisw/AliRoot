@@ -20,10 +20,7 @@
 class AliEveMultiView
 {
 public:
-    static AliEveMultiView* Instance(){return fgInstance;}
-    
-    AliEveMultiView();
-    ~AliEveMultiView();
+    static AliEveMultiView* Instance();
     
     void InitSimpleGeom(TEveGeoShape* geom,bool threeD=true, bool rPhi=true, bool rhoZ=true);
     
@@ -47,6 +44,9 @@ public:
     TEveScene* GetRhoZScene() {return fRhoZGeomScene;}
     
 private:
+    AliEveMultiView();
+    ~AliEveMultiView();
+    
     static AliEveMultiView* fgInstance;     // Single instance of the multiview
     
     TEveProjectionManager *fRPhiMgr; // Manager of R-Phi projection
