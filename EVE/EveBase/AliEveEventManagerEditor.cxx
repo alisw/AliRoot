@@ -355,73 +355,9 @@ void AliEveEventManagerWindow::DoSetEvent()
 void AliEveEventManagerWindow::DoRefresh()
 {
     // Refresh event status.
-    TEnv settings;
-    AliEveInit::GetConfig(&settings);
-    AliEveMultiView *mv = AliEveMultiView::Instance();
-    AliEveGeomGentle *geomGentle = new AliEveGeomGentle();
+    AliEveMultiView::Instance()->DestroyAllGeometries();
     
-    mv->DestroyAllGeometries();
-    
-    vector<string> detectorsList;
-    string geomPath = settings.GetValue("simple.geom.path","${ALICE_ROOT}/EVE/resources/geometry/run2/");
-    string alirootBasePath = gSystem->Getenv("ALICE_ROOT");
-    size_t alirootPos = geomPath.find("${ALICE_ROOT}");
-    
-    if(alirootPos != string::npos){
-        geomPath.replace(alirootPos,alirootPos+13,alirootBasePath);
-    }
-    
-    TSystemDirectory dir(geomPath.c_str(),geomPath.c_str());
-    TList *files = dir.GetListOfFiles();
-    
-    if (files)
-    {
-        TRegexp e("simple_geom_[A-Z,0-9][A-Z,0-9][A-Z,0-9].root");
-        TRegexp e2("[A-Z,0-9][A-Z,0-9][A-Z,0-9]");
-        
-        TSystemFile *file;
-        TString fname;
-        TIter next(files);
-        
-        while ((file=(TSystemFile*)next()))
-        {
-            fname = file->GetName();
-            if(fname.Contains(e))
-            {
-                TString detName = fname(e2);
-                detName.Resize(3);
-                detectorsList.push_back(detName.Data());
-            }
-        }
-    }
-    else{
-        cout<<"\n\nAliEveInit -- geometry files not found!!!"<<endl;
-        cout<<"Searched directory was:"<<endl;
-        dir.Print();
-    }
-    
-    for(int i=0;i<detectorsList.size();i++)
-    {
-        if(settings.GetValue(Form("%s.draw",detectorsList[i].c_str()), true))
-        {
-            if(detectorsList[i]=="TPC" || detectorsList[i]=="MCH" || detectorsList[i]=="MTR"|| detectorsList[i]=="MID" || detectorsList[i]=="MFT" || detectorsList[i]=="AD0" || detectorsList[i]=="FMD")
-            {
-                // don't load MUON+MFT and AD and standard TPC to R-Phi view
-                mv->InitSimpleGeom(geomGentle->GetSimpleGeom((char*)detectorsList[i].c_str()),true,false);
-            }
-            else if(detectorsList[i]=="RPH")
-            {
-                // special TPC geom from R-Phi view
-                mv->InitSimpleGeom(geomGentle->GetSimpleGeom("RPH"),false,true,false);
-            }
-            else
-            {
-                mv->InitSimpleGeom(geomGentle->GetSimpleGeom((char*)detectorsList[i].c_str()));
-            }
-        }
-    }
-
-    
+    AliEveInit::SetupGeometry();
     AliEveInit::AddMacros();
     
     TEveScene *rPhiScene = AliEveMultiView::Instance()->GetRPhiScene();
@@ -433,6 +369,8 @@ void AliEveEventManagerWindow::DoRefresh()
     TEveProjectionAxes* rPhiAxes = ((TEveProjectionAxes*)*rPhiElement);
     TEveProjectionAxes* rhoZAxes = ((TEveProjectionAxes*)*rhoZElement);
     
+    TEnv settings;
+    AliEveInit::GetConfig(&settings);
     rPhiAxes->SetRnrSelf(settings.GetValue("axes.show",false));
     rhoZAxes->SetRnrSelf(settings.GetValue("axes.show",false));
     
