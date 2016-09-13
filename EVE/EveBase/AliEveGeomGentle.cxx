@@ -15,7 +15,7 @@
 
 using namespace std;
 
-TEveGeoShape* AliEveGeomGentle::GetSimpleGeom(char* detector)
+TEveGeoShape* AliEveGeomGentle::GetSimpleGeom(string detector)
 {
     TEnv settings;
     AliEveInit::GetConfig(&settings);
@@ -28,25 +28,25 @@ TEveGeoShape* AliEveGeomGentle::GetSimpleGeom(char* detector)
         geomPath.replace(alirootPos,alirootPos+13,alirootBasePath);
     }
     
-    TFile *f = TFile::Open(Form("%s/simple_geom_%s.root",geomPath.c_str(),detector));
+    TFile *f = TFile::Open(Form("%s/simple_geom_%s.root",geomPath.c_str(),detector.c_str()));
     if(!f){
         cout<<"AliEveGeomGentle::GetSimpleGeom -- no file with geometry found!"<<endl;
         return nullptr;
     }
-    TEveGeoShapeExtract* gse = (TEveGeoShapeExtract*) f->Get(detector);
+    TEveGeoShapeExtract* gse = (TEveGeoShapeExtract*) f->Get(detector.c_str());
     TEveGeoShape* gsre = TEveGeoShape::ImportShapeExtract(gse);
     f->Close();
     
     // tricks for different R-Phi geom of TPC:
-    if(strcmp(detector,"RPH")==0) // use all other parameters of regular TPC geom
+    if(detector=="RPH") // use all other parameters of regular TPC geom
     {
         detector = "TPC";
     }
 
     DrawDeep(gsre,
-             settings.GetValue(Form("%s.color",detector),-1),
-             settings.GetValue(Form("%s.trans",detector),-1),
-             settings.GetValue(Form("%s.line.color",detector),-1));
+             settings.GetValue(Form("%s.color",detector.c_str()),-1),
+             settings.GetValue(Form("%s.trans",detector.c_str()),-1),
+             settings.GetValue(Form("%s.line.color",detector.c_str()),-1));
     
     gEve->GetDefaultGLViewer()->UpdateScene();
     

@@ -4,9 +4,6 @@
 // 2010 Svein Lindal <slindal@fys.uio.no>                        *
 //         for The ALICE HLT Project.                                    *
 // Offline Buffer
-#if __GNUC__>= 3
-   using namespace std;
-#endif
 
 #include "AliEveEventBufferOffline.h"
 
@@ -18,6 +15,10 @@
 #include "TFile.h"
 #include "TTree.h"
 #include <iostream>
+
+#if __GNUC__>= 3
+using namespace std;
+#endif
 
 ClassImp(AliEveEventBufferOffline);
 

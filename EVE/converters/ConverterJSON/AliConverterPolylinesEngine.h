@@ -60,8 +60,6 @@ public:
     ) const;
     void InitializeEngine(AliESDEvent *event);
 private:
-    AliConverterPolylinesEngine(const AliConverterPolylinesEngine&) {};
-    AliConverterPolylinesEngine& operator=(const AliConverterPolylinesEngine&) {};
     TRint *fApp;
     AliESDEvent *fESDEvent;
 };

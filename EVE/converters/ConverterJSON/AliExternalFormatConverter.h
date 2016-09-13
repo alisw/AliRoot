@@ -59,9 +59,6 @@ public:
     void SerializeAllEvents(TString path);
 
 private:
-    AliExternalFormatConverter(const AliExternalFormatConverter&) {/*Converter cannot be copied*/};
-    AliExternalFormatConverter& operator=(const AliExternalFormatConverter&) {/*Converter cannot be assigned*/};
-
     void LoadESDFile(const Char_t * ESDFilePath);
     void LoadESDFriends(const Char_t *friendFilePath);
 

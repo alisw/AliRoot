@@ -573,8 +573,8 @@ void AliEveITSModuleStepper::Render(TGLRnrCtx& rnrCtx)
     {
       TGLRect rect(*rnrCtx.GetPickRectangle());
       rnrCtx.GetCamera()->WindowToViewport(rect);
-      gluPickMatrix(rect.X(), rect.Y(), rect.Width(), rect.Height(),
-		    (Int_t*) rnrCtx.GetCamera()->RefViewport().CArr());
+//  this is deprecated - to be rewritten if needed at all
+//      gluPickMatrix(rect.X(), rect.Y(), rect.Width(), rect.Height(), (Int_t*) rnrCtx.GetCamera()->RefViewport().CArr());
     }
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();

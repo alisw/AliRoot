@@ -56,13 +56,6 @@ private:
 
     AliESDCaloCells  *fCellsEM; /// List with EMCAL cells
     AliESDCaloCells  *fCellsPH; /// List with PHOS cells
-
-    /// Copy ctor -- it is not recommended to copy CalorimetersEngine therefore it is private
-    AliConverterCalorimetersEngine(const AliConverterCalorimetersEngine&) {};
-    /// Assignment operator -- it is not recommended to assign CalorimetersEngine therefore it is private
-    AliConverterCalorimetersEngine& operator=(const AliConverterCalorimetersEngine&) {};
-
-
 };
 
 #endif

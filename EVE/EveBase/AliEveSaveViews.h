@@ -27,7 +27,7 @@ public:
     // 15,360 × 8,640 (16K)
     
     void SaveForAmore();
-    void Save(bool withDialog=true,char* filename="");
+    void Save(bool withDialog=true,const char* filename="");
     int SendToAmore();
 private:
     TASImage* GetPicture(int width, int heigth, int height3DView, bool projections=true);
