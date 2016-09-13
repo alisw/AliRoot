@@ -242,6 +242,12 @@ if(ROOTSYS)
         endif()
     endif(ROOT_HASXML)
 
+    # Checking for http support
+    execute_process(COMMAND ${ROOT_CONFIG} --has-http OUTPUT_VARIABLE ROOT_HASHTTP ERROR_VARIABLE error OUTPUT_STRIP_TRAILING_WHITESPACE )
+    if(error)
+    message(FATAL_ERROR "Error checking if ROOT was built with http support: ${error}")
+    endif(error)
+
     # Checking for monalisa support
     execute_process(COMMAND ${ROOT_CONFIG} --has-monalisa OUTPUT_VARIABLE ROOT_HASMONALISA ERROR_VARIABLE error OUTPUT_STRIP_TRAILING_WHITESPACE )
     if(error)
