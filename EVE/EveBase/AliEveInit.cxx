@@ -502,25 +502,15 @@ void AliEveInit::GetConfig(TEnv *settings)
     
     if(settings->ReadFile(Form("%s/.eve_config",gSystem->Getenv("HOME")), kEnvUser) < 0)
     {
-        Warning(kEH," could not find .eve_config in home directory! Trying ~/eve_config");
         if(settings->ReadFile(Form("%s/eve_config",gSystem->Getenv("HOME")), kEnvUser) < 0)
         {
-            Warning(kEH," could not find eve_config in home directory! Trying in $ALICE_ROOT/EVE/EveBase/");
+            Warning(kEH," could not find eve_config in home directory! Trying default one in $ALICE_ROOT/EVE/EveBase/");
             if(settings->ReadFile(Form("%s/EVE/EveBase/eve_config",gSystem->Getenv("ALICE_ROOT")), kEnvUser) < 0)
             {
                 Error(kEH,"could not find eve_config file!.");
                 exit(0);
             }
-            else{
-                Info(kEH,"Read config from standard location");
-            }
         }
-        else{
-            Info(kEH,"Read config from home directory");
-        }
-    }
-    else{
-        Info(kEH,"Read config from home directory");
     }
 }
 
