@@ -196,7 +196,7 @@ void AliEveSaveViews::SaveForAmore()
     delete compositeImg;
 }
 
-void AliEveSaveViews::Save(bool withDialog,char* filename)
+void AliEveSaveViews::Save(bool withDialog,const char* filename)
 {
     gEve->DoRedraw3D();
     

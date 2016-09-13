@@ -883,7 +883,7 @@ TEveElementList* AliEveESDTracks::ByPt()
 //                if(shade>3)shade=-3;
 //            }
 //            
-            track->SetName(Form("ESD Track idx=%d, pt=%d", at->GetID(), pt));
+            track->SetName(Form("ESD Track idx=%d, pt=%f", at->GetID(), pt));
             tlist->AddElement(track);
 //        }
     }

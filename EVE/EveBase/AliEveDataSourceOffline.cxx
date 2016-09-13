@@ -486,10 +486,9 @@ Int_t AliEveDataSourceOffline::GetMaxEventId(Bool_t refreshESD) const
         Int_t n = fCurrentData.fRawReader->GetNumberOfEvents() - 1;
         return n > -1 ? n : 10000000;
     }
-    else
-    {
-        AliFatal("neither ESD, AOD, RunLoader nor Raw loaded.");
-    }
+    
+    AliFatal("neither ESD, AOD, RunLoader nor Raw loaded.");
+    return -1;
 }
 
 /******************************************************************************/

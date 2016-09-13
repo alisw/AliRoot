@@ -13,6 +13,9 @@
 # * provided "as is" without express or implied warranty.                  *
 # **************************************************************************
 
+# we don't want any warnings in EVE, so treat them as errors
+add_definitions("-Werror")
+
 # EVE libraries
 add_subdirectory(EveBase)
 add_subdirectory(EveDet)

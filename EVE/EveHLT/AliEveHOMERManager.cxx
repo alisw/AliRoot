@@ -15,10 +15,6 @@
     @brief  Manager for HOMER events
 */
 
-#if __GNUC__>= 3
-   using namespace std;
-#endif
-
 #include "unistd.h"
 
 #include "AliHLTTriggerDecision.h"
@@ -28,6 +24,10 @@
 #include "AliEveHOMERSourceList.h"
 
 #include "TTimer.h"
+
+#if __GNUC__>= 3
+using namespace std;
+#endif
 
 ClassImp(AliEveHOMERManager)
   

@@ -53,7 +53,7 @@ fPath(path)
     TString ocdbStorage   = settings.GetValue("OCDB.default.path","local://$ALICE_ROOT/OCDB");// default path to OCDB
     
     
-    Info("AliEveInit",Form("\n\nOCDB path:%s\n\n",ocdbStorage.Data()));
+    cout<<"AliEveInit -- OCDB path:"<<ocdbStorage<<endl;
     
     //==============================================================================
     // Event Manager and different data sources
