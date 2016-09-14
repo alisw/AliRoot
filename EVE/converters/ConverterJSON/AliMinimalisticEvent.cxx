@@ -23,11 +23,15 @@ void AliMinimalisticEvent::AddCaloCluster(const AliMinimalisticCaloCluster &clus
 
 /// Ctor -- set the minimalistic event up
 AliMinimalisticEvent::AliMinimalisticEvent(
+        Int_t eventNumber,
+        Int_t runNumber,
         Double_t energy,
         Int_t multiplicity,
         TString collidingSystem,
         time_t timeStamp
 ) : TObject(),
+    fEventNumber(eventNumber),
+    fRunNumber(runNumber),
     fEnergy(energy),
     fMultiplicity(multiplicity),
     fCollidingSystem(collidingSystem),

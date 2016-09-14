@@ -212,11 +212,13 @@ TString AliExternalFormatConverter::GenerateXML(AliESDEvent *event)
 /// Created minimalistic event is fully populated. All computation and extraction is triggered.
 AliMinimalisticEvent AliExternalFormatConverter::GenerateMinimalisticEvent()
 {
+    Int_t eventNumber = fESDEvent->GetEventNumberInFile();
+    Int_t runNumber = fESDEvent->GetRunNumber();
     const char *beamType = fESDEvent->GetBeamType();
     time_t time_stamp = fESDEvent->GetTimeStamp();
     Float_t energy = fESDEvent->GetBeamEnergy();
     Int_t multiplicity = fESDEvent->GetNumberOfTracks();
-    AliMinimalisticEvent event(energy, multiplicity, beamType, time_stamp);
+    AliMinimalisticEvent event(eventNumber, runNumber, energy, multiplicity, beamType, time_stamp);
     PopulateEvent(event);
     return event;
 }
