@@ -23,9 +23,10 @@ public:
     void AddTrack(const AliMinimalisticTrack& track);
     void AddCluster(const AliMinimalisticCluster& cluster);
     void AddCaloCluster(const AliMinimalisticCaloCluster& cluster);
-    AliMinimalisticEvent(Double_t energy, Int_t multiplicity, TString collidingSystem, time_t timeStamp);
+    AliMinimalisticEvent(Int_t eventNumber, Int_t runNumber, Double_t energy, Int_t multiplicity, TString collidingSystem, time_t timeStamp);
 private:
-    Int_t fEventID; /// ID of the event extracted from the run
+    Int_t fEventNumber; /// ID of the event extracted from the run
+    Int_t fRunNumber; /// The Run Number
     Double_t fEnergy; /// energy of the collision
     Int_t fMultiplicity; /// number of particles reconstructed
     std::string fCollidingSystem; /// information about type of event (e.g. proton-proton)
