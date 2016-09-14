@@ -16,6 +16,12 @@ FMD.show:                               1
 axes.show:                              1
 fullscreen.mode:                        0
 
+camera.3D.rotation.horizontal:          -0.4
+camera.3D.rotation.vertical:            1.0
+camera.3D.zoom:                         1.0
+camera.R-Phi.zoom:                      1.0
+camera.Rho-Z.zoom:                      1.0
+
 tracks.selection:                       none
 # possible tracks selections: ITSin_noTPCin, noITSpureSA, TPCrefit, TPCrefit_ITSrefit
 

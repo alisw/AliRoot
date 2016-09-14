@@ -359,6 +359,7 @@ void AliEveEventManagerWindow::DoRefresh()
     
     AliEveInit::SetupGeometry();
     AliEveInit::AddMacros();
+    AliEveInit::SetupCamera();
     
     TEveScene *rPhiScene = AliEveMultiView::Instance()->GetRPhiScene();
     TEveScene *rhoZScene = AliEveMultiView::Instance()->GetRhoZScene();

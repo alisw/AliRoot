@@ -136,16 +136,7 @@ fPath(path)
     gEve->EditElement(g_trkcnt);
     gEve->Redraw3D();
     
-    // move and rotate sub-views
-    AliEveMultiView *mv = AliEveMultiView::Instance();
-    browser->GetTabRight()->SetTab(1);
-    TGLViewer *glv1 = mv->Get3DView()->GetGLViewer();
-    TGLViewer *glv2 = mv->GetRPhiView()->GetGLViewer();
-    TGLViewer *glv3 = mv->GetRhoZView()->GetGLViewer();
-    
-    glv1->CurrentCamera().RotateRad(-0.4, 1.0);
-    glv2->CurrentCamera().Dolly(1, kFALSE, kFALSE);
-    glv3->CurrentCamera().Dolly(1, kFALSE, kFALSE);
+    SetupCamera();
     
     // Fullscreen
     if(fullscreen){
@@ -442,6 +433,34 @@ void AliEveInit::AddMacros()
     if(showEMCal){
         exec->AddMacro(new AliEveMacro("ESD EMCal", "emcal_esdclustercells.C", "emcal_esdclustercells", ""));
     }
+}
+
+void AliEveInit::SetupCamera()
+{
+    // move and rotate sub-views
+    TEnv settings;
+    GetConfig(&settings);
+    AliEveMultiView *mv = AliEveMultiView::Instance();
+    gEve->GetBrowser()->GetTabRight()->SetTab(1);
+    
+    TGLViewer *glView3D   = mv->Get3DView()->GetGLViewer();
+    TGLViewer *glViewRPhi = mv->GetRPhiView()->GetGLViewer();
+    TGLViewer *glViewRhoZ = mv->GetRhoZView()->GetGLViewer();
+    
+    double angleHorizontal = settings.GetValue("camera.3D.rotation.horizontal",-0.4);// horizontal rotation of 3D view
+    double angleVertical   = settings.GetValue("camera.3D.rotation.vertical",1.0);   // vertical rotation of 3D view
+    double zoom3D          = settings.GetValue("camera.3D.zoom",1.0);// zoom of 3D view
+    double zoomRPhi        = settings.GetValue("camera.R-Phi.zoom",1.0);// zoom of R-Phi view
+    double zoomRhoZ        = settings.GetValue("camera.Rho-Z.zoom",1.0);// zoom of Rho-Z view
+    
+    glView3D->CurrentCamera().Reset();
+    glViewRPhi->CurrentCamera().Reset();
+    glViewRhoZ->CurrentCamera().Reset();
+    
+    glView3D->CurrentCamera().RotateRad(angleHorizontal, angleVertical);
+    glView3D->CurrentCamera().Dolly(zoom3D, kFALSE, kTRUE);
+    glViewRPhi->CurrentCamera().Dolly(zoomRPhi, kFALSE, kTRUE);
+    glViewRhoZ->CurrentCamera().Dolly(zoomRhoZ, kFALSE, kTRUE);
 }
 
 void AliEveInit::ImportMacros()
