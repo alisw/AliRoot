@@ -25,6 +25,7 @@ public:
     static void GetConfig(TEnv *settings);
     static void SetupGeometry();
     static void AddMacros();
+    static void SetupCamera();
 private:
     const TString& fPath;
     
