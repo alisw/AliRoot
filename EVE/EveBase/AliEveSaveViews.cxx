@@ -274,12 +274,22 @@ void AliEveSaveViews::Save(bool withDialog,const char* filename)
             if(strcmp(energyLabel,"")==0)energyLabel="Energy: unknown";
             energy = energyLabel;
         }
+        
         int fontSize = 0.015*fHeight;
+        
+        const char *additionalInfo = settings.GetValue("screenshot.additional.info","");
+        int infoOffset = 0;
+        if(strcmp(additionalInfo,"") != 0) // if there is some additional info
+        {
+            infoOffset = -5-1*fontSize;
+        }
+        
         compositeImg->BeginPaint();
-        compositeImg->DrawText(10, fHeight-25-4*fontSize, runNumber, fontSize, "#BBBBBB", "FreeSansBold.otf");
-        compositeImg->DrawText(10, fHeight-20-3*fontSize, timeStamp, fontSize, "#BBBBBB", "FreeSansBold.otf");
-        compositeImg->DrawText(10, fHeight-15-2*fontSize, system,    fontSize, "#BBBBBB", "FreeSansBold.otf");
-        compositeImg->DrawText(10, fHeight-10-1*fontSize, energy,    fontSize, "#BBBBBB", "FreeSansBold.otf");
+        compositeImg->DrawText(10,fHeight-25-4*fontSize+infoOffset, runNumber, fontSize,"#BBBBBB","FreeSansBold.otf");
+        compositeImg->DrawText(10,fHeight-20-3*fontSize+infoOffset, timeStamp, fontSize,"#BBBBBB","FreeSansBold.otf");
+        compositeImg->DrawText(10,fHeight-15-2*fontSize+infoOffset, system,    fontSize,"#BBBBBB","FreeSansBold.otf");
+        compositeImg->DrawText(10,fHeight-10-1*fontSize+infoOffset, energy,    fontSize,"#BBBBBB","FreeSansBold.otf");
+        compositeImg->DrawText(10,fHeight-10-1*fontSize      , additionalInfo, fontSize,"#BBBBBB","FreeSansBold.otf");
         compositeImg->EndPaint();
     }
     
