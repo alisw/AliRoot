@@ -70,7 +70,7 @@ public:
     virtual void GotoEvent(Int_t event);
     virtual void NextEvent();
     virtual const AliEveData* GetData() const {return &fCurrentData;}
-    virtual Int_t GetMaxEventId(Bool_t refreshESD=kFALSE) const{return -1;}
+    virtual Int_t GetMaxEventId(){return -1;}
     virtual void SetSourceURL(TString url) {fSourceURL=url; Init();}
     virtual Bool_t ReceivePromptRecoParameters(Int_t runNo) {return kFALSE;}
     

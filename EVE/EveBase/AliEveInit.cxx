@@ -101,7 +101,8 @@ fPath(path)
      */
     //    browser->GetTabRight()->SetTab(1);
     browser->StartEmbedding(TRootBrowser::kBottom);
-    new AliEveEventManagerWindow(man,storageManager,defaultDataSource);
+    
+    AliEveEventManagerWindow::GetInstance()->SetCurrentDataSource(defaultDataSource);
     browser->StopEmbedding("EventCtrl");
     
     slot = TEveWindow::CreateWindowInTab(browser->GetTabRight());
@@ -153,10 +154,11 @@ fPath(path)
     
     man->SetAutoLoad(autoloadEvents);// set autoload by default
     
-    if(defaultDataSource == AliEveEventManager::kSourceOffline){
+    if(defaultDataSource == AliEveEventManager::kSourceOffline)
+    {
+        ((AliEveDataSourceOffline*)man->GetDataSourceOffline())->GotoEvent(0);
         if(settings.GetValue("momentum.histograms.all.events.show",false))
         {
-            ((AliEveDataSourceOffline*)man->GetDataSourceOffline())->GotoEvent(0);
             man->GetMomentumHistogramsDrawer()->DrawAllEvents();
         }
     }

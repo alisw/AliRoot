@@ -554,7 +554,7 @@ AliEveFMDLoader::SummarizeModule(TEveElement* module)
   module->SetMainColorRGB(pix[0], pix[1], pix[2]);
   module->SetMainAlpha(0.33);
   TEveElementList* ml = dynamic_cast<TEveElementList*>(module);  
-  Printf("Module %s sum=%f", (ml ? ml->GetName() : "?"), sum);
+//  Printf("Module %s sum=%f", (ml ? ml->GetName() : "?"), sum);
   return sum;
 }
 

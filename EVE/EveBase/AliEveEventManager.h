@@ -61,7 +61,6 @@ public:
     AliAODEvent*   GetAOD()      { return fCurrentData->fAOD;      }
     
     //static getters for drawing macros
-    static Int_t  CurrentEventId();
     static Bool_t HasESD();
     
     static AliRunLoader* AssertRunLoader();
@@ -103,12 +102,13 @@ public:
     
     // getters and setters for info about events:
     Int_t          GetEventId() const {return fEventId;}
-    virtual Int_t  GetMaxEventId(Bool_t refreshESD=kFALSE) const;
+    Int_t          GetMaxEventId();
     int            GetCurrentRun() {return fCurrentRun;}
+    std::string    GetSelectedTrigger() {return fSelectedTrigger;}
     
     void           SetEventId(int eventId)    { fEventId=eventId;}
-    void           SetCurrentRun(int run){fCurrentRun = run;}
-    void           SetTrigSel(Int_t trig);
+    void           SetCurrentRun(int run);
+    void           SetSelectedTrigger(std::string selectedTrigger) {fSelectedTrigger = selectedTrigger;}
     void           SetHasEvent(bool hasEvent){fHasEvent=hasEvent;}
     
     // other public methods:
@@ -124,7 +124,6 @@ public:
     void Timeout();             // *SIGNAL*
     void NewEventDataLoaded();  // *SIGNAL*
     void NewEventLoaded();      // *SIGNAL*
-    void NoEventLoaded();       // *SIGNAL*
     
     void AutoLoadNextEvent();
 private:
@@ -134,10 +133,11 @@ private:
     void   InitInternals();
     Bool_t InitGRP();
     
-    Int_t         fEventId;		// Id of current event.
-    AliEventInfo  fEventInfo;   // Current Event Info
-    Bool_t        fHasEvent;    // Is an event available.
-    int           fCurrentRun;  // Current run number
+    Int_t         fEventId;         // Id of current event.
+    AliEventInfo  fEventInfo;       // Current Event Info
+    Bool_t        fHasEvent;        // Is an event available.
+    int           fCurrentRun;      // Current run number
+    std::string   fSelectedTrigger; // Selected trigger class for events filtering
     
     AliEveData        fEmptyData;          //just a place holder in case we have no sources
     const AliEveData* fCurrentData;        //current data struct from one of the data sources

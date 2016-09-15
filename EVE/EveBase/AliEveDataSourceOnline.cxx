@@ -404,7 +404,6 @@ void AliEveDataSourceOnline::NextEvent()
     {
         cout<<"No new event is avaliable."<<endl;
         fFailCounter++;
-        fEventManager->NoEventLoaded();
     }
     if(fFailCounter==5)
     {
