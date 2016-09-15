@@ -357,6 +357,7 @@ void AliEveEventManagerWindow::DoRefresh()
     // Refresh event status.
     AliEveMultiView::Instance()->DestroyAllGeometries();
     
+    AliEveInit::SetupBackground();
     AliEveInit::SetupGeometry();
     AliEveInit::AddMacros();
     AliEveInit::SetupCamera();

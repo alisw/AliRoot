@@ -128,6 +128,8 @@ fPath(path)
     // A refresh to show proper window.
     //    gEve->GetViewers()->SwitchColorSet();
     
+    SetupBackground();
+    
     browser->MoveResize(0, 0, gClient->GetDisplayWidth(),gClient->GetDisplayHeight() - 32);
     gEve->Redraw3D(true);
     gSystem->ProcessEvents();
@@ -461,6 +463,25 @@ void AliEveInit::SetupCamera()
     glView3D->CurrentCamera().Dolly(zoom3D, kFALSE, kTRUE);
     glViewRPhi->CurrentCamera().Dolly(zoomRPhi, kFALSE, kTRUE);
     glViewRhoZ->CurrentCamera().Dolly(zoomRhoZ, kFALSE, kTRUE);
+}
+
+void AliEveInit::SetupBackground()
+{
+    TEnv settings;
+    GetConfig(&settings);
+    TEveViewerList *viewers = gEve->GetViewers();
+    
+    for(TEveElement::List_i i = viewers->BeginChildren(); i != viewers->EndChildren(); i++)
+    {
+        TEveViewer* view = ((TEveViewer*)*i);
+        
+        if((strcmp(view->GetName(),"3D View MV")!=0) &&
+           (strcmp(view->GetName(),"RPhi View")!=0) &&
+           (strcmp(view->GetName(),"RhoZ View")!=0)){
+            continue;
+        }
+        view->GetGLViewer()->SetClearColor(settings.GetValue("background.color",1));
+    }
 }
 
 void AliEveInit::ImportMacros()
