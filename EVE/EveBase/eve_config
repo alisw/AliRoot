@@ -187,6 +187,7 @@ screenshot.info.draw:                   1
 screenshot.projections.draw:            1
 screenshot.force.energy:                Energy: 13 TeV
 screenshot.force.system:                System: Pb-Pb
+screenshot.additional.info:
 
 HLT.ZMQ.proxy:                          tcp://localhost:60201
 offline.base.path:                      /home/user_name/events/
