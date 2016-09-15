@@ -15,6 +15,7 @@ AD.show:                                1
 FMD.show:                               1
 axes.show:                              1
 fullscreen.mode:                        0
+background.color:                       1
 
 camera.3D.rotation.horizontal:          -0.4
 camera.3D.rotation.vertical:            1.0

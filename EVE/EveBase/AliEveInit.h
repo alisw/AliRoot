@@ -26,6 +26,7 @@ public:
     static void SetupGeometry();
     static void AddMacros();
     static void SetupCamera();
+    static void SetupBackground();
 private:
     const TString& fPath;
     
