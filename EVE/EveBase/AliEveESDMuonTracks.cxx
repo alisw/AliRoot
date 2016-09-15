@@ -27,7 +27,7 @@
 #include <TEvePointSet.h>
 #include <TEveQuadSet.h>
 #include <TEveVSDStructs.h>
-
+#include <TEnv.h>
 
 #include <AliMUONTrack.h>
 #include <AliMUONTrackExtrap.h>
@@ -42,6 +42,7 @@
 #include <AliEveMagField.h>
 
 #include <AliEveEventManager.h>
+#include <AliEveInit.h>
 
 //______________________________________________________________________________
 void AliEveESDMuonTracks::SetupTrackPropagator(TEveTrackPropagator* trkProp, Bool_t tracker, Bool_t trigger)
@@ -201,25 +202,33 @@ void AliEveESDMuonTracks::Draw(Bool_t showClusters, Bool_t showDigits)
     // track containers
     TEveElementList* trackCont = new TEveElementList("ESD MUON Tracks");
     trackCont->SetTitle(Form("N=%d", esd->GetNumberOfMuonTracks()));
+
+    // load config file
+    TEnv settings;
+    AliEveInit::GetConfig(&settings);
+
     
     TEveTrackList* match = new TEveTrackList("Matched");
     match->SetRnrPoints(kFALSE);
     match->SetRnrLine(kTRUE);
-    match->SetLineColor(kGreen);
+    match->SetLineColor(settings.GetValue("tracks.muon.matched.color",416));
+    match->SetLineWidth(settings.GetValue("tracks.muon.width",2));
     SetupTrackPropagator(match->GetPropagator(), kTRUE, kTRUE);
     trackCont->AddElement(match);
     
     TEveTrackList* nomatch = new TEveTrackList("Not matched");
     nomatch->SetRnrPoints(kFALSE);
     nomatch->SetRnrLine(kTRUE);
-    nomatch->SetLineColor(kGreen);
+    nomatch->SetLineColor(settings.GetValue("tracks.muon.nomatched.color",416));
+    nomatch->SetLineWidth(settings.GetValue("tracks.muon.width",2));
     SetupTrackPropagator(nomatch->GetPropagator(), kTRUE, kFALSE);
     trackCont->AddElement(nomatch);
     
     TEveTrackList* ghost = new TEveTrackList("Ghost");
     ghost->SetRnrPoints(kFALSE);
     ghost->SetRnrLine(kTRUE);
-    ghost->SetLineColor(kGreen);
+    ghost->SetLineColor(settings.GetValue("tracks.muon.ghost.color",416));
+    ghost->SetLineWidth(settings.GetValue("tracks.muon.width",2));
     SetupTrackPropagator(ghost->GetPropagator(), kFALSE, kTRUE);
     trackCont->AddElement(ghost);
     
