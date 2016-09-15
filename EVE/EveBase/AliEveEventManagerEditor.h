@@ -97,7 +97,7 @@ public:
     void SetActiveTriggerClasses();
     
     void Update();
-    void StorageManagerChangedState(int state);
+    //   void StorageManagerChangedState(int state);
     
 private:
     AliEveEventManagerWindow();
