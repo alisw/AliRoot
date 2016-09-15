@@ -17,7 +17,7 @@
 
 # Module include folder
 include_directories(
-                    ${AliRoot_SOURCE_DIR}/EVE/alieve_main
+                    ${AliRoot_SOURCE_DIR}/EVE/executables
                    )
 
 # Additional include folders in alphabetical order
