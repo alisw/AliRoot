@@ -16,25 +16,23 @@
 class AliEveDataSourceOffline : public AliEveDataSource
 {
 public:
-    AliEveDataSourceOffline(bool storageManager=false);
+    AliEveDataSourceOffline();
     ~AliEveDataSourceOffline();
-
+    
     void GotoEvent(Int_t event);
     void NextEvent();
     
     void SetFilesPath(const TString& path);
     
-    void SearchRawForCentralReconstruction();
-    virtual Int_t GetMaxEventId(Bool_t refreshESD=kFALSE) const;
+    Int_t GetMaxEventId();
 private:
     void Init(){};// to implement
     void Open();
     void Close();
     TTree* readESDTree(const char* treeName, int &run);
-    void AddAODfriend  (const TString& friendFileName);
     
-    bool            fIsOpen;            // Are event-files opened.
-    Bool_t          fESDfriendExists;	// Flag specifying if ESDfriend was found during opening of the event-data.
+    bool fIsOpen;           // Are event-files opened.
+    bool fESDfriendExists;	// Flag specifying if ESDfriend was found during opening of the event-data.
     
     AliEveEventManager *fEventManager;
     
@@ -45,14 +43,9 @@ private:
     TString  fgRawFileName;           // Name by which to open raw-data file
     TString  fgGAliceFileName;        // galice.root file
     
-    TList   *fgAODfriends;         // Global list of AOD friend names to be attached during opening of the event-data (empty by default).
+    TList *fgAODfriends; // Global list of AOD friend names to be attached during opening of the event-data (empty by default).
     
-    Bool_t   fgRawFromStandardLoc; // Global flag to enable looking for raw data in ../../../raw/, as it is stored for central reco.
-
-    AliEveDataSourceOffline(const AliEveDataSourceOffline&);
-    AliEveDataSourceOffline& operator=(const AliEveDataSourceOffline&);
-    
-   ClassDef(AliEveDataSourceOffline, 0);
+    ClassDef(AliEveDataSourceOffline, 0);
 };
 
 

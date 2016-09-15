@@ -129,7 +129,7 @@ TH2F* fHistoPH  = 0; /// Histogram with PHOS signals and location
 //TH2F* fHistoneg = 0;
 //TH2F* fHistopos = 0;
 
-Int_t debug = 10;
+Int_t debug = 0;
 
 TGeoNode* fNodeEM    ; /// EMCAL volumes node
 TGeoNode* fNodePH[4] ; /// PHOS volumes nodes

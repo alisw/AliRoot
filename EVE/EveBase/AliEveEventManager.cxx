@@ -8,6 +8,7 @@
  **************************************************************************/
 
 #include "AliEveEventManager.h"
+#include "AliEveEventManagerEditor.h"
 #include "AliEveEventSelector.h"
 #include "AliEveMacroExecutor.h"
 #include "AliEveMultiView.h"
@@ -42,7 +43,7 @@
 #include <TEveText.h>
 #include <TEveTrans.h>
 #include <iostream>
-
+#include <sstream>
 
 using namespace std;
 
@@ -82,7 +83,7 @@ AliEveEventManager* AliEveEventManager::fgMaster  = NULL;
 
 AliEveEventManager::AliEveEventManager(EDataSource defaultDataSource) :
 TEveEventManager("Event", ""),
-fEventId(-1),fEventInfo(),fHasEvent(kFALSE),fCurrentRun(-1),
+fEventId(-1),fEventInfo(),fHasEvent(kFALSE),fCurrentRun(-1),fSelectedTrigger(""),
 fCurrentData(&fEmptyData),fCurrentDataSource(NULL),fDataSourceOnline(NULL),fDataSourceOffline(NULL),fDataSourceHLTZMQ(NULL),
 fAutoLoad(kFALSE), fAutoLoadTime(5),fAutoLoadTimer(0),fAutoLoadTimerRunning(kFALSE),
 fTransients(0),
@@ -186,24 +187,9 @@ void AliEveEventManager::DestroyTransients()
     ElementChanged();
 }
 
-Int_t AliEveEventManager::GetMaxEventId(Bool_t refreshESD) const
+Int_t AliEveEventManager::GetMaxEventId()
 {
-    return fDataSourceOffline?fDataSourceOffline->GetMaxEventId(refreshESD):-1;
-}
-
-//------------------------------------------------------------------------------
-// Static convenience functions, mainly used from macros.
-//------------------------------------------------------------------------------
-
-Int_t AliEveEventManager::CurrentEventId()
-{
-    // Return current event-id.
-    
-    static const TEveException kEH("AliEveEventManager::CurrentEventId ");
-    
-    if (fgMaster == 0 || fgMaster->fHasEvent == kFALSE)
-        throw (kEH + "ALICE event not ready.");
-    return fgMaster->GetEventId();
+    return fDataSourceOffline?fDataSourceOffline->GetMaxEventId():-1;
 }
 
 Bool_t AliEveEventManager::HasESD()
@@ -402,33 +388,16 @@ void AliEveEventManager::SetAutoLoad(Bool_t autoLoad)
     }
     
     fAutoLoad = autoLoad;
-    if (fAutoLoad)
-    {
-        //        StorageManagerDown();
-        StartAutoLoadTimer();
-    }
-    else
-    {
-        //        StorageManagerOk();
-        StopAutoLoadTimer();
-    }
+    if (fAutoLoad)  StartAutoLoadTimer();
+    else            StopAutoLoadTimer();
 }
 
-void AliEveEventManager::SetTrigSel(Int_t trig)
+void AliEveEventManager::SetCurrentRun(int run)
 {
-    static const TEveException kEH("AliEveEventManager::SetTrigSel ");
-    
-    if (!fCurrentData->fRawReader)
+    if(run != fCurrentRun)
     {
-        Warning(kEH, "No Raw-reader exists. Ignoring the call.");
-        return;
-    }
-    else
-    {
-        ULong64_t trigMask = 0;
-        if (trig >= 0) trigMask = (1ull << trig);
-        Info(kEH,"Trigger selection: 0x%llx",trigMask);
-        fCurrentData->fRawReader->SelectEvents(-1,trigMask,NULL);
+        fCurrentRun = run;
+        AliEveEventManagerWindow::GetInstance()->SetActiveTriggerClasses();
     }
 }
 
@@ -510,6 +479,7 @@ void AliEveEventManager::AfterNewEventLoaded()
     
 
     cout<<"\n\n--------- AliEveEventManager::AfterNewEventLoaded ---------\n\n"<<endl;
+    cout<<"event:"<<fCurrentData->fESD->GetEventNumberInFile()<<endl;
     
     ElementChanged();
     NewEventDataLoaded();
@@ -617,9 +587,10 @@ void AliEveEventManager::AfterNewEventLoaded()
     TEveElement* top = gEve->GetCurrentEvent();
     mv->ImportEvent(top);
     
-    gEve->GetBrowser()->RaiseWindow();
-    gEve->FullRedraw3D();
-    gSystem->ProcessEvents();
+    gEve->DoRedraw3D();
+//    gEve->GetBrowser()->RaiseWindow();
+//    gEve->FullRedraw3D(true);
+//    gSystem->ProcessEvents();
     
     // animate tracks
     if(settings.GetValue("tracks.byType.animate",false) && beamKnown){
@@ -652,6 +623,10 @@ void AliEveEventManager::AfterNewEventLoaded()
         fViewsSaver->SaveForAmore();
         fViewsSaver->SendToAmore();
     }
+    AliEveInit::SetupCamera();
+    TEveBrowser *browser = gEve->GetBrowser();
+    browser->MoveResize(browser->GetX(), browser->GetY(), browser->GetWidth(),browser->GetHeight());
+    gSystem->ProcessEvents();
 }
 
 void AliEveEventManager::Timeout()
@@ -665,10 +640,6 @@ void AliEveEventManager::NewEventDataLoaded()
 void AliEveEventManager::NewEventLoaded()
 {
     Emit("NewEventLoaded()");
-}
-void AliEveEventManager::NoEventLoaded()
-{
-    Emit("NoEventLoaded()");
 }
 
 Bool_t AliEveEventManager::InitGRP()

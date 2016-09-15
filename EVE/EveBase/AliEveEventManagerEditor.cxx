@@ -124,9 +124,11 @@ void AliEveEventManagerEditor::DumpEventInfo()
 
 ClassImp(AliEveEventManagerWindow)
 
-AliEveEventManagerWindow::AliEveEventManagerWindow(AliEveEventManager* mgr,bool storageManager,AliEveEventManager::EDataSource defaultDataSource) :
+AliEveEventManagerWindow* AliEveEventManagerWindow::fInstance = nullptr;
+
+AliEveEventManagerWindow::AliEveEventManagerWindow() :
 TGMainFrame(gClient->GetRoot(), 400, 100, kVerticalFrame),
-fM            (mgr),
+fM            (AliEveEventManager::Instance()),
 fFirstEvent   (0),
 fPrevEvent    (0),
 fNextEvent    (0),
@@ -145,6 +147,8 @@ fTrigSel      (0),
 fEventInfo    (0)
 {
     // Constructor.
+    
+    fInstance = this;
     
     const TString cls("AliEveEventManagerWindow");
     TGTextButton *b = 0;
@@ -172,7 +176,7 @@ fEventInfo    (0)
         b->Connect("Clicked()", cls, this, "DoLastEvent()");
         fMarkEvent = b = MkTxtButton(f, "Mark", width);
         b->Connect("Clicked()", cls, this, "DoMarkEvent()");
-
+        
         fScreenshot = b = MkTxtButton(f, "Screenshot", 2*width);
         b->Connect("Clicked()", cls, this, "DoScreenshot()");
         
@@ -198,32 +202,25 @@ fEventInfo    (0)
         fAutoLoadTime->Connect("ValueSet(Double_t)", cls, this, "DoSetAutoLoadTime()");
         
         fTrigSel = new TGComboBox(f);
-        fTrigSel->Resize(4*width,b->GetDefaultHeight());
-        fTrigSel->AddEntry("No trigger selection",-1);
-        fTrigSel->Select(-1,kFALSE);
+        fTrigSel->Resize(5*width,b->GetDefaultHeight());
+        fTrigSel->AddEntry("No trigger selection",0);
+        fTrigSel->Select(0,kFALSE);
         f->AddFrame(fTrigSel, new TGLayoutHints(kLHintsNormal, 10, 5, 0, 0));
         fTrigSel->Connect("Selected(char*)", cls, this, "DoSetTrigSel()");
-        if(storageManager){
-            fStorageStatus = MkLabel(f,"Storage: Waiting",0,8,8);
-        }
-        else{
-            fStorageStatus = MkLabel(f,"",0,8,8);
-        }
         
         fReloadOffline = new TGTextButton(f, "Reload");
         fReloadOffline->Connect("Clicked()", cls, this, "DoReloadOffline()");
         fOfflineRunNumber = new TGNumberEntry(f);
         f->AddFrame(fOfflineRunNumber,new TGLayoutHints(kLHintsNormal,10,5,0,0));
         f->AddFrame(fReloadOffline,new TGLayoutHints(kLHintsNormal,10,5,0,0));
-
+        
         
         fDataSourceGroup = new TGHButtonGroup(f, "Data Source");
-//        horizontal->SetTitlePos(TGGroupFrame::kCenter);
+        //        horizontal->SetTitlePos(TGGroupFrame::kCenter);
         fSwitchToHLT     = new TGRadioButton(fDataSourceGroup, "HLT",AliEveEventManager::kSourceHLT);
         fSwitchToOnline  = new TGRadioButton(fDataSourceGroup, "Online",AliEveEventManager::kSourceOnline);
         fSwitchToOffline = new TGRadioButton(fDataSourceGroup, "Offline",AliEveEventManager::kSourceOffline);
         
-        fDataSourceGroup->SetButton(defaultDataSource);
         fDataSourceGroup->Connect("Pressed(Int_t)", cls, this,"DoSwitchDataSource(AliEveEventManager::EDataSource)");
 #ifndef ZMQ
         fSwitchToHLT->SetEnabled(false);
@@ -232,28 +229,19 @@ fEventInfo    (0)
         
         f->AddFrame(fDataSourceGroup, new TGLayoutHints(kLHintsNormal));
         
-            }
+    }
     
     fEventInfo = new TGTextView(this, 400, 600);
     AddFrame(fEventInfo, new TGLayoutHints(kLHintsNormal | kLHintsExpandX | kLHintsExpandY));
     
-    fM->Connect("NewEventLoaded()", cls, this, "Update(=1)");
-    fM->Connect("NoEventLoaded()", cls, this, "Update(=0)");
+    fM->Connect("NewEventLoaded()", cls, this, "Update()");
     
-    if(storageManager) // if SM is enabled in general
-    {
-        fM->Connect("StorageManagerOk()",cls,this,"StorageManagerChangedState(=1)");
-        fM->Connect("StorageManagerDown()",cls,this,"StorageManagerChangedState(=0)");
-    }
-    else
-    {
-        StorageManagerChangedState(0);
-    }
-        
     SetCleanup(kDeepCleanup);
     Layout();
     MapSubwindows();
     MapWindow();
+    
+    DoSetTrigSel();
 }
 
 //______________________________________________________________________________
@@ -262,6 +250,18 @@ AliEveEventManagerWindow::~AliEveEventManagerWindow()
     // Destructor.
     
     fM->Disconnect("NewEventLoaded()", this);
+}
+
+AliEveEventManagerWindow* AliEveEventManagerWindow::GetInstance()
+{
+    if(!fInstance) new AliEveEventManagerWindow();
+    return fInstance;
+}
+
+
+void AliEveEventManagerWindow::SetCurrentDataSource(AliEveEventManager::EDataSource defaultDataSource)
+{
+    fDataSourceGroup->SetButton(defaultDataSource);
 }
 
 //______________________________________________________________________________
@@ -277,14 +277,14 @@ void AliEveEventManagerWindow::DoPrevEvent()
 {
     // Load previous event
     // fM->PrevEvent();
-//    if (fM->IsOnlineMode()) {
-//        fM->GotoEvent(1);
-//    }
-//    else {
-        AliEveDataSource *dataSource = fM->GetCurrentDataSource();
-        dataSource->GotoEvent((Int_t) fEventId->GetNumber()-1);
-        
-//    }
+    //    if (fM->IsOnlineMode()) {
+    //        fM->GotoEvent(1);
+    //    }
+    //    else {
+    AliEveDataSource *dataSource = fM->GetCurrentDataSource();
+    dataSource->GotoEvent((Int_t) fEventId->GetNumber()-1);
+    
+    //    }
     
 }
 
@@ -293,15 +293,15 @@ void AliEveEventManagerWindow::DoNextEvent()
 {
     // Load next event
     // fM->NextEvent();
-//    if (fM->IsOnlineMode()) {
-//        cout<<"next event, online node"<<endl;
-//        fM->GotoEvent(2);
-//    }
-//    else {
-//        cout<<"next event, offline mode"<<endl;
-        AliEveDataSource *dataSource = fM->GetCurrentDataSource();
-        dataSource->GotoEvent((Int_t) fEventId->GetNumber()+1);
-//    }
+    //    if (fM->IsOnlineMode()) {
+    //        cout<<"next event, online node"<<endl;
+    //        fM->GotoEvent(2);
+    //    }
+    //    else {
+    //        cout<<"next event, offline mode"<<endl;
+    AliEveDataSource *dataSource = fM->GetCurrentDataSource();
+    dataSource->GotoEvent((Int_t) fEventId->GetNumber()+1);
+    //    }
 }
 
 //______________________________________________________________________________
@@ -317,7 +317,7 @@ void AliEveEventManagerWindow::DoMarkEvent()
 {
     // Mark current event
     cout<<"\n\n mark event not implemented!!\n\n"<<endl;
-//    fM->MarkCurrentEvent();
+    //    fM->MarkCurrentEvent();
 }
 
 //______________________________________________________________________________
@@ -391,7 +391,6 @@ void AliEveEventManagerWindow::DoSetAutoLoad()
     // Set the auto-load flag
     
     fM->SetAutoLoad(fAutoLoad->IsOn());
-//    Update(fM->NewEventAvailable());
 }
 
 //______________________________________________________________________________
@@ -405,9 +404,38 @@ void AliEveEventManagerWindow::DoSetAutoLoadTime()
 //______________________________________________________________________________
 void AliEveEventManagerWindow::DoSetTrigSel()
 {
-    // Set the trigger selection
+    cout<<"setting selected trigger:"<<fTrigSel->GetSelectedEntry()->GetTitle()<<endl;
+    fM->SetSelectedTrigger(fTrigSel->GetSelectedEntry()->GetTitle());
+}
+
+void AliEveEventManagerWindow::ResetTriggerSelection()
+{
+    fTrigSel->Select(0,kFALSE);
+    fTrigSel->SetEnabled();
+    DoSetTrigSel();
+    Layout();
+}
+
+void AliEveEventManagerWindow::SetActiveTriggerClasses()
+{
+    string s = fM->GetESD()->GetESDRun()->GetActiveTriggerClasses().Data();
+    stringstream ss(s);
+    istream_iterator<string> begin(ss);
+    istream_iterator<string> end;
+    vector<string> vstrings(begin, end);
+    copy(vstrings.begin(), vstrings.end(), ostream_iterator<string>(cout, "\n"));
     
-    fM->SetTrigSel(fTrigSel->GetSelectedEntry()->EntryId());
+    fTrigSel->RemoveAll();
+    fTrigSel->AddEntry("No trigger selection",0);
+    fTrigSel->Select(0,kFALSE);
+    
+    for(int i=0;i<vstrings.size();i++)
+    {
+        fTrigSel->AddEntry(vstrings[i].c_str(),i);
+    }
+    fTrigSel->SetEnabled();
+    DoSetTrigSel();
+    Layout();
 }
 
 void AliEveEventManagerWindow::DoSwitchDataSource(AliEveEventManager::EDataSource source)
@@ -416,74 +444,15 @@ void AliEveEventManagerWindow::DoSwitchDataSource(AliEveEventManager::EDataSourc
 }
 
 //______________________________________________________________________________
-void AliEveEventManagerWindow::Update(int state)
+void AliEveEventManagerWindow::Update()
 {
-    Bool_t autoLoad = fM->GetAutoLoad();
+    fEventId->SetNumber(fM->GetEventId());
+    fEventId->SetState(kTRUE);
     
-    if (state==1)
-    {
-//        fRefresh->SetEnabled(!autoLoad);
-        
-        fEventId->SetNumber(fM->GetEventId());
-        fEventId->SetState(kTRUE);
-        
-        fAutoLoad->SetState(fM->GetAutoLoad() ? kButtonDown : kButtonUp);
-        fAutoLoadTime->SetValue(fM->GetAutoLoadTime());
-        
-        // Loop over active trigger classes
-        if (fM->GetESD())// && !fM->IsOnlineMode())
-        {
-            for(Int_t iTrig = 0; iTrig < AliESDRun::kNTriggerClasses; iTrig++)
-            {
-                TString trigName = fM->GetESD()->GetESDRun()->GetTriggerClass(iTrig);
-                if (trigName.IsNull())
-                {
-                    if (fTrigSel->GetListBox()->GetEntry(iTrig)) {
-                        if (fTrigSel->GetSelected() == iTrig) fTrigSel->Select(-1);
-                        fTrigSel->RemoveEntry(iTrig);
-                    }
-                    continue;
-                }
-                if (!fTrigSel->FindEntry(trigName.Data())){
-                    fTrigSel->AddEntry(trigName.Data(),iTrig);
-                }
-            }
-        }
-        fTrigSel->SetEnabled(autoLoad);
-        Layout();
-    }
-}
-
-void AliEveEventManagerWindow::StorageManagerChangedState(int state)
-{
-    return;
-#ifdef ZMQ
-//    if (!fM->IsOnlineMode())return;
+    fAutoLoad->SetState(fM->GetAutoLoad() ? kButtonDown : kButtonUp);
+    fAutoLoadTime->SetValue(fM->GetAutoLoadTime());
     
-    Bool_t autoLoad = fM->GetAutoLoad();
-    AliStorageAdministratorPanelListEvents* listEventsTab = AliStorageAdministratorPanelListEvents::GetInstance();
-    
-    if (state == 0)// SM off
-    {
-        fMarkEvent->SetEnabled(kFALSE);
-        fNextEvent->SetEnabled(kFALSE);
-        fLastEvent->SetEnabled(kFALSE);
-        fPrevEvent->SetEnabled(kFALSE);
-        fFirstEvent->SetEnabled(kFALSE);
-        listEventsTab->SetOfflineMode(kTRUE);
-        fEventId->SetState(kTRUE);
-    }
-    else if(state == 1)// SM on
-    {
-        fMarkEvent->SetEnabled(kTRUE);
-        fNextEvent->SetEnabled(kTRUE);
-        fLastEvent->SetEnabled(kTRUE);
-        fPrevEvent->SetEnabled(kTRUE);
-        fFirstEvent->SetEnabled(kTRUE);
-        listEventsTab->SetOfflineMode(kFALSE);
-        fEventId->SetState(kTRUE);
-    }
-#endif
+    Layout();
 }
 
 //------------------------------------------------------------------------------

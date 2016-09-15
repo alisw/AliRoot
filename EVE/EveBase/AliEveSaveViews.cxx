@@ -424,7 +424,7 @@ void AliEveSaveViews::BuildEventInfoString()
     {
         fEventInfo.Form("Run: %d  Event#: %d (%s)",
                         rawReader->GetRunNumber(),
-                        AliEveEventManager::CurrentEventId(),
+                        AliEveEventManager::Instance()->GetEventId(),
                         AliRawEventHeaderBase::GetTypeName(rawReader->GetType())
                         );
         return;
@@ -454,9 +454,8 @@ void AliEveSaveViews::BuildTriggerClassesStrings()
     ULong64_t mask = 1;
     int sw=0;
     
-    AliESDEvent* esd =  AliEveEventManager::Instance()->AssertESD();
-    ULong64_t triggerMask = esd->GetTriggerMask();
-    ULong64_t triggerMaskNext50 = esd->GetTriggerMaskNext50();
+    ULong64_t triggerMask = fESDEvent->GetTriggerMask();
+    ULong64_t triggerMaskNext50 = fESDEvent->GetTriggerMaskNext50();
     
     fTriggerClasses[0]="";
     fTriggerClasses[1]="";
@@ -470,7 +469,7 @@ void AliEveSaveViews::BuildTriggerClassesStrings()
         {
             if(mask & triggerMask)
             {
-                fTriggerClasses[sw]+=esd->GetESDRun()->GetTriggerClass(i);
+                fTriggerClasses[sw]+=fESDEvent->GetESDRun()->GetTriggerClass(i);
                 fTriggerClasses[sw]+=Form("(%d)",fCluster[clusterIter]);
                 fTriggerClasses[sw]+="   ";
                 
@@ -480,7 +479,7 @@ void AliEveSaveViews::BuildTriggerClassesStrings()
             }
             if(mask & triggerMaskNext50)
             {
-                fTriggerClasses[sw]+=esd->GetESDRun()->GetTriggerClass(i+50);
+                fTriggerClasses[sw]+=fESDEvent->GetESDRun()->GetTriggerClass(i+50);
                 fTriggerClasses[sw]+=Form("(%d)",fCluster[clusterIter]);
                 fTriggerClasses[sw]+="   ";
                 

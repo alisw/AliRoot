@@ -18,6 +18,8 @@
 #include "TGButton.h"
 #include "TGButtonGroup.h"
 
+#include <string>
+
 class AliEveEventManager;
 class TEveGValuator;
 class TGButton;
@@ -38,27 +40,26 @@ class TGLabel;
 class AliEveEventManagerEditor : public TGedFrame
 {
 public:
-   AliEveEventManagerEditor(const TGWindow* p=0, Int_t width=170, Int_t height=30,
-         UInt_t options=kChildFrame, Pixel_t back=GetDefaultFrameBackground());
-   virtual ~AliEveEventManagerEditor() {}
-
-   virtual void SetModel(TObject* obj);
-
-   void DumpEventInfo();
-
+    AliEveEventManagerEditor(const TGWindow* p=0, Int_t width=170, Int_t height=30,
+                             UInt_t options=kChildFrame, Pixel_t back=GetDefaultFrameBackground());
+    virtual ~AliEveEventManagerEditor() {}
+    
+    virtual void SetModel(TObject* obj);
+    
+    void DumpEventInfo();
 protected:
-   AliEveEventManager  *fM;             // Model object.
-   TGTextButton        *fDumpEventInfo; // Button that dumps event-info into a file.
-   TGTextView          *fEventInfo;     // Text box with event info.
-
+    AliEveEventManager  *fM;             // Model object.
+    TGTextButton        *fDumpEventInfo; // Button that dumps event-info into a file.
+    TGTextView          *fEventInfo;     // Text box with event info.
+    
 private:
     TString GetEventInfoHorizontal() const;
     TString GetEventInfoVertical() const;
     
-   AliEveEventManagerEditor(const AliEveEventManagerEditor&);            // Not implemented
-   AliEveEventManagerEditor& operator=(const AliEveEventManagerEditor&); // Not implemented
-
-   ClassDef(AliEveEventManagerEditor, 0); // GUI editor for AliEveEventManager.
+    AliEveEventManagerEditor(const AliEveEventManagerEditor&);            // Not implemented
+    AliEveEventManagerEditor& operator=(const AliEveEventManagerEditor&); // Not implemented
+    
+    ClassDef(AliEveEventManagerEditor, 0); // GUI editor for AliEveEventManager.
 };
 
 
@@ -73,30 +74,38 @@ private:
 class AliEveEventManagerWindow : public TGMainFrame
 {
 public:
-    AliEveEventManagerWindow(AliEveEventManager* mgr, bool storageManager=false,AliEveEventManager::EDataSource defaultDataSource = AliEveEventManager::kSourceOffline);
-  virtual ~AliEveEventManagerWindow();
-
-  void DoFirstEvent();
-  void DoPrevEvent();
-  void DoNextEvent();
-  void DoLastEvent();
-  void DoMarkEvent();
+    static AliEveEventManagerWindow* GetInstance();
+    
+    void SetCurrentDataSource(AliEveEventManager::EDataSource defaultDataSource);
+    
+    void DoFirstEvent();
+    void DoPrevEvent();
+    void DoNextEvent();
+    void DoLastEvent();
+    void DoMarkEvent();
     void DoScreenshot();
     void DoReloadOffline();
     void DoSwitchDataSource(AliEveEventManager::EDataSource source);
-
-  void DoSetEvent();
-
-  void DoRefresh();
-  void DoSetAutoLoad();
-  void DoSetAutoLoadTime();
-  void DoSetTrigSel();
-
-  void Update(int=1);
-  void StorageManagerChangedState(int state);
     
-protected:
-  AliEveEventManager   *fM;            // Model object.
+    void DoSetEvent();
+    
+    void DoRefresh();
+    void DoSetAutoLoad();
+    void DoSetAutoLoadTime();
+    void DoSetTrigSel();
+    void ResetTriggerSelection();
+    void SetActiveTriggerClasses();
+    
+    void Update();
+    void StorageManagerChangedState(int state);
+    
+private:
+    AliEveEventManagerWindow();
+    virtual ~AliEveEventManagerWindow();
+    
+    static AliEveEventManagerWindow *fInstance;
+    
+    AliEveEventManager   *fM;            // Model object.
     
     TGTextButton         *fFirstEvent;   // Go to first event
     TGTextButton         *fPrevEvent;    // Go to prev event
@@ -112,28 +121,27 @@ protected:
     TGRadioButton *fSwitchToOffline;     // switch data source to Offline
     TGNumberEntry *fOfflineRunNumber;    // run number for offline files
     TGTextButton  *fReloadOffline;       // load offline files for specified run
-
-  TGNumberEntry        *fEventId;      // Display/edit current event id
-  TGLabel              *fInfoLabel;    // Display last available event id
-
-  TGCheckButton        *fAutoLoad;     // Check-box for automatic loading of events
-  TEveGValuator        *fAutoLoadTime; // Time for automatic loading of events
-
-  TGComboBox           *fTrigSel;      // Trigger selection combo box
-  TGLabel              *fStorageStatus; // Display status of Storage Manager
-
-  TGTextView           *fEventInfo;    // Text box with event info
-
-  TGTextButton* MkTxtButton(TGCompositeFrame* p, const char* txt, Int_t width=0,
-			    Int_t lo=0, Int_t ro=0, Int_t to=0, Int_t bo=0);
-  TGLabel* MkLabel(TGCompositeFrame* p, const char* txt, Int_t width,
-		   Int_t lo=0, Int_t ro=0, Int_t to=2, Int_t bo=0);
     
-private:
-  AliEveEventManagerWindow(const AliEveEventManagerWindow&);            // Not implemented
-  AliEveEventManagerWindow& operator=(const AliEveEventManagerWindow&); // Not implemented
-
-  ClassDef(AliEveEventManagerWindow, 0); // GUI window for AliEveEventManager.
+    TGNumberEntry        *fEventId;      // Display/edit current event id
+    TGLabel              *fInfoLabel;    // Display last available event id
+    
+    TGCheckButton        *fAutoLoad;     // Check-box for automatic loading of events
+    TEveGValuator        *fAutoLoadTime; // Time for automatic loading of events
+    
+    TGComboBox           *fTrigSel;      // Trigger selection combo box
+    TGLabel              *fStorageStatus; // Display status of Storage Manager
+    
+    TGTextView           *fEventInfo;    // Text box with event info
+    
+    TGTextButton* MkTxtButton(TGCompositeFrame* p, const char* txt, Int_t width=0,
+                              Int_t lo=0, Int_t ro=0, Int_t to=0, Int_t bo=0);
+    TGLabel* MkLabel(TGCompositeFrame* p, const char* txt, Int_t width,
+                     Int_t lo=0, Int_t ro=0, Int_t to=2, Int_t bo=0);
+    
+    AliEveEventManagerWindow(const AliEveEventManagerWindow&);            // Not implemented
+    AliEveEventManagerWindow& operator=(const AliEveEventManagerWindow&); // Not implemented
+    
+    ClassDef(AliEveEventManagerWindow, 0); // GUI window for AliEveEventManager.
 };
 
 #endif

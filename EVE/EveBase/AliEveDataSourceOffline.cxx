@@ -7,6 +7,7 @@
 //
 
 #include "AliEveDataSourceOffline.h"
+#include "AliEveEventManagerEditor.h"
 #include "AliEveInit.h"
 
 #include "AliSysInfo.h"
@@ -23,7 +24,7 @@ using namespace std;
 
 ClassImp(AliEveDataSourceOffline);
 
-AliEveDataSourceOffline::AliEveDataSourceOffline(bool storageManager) :
+AliEveDataSourceOffline::AliEveDataSourceOffline() :
 AliEveDataSource(),
 fgESDFileName("AliESDs.root"),
 fgESDfriendsFileName("AliESDfriends.root"),
@@ -33,26 +34,27 @@ fgRawFileName("raw.root"),
 fEventManager(0),
 fIsOpen(false),
 fESDfriendExists(kFALSE),
-fgAODfriends(0),
-fgRawFromStandardLoc(false)
+fgAODfriends(0)
 {
     fEventManager = AliEveEventManager::Instance();
-    Open();
+    Open(); // open local files
 }
 
 AliEveDataSourceOffline::~AliEveDataSourceOffline()
 {
-    
+    Close();
 }
 
 void AliEveDataSourceOffline::NextEvent()
 {
-    GotoEvent(AliEveEventManager::CurrentEventId()+1);
+    int nextEvent = fEventManager->GetEventId()+1;
+    
+    if(nextEvent > GetMaxEventId()) GotoEvent(0);
+    else                            GotoEvent(nextEvent);
 }
 
 void AliEveDataSourceOffline::GotoEvent(Int_t event)
 {
-    cout<<"Go to event:"<<event<<endl;
     // Load data for specified event.
     // If event is out of range an exception is thrown and old state
     // is preserved.
@@ -94,35 +96,29 @@ void AliEveDataSourceOffline::GotoEvent(Int_t event)
     
     fEventManager->SetHasEvent(false);
     
-    Int_t maxEvent = 0;
     if ((fCurrentData.fESDTree!=0))
     {
         if(fCurrentData.fESDTree){
             if (event >= fCurrentData.fESDTree->GetEntries())
                 fCurrentData.fESDTree->Refresh();
-            maxEvent = fCurrentData.fESDTree->GetEntries() - 1;
             if (event < 0)
                 event = fCurrentData.fESDTree->GetEntries() + event;
         }
     }
     else if (fCurrentData.fAODTree)
     {
-        maxEvent = fCurrentData.fAODTree->GetEntries() - 1;
         if (event < 0)
             event = fCurrentData.fAODTree->GetEntries() + event;
     }
     else if (fCurrentData.fRunLoader)
     {
-        maxEvent = fCurrentData.fRunLoader->GetNumberOfEvents() - 1;
         if (event < 0)
             event = fCurrentData.fRunLoader->GetNumberOfEvents() + event;
     }
     else if (fCurrentData.fRawReader)
     {
-        maxEvent = fCurrentData.fRawReader->GetNumberOfEvents() - 1;
-        if (maxEvent < 0)
+        if (GetMaxEventId() < 0)
         {
-            maxEvent = 10000000;
             if (event < 0) {
                 AliError("current raw-data source does not support direct event access.");
                 return;
@@ -141,14 +137,14 @@ void AliEveDataSourceOffline::GotoEvent(Int_t event)
     }
     if (event < 0)
     {
-        AliFatal(Form("event %d not present, available range [0, %d].",event, maxEvent));
+        AliFatal(Form("event %d not present, available range [0, %d].",event, GetMaxEventId()));
     }
-    if (event > maxEvent)
+    if (event > GetMaxEventId())
     {
         AliInfo("Event number out of range. Going to event 0");
         GotoEvent(0);
     }
-
+    
     TString sysInfoHeader;
     sysInfoHeader.Form("AliEveEventManager::GotoEvent(%d) - ", event);
     AliSysInfo::AddStamp(sysInfoHeader + "Start");
@@ -201,6 +197,63 @@ void AliEveDataSourceOffline::GotoEvent(Int_t event)
     
     fEventManager->SetHasEvent(true);
     fEventManager->SetEventId(event);
+    
+    // --------
+    // check if event has required trigger class
+    string selectedTrigger = fEventManager->GetSelectedTrigger();
+    
+    bool foundTrigger = false;
+    
+    if(selectedTrigger == "No trigger selection")
+    {
+        cout<<"There was no trigger class selection"<<endl;
+        foundTrigger = true;
+    }
+    else
+    {
+        ULong64_t mask = 1;
+        ULong64_t triggerMask = fCurrentData.fESD->GetTriggerMask();
+        ULong64_t triggerMaskNext50 = fCurrentData.fESD->GetTriggerMaskNext50();
+        
+        // get trigger classes for given cluster
+        mask=1;
+        for(int i=0;i<50;i++)
+        {
+            if(mask & triggerMask)
+            {
+                if(fCurrentData.fESD->GetESDRun()->GetTriggerClass(i) == selectedTrigger)
+                {
+                    cout<<"Class found:"<<fCurrentData.fESD->GetESDRun()->GetTriggerClass(i)<<endl;
+                    foundTrigger = true;
+                    break;
+                }
+            }
+            if(mask & triggerMaskNext50)
+            {
+                if(fCurrentData.fESD->GetESDRun()->GetTriggerClass(i+50) == selectedTrigger)
+                {
+                    cout<<"Class found:"<<fCurrentData.fESD->GetESDRun()->GetTriggerClass(i+50)<<endl;
+                    foundTrigger = true;
+                    break;
+                }
+            }
+            mask = mask<<1;
+        }
+    }
+    
+    if(!foundTrigger)
+    {
+        cout<<"Skipping event "<<event<<" as it has no required trigger class "<<selectedTrigger<<endl;
+        if(event+1 > GetMaxEventId())
+        {
+            cout<<"Reseting trigger class filter"<<endl;
+            AliEveEventManagerWindow::GetInstance()->ResetTriggerSelection();
+        }
+        fEventManager->SetEventId(event);
+        NextEvent();
+        return;
+    }
+    //---------
     
     SetName(Form("Event %d", fEventManager->GetEventId()));
     fEventManager->ElementChanged();
@@ -338,43 +391,16 @@ void AliEveDataSourceOffline::Open()
     {
         AliWarning("Bootstraping of run-loader failed.");
     }
+    
     // Open raw-data file
-    TString rawPath;
-    if (fgRawFromStandardLoc)
-    {
-        if (!fgRawFileName.BeginsWith("alien:")){
-            AliFatal("Standard raw search requested, but the directory is not in AliEn.");
-        }
-        if (!fgRawFileName.Contains("/ESDs/")){
-            AliFatal("Standard raw search requested, but does not contain 'ESDs' directory.");
-        }
-        
-        TPMERegexp chunk("/([\\d\\.])+/?$");
-        Int_t nm = chunk.Match(fgRawFileName);
-        if (nm != 2){
-            AliFatal("Standard raw search requested, but the path does not end with chunk-id directory.");
-        }
-        
-        TPMERegexp esdstrip("/ESDs/.*");
-        rawPath = fgRawFileName;
-        esdstrip.Substitute(rawPath, "/raw/");
-        rawPath += chunk[0];
-        rawPath += ".root";
-        
-        AliInfo(Form("Standard raw search requested, using the following path:\n  %s\n", rawPath.Data()));
-    }
-    else
-    {
-        rawPath = fgRawFileName;
-    }
     // If i use open directly, raw-reader reports an error but i have
     // no way to detect it.
     // Is this (AccessPathName check) ok for xrootd / alien? Yes, not for http.
     AliLog::EType_t oldLogLevel = (AliLog::EType_t) AliLog::GetGlobalLogLevel();
     AliLog::SetGlobalLogLevel(AliLog::kFatal);
     
-    if (gSystem->AccessPathName(rawPath, kReadPermission) == kFALSE){
-        fCurrentData.fRawReader = AliRawReader::Create(rawPath);
+    if (gSystem->AccessPathName(fgRawFileName, kReadPermission) == kFALSE){
+        fCurrentData.fRawReader = AliRawReader::Create(fgRawFileName);
     }
     else{
         fCurrentData.fRawReader = AliRawReader::Create(fgRawFileName);
@@ -452,25 +478,17 @@ void AliEveDataSourceOffline::Close()
     fEventManager->SetHasEvent(false);
 }
 
-Int_t AliEveDataSourceOffline::GetMaxEventId(Bool_t refreshESD) const
+Int_t AliEveDataSourceOffline::GetMaxEventId()
 {
     // Returns maximum available event id.
     // If under external control or event is not opened -1 is returned.
     // If raw-data is the only data-source this can not be known
     // and 10,000,000 is returned.
-    // If neither data-source is initialised an exception is thrown.
-    // If refresh_esd is true and ESD is the primary event-data source
-    // its header is re-read from disk.
     
     if (!fIsOpen){return -1;}
     
     if (fCurrentData.fESDTree!=0)
     {
-        if (refreshESD)
-        {
-            fCurrentData.fESDTree->Refresh();
-            fEventManager->GetEventSelector()->Update();
-        }
         return fCurrentData.fESDTree->GetEntries() - 1;
     }
     else if (fCurrentData.fAODTree)
@@ -491,33 +509,6 @@ Int_t AliEveDataSourceOffline::GetMaxEventId(Bool_t refreshESD) const
     return -1;
 }
 
-/******************************************************************************/
-
-void AliEveDataSourceOffline::SearchRawForCentralReconstruction()
-{
-    // Enable searching of raw data in standard location. The path passed to
-    // Open() is expected to point to a centrally reconstructed run, e.g.:
-    // "alien:///alice/data/2009/LHC09c/000101134/ESDs/pass1/09000101134018.10".
-    
-    fgRawFromStandardLoc = kTRUE;
-}
-
-void AliEveDataSourceOffline::AddAODfriend(const TString& friendFileName)
-{
-    // Add new AOD friend file-name to be attached when opening AOD.
-    // This should include '.root', as in 'AliAOD.VertexingHF.root'.
-    
-    if (fgAODfriends == 0)
-    {
-        fgAODfriends = new TList;
-        fgAODfriends->SetOwner(kTRUE);
-    }
-    if (fgAODfriends->FindObject(friendFileName) == 0)
-    {
-        fgAODfriends->Add(new TObjString(friendFileName));
-    }
-}
-
 void AliEveDataSourceOffline::SetFilesPath(const TString& urlPath)
 {
     AliInfo(Form("setting path:%s",urlPath.Data()));
@@ -535,8 +526,18 @@ void AliEveDataSourceOffline::SetFilesPath(const TString& urlPath)
     fgRawFileName        = TString::Format("%s/raw.root", path.Data());
     fgGAliceFileName     = TString::Format("%s/galice.root", path.Data());
 
-    AddAODfriend(TString(Form("%s/AliAOD.VertexingHF.root", path.Data())));
+    TString friendFileName = TString::Format("%s/AliAOD.VertexingHF.root", path.Data());
     
+    if (fgAODfriends == 0)
+    {
+        fgAODfriends = new TList;
+        fgAODfriends->SetOwner(kTRUE);
+    }
+    if (fgAODfriends->FindObject(friendFileName) == 0)
+    {
+        fgAODfriends->Add(new TObjString(friendFileName));
+    }
+
     if(fIsOpen){Close();} // close old files
     Open();  // open files with new path
 }
@@ -546,10 +547,9 @@ TTree* AliEveDataSourceOffline::readESDTree(const char *treeName, int &runNo)
 {
     if(!fCurrentData.fESDFile && !fCurrentData.fESD) return 0;
     
-    TTree* tempTree = 0;
+    TTree* tempTree = (TTree*)fCurrentData.fESDFile->Get(treeName);
     
-    tempTree =(TTree*) fCurrentData.fESDFile->Get(treeName);
-    if (tempTree != 0)
+    if (tempTree)
     {
         TFile *esdFriendFile = TFile::Open(fgESDfriendsFileName);
         if (esdFriendFile)
