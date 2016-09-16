@@ -99,7 +99,7 @@ void AliEveESDMuonTracks::AddMuonTracks(AliESDEvent* esd, AliMUONESDInterface* d
     
     Int_t nTrack(esd->GetNumberOfMuonTracks());
     TEveRecTrack recTrack;
-    TEveTrack* track;
+    TEveTrack* track = nullptr;
     
     // add ESD tracks to the proper list
     for (Int_t n = 0; n < nTrack; ++n)
@@ -125,38 +125,41 @@ void AliEveESDMuonTracks::AddMuonTracks(AliESDEvent* esd, AliMUONESDInterface* d
             if ( emt->GetMatchTrigger() > 0 ) trackList = match;
             
             // produce eve track
-            track = new AliEveTrack(&recTrack,trackList->GetPropagator());
-            track->SetName(Form("%cmu",emt->Charge()>0 ? '+':'-'));
-            track->SetStdTitle();
-            track->SetSourceObject(emt); // WARNING: Change the UniqueID of the object!!
-            
-            // add path mark
-            TIter next(data->FindTrack(trackId)->GetTrackParamAtCluster());
-            AliMUONTrackParam* param;
-            while ( ( param = static_cast<AliMUONTrackParam*>(next()) ) )
+            if(trackList)
             {
-                TEveVector v(param->GetNonBendingCoor(),param->GetBendingCoor(),param->GetZ());
-                TEveVector p(param->Px(),param->Py(),param->Pz());
-                track->AddPathMark(TEvePathMark(TEvePathMark::kReference,v,p));
+                track = new AliEveTrack(&recTrack,trackList->GetPropagator());
+                track->SetName(Form("%cmu",emt->Charge()>0 ? '+':'-'));
+                track->SetStdTitle();
+                track->SetSourceObject(emt); // WARNING: Change the UniqueID of the object!!
+                
+                // add path mark
+                TIter next(data->FindTrack(trackId)->GetTrackParamAtCluster());
+                AliMUONTrackParam* param;
+                while ( ( param = static_cast<AliMUONTrackParam*>(next()) ) )
+                {
+                    TEveVector v(param->GetNonBendingCoor(),param->GetBendingCoor(),param->GetZ());
+                    TEveVector p(param->Px(),param->Py(),param->Pz());
+                    track->AddPathMark(TEvePathMark(TEvePathMark::kReference,v,p));
+                }
+                
+                // add trigger track if any
+                if (emt->ContainTriggerData())
+                {
+                    Double_t x11 = gTriggerCircuit->GetX11Pos(emt->LoCircuit(), emt->LoStripY());
+                    Double_t y11 = gTriggerCircuit->GetY11Pos(emt->LoCircuit(), emt->LoStripX());
+                    Double_t z11 = gTriggerCircuit->GetZ11Pos(emt->LoCircuit(), emt->LoStripX());
+                    Double_t y21 = gTriggerCircuit->GetY21Pos(emt->LoCircuit(), emt->LoStripX()+emt->LoDev()+1);
+                    Double_t z21 = gTriggerCircuit->GetZ21Pos(emt->LoCircuit(), emt->LoStripX()+emt->LoDev()+1);
+                    Double_t pz  = -emt->PUncorrected(); // max value
+                    TEveVector v(x11, y11, z11);
+                    TEveVector p(pz*x11/z11, pz*(y21-y11)/(z21-z11), pz);
+                    track->AddPathMark(TEvePathMark(TEvePathMark::kReference,v,p));
+                }
+                
+                // add the track to proper list
+                track->SetAttLineAttMarker(trackList);
+                trackList->AddElement(track);
             }
-            
-            // add trigger track if any
-            if (emt->ContainTriggerData())
-            {
-                Double_t x11 = gTriggerCircuit->GetX11Pos(emt->LoCircuit(), emt->LoStripY());
-                Double_t y11 = gTriggerCircuit->GetY11Pos(emt->LoCircuit(), emt->LoStripX());
-                Double_t z11 = gTriggerCircuit->GetZ11Pos(emt->LoCircuit(), emt->LoStripX());
-                Double_t y21 = gTriggerCircuit->GetY21Pos(emt->LoCircuit(), emt->LoStripX()+emt->LoDev()+1);
-                Double_t z21 = gTriggerCircuit->GetZ21Pos(emt->LoCircuit(), emt->LoStripX()+emt->LoDev()+1);
-                Double_t pz  = -emt->PUncorrected(); // max value
-                TEveVector v(x11, y11, z11);
-                TEveVector p(pz*x11/z11, pz*(y21-y11)/(z21-z11), pz);
-                track->AddPathMark(TEvePathMark(TEvePathMark::kReference,v,p));
-            }
-            
-            // add the track to proper list
-            track->SetAttLineAttMarker(trackList);
-            trackList->AddElement(track);
         }
         else // fill ghost track specific info
         {
@@ -167,14 +170,17 @@ void AliEveESDMuonTracks::AddMuonTracks(AliESDEvent* esd, AliMUONESDInterface* d
             recTrack.fP.Set(-TMath::Tan(emt->GetThetaXUncorrected()),-TMath::Tan(emt->GetThetaYUncorrected()),-1.);
             
             // produce eve track
-            track = new AliEveTrack(&recTrack,ghost->GetPropagator());
-            track->SetName("mu");
-            track->SetTitle("Trigger only");
-            track->SetSourceObject(emt);
-            
-            // add the track to proper list
-            track->SetAttLineAttMarker(ghost);
-            ghost->AddElement(track);
+            if(ghost)
+            {
+                track = new AliEveTrack(&recTrack,ghost->GetPropagator());
+                track->SetName("mu");
+                track->SetTitle("Trigger only");
+                track->SetSourceObject(emt);
+                
+                // add the track to proper list
+                track->SetAttLineAttMarker(ghost);
+                ghost->AddElement(track);
+            }
         }
         
     }
@@ -208,30 +214,43 @@ void AliEveESDMuonTracks::Draw(Bool_t showClusters, Bool_t showDigits)
     AliEveInit::GetConfig(&settings);
 
     
-    TEveTrackList* match = new TEveTrackList("Matched");
-    match->SetRnrPoints(kFALSE);
-    match->SetRnrLine(kTRUE);
-    match->SetLineColor(settings.GetValue("tracks.muon.matched.color",416));
-    match->SetLineWidth(settings.GetValue("tracks.muon.width",2));
-    SetupTrackPropagator(match->GetPropagator(), kTRUE, kTRUE);
-    trackCont->AddElement(match);
+    TEveTrackList* match = nullptr;
+    TEveTrackList* nomatch = nullptr;
+    TEveTrackList* ghost = nullptr;
     
-    TEveTrackList* nomatch = new TEveTrackList("Not matched");
-    nomatch->SetRnrPoints(kFALSE);
-    nomatch->SetRnrLine(kTRUE);
-    nomatch->SetLineColor(settings.GetValue("tracks.muon.nomatched.color",416));
-    nomatch->SetLineWidth(settings.GetValue("tracks.muon.width",2));
-    SetupTrackPropagator(nomatch->GetPropagator(), kTRUE, kFALSE);
-    trackCont->AddElement(nomatch);
+    if(settings.GetValue("tracks.muon.matched.draw",true))
+    {
+        match = new TEveTrackList("Matched");
+        match->SetRnrPoints(kFALSE);
+        match->SetRnrLine(kTRUE);
+        match->SetLineColor(settings.GetValue("tracks.muon.matched.color",416));
+        match->SetLineWidth(settings.GetValue("tracks.muon.width",2));
+        SetupTrackPropagator(match->GetPropagator(), kTRUE, kTRUE);
+        trackCont->AddElement(match);
+    }
     
-    TEveTrackList* ghost = new TEveTrackList("Ghost");
-    ghost->SetRnrPoints(kFALSE);
-    ghost->SetRnrLine(kTRUE);
-    ghost->SetLineColor(settings.GetValue("tracks.muon.ghost.color",416));
-    ghost->SetLineWidth(settings.GetValue("tracks.muon.width",2));
-    SetupTrackPropagator(ghost->GetPropagator(), kFALSE, kTRUE);
-    trackCont->AddElement(ghost);
+    if(settings.GetValue("tracks.muon.nomatched.draw",true))
+    {
+        nomatch = new TEveTrackList("Not matched");
+        nomatch->SetRnrPoints(kFALSE);
+        nomatch->SetRnrLine(kTRUE);
+        nomatch->SetLineColor(settings.GetValue("tracks.muon.nomatched.color",416));
+        nomatch->SetLineWidth(settings.GetValue("tracks.muon.width",2));
+        SetupTrackPropagator(nomatch->GetPropagator(), kTRUE, kFALSE);
+        trackCont->AddElement(nomatch);
+    }
     
+    if(settings.GetValue("tracks.muon.ghost.draw",true))
+    {
+        ghost = new TEveTrackList("Ghost");
+        ghost->SetRnrPoints(kFALSE);
+        ghost->SetRnrLine(kTRUE);
+        ghost->SetLineColor(settings.GetValue("tracks.muon.ghost.color",416));
+        ghost->SetLineWidth(settings.GetValue("tracks.muon.width",2));
+        SetupTrackPropagator(ghost->GetPropagator(), kFALSE, kTRUE);
+        trackCont->AddElement(ghost);
+    }
+        
     // cluster container
     TEvePointSet* clusterList = 0x0;
     if (showClusters && (data.GetNClusters() > 0 || gEve->GetKeepEmptyCont()))
@@ -269,12 +288,22 @@ void AliEveESDMuonTracks::Draw(Bool_t showClusters, Bool_t showDigits)
     
     // add tracks to the proper list and propagate them
     AddMuonTracks(esd, &data, match, nomatch, ghost);
-    match->SetTitle(Form("N=%d",match->NumChildren()));
-    nomatch->SetTitle(Form("N=%d",nomatch->NumChildren()));
-    ghost->SetTitle(Form("N=%d",ghost->NumChildren()));
-    match->MakeTracks();
-    nomatch->MakeTracks();
-    ghost->MakeTracks();
+    if(match)
+    {
+        match->SetTitle(Form("N=%d",match->NumChildren()));
+        match->MakeTracks();
+    }
+    if(nomatch)
+    {
+        nomatch->SetTitle(Form("N=%d",nomatch->NumChildren()));
+        nomatch->MakeTracks();
+    }
+    if(ghost)
+    {
+        ghost->SetTitle(Form("N=%d",ghost->NumChildren()));
+        ghost->MakeTracks();
+    }
+    
     
     // add cluster to the container
     if (clusterList)
