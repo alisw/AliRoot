@@ -38,6 +38,7 @@
 
 #include <vector>
 #include <string>
+#include <sstream>
 #include "Riostream.h"
 
 //______________________________________________________________________________
@@ -361,21 +362,21 @@ void AliEveEventManagerWindow::DoRefresh()
     AliEveInit::SetupGeometry();
     AliEveInit::AddMacros();
     AliEveInit::SetupCamera();
-    
+
     TEveScene *rPhiScene = AliEveMultiView::Instance()->GetRPhiScene();
     TEveScene *rhoZScene = AliEveMultiView::Instance()->GetRhoZScene();
     
     TEveElement::List_i rPhiElement = rPhiScene->BeginChildren();
     TEveElement::List_i rhoZElement = rhoZScene->BeginChildren();
-    
+
     TEveProjectionAxes* rPhiAxes = ((TEveProjectionAxes*)*rPhiElement);
     TEveProjectionAxes* rhoZAxes = ((TEveProjectionAxes*)*rhoZElement);
     
     TEnv settings;
     AliEveInit::GetConfig(&settings);
-    rPhiAxes->SetRnrSelf(settings.GetValue("axes.show",false));
-    rhoZAxes->SetRnrSelf(settings.GetValue("axes.show",false));
-    
+    if(rPhiAxes) rPhiAxes->SetRnrSelf(settings.GetValue("axes.show",false));
+    if(rhoZAxes) rhoZAxes->SetRnrSelf(settings.GetValue("axes.show",false));
+
     gEve->FullRedraw3D();
     gSystem->ProcessEvents();
     gEve->Redraw3D();

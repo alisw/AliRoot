@@ -84,7 +84,7 @@ AliEveEventManager* AliEveEventManager::fgMaster  = NULL;
 AliEveEventManager::AliEveEventManager(EDataSource defaultDataSource) :
 TEveEventManager("Event", ""),
 fEventId(-1),fEventInfo(),fHasEvent(kFALSE),fCurrentRun(-1),fSelectedTrigger(""),
-fCurrentData(&fEmptyData),fCurrentDataSource(NULL),fDataSourceOnline(NULL),fDataSourceOffline(NULL),fDataSourceHLTZMQ(NULL),
+fCurrentData(&fEmptyData),fCurrentDataSource(NULL),fDataSourceOnline(NULL),fDataSourceOffline(NULL),fDataSourceHLTZMQ(NULL), fCurrentDataSourceType(defaultDataSource),
 fAutoLoad(kFALSE), fAutoLoadTime(5),fAutoLoadTimer(0),fAutoLoadTimerRunning(kFALSE),
 fTransients(0),
 fExecutor(0),fViewsSaver(0),fESDTracksDrawer(0),fAODTracksDrawer(0),fPrimaryVertexDrawer(0),fKinksDrawer(0),fCascadesDrawer(0),fV0sDrawer(0),fMuonTracksDrawer(0),fSPDTracklersDrawer(0),fKineTracksDrawer(0),  fMomentumHistogramsDrawer(0),fPEventSelector(0),
@@ -169,6 +169,8 @@ void AliEveEventManager::ChangeDataSource(EDataSource newSource)
     }
     if (fCurrentDataSource) fCurrentData = fCurrentDataSource->GetData();
 
+    fCurrentDataSourceType = newSource;
+    
     //restore timer
     if (fAutoLoad)
     {
@@ -618,12 +620,12 @@ void AliEveEventManager::AfterNewEventLoaded()
     
     bool saveViews = settings.GetValue("ALICE_LIVE.send",false);
     
-    if(saveViews  && fCurrentData->fESD->GetNumberOfTracks()>0)
+    if(fCurrentDataSourceType!=kSourceOffline && saveViews && fCurrentData->fESD->GetNumberOfTracks()>0)
     {
         fViewsSaver->SaveForAmore();
         fViewsSaver->SendToAmore();
     }
-    AliEveInit::SetupCamera();
+//    AliEveInit::SetupCamera();
     TEveBrowser *browser = gEve->GetBrowser();
     browser->MoveResize(browser->GetX(), browser->GetY(), browser->GetWidth(),browser->GetHeight());
     gSystem->ProcessEvents();

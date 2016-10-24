@@ -35,8 +35,8 @@ protected:
     Int_t fSavingStatus;
 
     // storage parameters
-    int fCurrentStorageSize;
-    int fMaximumStorageSize;
+    long int fCurrentStorageSize;
+    long int fMaximumStorageSize;
     std::string fStoragePath;
     int fNumberOfEventsInFile;
     int fStorageOccupationLevel;

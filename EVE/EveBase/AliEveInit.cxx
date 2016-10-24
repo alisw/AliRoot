@@ -370,9 +370,7 @@ void AliEveInit::AddMacros()
                                            "AliEveEventManager::kAOD"
                                            ));
         }
-
     }
-    
     // what's below should be removed
     
     bool showMuon         = settings.GetValue("MUON.show", true);              // show MUON's geom
@@ -384,6 +382,7 @@ void AliEveInit::AddMacros()
     
     if(drawHits)
     {
+        cout<<"Adding old macros for hits"<<endl;
         exec->AddMacro(new AliEveMacro("SIM Hits ITS", "its_hits.C",    "its_hits",    ""));
         exec->AddMacro(new AliEveMacro("SIM Hits TPC", "tpc_hits.C",    "tpc_hits",    ""));
         exec->AddMacro(new AliEveMacro("SIM Hits T0",  "t0_hits.C",     "t0_hits",     ""));
@@ -395,6 +394,7 @@ void AliEveInit::AddMacros()
         exec->AddMacro(new AliEveMacro("SIM Hits VZERO", "vzero_hits.C",    "vzero_hits",    ""));
     }
     if(drawDigits){
+        cout<<"Adding old macros for digits"<<endl;
         exec->AddMacro(new AliEveMacro("DIG ITS",     "its_digits.C",  "its_digits",  ""));
         exec->AddMacro(new AliEveMacro("DIG TPC",     "tpc_digits.C",  "tpc_digits",  ""));
         exec->AddMacro(new AliEveMacro("DIG TOF",     "tof_digits.C",  "tof_digits",  ""));
@@ -403,6 +403,7 @@ void AliEveInit::AddMacros()
     }
     if(drawRawData)
     {
+        cout<<"Adding old macros for raw data"<<endl;
         exec->AddMacro(new AliEveMacro("RAW ITS",     "its_raw.C",     "its_raw",     ""));
         exec->AddMacro(new AliEveMacro("RAW TPC",     "tpc_raw.C",     "tpc_raw",     ""));
         exec->AddMacro(new AliEveMacro("RAW TOF",     "tof_raw.C",     "tof_raw",     ""));
@@ -414,6 +415,7 @@ void AliEveInit::AddMacros()
     }
     if(drawClusters)
     {
+        cout<<"Adding old macros for clusters"<<endl;
         exec->AddMacro(new AliEveMacro("REC Clusters ITS", "its_clusters.C", "its_clusters",""));
         exec->AddMacro(new AliEveMacro("REC Clusters TPC", "tpc_clusters.C", "tpc_clusters",""));
         exec->AddMacro(new AliEveMacro("REC Clusters TRD", "trd_clusters.C", "trd_clusters",""));
@@ -423,6 +425,7 @@ void AliEveInit::AddMacros()
     }
     if (showMuon)
     {
+        cout<<"Adding old macros for muon"<<endl;
         if(drawRawData){
             exec->AddMacro(new AliEveMacro("RAW MUON", "muon_raw.C", "muon_raw", ""));
         }
@@ -435,6 +438,7 @@ void AliEveInit::AddMacros()
 
     }
     if(showEMCal){
+        cout<<"Adding old macros for emcal"<<endl;
         exec->AddMacro(new AliEveMacro("ESD EMCal", "emcal_esdclustercells.C", "emcal_esdclustercells", ""));
     }
 }

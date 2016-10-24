@@ -145,6 +145,7 @@ private:
     AliEveDataSource* fDataSourceOnline;   // pointer to online data source
     AliEveDataSource* fDataSourceOffline;  // pointer to offline data source
     AliEveDataSource* fDataSourceHLTZMQ;   // pointer to HLT ZMQ data source
+    EDataSource fCurrentDataSourceType;    // enum type of the current data source
     
     
     Bool_t   fAutoLoad;              // Automatic loading of events (online)
