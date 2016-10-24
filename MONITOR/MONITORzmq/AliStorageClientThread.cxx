@@ -45,7 +45,7 @@ fRemoveEventsPercentage(0)
                 fStoragePath=line.substr(from,to-from);
             }
             else if(line.find("MAX_SIZE=")==0){
-                fMaximumStorageSize=atoi(line.substr(from,to-from).c_str());
+                fMaximumStorageSize=atol(line.substr(from,to-from).c_str());
             }
             else if(line.find("MAX_OCCUPATION=")==0){
                 fStorageOccupationLevel=atoi(line.substr(from,to-from).c_str());

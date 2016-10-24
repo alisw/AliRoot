@@ -52,7 +52,7 @@ void AliEventsCollectorThread::CollectorHandle()
     AliZMQManager *eventManager = AliZMQManager::GetInstance();
     eventManager->CreateSocket(EVENTS_SERVER_SUB);
     
-    int receiveStatus = false;
+    bool receiveStatus = false;
     
     AliESDEvent *event = NULL;
     
@@ -75,40 +75,9 @@ void AliEventsCollectorThread::CollectorHandle()
         else if(event && receiveStatus)
         {
             cout<<"AliEventsCollectorThread -- Received event:"<<event->GetEventNumberInFile()<<"\trun:"<<event->GetRunNumber()<<endl;
-            /*
-            if(event->GetRunNumber() != fCurrentRunNumber)// first event in a new run
-            {
-                cout<<"AliEventsCollectorThread -- new run stars"<<endl;
-                fCurrentRunNumber = event->GetRunNumber();
-                gSystem->Exec(Form("mkdir -p %s/run%d",fManager->fStoragePath.c_str(),fCurrentRunNumber));
-                
-                // create new empty file for ESD events
-                esdFile = TFile::Open(Form("%s/run%d/AliESDs.root",fManager->fStoragePath.c_str(),fCurrentRunNumber), "RECREATE");
-                esdTree = new TTree("esdTree", "Tree with ESD objects");
-                event->WriteToTree(esdTree);
-                esdTree->Fill();
-                esdTree->Write();
-            }
-            else
-            {
-                esdFile = TFile::Open(Form("%s/run%d/AliESDs.root",fManager->fStoragePath.c_str(),fCurrentRunNumber), "UPDATE");
-                esdTree = (TTree*)esdFile->Get("esdTree");
-                
-                event->AddToTree(esdTree);
-                esdTree->Fill();
-                esdTree->Write(0,TObject::kWriteDelete,0);
-            }
-            
-            if(esdTree){ delete esdTree; esdTree = 0; }
-            
-            if(esdFile){ // close the file after each new event
-                esdFile->Close();
-                delete esdFile;
-                esdFile = 0;
-            }
             
             CheckCurrentStorageSize();
-*/
+
             TThread::Lock();
             
             fDatabase->InsertEvent(event->GetRunNumber(),
