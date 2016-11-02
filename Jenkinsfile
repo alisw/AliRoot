@@ -1,5 +1,7 @@
 #!groovy
 
+# -*- test -*-
+
 node {
   stage "Build AliRoot"
   def test_script = """
