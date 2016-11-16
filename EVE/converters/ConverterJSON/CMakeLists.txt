@@ -53,7 +53,7 @@ set(MODULE_LINK_FLAGS)
 get_directory_property(incdirs INCLUDE_DIRECTORIES)
 generate_dictionary("${MODULE}" "${MODULE}LinkDef.h" "${HDRS}" "${incdirs}" "${MODULE_COMPILE_FLAGS}")
 
-set(LIBDEPS STEERBase STEER EMCALUtils PHOSbase PHOSUtils ESD CDB EG EveDet EveBase MUONrec MUONcore Ged Gpad Graf Graf3d Gui Net RGL Rint)
+set(LIBDEPS STEERBase STEER EMCALUtils PHOSbase PHOSUtils ESD CDB EG EveDet EveBase MUONrec MUONcore Ged Gpad Graf Graf3d Gui Net RGL Rint RHTTP)
 
 if(DATE_FOUND)
     set(MODULE_COMPILE_FLAGS "${DATE_CFLAGS}")
