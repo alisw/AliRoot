@@ -87,6 +87,8 @@ int main(int argc, char **argv)
   // run and event number, the number of vertices, tracks and primary tracks
   // in the event.
 
+  return -1;
+
   //RS: use maximum stack size
   const long kMB = 1024L * 1024L;
   rlim_t newStackSize = 8L;   // new default stack size
