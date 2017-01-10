@@ -31,6 +31,8 @@
 #include "AliMultiEventInputHandler.h"
 #include "AliLog.h"
 
+#include "UnknownFile.h"
+
 
 ClassImp(AliAnalysisTaskME)
 
