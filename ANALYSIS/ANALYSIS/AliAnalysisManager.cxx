@@ -29,6 +29,8 @@
 
 #include "AliAnalysisManager.h"
 
+#include "LetsBreakTheMaster.h"
+
 #include <cerrno>
 #include <Riostream.h>
 #include <TError.h>
