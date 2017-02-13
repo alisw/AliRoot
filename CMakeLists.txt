@@ -19,6 +19,8 @@
 
 cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
 
+# a mod
+
 # AliRoot will refuse to compile against a wrong ROOT version
 set(ROOT_VERSION_MIN_5 "5.34.30")
 set(ROOT_VERSION_MIN_6 "6.04.00")
