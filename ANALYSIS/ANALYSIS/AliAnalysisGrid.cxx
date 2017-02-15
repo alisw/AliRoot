@@ -33,7 +33,7 @@ AliAnalysisGrid::AliAnalysisGrid(const AliAnalysisGrid& other)
                 :TNamed(other), fSpecialBits(0)
 {
 // Copy ctor.
-  int var = 7 // syntax error
+  int var = 7; // now fixed the syntax error
 }
 
 //______________________________________________________________________________
