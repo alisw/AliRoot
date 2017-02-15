@@ -126,17 +126,6 @@ AliAnalysisManager::AliAnalysisManager(const char *name, const char *title)
 // Default constructor.
    fgAnalysisManager = this;
    fgCommonFileName  = "AnalysisResults.root";
-   if (TClass::IsCallingNew() != TClass::kDummyNew) {
-     fTasks      = new TObjArray();
-     fTopTasks   = new TObjArray();
-     fZombies    = new TObjArray();
-     fContainers = new TObjArray();
-     fInputs     = new TObjArray();
-     fOutputs    = new TObjArray();
-     fParamCont  = new TObjArray();
-     fExchangeCont = new TObjArray();
-     fGlobals    = new TMap();
-   }
    fIOTimer = new TStopwatch();
    fCPUTimer = new TStopwatch();
    fInitTimer = new TStopwatch();
