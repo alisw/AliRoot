@@ -129,7 +129,7 @@ AliAnalysisManager::AliAnalysisManager(const char *name, const char *title)
    if (TClass::IsCallingNew() != TClass::kDummyNew) {
      fTasks      = new TObjArray();
      fTopTasks   = new TObjArray();
-     fZombies    = new TObjArray();
+     fZombies    = 0;
      fContainers = new TObjArray();
      fInputs     = new TObjArray();
      fOutputs    = new TObjArray();
