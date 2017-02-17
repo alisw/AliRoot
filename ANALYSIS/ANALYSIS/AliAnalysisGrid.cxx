@@ -15,6 +15,8 @@
 
 // Author: Mihaela Gheata, 01/09/2008
 
+// another comment
+
 //==============================================================================
 //   AliAnalysisGrid - Base grid utility class. Provides interface for creating
 // a personalized JDL, finding and creating a dataset.
@@ -31,6 +33,7 @@ AliAnalysisGrid::AliAnalysisGrid(const AliAnalysisGrid& other)
                 :TNamed(other), fSpecialBits(0)
 {
 // Copy ctor.
+  int var = 7; // now fixed the syntax error
 }
 
 //______________________________________________________________________________
