@@ -6,7 +6,14 @@
 class AliDataFile {
   public:
     virtual ~AliDataFile() {};
-    static TFile *Open(const char *url, Option_t *opts="");
+    static std::string GetFileName(const std::string &url);
+    static std::string GetFileNameOADB(const std::string &url);
+    static TFile *Open(const std::string &url, Option_t *opts="") {
+      return TFile::Open(GetFileName(url).c_str(), opts);
+    }
+    static TFile *OpenOADB(const std::string &url, Option_t *opts="") {
+      return Open(GetFileNameOADB(url), opts);
+    }
 
   /// \cond CLASSIMP
   ClassDef(AliDataFile, 0);
