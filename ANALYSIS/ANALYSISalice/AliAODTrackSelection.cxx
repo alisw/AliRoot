@@ -75,7 +75,7 @@ bool AliAODTrackSelection::IsTrackAccepted(AliVTrack * const trk)
   Int_t cutcounter(0);
   if (fFilterBits) {
     if(aodt->TestFilterBit(fFilterBits)) fTrackBitmap.SetBitNumber(cutcounter);
-    cutcounter++;
+    cutcounter = 0;
   }
   if (fListOfCuts) {
     for (TIter cutIter = TIter(fListOfCuts).Begin(); cutIter != TIter::End(); ++cutIter){
