@@ -155,7 +155,6 @@ Bool_t AliPIDResponseInputHandler::BeginEvent(Long64_t entry)
               SetRecoInfo();
               fOldRun = fRun;
             }
-           fPIDResponse->SetOADBPath(AliAnalysisManager::GetOADBPath());
            fPIDResponse->InitialiseEvent(event,fRecoPass);
          }
       }

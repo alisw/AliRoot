@@ -134,9 +134,6 @@ public:
 
   void SetITSPIDmethod(ITSPIDmethod pmeth) { fITSPIDmethod = pmeth; }
 
-  void SetOADBPath(const char* path) {fOADBPath=path;}
-  const char *GetOADBPath() const {return fOADBPath.Data();}
-
   void SetCustomTPCpidResponse(const char* tpcpid) { fCustomTPCpidResponse = tpcpid; }
   const char* GetCustomTPCpidResponse() const { return fCustomTPCpidResponse.Data(); }
 

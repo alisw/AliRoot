@@ -115,9 +115,7 @@ void AliAnalysisTaskPIDResponse::UserCreateOutputObjects()
   fPIDResponse=inputHandler->GetPIDResponse();
   if (!fPIDResponse) AliFatal("PIDResponse object was not created");
 
-  fPIDResponse->SetOADBPath(AliAnalysisManager::GetOADBPath());
   fPIDResponse->SetCachePID(fCachePID);
-  if (!fOADBPath.IsNull()) fPIDResponse->SetOADBPath(fOADBPath.Data());
 
   if(fTunedOnDataMask != 0) fPIDResponse->SetTunedOnDataMask(fTunedOnDataMask);
 

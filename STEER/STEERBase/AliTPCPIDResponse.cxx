@@ -37,6 +37,7 @@
 #include <TSystem.h>
 #include <TMD5.h>
 
+#include "AliDataFile.h"
 #include <AliLog.h>
 #include "AliExternalTrackParam.h"
 #include "AliVTrack.h"
@@ -1625,7 +1626,7 @@ Bool_t   AliTPCPIDResponse::RegisterSpline(const char * name, Int_t index){
   //
   // register spline to be used for drawing comparisons
   // 
-  TFile * fTPCBB = TFile::Open("$ALICE_PHYSICS/OADB/COMMON/PID/data/TPCPIDResponse.root");
+  TFile * fTPCBB = AliDataFile::OpenOADB("COMMON/PID/data/TPCPIDResponse.root");
   TObjArray  *arrayTPCPID= (TObjArray*)  fTPCBB->Get("TPCPIDResponse");
   if (fSplineArray.GetEntriesFast()<index) fSplineArray.Expand(index*2);
   TSpline3 *spline=0;

@@ -25,6 +25,7 @@ class AliOADBContainer : public TNamed {
   AliOADBContainer(const char* name);
   virtual ~AliOADBContainer();
   AliOADBContainer(const AliOADBContainer& cont); 
+  AliOADBContainer(AliOADBContainer&& cont); 
   AliOADBContainer& operator=(const AliOADBContainer& cont);
 // Object adding and removal
   void   AppendObject(TObject* obj, Int_t lower, Int_t upper, TString passName="");
@@ -54,8 +55,7 @@ class AliOADBContainer : public TNamed {
   virtual Bool_t	IsFolder() const { return kTRUE; }
   void Browse(TBrowser *b);
   Int_t GetIndexForRun(Int_t run, TString passName="") const;
-//
-  static const char*   GetOADBPath();
+
  private:
   Int_t HasOverlap(Int_t lower, Int_t upper, TString passName) const;
  private :

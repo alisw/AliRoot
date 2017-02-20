@@ -31,6 +31,7 @@
 #include <TDirectory.h>
 
 #include "AliLog.h"
+#include "AliDataFile.h"
 #include "AliVEvent.h"
 #include "AliAnalysisManager.h"
 #include "AliOADBContainer.h"
@@ -97,9 +98,8 @@ void AliVZEROEPSelectionTask::UserCreateOutputObjects()
   // Open the OADB file
   
   if(!fUserParams) {
-    TString oadbFileName = Form("%s/COMMON/EVENTPLANE/data/vzero.root", AliAnalysisManager::GetOADBPath());
-    TFile *fOADB = TFile::Open(oadbFileName); 
-    if(!fOADB->IsOpen()) AliFatal(Form("Cannot open OADB file %s", oadbFileName.Data()));
+    TFile *fOADB = AliDataFile::OpenOADB("COMMON/EVENTPLANE/data/vzero.root");
+    if(!fOADB->IsOpen()) AliFatal("Cannot open OADB file");
 
     AliInfo("Using Standard OADB");
     AliOADBContainer *cont = (AliOADBContainer*)fOADB->Get("vzeroEP");

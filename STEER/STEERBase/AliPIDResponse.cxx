@@ -37,6 +37,7 @@
 #include <TMD5.h>
 #include "TRandom.h"
 
+#include "AliDataFile.h"
 #include <AliVEvent.h>
 #include <AliVTrack.h>
 #include <AliMCEvent.h>
@@ -71,7 +72,6 @@ fTuneMConData(kFALSE),
 fTuneMConDataMask(kDetTOF|kDetTPC),
 fIsMC(isMC),
 fCachePID(kFALSE),
-fOADBPath(),
 fCustomTPCpidResponse(),
 fCustomTPCpidResponseOADBFile(),
 fCustomTPCetaMaps(),
@@ -149,7 +149,6 @@ fTuneMConData(other.fTuneMConData),
 fTuneMConDataMask(other.fTuneMConDataMask),
 fIsMC(other.fIsMC),
 fCachePID(other.fCachePID),
-fOADBPath(other.fOADBPath),
 fCustomTPCpidResponse(other.fCustomTPCpidResponse),
 fCustomTPCpidResponseOADBFile(other.fCustomTPCpidResponseOADBFile),
 fCustomTPCetaMaps(other.fCustomTPCetaMaps),
@@ -212,7 +211,6 @@ AliPIDResponse& AliPIDResponse::operator=(const AliPIDResponse &other)
     fEMCALResponse=other.fEMCALResponse;
     fRange=other.fRange;
     fITSPIDmethod=other.fITSPIDmethod;
-    fOADBPath=other.fOADBPath;
     fCustomTPCpidResponse=other.fCustomTPCpidResponse;
     fCustomTPCpidResponseOADBFile=other.fCustomTPCpidResponseOADBFile;
     fCustomTPCetaMaps=other.fCustomTPCetaMaps;
@@ -1127,7 +1125,7 @@ void AliPIDResponse::SetTPCEtaMaps(Double_t refineFactorMapX, Double_t refineFac
   fTPCResponse.SetSigmaParams(0x0, 0);
 
 
-  TString fileNameMaps(Form("%s/COMMON/PID/data/TPCetaMaps.root", fOADBPath.Data()));
+  TString fileNameMaps(AliDataFile::GetFileName("COMMON/PID/data/TPCetaMaps.root"));
   if (!fCustomTPCetaMaps.IsNull()) fileNameMaps=fCustomTPCetaMaps;
 
   // ===| Load the eta correction maps |=======================================
@@ -1324,7 +1322,7 @@ Bool_t AliPIDResponse::InitializeTPCResponse()
   
   AliInfo("---------------------------- TPC Response Configuration (New) ----------------------------");
   // ===| load TPC response array from OADB |===================================
-  TString fileNamePIDresponse(Form("%s/COMMON/PID/data/TPCPIDResponseOADB.root", fOADBPath.Data()));
+  TString fileNamePIDresponse(AliDataFile::GetFileName("COMMON/PID/data/TPCPIDResponseOADB.root"));
   if (!fCustomTPCpidResponseOADBFile.IsNull()) fileNamePIDresponse=fCustomTPCpidResponseOADBFile;
 
 
@@ -1364,7 +1362,7 @@ void AliPIDResponse::SetTPCPidResponseMaster()
 
   TFile *f=NULL;
 
-  TString fileNamePIDresponse(Form("%s/COMMON/PID/data/TPCPIDResponse.root", fOADBPath.Data()));
+  TString fileNamePIDresponse(AliDataFile::GetFileName("COMMON/PID/data/TPCPIDResponse.root"));
   if (!fCustomTPCpidResponse.IsNull()) fileNamePIDresponse=fCustomTPCpidResponse;
 
   f=TFile::Open(fileNamePIDresponse.Data());
@@ -1373,7 +1371,7 @@ void AliPIDResponse::SetTPCPidResponseMaster()
   }
   delete f;
 
-  TString fileNameVoltageMaps(Form("%s/COMMON/PID/data/TPCvoltageSettings.root", fOADBPath.Data()));
+  TString fileNameVoltageMaps(AliDataFile::GetFileName("COMMON/PID/data/TPCvoltageSettings.root"));
   f=TFile::Open(fileNameVoltageMaps.Data());
   if (f && f->IsOpen() && !f->IsZombie()){
     fOADBvoltageMaps=dynamic_cast<AliOADBContainer*>(f->Get("TPCvoltageSettings"));
@@ -1768,11 +1766,11 @@ void AliPIDResponse::SetTRDPidResponseMaster()
   if(fTRDPIDResponseObject) return;
   AliOADBContainer contParams("contParams");
 
-  Int_t statusResponse = contParams.InitFromFile(Form("%s/COMMON/PID/data/TRDPIDResponse.root", fOADBPath.Data()), "AliTRDPIDResponseObject");
+  Int_t statusResponse = contParams.InitFromFile(AliDataFile::GetFileName("COMMON/PID/data/TRDPIDResponse.root").c_str(), "AliTRDPIDResponseObject");
   if(statusResponse){
     AliError("Failed initializing PID Response Object from OADB");
   } else {
-    AliInfo(Form("Loading TRD Response from %s/COMMON/PID/data/TRDPIDResponse.root", fOADBPath.Data()));
+    AliInfo(Form("Loading TRD Response from %s", AliDataFile::GetFileName("COMMON/PID/data/TRDPIDResponse.root").c_str()));
     fTRDPIDResponseObject = dynamic_cast<AliTRDPIDResponseObject *>(contParams.GetObject(fRun));
     if(!fTRDPIDResponseObject){
       AliError(Form("TRD Response not found in run %d", fRun));
@@ -1817,7 +1815,7 @@ void AliPIDResponse::SetTRDdEdxParams()
   const TString containerName = "TRDdEdxParamsContainer";
   AliOADBContainer cont(containerName.Data());
 
-  const TString filePathNamePackage=Form("%s/COMMON/PID/data/TRDdEdxParams.root", fOADBPath.Data());
+  const TString filePathNamePackage=AliDataFile::GetFileName("COMMON/PID/data/TRDdEdxParams.root");
 
   const Int_t statusCont = cont.InitFromFile(filePathNamePackage.Data(), cont.GetName());
   if (statusCont){
@@ -1854,7 +1852,7 @@ void AliPIDResponse::SetTRDEtaMaps()
     const TString containerName = "TRDCorrectionMaps";
     AliOADBContainer cont(containerName.Data());
 
-    const TString filePathNamePackage=Form("%s/COMMON/PID/data/TRDdEdxCorrectionMaps.root", fOADBPath.Data());
+    const TString filePathNamePackage=AliDataFile::GetFileName("COMMON/PID/data/TRDdEdxCorrectionMaps.root");
 
     const Int_t statusCont = cont.InitFromFile(filePathNamePackage.Data(), cont.GetName());
     if (statusCont){
@@ -1912,7 +1910,7 @@ void AliPIDResponse::SetTRDClusterMaps()
     const TString containerName = "TRDCorrectionMaps";
     AliOADBContainer cont(containerName.Data());
 
-    const TString filePathNamePackage=Form("%s/COMMON/PID/data/TRDdEdxCorrectionMaps.root", fOADBPath.Data());
+    const TString filePathNamePackage=AliDataFile::GetFileName("COMMON/PID/data/TRDdEdxCorrectionMaps.root");
 
     const Int_t statusCont = cont.InitFromFile(filePathNamePackage.Data(), cont.GetName());
     if (statusCont){
@@ -1971,7 +1969,7 @@ void AliPIDResponse::SetTRDCentralityMaps()
     const TString containerName = "TRDCorrectionMaps";
     AliOADBContainer cont(containerName.Data());
 
-    const TString filePathNamePackage=Form("%s/COMMON/PID/data/TRDdEdxCorrectionMaps.root", fOADBPath.Data());
+    const TString filePathNamePackage=AliDataFile::GetFileName("COMMON/PID/data/TRDdEdxCorrectionMaps.root");
 
     const Int_t statusCont = cont.InitFromFile(filePathNamePackage.Data(), cont.GetName());
     if (statusCont){
@@ -2019,18 +2017,19 @@ void AliPIDResponse::SetTOFPidResponseMaster()
   if (fTOFPIDParams) delete fTOFPIDParams;
   fTOFPIDParams=NULL;
 
-  TFile *oadbf = new TFile(Form("%s/COMMON/PID/data/TOFPIDParams.root",fOADBPath.Data()));
+  const TString filename = AliDataFile::GetFileName("COMMON/PID/data/TOFPIDParams.root");
+  TFile *oadbf = new TFile(filename);
   if (oadbf && oadbf->IsOpen()) {
     Int_t recoPass = fRecoPass;
     if (fTuneMConData && ((fTuneMConDataMask & kDetTOF) == kDetTOF) ) recoPass = fRecoPassUser;
     TString passName = Form("pass%d",recoPass);
-    AliInfo(Form("Loading TOF Params from %s/COMMON/PID/data/TOFPIDParams.root for run %d (pass: %s)", fOADBPath.Data(),fRun,passName.Data()));
+    AliInfo(Form("Loading TOF Params from %s for run %d (pass: %s)",filename.Data(),fRun,passName.Data()));
     AliOADBContainer *oadbc = (AliOADBContainer *)oadbf->Get("TOFoadb");
     if (oadbc) fTOFPIDParams = dynamic_cast<AliTOFPIDParams *>(oadbc->GetObject(fRun,"TOFparams",passName));
     oadbf->Close();
     delete oadbc;
   } else {
-    AliError(Form("TOF OADB file not found!!! %s/COMMON/PID/data/TOFPIDParams.root",fOADBPath.Data()));
+    AliError(Form("TOF OADB file not found!!! %s",filename.Data()));
   }
   delete oadbf;
 
@@ -2106,10 +2105,12 @@ void AliPIDResponse::SetHMPIDPidResponseMaster()
   fHMPIDPIDParams=NULL;
 
   TFile *oadbf;
-  if(!fIsMC) oadbf = new TFile(Form("%s/COMMON/PID/data/HMPIDPIDParams.root",fOADBPath.Data()));
-  else       oadbf = new TFile(Form("%s/COMMON/PID/MC/HMPIDPIDParams.root",fOADBPath.Data()));
+  const TString filename = !fIsMC ?
+    AliDataFile::GetFileName("COMMON/PID/data/HMPIDPIDParams.root") :
+    AliDataFile::GetFileName("COMMON/PID/MC/HMPIDPIDParams.root");
+  oadbf = new TFile(filename.Data());
   if (oadbf && oadbf->IsOpen()) {
-    AliInfo(Form("Loading HMPID Params from %s/COMMON/PID/data/HMPIDPIDParams.root", fOADBPath.Data()));
+    AliInfo(Form("Loading HMPID Params from %s", filename.Data()));
     AliOADBContainer *oadbc = (AliOADBContainer *)oadbf->Get("HMPoadb");
     if (oadbc) fHMPIDPIDParams = dynamic_cast<AliHMPIDPIDParams *>(oadbc->GetObject(fRun,"HMPparams"));
     oadbf->Close();
@@ -2172,12 +2173,13 @@ void AliPIDResponse::SetEMCALPidResponseMaster()
   if(fEMCALPIDParams) return;
   AliOADBContainer contParams("contParams");
 
-  Int_t statusPars = contParams.InitFromFile(Form("%s/COMMON/PID/data/EMCALPIDParams.root", fOADBPath.Data()), "AliEMCALPIDParams");
+  const TString filename = AliDataFile::GetFileName("COMMON/PID/data/EMCALPIDParams.root");
+  Int_t statusPars = contParams.InitFromFile(filename.Data(), "AliEMCALPIDParams");
   if(statusPars){
     AliError("Failed initializing PID Params from OADB");
   }
   else {
-    AliInfo(Form("Loading EMCAL Params from %s/COMMON/PID/data/EMCALPIDParams.root", fOADBPath.Data()));
+    AliInfo(Form("Loading EMCAL Params from %s", filename.Data()));
 
     fEMCALPIDParamsRun = dynamic_cast<TObjArray *>(contParams.GetObject(fRun));
     if(fEMCALPIDParamsRun)  fEMCALPIDParamsPass = dynamic_cast<TObjArray *>(fEMCALPIDParamsRun->FindObject(Form("pass%d",fRecoPass)));
@@ -2192,7 +2194,7 @@ void AliPIDResponse::SetEMCALPidResponseMaster()
       if(fEMCALPIDParamsPass) fEMCALPIDParams     = dynamic_cast<TObjArray *>(fEMCALPIDParamsPass->FindObject(Form("EMCALPIDParams_Particles")));
 
       if(!fEMCALPIDParams){
-	AliError(Form("DEFAULT EMCAL Params (LHC11d) not found in file %s/COMMON/PID/data/EMCALPIDParams.root", fOADBPath.Data()));
+	AliError(Form("DEFAULT EMCAL Params (LHC11d) not found in file %s", filename.Data()));
       }
     }
   }

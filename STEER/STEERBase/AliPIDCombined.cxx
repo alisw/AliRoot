@@ -30,6 +30,7 @@
 #include <AliPID.h>
 #include <AliPIDResponse.h>
 
+#include "AliDataFile.h"
 #include "AliPIDCombined.h"
 
 #include "TMath.h"
@@ -452,14 +453,10 @@ void AliPIDCombined::SetDefaultTPCPriors(){
   //Check if priors are already initialized
   if (fDefaultPriorsTPC[0]) return;
   
-  TString oadbfilename("$ALICE_PHYSICS/OADB/COMMON/PID/data/");
-  //  TString oadbfilename("$ALICE_ROOT/OADB/COMMON/PID/data/");
-  //  TString oadbfilename(Form("%s/COMMON/PID/data/",AliAnalysisManager::GetOADBPath()));
-  oadbfilename += "/PIDdefaultPriors.root";
-  TFile * foadb = TFile::Open(oadbfilename.Data());
+  TFile *foadb = AliDataFile::OpenOADB("COMMON/PID/data");
   if(!foadb || !foadb->IsOpen()) {
     delete foadb;
-    AliFatal(Form("Cannot open OADB file %s", oadbfilename.Data()));
+    AliFatal("Cannot open OADB file");
     return;
   }
   

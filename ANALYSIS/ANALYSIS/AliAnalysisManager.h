@@ -219,8 +219,6 @@ enum EAliAnalysisFlags {
    Int_t                GetNcalls() const {return fNcalls;}
    Bool_t               ValidateOutputFiles() const;
    
-   static const char*   GetOADBPath();
-
    void                 ApplyDebugOptions();
    void                 AddClassDebug(const char *className, Int_t debugLevel);
    
