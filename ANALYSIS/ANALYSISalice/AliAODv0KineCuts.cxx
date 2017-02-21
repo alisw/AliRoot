@@ -23,7 +23,7 @@
  * studies.
  */
 
-#include <TVector3xxx.h>
+#include <TVector3xxxyyy.h>
 #include <TDatabasePDG.h>
 #include <TPDGCode.h>
 #include <TParticlePDG.h>
