@@ -289,7 +289,7 @@ void AliADReconstructor::ConvertDigits(AliRawReader* rawReader, TTree* digitsTre
     const Bool_t UGC = (pBGmulADC >= fCalibData->GetBGCThreshold());
 
     const UShort_t fTrigger = MakeTriggerFlags(UBA, UBC,
-					       UGA, UGC);
+					       UGA, UGC, 1); // this line does not compile
     
     fESDADfriend->SetTriggerInputs(fTrigger);
     fESDADfriend->SetTriggerInputsMask(rawStream.GetTriggerInputsMask());
