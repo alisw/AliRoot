@@ -20,6 +20,8 @@
 //////////////////////////////////////////////////////////////////////////////
 #include <algorithm>
 
+// --- test COMMENT ---
+
 #include <TParameter.h>
 #include <TGeoManager.h>
 #include <TGeoMatrix.h>
