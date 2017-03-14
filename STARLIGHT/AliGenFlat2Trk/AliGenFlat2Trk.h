@@ -1,6 +1,8 @@
 // -*- C++ -*-
 // $Id$
 
+// test COMMENT
+
 #ifndef ALIGENFLAT2TRK_H_cm021218
 #define ALIGENFLAT2TRK_H_cm021218
 
