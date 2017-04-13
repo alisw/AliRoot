@@ -64,6 +64,9 @@
 #include "AliCDBEntry.h"
 #include "AliTrackReference.h"
 
+using std::cout;
+using std::endl;
+
 ClassImp(AliFITv7)
 
 using std::cout;
