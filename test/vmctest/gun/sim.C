@@ -3,7 +3,23 @@
 // Macro for running simulation in test/vmctest/gun.
 // From test/gun. 
 
-void sim(Int_t nev=1, const TString& config) {
+void sim(Int_t nev, const char * config) {
+  // Load Geant3 + Geant3 VMC libraries
+  //
+  gSystem->Load("liblhapdf");      // Parton density functions
+  gSystem->Load("libEGPythia6");   // TGenerator interface
+  gSystem->Load("libpythia6");     // Pythia
+  gSystem->Load("libAliPythia6");  // ALICE specific implementations
+  gSystem->Load("libgeant321");
+
+  // AliRoot setup
+  //
+  gROOT->LoadMacro("$ALICE_ROOT/test/vmctest/gun/commonConfig.C");
+
+  // AliRoot event generator
+  // (it has to be created after MC, as it may use decayer via VMC)
+  //
+  gROOT->LoadMacro("$ALICE_ROOT/test/vmctest/gun/genExtFileConfig.C");
 
   AliSimulation simulator(config);
   simulator.SetMakeSDigits("TRD TOF PHOS HMPID EMCAL MUON FMD ZDC PMD T0 VZERO ACORDE");

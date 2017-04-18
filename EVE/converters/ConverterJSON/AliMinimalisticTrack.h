@@ -45,6 +45,13 @@ public:
     void AddPolyPoint(Double_t xyz[3]);
     void SetTrackType(TrackType type);
 
+    double* GetVertex(){return fStartCoordinates;}
+    double* GetMomentum(){return fMomentum;}
+    double  GetBeta(){return sqrt(1-pow(fMass/fE,2));}
+    int     GetCharge(){return fCharge;}
+    int     GetID(){return GetUniqueID();}
+    int     GetPID(){return fPID;}
+    
     static const Int_t fgkNoParent = -1;
     static const Int_t fgkNoChild = -1;
 private:

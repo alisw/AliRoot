@@ -78,6 +78,7 @@ class AliHLTTPCHWCFEmulator
   /** set tagging of deconvoluted clusters
    **/
   void SetTagDeconvolutedClusters( AliHLTUInt32_t option ){ fDivisionUnit.SetTagDeconvolutedClusters( option ); }
+  void SetTagEdgeClusters( AliHLTUInt32_t option ){ fDivisionUnit.SetTagEdgeClusters( option ); }
 
   /** set RCU2 flag (data is not split in two branches)
    **/
@@ -90,6 +91,7 @@ class AliHLTTPCHWCFEmulator
   void SetSmoothingThreshold(int s) {fPeakFinderUnit.SetSmoothingThreshold(s);}
   void SetClusterQMaxLowerLimit(int l) {fDivisionUnit.SetClusterQMaxLowerLimit(l);}
   void SetImprovedDeconvolution(int d) {fChannelProcessor.SetImprovedDeconvolution(d);}
+  void SetCorrectEdgeClusters(int c) {fDivisionUnit.SetCorrectEdgeClusters(c);}
 
  private: 
 

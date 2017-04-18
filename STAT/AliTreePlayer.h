@@ -9,7 +9,7 @@
 //  Alice extension of TTreePlayer            //
 ////////////////////////////////////////////////
 
- 
+class TPad; 
 #include "AliTreePlayer.h"
 
 class AliTreePlayer : public TNamed {
@@ -19,7 +19,7 @@ public:
   AliTreePlayer(const char *name, const char *title);
   static TObjArray  * selectMetadata(TTree * tree, TString query, Int_t verbose);
   static TObjArray  * selectTreeInfo(TTree* tree, TString query,Int_t verbose); 
-  static void selectWhatWhereOrderBy(TTree * tree, TString what, TString where, TString orderBy,  Int_t firstentry, Int_t nentries, TString outputFormat, TString outputName);
+  static Int_t selectWhatWhereOrderBy(TTree * tree, TString what, TString where, TString orderBy,  Int_t firstentry, Int_t nentries, TString outputFormat, TString outputName);
   static TString  printSelectedTreeInfo(TTree*tree, TString infoType,  TString regExpFriend, TString regExpTag, Int_t verbose);
   // to add
   // Metadata query from the TStatToolkit (GetMetadata, AddMetadata)
@@ -37,6 +37,10 @@ public:
   
   //static TH1* DrawSorted(TTree * tree, const char* varexp, const TCut& selection, Bool_t nbins=20, Long64_t nentries = 1000000000, Long64_t firstentry = 0);
   //
+  static TObjArray  * MakeHistograms(TTree * tree, TString hisString, TString defaultCut, Int_t firstEntry, Int_t lastEntry, Int_t chunkSize=-1, Int_t verbose=1);
+  static TPad *  DrawHistograms(TPad  * pad, TObjArray * hisArray, TString drawExpression, TObjArray *keepArray=0, Int_t verbose=0);
+  static void MakeCacheTree(TTree * tree, TString varList, TString outFile, TString outTree, TCut selection);
+
   template <typename T> static Long64_t BinarySearchSmaller(Long64_t n, const T *array, T value);
   enum TStatType {kUndef=-1,kEntries, kSum, kMean, kRMS, kMedian, kLTM, kLTMRMS, kMedianLeft,kMedianRight}; 
   static Int_t GetStatType(const TString &stat);

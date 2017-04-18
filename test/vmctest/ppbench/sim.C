@@ -3,7 +3,28 @@
 // Macro for running simulation in test/vmctest/ppbench.
 // From test/ppbench. 
 
-void sim(Int_t nev=3, const TString& config) {
+void sim(Int_t nev, const char * config) {
+  // Load Pythia related libraries
+  gSystem->Load("liblhapdf");      // Parton density functions
+  gSystem->Load("libEGPythia6");   // TGenerator interface
+  gSystem->Load("libpythia6");     // Pythia
+  gSystem->Load("libAliPythia6");  // ALICE specific implementations
+  gSystem->Load("libHIJING");
+  gSystem->Load("libTHijing");
+
+  // Load Geant3 library
+  gSystem->Load("libgeant321");
+
+  // AliRoot setup
+  //
+  gROOT->LoadMacro("$ALICE_ROOT/test/vmctest/ppbench/commonConfig.C");
+
+  // AliRoot event generator
+  // (it has to be created after MC, as it may use decayer via VMC)
+  gROOT->LoadMacro("$ALICE_ROOT/test/vmctest/ppbench/genPPbenchConfig.C");
+  gROOT->LoadMacro("$ALICE_ROOT/test/vmctest/ppbench/genExtFileConfig.C");
+
+
   if (gSystem->Getenv("EVENT"))
    nev = atoi(gSystem->Getenv("EVENT")) ;   
   
@@ -21,7 +42,7 @@ void sim(Int_t nev=3, const TString& config) {
   simulator.SetQARefDefaultStorage("local://$ALICE_ROOT/QAref") ;
 
   for (Int_t det = 0 ; det < AliQA::kNDET ; det++) {
-    simulator.SetQACycles(det, nev+1) ;
+    simulator.SetQACycles((AliQAv1::DETECTORINDEX_t)det, nev+1) ;
   }
 
   simulator.SetRunHLT("default"); // In case we do not have ancored production

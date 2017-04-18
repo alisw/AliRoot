@@ -71,6 +71,8 @@ rpm-tmp.*
 /Debug
 .cproject
 .project
+.settings
+.vscode
 
 # OS X metafiles
 .DS_Store

@@ -406,7 +406,7 @@ AliTPCclusterMI &c)
     c.SetSigmaY2(mi2);
     c.SetSigmaZ2(mj2);
     c.SetType(0);
-    AddCluster(c,(Float_t*)vmatrix,k);
+    AddCluster(c,(Float_t*)vmatrix,k,true);
     return;     
   }
   //
@@ -435,7 +435,7 @@ AliTPCclusterMI &c)
   c.SetSigmaY2(mi2);
   c.SetSigmaZ2(mj2);
   c.SetType(Char_t(overlap)+1);
-  AddCluster(c,(Float_t*)vmatrix,k);
+  AddCluster(c,(Float_t*)vmatrix,k,true);
 
   //unfolding 2
   meani-=i0;
@@ -589,7 +589,7 @@ Float_t AliTPCclusterer::FitMax(Float_t vmatrix[5][5], Float_t y, Float_t z, Flo
   return max;
 }
 
-void AliTPCclusterer::AddCluster(AliTPCclusterMI &c, bool addtoarray, Float_t * /*matrix*/, Int_t /*pos*/){
+void AliTPCclusterer::AddCluster(AliTPCclusterMI &c, bool addtoarray, Float_t * /*matrix*/, Int_t /*pos*/,Bool_t markedge){
   //
   //
   // Transform cluster to the rotated global coordinata
@@ -642,7 +642,7 @@ void AliTPCclusterer::AddCluster(AliTPCclusterMI &c, bool addtoarray, Float_t * 
     c.SetZ(x[2]);
   }
   //
-  if (ki<=1 || ki>=fMaxPad-1 || kj==1 || kj==fMaxTime-2) {
+  if (c.GetType() >= 0 && ((markedge && (ki<=1 || ki>=fMaxPad-1)) || (kj<=1 || kj>=fMaxTime-2))) {
     c.SetType(-(c.GetType()+3));  //edge clusters
   }
   if (fLoop==2) c.SetType(100);
@@ -1444,22 +1444,22 @@ Int_t AliTPCclusterer::ReadHLTClusters()
   //
 
   if (!fHLTClusterAccess) {
-  TClass* pCl=NULL;
-  ROOT::NewFunc_t pNewFunc=NULL;
-  do {
-    pCl=TClass::GetClass("AliHLTTPCClusterAccessHLTOUT");
-  } while (!pCl && gSystem->Load("libAliHLTTPC")==0);
-  if (!pCl || (pNewFunc=pCl->GetNew())==NULL) {
-    AliError("can not load class description of AliHLTTPCClusterAccessHLTOUT, aborting ...");
-    return -1;
-  }
+    TClass* pCl=NULL;
+    ROOT::NewFunc_t pNewFunc=NULL;
+    do {
+      pCl=TClass::GetClass("AliHLTTPCClusterAccessHLTOUT");
+    } while (!pCl && gSystem->Load("libAliHLTTPC")==0);
+    if (!pCl || (pNewFunc=pCl->GetNew())==NULL) {
+      AliError("can not load class description of AliHLTTPCClusterAccessHLTOUT, aborting ...");
+      return -1;
+    }
   
-  void* p=(*pNewFunc)(NULL);
-  if (!p) {
-    AliError("unable to create instance of AliHLTTPCClusterAccessHLTOUT");
-    return -2;
-  }
-  fHLTClusterAccess=reinterpret_cast<TObject*>(p);
+    void* p=(*pNewFunc)(NULL);
+    if (!p) {
+      AliError("unable to create instance of AliHLTTPCClusterAccessHLTOUT");
+      return -2;
+    }
+    fHLTClusterAccess=reinterpret_cast<TObject*>(p);
   }
 
   TObject* pClusterAccess=fHLTClusterAccess;
@@ -1529,6 +1529,9 @@ Int_t AliTPCclusterer::ReadHLTClusters()
       TObjArray* clusterArray=fRowCl->GetArray();
       if (!clusterArray) continue;
       AliDebug(4,Form("Reading %d clusters from HLT for sector %d row %d", clusterArray->GetEntriesFast(), fSector, fRow));
+      
+      int edge_flags_set = 0;
+      pClusterAccess->Execute("get_edge_flags_set", NULL, &edge_flags_set);
 
       for (Int_t i=0; i<clusterArray->GetEntriesFast(); i++) {
 	if (!clusterArray->At(i)) 
@@ -1569,7 +1572,7 @@ Int_t AliTPCclusterer::ReadHLTClusters()
         
 	nClusterSectorGood++;
 	// Note: cluster is simply adjusted, not cloned nor added to any additional array
-	AddCluster(*cluster, false, NULL, 0);
+	AddCluster(*cluster, false, NULL, 0, !edge_flags_set);
       }
       // remove the empty slots from the array
       clusterArray->Compress();

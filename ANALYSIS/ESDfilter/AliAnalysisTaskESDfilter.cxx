@@ -382,7 +382,9 @@ AliAODHeader* AliAnalysisTaskESDfilter::ConvertHeader(const AliESDEvent& esd)
   header->SetOfflineTrigger(fInputHandler->IsEventSelected()); // propagate the decision of the physics selection
   header->SetNumberOfESDTracks(esd.GetNumberOfTracks());
   header->SetDAQAttributes(esd.GetDAQAttributes());
-
+  header->SetNumberOfTPCClusters(esd.GetNumberOfTPCClusters());
+  header->SetNumberOfTPCTracks(esd.GetNumberOfTPCTracks());
+  
   TTree* tree = fInputHandler->GetTree();
   if (tree) {
     TFile* file = tree->GetCurrentFile();
@@ -2595,7 +2597,8 @@ void AliAnalysisTaskESDfilter::CopyChi2TPCConstrainedVsGlobal(AliESDtrack *esdt,
 {
 
 
-  if(esdt->GetCachedChi2TPCConstrainedVsGlobalVal()>-5){ //Golden chi2 is from AliESDtrackCuts
+  if(esdt->GetCachedChi2TPCConstrainedVsGlobalVal()>-5 || !esdt->IsOn(AliESDtrack::kTPCin)){
+    //Golden chi2 is from AliESDtrackCuts or no TPC track
     aodt->SetChi2TPCConstrainedVsGlobal(esdt->GetCachedChi2TPCConstrainedVsGlobalVal());
   }else{ //Golden chi2 is not calculated in AliESDtrackCuts. Do calculate here. 
     const AliESDEvent* esdEvent = esdt->GetESDEvent();
