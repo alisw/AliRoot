@@ -29,6 +29,8 @@ public:
     AliEveTrack(TEveRecTrack* t, TEveTrackPropagator* prop=0);
     AliEveTrack(AliESDtrack*  t, TEveTrackPropagator* prop=0);
     AliEveTrack(AliAODTrack*  t, TEveTrackPropagator* prop=0);
+    AliEveTrack(double vertex[3], double momentum[3], double beta,
+                int charge, int label, int index, TEveTrackPropagator* prop=0);
     AliEveTrack(const AliEveTrack& t);
     virtual ~AliEveTrack();
     
