@@ -262,6 +262,7 @@ public:
   UShort_t GetTPCclusters(Int_t *idx) const;
   Double_t GetTPCdensity(Int_t row0, Int_t row1) const;
   Int_t   GetTPCLabel() const {return fTPCLabel;}
+  void    SetTPCLabel(int lbl) {fTPCLabel = lbl;}  
   Int_t   GetKinkIndex(Int_t i) const { return fKinkIndexes[i];}
   Int_t   GetV0Index(Int_t i) const { return fV0Indexes[i];}
   const TBits& GetTPCFitMap() const {return fTPCFitMap;}
@@ -320,6 +321,7 @@ public:
   void    SetTRDpid(Int_t iSpecies, Float_t p);
   Double_t GetTRDpid(Int_t iSpecies) const;
   Int_t   GetTRDLabel() const {return fTRDLabel;}
+  void    SetTRDLabel(int lbl) {fTRDLabel = lbl;}
 
   void    SetTRDtrack(AliKalmanTrack * track){
     if (fFriendTrack) fFriendTrack->SetTRDtrack(track);
@@ -537,11 +539,14 @@ public:
   void   SetFriendTrackID(int id)      {fFrTrackID = UShort_t(id+1);}
   Int_t  GetFriendTrackID()      const {return Int_t(fFrTrackID)-1;}
 
+  static void   SetTrackEMuAsPi(Bool_t val);
+  static Bool_t GetTrackEMuAsPi()           {return fgTrackEMuAsPi;}
+  
 protected:
   
   AliExternalTrackParam *fCp; // Track parameters constrained to the primary vertex
-  AliExternalTrackParam *fIp; // Track parameters estimated at the inner wall of TPC
-  AliExternalTrackParam *fTPCInner; // Track parameters estimated at the inner wall of TPC using the TPC stand-alone 
+  AliExternalTrackParam *fIp; // Track parameters estimated at the inner wall of TPC at PropagateBack stage
+  AliExternalTrackParam *fTPCInner; // Track parameters estimated at the inner wall of TPC using the TPC stand-alone and propagating to vtx w/o material correction 
   AliExternalTrackParam *fOp; // Track parameters estimated at the point of maximal radial coordinate reached during the tracking
   AliExternalTrackParam *fHMPIDp; // Track parameters at HMPID
   AliESDfriendTrack *fFriendTrack; //! All the complementary information
@@ -678,11 +683,10 @@ protected:
   Int_t fNtofClusters;              // number of matchable TOF clusters 
   Int_t *fTOFcluster;               //[fNtofClusters]
                                     // TOF clusters matchable with the track
-
   //
  private:
   static bool fgkOnlineMode; //! indicate the online mode to skip some of the functionality
-
+  static Bool_t fgTrackEMuAsPi; // when true, track mu and e with pion mass (run 2)
   AliESDtrack & operator=(const AliESDtrack & );
   ClassDef(AliESDtrack,73)  //ESDtrack 
 };

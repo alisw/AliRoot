@@ -252,6 +252,8 @@ int AliHLTTPCHWClusterMergerV1::Merge()
       
       for( UInt_t iCluster=0; iCluster<clusters->fCount; iCluster++){
 	AliHLTTPCRawCluster &cluster = clusters->fClusters[iCluster];
+	
+	if (fCheckEdgeFlag && !cluster.GetFlagEdge()) continue;
 
 	// check if the cluster is at the branch border    
 	Int_t patchRow = cluster.GetPadRow();	
@@ -336,6 +338,7 @@ int AliHLTTPCHWClusterMergerV1::Merge()
       
 	c1->SetPad( w1*c1->GetPad() + w2*c2->GetPad() );
 	c1->SetTime( w1*c1->GetTime() + w2*c2->GetTime() );
+	c1->fFlags |= c2->fFlags;
       
 	// merge MC labels
 	if( mc1 && mc2 ){
@@ -415,4 +418,3 @@ int AliHLTTPCHWClusterMergerV1::Merge()
   if (iResult<0) return iResult;
   return count;
 }
-

@@ -35,7 +35,7 @@
 
 AliHLTTPCHWCFDivisionUnit::AliHLTTPCHWCFDivisionUnit()
   : 
-  fSinglePadSuppression(1), fClusterLowerLimit(0), fClusterQMaxLowerLimit(0), fTagDeconvolutedClusters(0), fkInput(0),fOutput(), fDebug(0), fDebugNtuple(0),fDebugFile(0)
+  fSinglePadSuppression(1), fClusterLowerLimit(0), fClusterQMaxLowerLimit(0), fTagDeconvolutedClusters(0), fCorrectEdgeClusters(0), fkInput(0),fOutput(), fDebug(0), fDebugNtuple(0),fDebugFile(0)
 {
   //constructor 
 }
@@ -53,7 +53,7 @@ AliHLTTPCHWCFDivisionUnit::~AliHLTTPCHWCFDivisionUnit()
 
 AliHLTTPCHWCFDivisionUnit::AliHLTTPCHWCFDivisionUnit(const AliHLTTPCHWCFDivisionUnit&)
   : 
-  fSinglePadSuppression(1),fClusterLowerLimit(0),fClusterQMaxLowerLimit(0),fTagDeconvolutedClusters(0), fkInput(0),fOutput(), fDebug(0), fDebugNtuple(0), fDebugFile(0)
+  fSinglePadSuppression(1),fClusterLowerLimit(0),fClusterQMaxLowerLimit(0),fTagDeconvolutedClusters(0), fCorrectEdgeClusters(0), fkInput(0),fOutput(), fDebug(0), fDebugNtuple(0), fDebugFile(0)
 {
 }
 
@@ -121,14 +121,13 @@ const AliHLTTPCHWCFCluster *AliHLTTPCHWCFDivisionUnit::OutputStream()
   
   fOutput.fFlag = 1;
 
-  // bit 23 is 0, bits 30,31 are 1
+  // bit 23 is 0 (used for edge tag later), bits 30,31 are 1
   fOutput.fRowQ = (((AliHLTUInt32_t) 0x3)<<30) + ((fkInput->fRow &0x3f)<<24) + ((fkInput->fQmax)&0x7FFFFF);
 
-  // bits 30,31 are 0
+  // bits 30,31 are 0 (used for deconvote tag later)
   fOutput.fQ = fkInput->fQ & 0x3FFFFFFF;
 
   // set is_deconvoluted flag at bit 31 for pad direction, at bit 30 for time direction
-  
   switch( fTagDeconvolutedClusters ){
   case 0:
     break;
@@ -159,12 +158,31 @@ const AliHLTTPCHWCFCluster *AliHLTTPCHWCFDivisionUnit::OutputStream()
   default:
     HLTError("Unknown HW cluster tagging option %d",fTagDeconvolutedClusters);
   }
+  
+  if (fTagEdgeClusters)
+  {
+    if (fkInput->fBorder) fOutput.fRowQ |= (0x1 << 23);
+  }
+  
 
   *((AliHLTFloat32_t*)&fOutput.fP) = (float)fkInput->fP/q;
   *((AliHLTFloat32_t*)&fOutput.fT) = (float)fkInput->fT/q;
   *((AliHLTFloat32_t*)&fOutput.fP2) = (float)fkInput->fP2/q;
   *((AliHLTFloat32_t*)&fOutput.fT2) = (float)fkInput->fT2/q;
  
+  if (fCorrectEdgeClusters)
+  {
+    if (fkInput->fEdge)
+    {
+      AliHLTFloat32_t& cog = *((AliHLTFloat32_t*)&fOutput.fP);
+      AliHLTFloat32_t peak = (float)fkInput->fLargestQPad;
+      if (cog < 30 ? (cog > peak) : (cog < peak))
+      {
+        cog = peak;  
+      }
+    }
+  }
+  
   // MC part
 
   AliHLTTPCClusterMCWeight emptyWeight;
@@ -211,4 +229,3 @@ const AliHLTTPCHWCFCluster *AliHLTTPCHWCFDivisionUnit::OutputStream()
 
   return &fOutput;
 }
-

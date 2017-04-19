@@ -110,6 +110,21 @@ TEveTrack()
 }
 
 //______________________________________________________________________________
+AliEveTrack::AliEveTrack(double vertex[3], double momentum[3], double beta, int charge, int label, int index, TEveTrackPropagator* prop) :
+TEveTrack()
+{
+    // Constructor.
+    
+    fV.Set(vertex);
+    fP.Set(momentum);
+    fBeta = beta;
+    fCharge = charge;
+    fLabel = label;
+    fIndex = index;
+    SetPropagator(prop);
+}
+
+//______________________________________________________________________________
 AliEveTrack::AliEveTrack(const AliEveTrack& t) :
 TEveTrack(t)
 {

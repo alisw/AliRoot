@@ -257,13 +257,17 @@ else()
   # Enable C++11 by default if found in ROOT
   if(ROOT_HAS_CXX11 AND NOT DISABLE_CXX11)
     message(STATUS "Enabling C++11")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    if (NOT ${CMAKE_CXX_FLAGS} MATCHES "-std=c\\+\\+11") 
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    endif()
   endif()
 
   # Enable C++14 by default if found in ROOT
   if(ROOT_HAS_CXX14 AND NOT DISABLE_CXX14)
     message(STATUS "Enabling C++14")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+    if (NOT ${CMAKE_CXX_FLAGS} MATCHES "-std=c\\+\\+14") 
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+    endif()
   endif()
 
   # FTGL: prefer library from ROOT, look for both libFTGL and libftgl
@@ -387,14 +391,18 @@ else()
 
   # AliRoot modules requiring Fortran
   set(ALIROOT_MODULES_FORTRAN
-      DIME HERWIG HIJING LHAPDF MICROCERN PYTHIA6 PYTHIA8 TAmpt TDPMjet
+      DIME HERWIG HIJING LHAPDF MICROCERN PYTHIA6 PYTHIA8 TAmpt
       TEPEMGEN THbtp THerwig THijing THydjet TPHIC TUHKMgen)
   if(NOT DISABLE_FORTRAN)
     list(INSERT ALIROOT_MODULES 0 "${ALIROOT_MODULES_FORTRAN}")
     find_package(DPMJET)
-    if(NOT DPMJET_FOUND)
+    if (DPMJET_FOUND)
+      list(INSERT ALIROOT_MODULES 0 "TDPMjet")
+    elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/DPMJET)
       message(WARNING "Using DPMJET from AliRoot. This is deprecated and it will be removed soon!")
-      list(INSERT ALIROOT_MODULES 0 "DPMJET")
+      list(INSERT ALIROOT_MODULES 0 "DPMJET" "TDPMjet")
+    else()
+      message(WARNING "Not using DPMJET! No external package or builtin found!")
     endif()
   else()
     string(REPLACE ";" " " ALIROOT_MODULES_FORTRAN_FLAT "${ALIROOT_MODULES_FORTRAN}")

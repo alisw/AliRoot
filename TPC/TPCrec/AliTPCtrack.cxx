@@ -111,7 +111,7 @@ AliTPCtrack::AliTPCtrack(Double_t x, Double_t alpha, const Double_t p[5],
 
   Set(x,alpha,pp,cc);
 
-  SetNumberOfClusters(1);
+  SetNumberOfClusters(0);
   
   fIndex[0]=index;
   for (Int_t i=1; i<kMaxRow;i++) fIndex[i]=-2;
@@ -191,12 +191,27 @@ AliTPCtrack::AliTPCtrack(const AliESDtrack& t, TTreeSRedirector *pcstream) :
 	param.GetCovariance()[5]>kmaxC[2]*kmaxC[2] ||
 	param.GetCovariance()[9]>kmaxC[3]*kmaxC[3]) isOK=kFALSE;
   }
+  Double_t chi2= param.GetPredictedChi2(tpc);
   if (isOK) {
-    Double_t chi2= param.GetPredictedChi2(tpc);
     if (isBackProp) {
       if (chi2>recoParam->GetMaxChi2TPCITS()) isOK=kFALSE; // protection against outliers in the ITS
     }
     else if (chi2>recoParam->GetMaxChi2TPCTRD()) isOK=kFALSE; // protection against outliers in the TRD
+  }
+  //
+  if (pcstream){
+    AliExternalTrackParam dummy;
+    AliExternalTrackParam *ptpc=(AliExternalTrackParam *)tpc;
+    //    if (!ptpc) ptpc=&dummy;
+    AliESDtrack *esd= (AliESDtrack *)&t;
+    (*pcstream)<<"trackP"<<
+      "isOK="<<isOK<<
+      "chi2="<<chi2<<       // chi2
+      "reject="<<reject<<   // flag - rejection of current esd track parameters
+      "esd.="<<esd<<        // original esd track
+      "tr.="<<&param<<      // starting track parameters
+      "out.="<<ptpc<<       // backup tpc parameters
+      "\n";
   }
 
   if (!isOK){
@@ -212,19 +227,7 @@ AliTPCtrack::AliTPCtrack(const AliESDtrack& t, TTreeSRedirector *pcstream) :
     cov[14] = ep4*ep4;
   }
   //
-  //
-  if (pcstream){
-    AliExternalTrackParam dummy;
-    AliExternalTrackParam *ptpc=(AliExternalTrackParam *)tpc;
-    //    if (!ptpc) ptpc=&dummy;
-    AliESDtrack *esd= (AliESDtrack *)&t;
-    (*pcstream)<<"trackP"<<
-      "reject="<<reject<<   // flag - rejection of current esd track parameters
-      "esd.="<<esd<<        // original esd track
-      "tr.="<<&param<<      // starting track parameters
-      "out.="<<ptpc<<       // backup tpc parameters
-      "\n";
-  }
+ 
 
   Set(param.GetX(),param.GetAlpha(),param.GetParameter(),param.GetCovariance());
 

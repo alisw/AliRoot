@@ -1716,6 +1716,20 @@ void AliTPC::Hits2SDigits2(Int_t eventnumber)
 
   fTPCParam->SetZeroSup(0);
 
+  AliTPCcalibDB* const calib=AliTPCcalibDB::Instance();
+  AliTPCRecoParam *tpcrecoparam = calib->GetRecoParamFromGRP(); // RS event specie will be selected according to GRP
+  //  AliTPCRecoParam *tpcrecoparam = calib->GetRecoParam(0); //FIXME: event specie should not be set by hand, However the parameters read here are the same for al species
+  //
+  if (tpcrecoparam->GetUseCorrectionMap()) {
+    AliTPCTransform* transform = (AliTPCTransform*) calib->GetTransform();
+    transform->SetCurrentRecoParam(tpcrecoparam);
+    transform->SetCorrectionMapMode(kFALSE); // set distortion mode
+    transform->SetCurrentTimeStamp(fLoader->GetRunLoader()->GetHeader()->GetTimeStamp()); // force to upload time dependent maps
+    float strFluct = tpcrecoparam->GetDistortionFluctMCAmp() *gRandom->Gaus(); // RSTMP
+    AliInfoF("Impose %+.2f fluctuation for distortion map in event %d",strFluct,eventnumber);
+    transform->SetCurrentMapFluctStrenght(strFluct);
+  }
+  
   for(Int_t isec=0;isec<fTPCParam->GetNSector();isec++) 
     if (IsSectorActive(isec)) {
       Hits2DigitsSector(isec);
@@ -2494,8 +2508,6 @@ void AliTPC::MakeSector(Int_t isec,Int_t nrows,TTree *TH,
 	  if (tpcrecoparam->GetUseExBCorrection()) xyz[2]+=correction; // In Correction there is already a corretion for the time 0 offset so not needed
 	  xyz[2]+=fTPCParam->GetNTBinsL1();    // adding Level 1 time bin offset
 	  //
-	  // Electron track time (for pileup simulation)
-	  xyz[2]+=tpcHit->Time()/fTPCParam->GetTSample(); // adding time of flight
 	}
 	else { // use Transform for time-aware Z -> Tbin conversion
 	  // go back from L drift to Z
@@ -2503,6 +2515,8 @@ void AliTPC::MakeSector(Int_t isec,Int_t nrows,TTree *TH,
 	  if (sideC) z = -z;
 	  xyz[2] = transform->Z2TimeBin(z,isec, yLab);
 	}
+	// Electron track time (for pileup simulation)
+	xyz[2]+=tpcHit->Time()/fTPCParam->GetTSample(); // adding time of flight
 
 	xyz[4] =0;	  
 	//

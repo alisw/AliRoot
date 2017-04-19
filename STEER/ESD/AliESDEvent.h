@@ -75,7 +75,7 @@ class AliESDACORDE;
 class AliESDAD;
 class AliESDHLTDecision;
 class AliESDCosmicTrack;
-
+class AliMCEvent;
 class TList;
 class TString;
 
@@ -365,6 +365,7 @@ public:
   void   EstimateMultiplicity(Int_t &tracklets,Int_t &trITSTPC,Int_t &trITSSApure,
 			      Double_t eta=1.,Bool_t useDCAFlag=kTRUE,Bool_t useV0Flag=kTRUE) const;
 
+  Int_t GetNumberOfTPCTracks()        const;
   Int_t GetNumberOfTPCClusters()      const {return fNTPCClusters;}
   void  SetNumberOfTPCClusters(int n)       {fNTPCClusters = n;}
 
@@ -599,6 +600,8 @@ public:
   //
   virtual AliVEvent::EDataLayoutType GetDataLayoutType() const;
 
+  void AdjustMCLabels(const AliVEvent *mctruth);
+  
 protected:
   AliESDEvent(const AliESDEvent&);
   static Bool_t ResetWithPlacementNew(TObject *pObject);
