@@ -40,6 +40,18 @@ set(SRCS
     AliTreeTrending.cxx
     AliNDFormulaBrowser.cxx
   )
+# Check for C++11 or C++14 support and only
+# add elasticsearch when it's available.
+if ((${CMAKE_CXX_FLAGS} MATCHES "-std=c\\+\\+11") OR
+    (${CMAKE_CXX_FLAGS} MATCHES "-std=c\\+\\+14"))
+  message(STATUS "STAT: Found C++11 support, enabling elasticsearch API")
+  set(SRCS ${SRCS}
+    BulkBuilder.cxx
+    ElasticSearch.cxx
+    HTTP.cxx
+    Json.cxx
+    )
+endif()
 
 # Headers from sources
 string(REPLACE ".cxx" ".h" HDRS "${SRCS}")

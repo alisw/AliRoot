@@ -7,7 +7,19 @@
 #pragma link off all classes;
 #pragma link off all functions;
 
-#pragma link C++ nestedtypedefs;
+/* ElasticSearch API */
+#pragma link C++ class ElasticSearch+;
+#pragma link C++ class BulkBuilder+;
+#pragma link C++ class HTTP+;
+#pragma link C++ class Exception+;
+#pragma link C++ typedef JsonKey;
+#pragma link C++ class JsonValue+;
+#pragma link C++ class std::map<JsonKey,JsonValue>+;
+#pragma link C++ class JsonObject+;
+#pragma link C++ class JsonArray+;
+
+
+#pragma link C++ nestedtypedef;
 
 #pragma link C++ class TKDInterpolatorBase+;
 #pragma link C++ class TKDNodeInfo+;
