@@ -15,19 +15,19 @@
 //_________________________________________________________________________
 // Various utilities usefull for analysis
 //
-//*-- Yves Schutz 
+//*-- Yves Schutz
 //////////////////////////////////////////////////////////////////////////////
 
-#include "AliAnalysisDataContainer.h" 
-#include "AliTagAnalysis.h" 
-#include "AliEventTagCuts.h" 
-#include "AliRunTagCuts.h" 
-#include "AliXMLCollection.h" 
-#include "AliAnalysisGoodies.h" 
-#include "AliAnalysisManager.h" 
+#include "AliAnalysisDataContainer.h"
+#include "AliTagAnalysis.h"
+#include "AliEventTagCuts.h"
+#include "AliRunTagCuts.h"
+#include "AliXMLCollection.h"
+#include "AliAnalysisGoodies.h"
+#include "AliAnalysisManager.h"
 #include "AliAODHandler.h"
-#include "AliAnalysisTask.h" 
-#include "AliLog.h" 
+#include "AliAnalysisTask.h"
+#include "AliLog.h"
 
 #include <Riostream.h>
 #ifdef WITHALIEN
