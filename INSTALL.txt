@@ -10,7 +10,7 @@
 ############################################################################
 
 AliRoot, ALICE Off-line framework for simulation, reconstruction and analysis,
-can be build and installed using CMake build system [http://www.cmake.org].
+can be build and installed using CMake build system <http://www.cmake.org>.
 
 CMake is a cross-platform, open-source build system. One of the most important
 features of CMake is the capability to build a project outside the source tree.
