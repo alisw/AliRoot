@@ -1040,8 +1040,8 @@ TTree*  AliExternalInfo::GetTreeMCPassGuess(){
 
     anchprod tempprod;
 
-    multiset<anchprod> list;
-    multiset<anchprod>::iterator it = list.begin();
+    std::multiset<anchprod> list;
+    std::multiset<anchprod>::iterator it = list.begin();
 
 
     for (Int_t i=0; i<m; i++) {
@@ -1052,9 +1052,9 @@ TTree*  AliExternalInfo::GetTreeMCPassGuess(){
         smcaliphys = TString(MCaliphysics);
         smcaliroot = TString(MCaliroot);
 
-        cout<<endl;
-        cout<<i<<" of "<<m<<endl;
-        cout<<"MC Production name: "<<MCprodname<<" Anchor Production name: "<<MCanchprodname<<" MC aliphys: "<<smcaliphys<<" MC aliroot: "<<smcaliroot<<endl;
+        std::cout<<std::endl;
+        std::cout<<i<<" of "<<m<<std::endl;
+        std::cout<<"MC Production name: "<<MCprodname<<" Anchor Production name: "<<MCanchprodname<<" MC aliphys: "<<smcaliphys<<" MC aliroot: "<<smcaliroot<<std::endl;
 
         memset(MCanchpassname, 0, sizeof(MCanchpassname));
         memset(MCanchaliroot, 0, sizeof(MCanchaliroot));
@@ -1068,8 +1068,9 @@ TTree*  AliExternalInfo::GetTreeMCPassGuess(){
             RDTree->GetEntry(j);
 
             if(sanchprod==""){
-                cout<<"Complete match: no. No anchorprod found -> skip"<<endl;
-                break;}
+              std::cout<<"Complete match: no. No anchorprod found -> skip"<<std::endl;
+              break;
+            }
 
             srdprod = TString(RDprodname);
             srdpass = TString(RDpassname);
@@ -1090,8 +1091,8 @@ TTree*  AliExternalInfo::GetTreeMCPassGuess(){
                  for(int k=0;k<(int)srdpass.Sizeof();k++)   MCanchpassname[k] = srdpass[k];
                  for(int k=0;k<(int)srdaliroot.Sizeof();k++)   MCanchaliroot[k] = srdaliroot[k];
                  for(int k=0;k<(int)srdaliphys.Sizeof();k++)   MCanchaliphys[k] = srdaliphys[k];
-                 cout<<"Complete match: yes"<<endl;
-                 cout<<"Used for guess: RDphys:"<<srdaliphys<<" RDroot: "<<srdaliroot<<" RDpass: "<<srdpass<<endl;
+                 std::cout<<"Complete match: yes"<<std::endl;
+                 std::cout<<"Used for guess: RDphys:"<<srdaliphys<<" RDroot: "<<srdaliroot<<" RDpass: "<<srdpass<<std::endl;
                  prfound=kTRUE;
                  break;             //break if perfect match found      ?? wanted ??
             }
@@ -1109,16 +1110,16 @@ TTree*  AliExternalInfo::GetTreeMCPassGuess(){
                              }
             --it;
             int l =0;
-            cout<<"Complete match: no -> take closest aliversion as guess from RD productions: "<<endl;
-            for (multiset<anchprod>::iterator iter=list.begin(); iter!=list.end(); ++iter){
+            std::cout<<"Complete match: no -> take closest aliversion as guess from RD productions: "<<std::endl;
+            for (std::multiset<anchprod>::iterator iter=list.begin(); iter!=list.end(); ++iter){
               l++;
-              cout<<l<<" RDprodname: "<<(*iter).anchprodname<<" AliPhys: "<<(*iter).aliphys<<" AliRoot: "<<" "<<(*iter).aliroot<<" RDpass: "<<(*iter).anchpass<<endl;
+              std::cout<<l<<" RDprodname: "<<(*iter).anchprodname<<" AliPhys: "<<(*iter).aliphys<<" AliRoot: "<<" "<<(*iter).aliroot<<" RDpass: "<<(*iter).anchpass<<std::endl;
             }
 
-            for (multiset<anchprod>::iterator iter=it; ; --iter){       //go backwards through list and take first pass guess that is not a cpass
-                cout<<"Looking for MC aliphys: "<<tempprod.aliphys<<" MC aliroot: "<<tempprod.aliroot<<endl;
+            for (std::multiset<anchprod>::iterator iter=it; ; --iter){       //go backwards through list and take first pass guess that is not a cpass
+              std::cout<<"Looking for MC aliphys: "<<tempprod.aliphys<<" MC aliroot: "<<tempprod.aliroot<<std::endl;
                 if(!((*iter).anchpass).Contains("cpass") && !((*iter).anchpass).Contains("cosmic")){
-                cout<<"Used for guess: RDphys:"<<(*iter).aliphys<<" RDroot: "<<(*iter).aliroot<<" RDpass: "<<(*iter).anchpass<<endl;
+                  std::cout<<"Used for guess: RDphys:"<<(*iter).aliphys<<" RDroot: "<<(*iter).aliroot<<" RDpass: "<<(*iter).anchpass<<std::endl;
                 for(int k=0;k<(int)(*iter).anchpass.Sizeof();k++)  MCanchpassname[k] = (*iter).anchpass.Data()[k];
                 for(int k=0;k<(int)(*iter).aliroot.Sizeof();k++)   MCanchaliroot[k] = (*iter).aliroot.Data()[k];
                 for(int k=0;k<(int)(*iter).aliphys.Sizeof();k++)   MCanchaliphys[k] = (*iter).aliphys.Data()[k];
@@ -1192,11 +1193,11 @@ TString  AliExternalInfo::GetMCPassGuess(TString sMCprodname){
      sMCprodname_temp=TString(MCprodname_temp);
      sMCpassguess=TString(MCpassguess);
      if(sMCprodname_temp==sMCprodname){
-         cout<<"Anchor Pass guess for "<<sMCprodname_temp<<": "<<sMCpassguess<<endl;
+       std::cout<<"Anchor Pass guess for "<<sMCprodname_temp<<": "<<sMCpassguess<<std::endl;
          return(sMCpassguess);
      }
  }
- cout<<sMCprodname<<" was not found in list of MC productions"<<endl;
+std::cout<<sMCprodname<<" was not found in list of MC productions"<<std::endl;
  return(TString::Format("MC production not found"));
  
 }
