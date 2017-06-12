@@ -126,7 +126,8 @@ void AliDecayerPythia::Init()
 
     Int_t isw = 0;
     if (fLongLived) isw = 1;
-    
+
+    fPythia->SetMDCY(fPythia->Pycomp(321) ,1, isw);
     fPythia->SetMDCY(fPythia->Pycomp(310) ,1, isw);
     fPythia->SetMDCY(fPythia->Pycomp(3122),1, isw);
     fPythia->SetMDCY(fPythia->Pycomp(3112),1, isw);
