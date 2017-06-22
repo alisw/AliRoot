@@ -16,7 +16,7 @@
 //***************************************************************************
 
 #include "AliHLTCreateGRP.h"
-#include <dic.hxx>
+#include <dim/dic.hxx>
 #include <stdio.h>
 #include <ctime>
 #include <iostream>
