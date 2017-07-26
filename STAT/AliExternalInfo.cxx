@@ -1229,7 +1229,7 @@ TString  AliExternalInfo::GetMCPassGuess(TString sMCprodname){
      osMCprodname = TObjString(pMCprodname);
      if(osMCprodname.String()==sMCprodname){       //if match found return corresponding guess
          cout<<"Anchor Pass guess for "<<osMCprodname.String()<<": "<<osMCpassguess->String()<<endl;
-         return(osMCpassguess->String());
+         return(osMCprodname.String()+" "+osMCpassguess->String());
      }
  }
  cout<<osMCprodname.String()<<" was not found in list of MC productions"<<endl;
