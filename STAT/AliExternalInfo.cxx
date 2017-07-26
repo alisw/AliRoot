@@ -1218,9 +1218,12 @@ TString  AliExternalInfo::GetMCPassGuess(TString sMCprodname){
 }
  
  char pMCprodname[1000];
+
  TObjString osMCprodname=0;
+ TObjString* osAnchprodname=0;
  TObjString* osMCpassguess=0;
- 
+
+ guesstree->GetBranch("anchorProdTag_ForGuess")->SetAddress(&osAnchprodname); 
  guesstree->GetBranch("prodName")->SetAddress(&pMCprodname);
  guesstree->GetBranch("anchorPassName_guess")->SetAddress(&osMCpassguess);
  
@@ -1229,7 +1232,7 @@ TString  AliExternalInfo::GetMCPassGuess(TString sMCprodname){
      osMCprodname = TObjString(pMCprodname);
      if(osMCprodname.String()==sMCprodname){       //if match found return corresponding guess
          cout<<"Anchor Pass guess for "<<osMCprodname.String()<<": "<<osMCpassguess->String()<<endl;
-         return(osMCprodname.String()+" "+osMCpassguess->String());
+         return(osAnchprodname->String()+" "+osMCpassguess->String());
      }
  }
  cout<<osMCprodname.String()<<" was not found in list of MC productions"<<endl;
