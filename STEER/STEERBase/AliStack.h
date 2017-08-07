@@ -82,6 +82,8 @@ class AliStack : public TVirtualMCStack
     TParticle*  ParticleFromTreeK(Int_t id, Bool_t useInEmbedding=kFALSE) const;
     Int_t       TreeKEntry(Int_t id, Bool_t useInEmbedding=kFALSE) const;
     Bool_t      IsPhysicalPrimary(Int_t i, Bool_t useInEmbedding=kFALSE);
+    Bool_t      IsPhysicalPrimaryNew(Int_t i, Bool_t useInEmbedding=kFALSE);
+    Bool_t      IsPhysicalPrimaryOld(Int_t i, Bool_t useInEmbedding=kFALSE);
     Bool_t      IsSecondaryFromWeakDecay(Int_t index, Bool_t useInEmbedding=kFALSE);
     Bool_t      IsSecondaryFromMaterial (Int_t index, Bool_t useInEmbedding=kFALSE);
     Int_t       TrackLabel(Int_t label) const {return fTrackLabelMap[label];}
