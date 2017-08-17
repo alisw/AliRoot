@@ -1170,6 +1170,9 @@ TTree*  AliExternalInfo::GetTreeMCPassGuess(){
                 cout<<"Looking for MC aliphys: "<<tempprod.aliphys<<" MC aliroot: "<<tempprod.aliroot<<endl;
                 if(!((*iter).anchpass).Contains("cpass") && !((*iter).anchpass).Contains("cosmic") && (!isgp || TPRegexp("^pass").MatchB((*iter).anchpass,"i"))){
                 cout<<"Used for guess: RDphys:"<<(*iter).aliphys<<" RDroot: "<<(*iter).aliroot<<" RDpass guess: "<<(*iter).anchpass<<endl;
+                *osrdpass=TObjString(iter->anchpass);
+                *osrdaliphys=TObjString(iter->aliphys);
+                *osrdaliroot=TObjString(iter->aliroot);
                 break;
                     }
                 if(iter==list.begin()) break;
