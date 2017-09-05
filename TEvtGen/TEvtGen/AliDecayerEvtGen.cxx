@@ -204,8 +204,7 @@ void AliDecayerEvtGen::ForceDecay()
   // Set the decay mode to decay particles: for each case is read a 
   // different decay table. case kAll read the default decay table only   
   //
-  Decay_t decay = fDecay;
-  switch(decay)
+  switch(fDecay)
     {
      case kAll: // particles decayed "naturally" according to $ALICE_ROOT/TEvtGen/EvtGen/DECAY.DEC
       break;
@@ -284,21 +283,8 @@ void AliDecayerEvtGen::ForceDecay()
      case kBeautyUpgrade:
       SetDecayTablePath(gSystem->ExpandPathName("$ALICE_ROOT/TEvtGen/EvtGen/DecayTable/BEAUTYUPGRADE.DEC"));
       break;     
-     case kPiToMu:
-     case kKaToMu:
-     case kAllMuonic:
-     case kWToMuon:
-     case kWToCharm:
-     case kWToCharmToMuon:
-     case kZDiMuon:
-     case kZDiElectron:
-     case kNoDecay:
-     case kNoDecayHeavy:
-     case kNeutralPion:
-     case kBJpsiUndecayed:
-     case kAllEM:
-     case kNoDecayBeauty:
-      AliWarning(Form("Warning: case %d not implemented for this class!",(int)decay));
+    default:
+      AliWarning(Form("Warning: case %d not implemented for this class!",(int)fDecay));
      break;
      }
      ReadDecayTable();
