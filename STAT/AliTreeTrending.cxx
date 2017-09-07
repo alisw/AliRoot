@@ -121,7 +121,7 @@ void AliTreeTrending::AddUserDescription(TNamed * description){
 }
 
 
-Bool_t  AliTreeTrending::InitSummaryTrending(TString statusDescription[3], Float_t descriptionSize){
+Bool_t  AliTreeTrending::InitSummaryTrending(TString statusDescription[3], Float_t descriptionSize, TString cutString){
   //
   // Init drawing for the <detector> QA
   // Detector specific qaConfig() has to be called before invoking this function
@@ -181,10 +181,18 @@ Bool_t  AliTreeTrending::InitSummaryTrending(TString statusDescription[3], Float
   int igr=0;
   for (Int_t vari=oaStatusbarVars->GetEntriesFast()-1; vari>=0; vari--){ // invert the order of the status graphs
     TString sVar = Form("%s:tagID", oaStatusbarVars->At(vari)->GetName()); //e.g. -> dcar:run
-    fStatusGraph->Add( TStatToolkit::MakeStatusMultGr(fTree, sVar.Data(),  "", sCriteria.Data(), igr) );
-    TString sYtitle = oaStatusbarNames->At(vari)->GetName(); // set better name for y axis of statuspad
-    ((TMultiGraph*) fStatusGraph->At(igr))->SetTitle(sYtitle.Data());
-    igr++;
+    TMultiGraph* multGr = TStatToolkit::MakeStatusMultGr(fTree, sVar.Data(),  cutString, sCriteria.Data(), igr);
+    if(multGr){
+        fStatusGraph->Add(multGr);
+        TString sYtitle = oaStatusbarNames->At(vari)->GetName(); // set better name for y axis of statuspad
+        ((TMultiGraph*) fStatusGraph->At(igr))->SetTitle(sYtitle.Data());
+        igr++;
+    }
+    else{
+        AliError("TStatToolkit::MakeStatusMultGr() returned with error -> next");
+//        return 0;
+        continue;
+    }
   }
   return kTRUE;
 }
