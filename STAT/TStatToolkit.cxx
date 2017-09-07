@@ -1143,6 +1143,7 @@ TGraph * TStatToolkit::MakeGraphSparse(TTree * tree, const char * expr, const ch
     ::Error("TStatToolkit::MakeGraphSparse","Empty or Not valid expression (%s) or cut (%s)", expr, cut);
     return 0;
   }
+  else ::Info("TStatToolkit::MakeGraphSparse","Valid expression (%s) or cut (%s)", expr, cut);
   //  TGraph * graph = (TGraph*)gPad->GetPrimitive("Graph"); // 2D
 
   Double_t *graphY, *graphX;
@@ -1282,6 +1283,7 @@ TMultiGraph * TStatToolkit::MakeMultGraph(TTree * tree, const char *groupName, c
   */  
   TMultiGraph *multiGraph=new TMultiGraph(groupName,groupName);
   TObjArray * exprVars=TString(expr).Tokenize(":");
+
   if (exprVars->GetEntries()<2) {
     ::Error("MakeMultGraph","NotValid expression %s",expr);
     delete exprVars;
@@ -1343,7 +1345,8 @@ TMultiGraph * TStatToolkit::MakeMultGraph(TTree * tree, const char *groupName, c
     Double_t meanT,rmsT=0;
     if (gr==NULL){
       ::Error("MakeMultGraph","Not valid sub-expression %s",exprVarArray->At(igraph)->GetName());
-      continue;
+      return 0;  
+//      continue;
     }
     if (gr->GetN()>2){
       TStatToolkit::EvaluateUni(gr->GetN(),gr->GetY(), meanT,rmsT, TMath::Max(0.75*gr->GetN(),1.));
@@ -1724,7 +1727,6 @@ TMultiGraph*  TStatToolkit::MakeStatusMultGr(TTree * tree, const char * expr, co
   //  TStatToolkit::AddStatusPad(c1, 0.30, 0.40);
   //  TStatToolkit::DrawStatusGraphs(oaMultGr);
   
-  
   TObjArray* oaVar = TString(expr).Tokenize(":");
   if (oaVar->GetEntries()<2) {
     printf("Expression has to be of type 'varname:xaxis':\t%s\n", expr);
@@ -1753,6 +1755,10 @@ TMultiGraph*  TStatToolkit::MakeStatusMultGr(TTree * tree, const char * expr, co
     snprintf(query,200, "%f*(%s-0.5):%s", 1.+igr, oaAlias->At(i)->GetName(), var_x);
     TGraphErrors * gr = (TGraphErrors*) TStatToolkit::MakeGraphSparse(tree,query,cut,marArr[i],colArr[i],sizeArr[i],shiftArr[i]);
     if (gr) multGr->Add(gr);
+    else{
+        ::Error("MakeGraphSparse"," returned with error -> returning");
+        return 0;
+    }
   }
   //
   multGr->SetName(varname);
