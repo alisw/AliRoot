@@ -1394,11 +1394,10 @@ TMultiGraph * TStatToolkit::MakeMultGraph(TTree * tree, const char *groupName, c
   }
 
   if(!flag){
-    ::Error("Test::","Number of graphs 0 -return 0");
+
     delete exprVarArray;
     delete exprVarErrArray;
-    //delete exprColors;
-    //delete exprMarkers;
+    delete exprCutArray;
     return 0;
   }
   Double_t rmsGraphs = TMath::RMS(ngraphs,  vecMean.GetMatrixArray());
