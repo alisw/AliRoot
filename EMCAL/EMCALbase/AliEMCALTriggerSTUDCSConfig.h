@@ -73,7 +73,7 @@ private:
   Int_t                   fRegion;                    ///< Region
   Int_t                   fFw;                        ///< Firmware version
   Int_t                   fPHOSScale[4];              ///< PHOS scale factors
-  TClonesArray            *fTRUErrorCounts[32];       ///  TRU error counts
+  TClonesArray            *fTRUErrorCounts[68];       ///  TRU error counts
   
   ClassDef(AliEMCALTriggerSTUDCSConfig,4) //
 };
