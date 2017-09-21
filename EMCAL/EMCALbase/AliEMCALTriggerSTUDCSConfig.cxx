@@ -47,7 +47,7 @@ fFw(0x2A012)
 		}
 	}
 	memset(fPHOSScale, 0, sizeof(Int_t) * 4);
-	memset(fTRUErrorCounts, 0, sizeof(TClonesArray *) * 32);
+	memset(fTRUErrorCounts, 0, sizeof(TClonesArray *) * 68);
 }
 
 //_____________________________________________________________________________
@@ -55,7 +55,7 @@ AliEMCALTriggerSTUDCSConfig::~AliEMCALTriggerSTUDCSConfig(){
   //
   // Destructor
   //
-  for(int itru = 0; itru < 32; itru++){
+  for(int itru = 0; itru < 68; itru++){
     if(fTRUErrorCounts[itru]) delete fTRUErrorCounts[itru];
   }
 }
@@ -78,7 +78,7 @@ void  AliEMCALTriggerSTUDCSConfig::SetTRUErrorCounts(Int_t itru, Int_t itime, UL
   //
   // Set TRU error counts
   //
-  if(itru >= 32) return;
+  if(itru >= 68) return;
   if(!fTRUErrorCounts[itru])
     fTRUErrorCounts[itru] = new TClonesArray("AliEMCALTriggerSTUDCSConfig::AliEMCALTriggerSTUTRUErrorCount");
   AliEMCALTriggerSTUTRUErrorCount test(itime, errorcounts), *found(NULL);
@@ -95,7 +95,7 @@ TClonesArray *AliEMCALTriggerSTUDCSConfig::GetErrorCountsForTRU(Int_t itru) cons
   //
   // Return time-dependent error counts for a given TRU
   //
-  if(itru >= 32) return NULL;
+  if(itru >= 68) return NULL;
   return fTRUErrorCounts[itru];
 }
 
