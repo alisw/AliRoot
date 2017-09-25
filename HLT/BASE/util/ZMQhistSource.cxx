@@ -26,6 +26,7 @@
 #include "TObjArray.h"
 #include "AliHLTObjArray.h"
 #include "AliOptionParser.h"
+#include "AliAnalysisDataContainer.h"
 
 using namespace AliZMQhelpers;
 

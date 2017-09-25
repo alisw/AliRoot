@@ -29,6 +29,7 @@
 #include "AliHLTMessage.h"
 #include "TStreamerInfo.h"
 #include "TClass.h"
+#include "TSystem.h"
 
 using namespace AliZMQhelpers;
 
