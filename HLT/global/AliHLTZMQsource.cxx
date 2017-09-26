@@ -26,7 +26,7 @@
 #include "AliLog.h"
 #include <TPRegexp.h>
 #include "zmq.h"
-#include "AliZMQhelpers.h"
+#include "AliHLTZMQhelpers.h"
 
 using namespace std;
 
@@ -257,7 +257,7 @@ int AliHLTZMQsource::DoProcessing( const AliHLTComponentEventData& evtData,
     blockHeader.fPtr      = outputBuffer;
     blockHeader.fOffset   = outputBufferSize;
     blockHeader.fSize     = blockSize;
-    blockHeader.fDataType = blockTopic.fTopic;
+    blockTopic.Fill(blockHeader.fDataType);
     blockHeader.fSpecification = blockTopic.fSpecification;
     
     //register the block in the output buffer list

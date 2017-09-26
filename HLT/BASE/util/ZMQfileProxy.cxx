@@ -1,5 +1,5 @@
 #include "zmq.h"
-#include "AliZMQhelpers.h"
+#include "AliHLTZMQhelpers.h"
 #include <iostream>
 #include "TTimeStamp.h"
 #include "AliHLTDataTypes.h"
@@ -25,7 +25,10 @@
 #include "TSystem.h"
 #include "TStyle.h"
 #include "signal.h"
+#include "AliOptionParser.h"
 class MySignalHandler;
+
+using namespace AliZMQhelpers;
 
 //this is meant to become a class, hence the structure with global vars etc.
 //Also the code is rather flat - it is a bit of a playground to test ideas.

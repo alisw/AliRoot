@@ -17,14 +17,18 @@
 #include <string>
 #include <map>
 #include <unistd.h>
-#include "AliZMQhelpers.h"
+#include "AliHLTZMQhelpers.h"
 #include <sstream>
 #include <vector>
 #include "TRandom.h"
 #include "TTimeStamp.h"
 #include "TSystem.h"
 #include "TObjArray.h"
+#include "AliHLTObjArray.h"
+#include "AliOptionParser.h"
 #include "AliAnalysisDataContainer.h"
+
+using namespace AliZMQhelpers;
 
 void* fZMQout = NULL;
 void* fZMQcontext = NULL;

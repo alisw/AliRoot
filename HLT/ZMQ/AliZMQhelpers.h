@@ -1,19 +1,38 @@
 #ifndef __AliZMQhelpers__
 #define __AliZMQhelpers__
 
+// a helper library for using ZMQ with ROOT, focussed on multipart messaging
 // blame: Mikolaj Krzewicki, mikolaj.krzewicki@cern.ch
-// some of it might be inspired by czmq.h
+// some of it might be inspired by czmq.h (http://czmq.zeromq.org)
 
-namespace AliZMQhelpers {
-  extern void* gZMQcontext; //a global ZMQ context
-}
+// Copyright (C) 2015 Goethe University Frankfurt
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include <string>
 #include <map>
 #include "TString.h"
+#include <inttypes.h>
 struct zmq_msg_t;
-struct AliHLTDataTopic;
 class TVirtualStreamerInfo;
+
+namespace AliZMQhelpers
+{
+struct DataTopic;
+
+extern void* gZMQcontext; //a global ZMQ context
 
 //convenience typedefs:
 //define a map of strings
@@ -54,9 +73,9 @@ int alizmq_detach (void *self, const char *endpoints, bool serverish=false);
 //general multipart messages (aliZMQmsg)
 //to access, just iterate over it.
 int alizmq_msg_recv(aliZMQmsg* message, void* socket, int flags);
-int alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, TObject* object, int compression=0, aliZMQrootStreamerInfo* streamers=NULL);
-int alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, const std::string& data);
-int alizmq_msg_add(aliZMQmsg* message, const AliHLTDataTopic* topic, void* buffer, int size);
+int alizmq_msg_add(aliZMQmsg* message, const DataTopic* topic, TObject* object, int compression=0, aliZMQrootStreamerInfo* streamers=NULL);
+int alizmq_msg_add(aliZMQmsg* message, const DataTopic* topic, const std::string& data);
+int alizmq_msg_add(aliZMQmsg* message, const DataTopic* topic, void* buffer, int size);
 int alizmq_msg_add(aliZMQmsg* message, const std::string& topic, const std::string& data);
 int alizmq_msg_copy(aliZMQmsg* dst, aliZMQmsg* src);
 int alizmq_msg_send(aliZMQmsg* message, void* socket, int flags);
@@ -68,13 +87,13 @@ int alizmq_msg_iter_init_streamer_infos(aliZMQmsg::iterator it);
 void alizmq_update_streamerlist(aliZMQrootStreamerInfo* streamers, const TObjArray* newStreamers);
 
 //checking identity of the frame via iterator
-int alizmq_msg_iter_check(aliZMQmsg::iterator it, const AliHLTDataTopic& topic);
-int alizmq_msg_iter_check_id(aliZMQmsg::iterator it, const AliHLTDataTopic& topic);
+int alizmq_msg_iter_check(aliZMQmsg::iterator it, const DataTopic& topic);
+int alizmq_msg_iter_check_id(aliZMQmsg::iterator it, const DataTopic& topic);
 int alizmq_msg_iter_check_id(aliZMQmsg::iterator it, const std::string& topic);
 //helpers for accessing data via iterators
 int alizmq_msg_iter_topic(aliZMQmsg::iterator it, std::string& topic);
 int alizmq_msg_iter_data(aliZMQmsg::iterator it, std::string& data);
-int alizmq_msg_iter_topic(aliZMQmsg::iterator it, AliHLTDataTopic& topic);
+int alizmq_msg_iter_topic(aliZMQmsg::iterator it, DataTopic& topic);
 int alizmq_msg_iter_data(aliZMQmsg::iterator it, TObject*& object);
 
 //string messages, no need to close, strings are copied
@@ -82,55 +101,89 @@ int alizmq_msg_send(std::string topic, std::string data, void* socket, int flags
 int alizmq_msg_recv(aliZMQmsgStr* message, void* socket, int flags);
 
 //send a single block (one header + payload), ZMQ_SNDMORE should not be used
-int alizmq_msg_send(const AliHLTDataTopic& topic, TObject* object, void* socket, int flags, int compression=0, aliZMQrootStreamerInfo* streamers=NULL);
-int alizmq_msg_send(const AliHLTDataTopic& topic, const std::string& data, void* socket, int flags);
+int alizmq_msg_send(const DataTopic& topic, TObject* object, void* socket, int flags, int compression=0, aliZMQrootStreamerInfo* streamers=NULL);
+int alizmq_msg_send(const DataTopic& topic, const std::string& data, void* socket, int flags);
 
 //deallocate an object - callback for ZMQ
 void alizmq_deleteTObject(void*, void* object);
 void alizmq_deleteTopic(void*, void* object);
 
-//simple zmq multi part message class
-//behaves like a map.
-//this is to simplify receiving/sending multipart msgs
-//and to handle message destruction automatically
-//keep it simple!
-//class AliZMQmsg {
-//public:
-//  AliZMQmsg() {}
-//  ~AliZMQmsg() {}
-//  int Receive(void* socket) {return 0;}
-//  int Send(void* socket) {return 0;}
-//  void Add(zmq_msg_t* topic, zmq_msg_t* data) {}
-//
-//  //define (delegate) iterators
-//  typedef aliZMQmsg::iterator iterator;
-//  typedef aliZMQmsg::const_iterator const_iterator;
-//  iterator begin() { return fMessage.begin(); }
-//  iterator end() { return fMessage.end(); }
-//private:
-//  aliZMQmsg fMessage;
-//};
+const int kDataTypefIDsize = 8;
+const int kDataTypefOriginSize = 4;
+const int kDataTypeTopicSize = kDataTypefIDsize+kDataTypefOriginSize;
 
-//simple option parser class
-class AliOptionParser {
-public:
-  AliOptionParser() {}
-  virtual ~AliOptionParser() {}
-  //implement this to process one option at a time
-  virtual int ProcessOption(TString /*option*/, TString /*value*/) {return 0;}
-  
-  //call this to parse the args
-  int ProcessOptionString(TString arguments);
-  int ProcessOptionString(int argc, char** argv) { return ProcessOptionString(GetFullArgString(argc,argv)); }
+//Helper function to compare topics
+bool Topicncmp(const char* topic, const char* reference, int topicSize=kDataTypeTopicSize, int referenceSize=kDataTypeTopicSize);
 
-  //convert argc/argv into a TString of options
-  static TString GetFullArgString(int argc, char** argv);
-  static aliStringVec* TokenizeOptionString(const TString str);
+//the data header, describes the data frame
+struct DataTopic
+{
+  char fTopic[kDataTypeTopicSize]; /// Data type identifier + source id as char array.
+  int32_t fSpecification;                  /// data specification of the data block
+ 
+  //ctor
+  DataTopic()
+    : fTopic()
+    , fSpecification(0)
+  {
+  }
+
+  //ctor
+  DataTopic(const char* id, const char* origin, int spec)
+    : fTopic()
+    , fSpecification(spec)
+  {
+    memcpy(&fTopic[0], id, kDataTypefIDsize);
+    memcpy(&fTopic[kDataTypefIDsize], origin, kDataTypefOriginSize);
+  }
+
+  bool operator==( const DataTopic& dt )
+  {
+    bool topicMatch = Topicncmp(dt.fTopic, fTopic);
+    return topicMatch;
+  }
+
+  std::string Description() const
+  {
+    std::string description(fTopic, kDataTypeTopicSize);
+    description+=" spec:";
+    char numstr[21];
+    snprintf(numstr, 21, "%x", fSpecification);
+    description+=numstr;
+    return description;
+  }
+
+  std::string GetOrigin() const
+  {
+    std::string origin(fTopic+kDataTypefIDsize, kDataTypefOriginSize);
+    return origin;
+  }
+
+  std::string GetID() const
+  {
+    std::string id(fTopic, kDataTypefIDsize);
+    return id;
+  }
+
 };
+
+//common data type definitions, compatible with AliHLTDataTypes v25
+const DataTopic kDataTypeStreamerInfos("ROOTSTRI","***\n",0);
+const DataTopic kDataTypeInfo("INFO____","***\n",0);
+const DataTopic kDataTypeConfig("CONFIG__","***\n",0);
+const DataTopic kDataTypeTObject("ROOTTOBJ","***\n",0);
+const DataTopic kDataTypeTH1("ROOTHIST","***\n",0);
 
 //a general utility to tokenize strings
 std::vector<std::string> TokenizeString(const std::string input, const std::string delimiters);
 //parse 
 stringMap ParseParamString(const std::string paramString);
 std::string GetParamString(const std::string param, const std::string paramstring);
+
+//load ROOT libraries specified in comma separated string
+int LoadROOTlibs(std::string libstring, bool verbose=false);
+
+}  //end namespace AliZMQhelpers
+
 #endif
+

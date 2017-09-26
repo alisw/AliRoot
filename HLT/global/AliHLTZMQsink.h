@@ -15,6 +15,9 @@
 #include <map>
 #include <string>
 #include "TRegexp.h"
+#include "AliOptionParser.h"
+
+using namespace AliZMQhelpers;
 
 class AliHLTZMQsink : public AliHLTComponent, public AliOptionParser {
 public:

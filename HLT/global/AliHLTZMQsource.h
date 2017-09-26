@@ -12,9 +12,12 @@
 
 #include "AliHLTComponent.h"
 #include "AliZMQhelpers.h"
+#include "AliOptionParser.h"
 #include <TList.h>
 
 class TFile;
+
+using namespace AliZMQhelpers;
 
 class AliHLTZMQsource : public AliHLTComponent, public AliOptionParser  {
   public:

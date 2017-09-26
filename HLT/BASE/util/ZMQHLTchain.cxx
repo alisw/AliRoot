@@ -36,7 +36,8 @@
 #include "TSystem.h"
 #include "TTimeStamp.h"
 #include "zmq.h"
-#include "AliZMQhelpers.h"
+#include "AliHLTZMQhelpers.h"
+#include "AliOptionParser.h"
 #include <vector>
 #include <iostream>
 #include <sys/ioctl.h>
@@ -46,6 +47,7 @@
 #include "AliGRPManager.h"
 
 using namespace std;
+using namespace AliZMQhelpers;
 
 //configuration vars
 Bool_t  fVerbose = kFALSE;

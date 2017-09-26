@@ -16,12 +16,15 @@
 #include <string>
 #include <map>
 #include "AliZMQhelpers.h"
+#include "AliOptionParser.h"
 
 //this is meant to become a class, hence the structure with global vars etc.
 //Also the code is rather flat - it is a bit of a playground to test ideas.
 //TODO structure this at some point, e.g. introduce a SIMPLE unified way of handling
 //zmq payloads, maybe a AliZMQmessage class which would by default be multipart and provide
 //easy access to payloads based on topic or so (a la HLT GetFirstInputObject() etc...)
+
+using namespace AliZMQhelpers;
 
 //methods
 int ProcessOptionString(TString arguments);

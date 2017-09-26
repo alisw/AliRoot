@@ -16,7 +16,8 @@
 #include <sys/time.h>
 #include <string>
 #include <map>
-#include "AliZMQhelpers.h"
+#include "AliHLTZMQhelpers.h"
+#include "AliOptionParser.h"
 #include "TCollection.h"
 #include "AliLog.h"
 #include "AliAnalysisDataContainer.h"
@@ -34,6 +35,8 @@
 //TODO structure this at some point, e.g. introduce a SIMPLE unified way of handling
 //zmq payloads, maybe a AliZMQmessage class which would by default be multipart and provide
 //easy access to payloads based on topic or so (a la HLT GetFirstInputObject() etc...)
+
+using namespace AliZMQhelpers;
 
 //methods
 Int_t ProcessOptionString(TString arguments);
