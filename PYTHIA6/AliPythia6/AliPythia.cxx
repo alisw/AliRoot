@@ -1588,7 +1588,8 @@ void AliPythia::PizeroDalitz()
   continue;
   TLorentzVector pizero(fPyjets->P[0][i], fPyjets->P[1][i], fPyjets->P[2][i], fPyjets->P[3][i]);
   Int_t pdg = TMath::Abs(fPyjets->K[1][i]);
-  fExodus.Decay(pdg, &pizero);
+  //fExodus.Decay(pdg, &pizero, fPyjets->K[1][fd]);
+  fExodus.Decay(pdg+1000*fPyjets->K[1][fd], &pizero);
   for (Int_t j = 0; j < 3; j++) {
   for (Int_t k = 0; k < 4; k++) {
   TLorentzVector vec = (fExodus.Products_pion())[2-j];
@@ -1613,7 +1614,8 @@ void AliPythia::EtaDalitz()
   continue;
   TLorentzVector eta(fPyjets->P[0][i], fPyjets->P[1][i], fPyjets->P[2][i], fPyjets->P[3][i]);
   Int_t pdg = TMath::Abs(fPyjets->K[1][i]);
-  fExodus.Decay(pdg, &eta);
+  //fExodus.Decay(pdg, &eta,fPyjets->K[1][fd] );
+  fExodus.Decay(pdg+1000*fPyjets->K[1][fd], &eta);
   for (Int_t j = 0; j < 3; j++) {
   for (Int_t k = 0; k < 4; k++) {
   TLorentzVector vec = (fExodus.Products_eta())[2-j];
@@ -1638,6 +1640,7 @@ void AliPythia::RhoDirect()
   continue;
   TLorentzVector rho(fPyjets->P[0][i], fPyjets->P[1][i], fPyjets->P[2][i], fPyjets->P[3][i]);
   Int_t pdg = TMath::Abs(fPyjets->K[1][i]);
+  //fExodus.Decay(pdg, &rho, 0);
   fExodus.Decay(pdg, &rho);
   for (Int_t j = 0; j < 2; j++) {
   for (Int_t k = 0; k < 4; k++) {
@@ -1663,7 +1666,8 @@ void AliPythia::OmegaDalitz()
   continue;
   TLorentzVector omegadalitz(fPyjets->P[0][i], fPyjets->P[1][i], fPyjets->P[2][i], fPyjets->P[3][i]);
   Int_t pdg = TMath::Abs(fPyjets->K[1][i]);
-  fExodus.Decay(pdg, &omegadalitz);
+  //fExodus.Decay(pdg, &omegadalitz, fPyjets->K[1][fd]);
+  fExodus.Decay(pdg+1000*fPyjets->K[1][fd], &omegadalitz);
   for (Int_t j = 0; j < 3; j++) {
   for (Int_t k = 0; k < 4; k++) {
   TLorentzVector vec = (fExodus.Products_omega_dalitz())[2-j];
@@ -1688,6 +1692,7 @@ void AliPythia::OmegaDirect()
   continue;
   TLorentzVector omegadirect(fPyjets->P[0][i], fPyjets->P[1][i], fPyjets->P[2][i], fPyjets->P[3][i]);
   Int_t pdg = TMath::Abs(fPyjets->K[1][i]);
+  //fExodus.Decay(pdg, &omegadirect, 0);
   fExodus.Decay(pdg, &omegadirect);
   for (Int_t j = 0; j < 2; j++) {
   for (Int_t k = 0; k < 4; k++) {
@@ -1709,11 +1714,12 @@ void AliPythia::EtaprimeDalitz()
   Int_t ld = fPyjets->K[4][i] - 1;
   if (fd < 0)                                        continue;
   if ((ld - fd) != 2)                                continue;
-  if ((fPyjets->K[1][fd] != 22) || (TMath::Abs(fPyjets->K[1][fd+1]) != 11))
+  if ((fPyjets->K[1][fd] != 22 && fPyjets->K[1][fd] != 223) || (TMath::Abs(fPyjets->K[1][fd+1]) != 11))
   continue;
   TLorentzVector etaprime(fPyjets->P[0][i], fPyjets->P[1][i], fPyjets->P[2][i], fPyjets->P[3][i]);
   Int_t pdg = TMath::Abs(fPyjets->K[1][i]);
-  fExodus.Decay(pdg, &etaprime);
+  //fExodus.Decay(pdg, &etaprime, fPyjets->K[1][fd]);
+  fExodus.Decay(pdg+1000*fPyjets->K[1][fd], &etaprime);
   for (Int_t j = 0; j < 3; j++) {
   for (Int_t k = 0; k < 4; k++) {
   TLorentzVector vec = (fExodus.Products_etaprime())[2-j];
@@ -1734,11 +1740,12 @@ void AliPythia::PhiDalitz()
   Int_t ld = fPyjets->K[4][i] - 1;
   if (fd < 0)                                        continue;
   if ((ld - fd) != 2)                                continue;
-  if ((fPyjets->K[1][fd] != 221) || (TMath::Abs(fPyjets->K[1][fd+1]) != 11))
+  if ((fPyjets->K[1][fd] != 221 && fPyjets->K[1][fd] != 111 ) || (TMath::Abs(fPyjets->K[1][fd+1]) != 11))
   continue;
   TLorentzVector phidalitz(fPyjets->P[0][i], fPyjets->P[1][i], fPyjets->P[2][i], fPyjets->P[3][i]);
   Int_t pdg = TMath::Abs(fPyjets->K[1][i]);
-  fExodus.Decay(pdg, &phidalitz);
+  //fExodus.Decay(pdg, &phidalitz, fPyjets->K[1][fd]);
+  fExodus.Decay(pdg+1000*fPyjets->K[1][fd], &phidalitz);
   for (Int_t j = 0; j < 3; j++) {
   for (Int_t k = 0; k < 4; k++) {
   TLorentzVector vec = (fExodus.Products_phi_dalitz())[2-j];
@@ -1763,6 +1770,7 @@ void AliPythia::PhiDirect()
   continue;
   TLorentzVector phi(fPyjets->P[0][i], fPyjets->P[1][i], fPyjets->P[2][i], fPyjets->P[3][i]);
   Int_t pdg = TMath::Abs(fPyjets->K[1][i]);
+  //fExodus.Decay(pdg, &phi, 0);
   fExodus.Decay(pdg, &phi);
   for (Int_t j = 0; j < 2; j++) {
   for (Int_t k = 0; k < 4; k++) {
@@ -1787,6 +1795,7 @@ void AliPythia::JPsiDirect()
   continue;
   TLorentzVector jpsi(fPyjets->P[0][i], fPyjets->P[1][i], fPyjets->P[2][i], fPyjets->P[3][i]);
   Int_t pdg = TMath::Abs(fPyjets->K[1][i]);
+  //fExodus.Decay(pdg, &jpsi, 0);
   fExodus.Decay(pdg, &jpsi);
   for (Int_t j = 0; j < 2; j++) {
   for (Int_t k = 0; k < 4; k++) {

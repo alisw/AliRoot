@@ -35,6 +35,7 @@ class AliDecayerExodus : public AliDecayer
  public:
     AliDecayerExodus();
     virtual void    Init();
+  //  virtual void    Decay(Int_t idpart,TLorentzVector* pparent, Int_t idpartner);
     virtual void    Decay(Int_t idpart,TLorentzVector* pparent);
     virtual Int_t   ImportParticles(TClonesArray *particles);
     virtual void    SetForceDecay(Int_t)                      {;}
@@ -46,11 +47,13 @@ class AliDecayerExodus : public AliDecayer
     virtual TH1F*   ElectronPairMassHistoPion()          {return  fEPMassPion;}
     virtual TH1F*   ElectronPairMassHistoEta()           {return  fEPMassEta;}
     virtual TH1F*   ElectronPairMassHistoEtaPrime()      {return  fEPMassEtaPrime;}
+virtual TH1F*   ElectronPairMassHistoEtaPrime_toOmega()      {return  fEPMassEtaPrime_toOmega;}
     virtual TH1F*   ElectronPairMassHistoRho()           {return  fEPMassRho;}
     virtual TH1F*   ElectronPairMassHistoOmega()         {return  fEPMassOmega;}
     virtual TH1F*   ElectronPairMassHistoOmegaDalitz()   {return  fEPMassOmegaDalitz;}
     virtual TH1F*   ElectronPairMassHistoPhi()           {return  fEPMassPhi;}
     virtual TH1F*   ElectronPairMassHistoPhiDalitz()     {return  fEPMassPhiDalitz;}
+virtual TH1F*   ElectronPairMassHistoPhiDalitz_toPi0()     {return  fEPMassPhiDalitz_toPi0;}
     virtual TH1F*   ElectronPairMassHistoJPsi()          {return  fEPMassJPsi;}
 
     virtual void    Decay(TClonesArray* array);
@@ -58,11 +61,13 @@ class AliDecayerExodus : public AliDecayer
     virtual const   TLorentzVector* Products_pion()         const {return fProducts_pion;}
     virtual const   TLorentzVector* Products_eta()          const {return fProducts_eta;}
     virtual const   TLorentzVector* Products_etaprime()     const {return fProducts_etaprime;}
+virtual const   TLorentzVector* Products_etaprime_toOmega()     const {return fProducts_etaprime_toOmega;}
     virtual const   TLorentzVector* Products_rho()          const {return fProducts_rho;}
     virtual const   TLorentzVector* Products_omega()        const {return fProducts_omega;}
     virtual const   TLorentzVector* Products_omega_dalitz() const {return fProducts_omega_dalitz;}
     virtual const   TLorentzVector* Products_phi()          const {return fProducts_phi;}
     virtual const   TLorentzVector* Products_phi_dalitz()   const {return fProducts_phi_dalitz;}
+virtual const   TLorentzVector* Products_phi_dalitz_toPi0()   const {return fProducts_phi_dalitz_toPi0;}
     virtual const   TLorentzVector* Products_jpsi()         const {return fProducts_jpsi;}
 
     virtual void    Copy(TObject&) const;
@@ -72,11 +77,13 @@ class AliDecayerExodus : public AliDecayer
     TH1F*         fEPMassPion;          
     TH1F*         fEPMassEta;       
     TH1F*         fEPMassEtaPrime;
+TH1F*         fEPMassEtaPrime_toOmega;
     TH1F*         fEPMassRho;
     TH1F*         fEPMassOmega;
     TH1F*         fEPMassOmegaDalitz;
     TH1F*         fEPMassPhi;
     TH1F*         fEPMassPhiDalitz;
+TH1F*         fEPMassPhiDalitz_toPi0;
     TH1F*         fEPMassJPsi;
 
     TF1* fPol;
@@ -85,11 +92,13 @@ class AliDecayerExodus : public AliDecayer
     TLorentzVector  fProducts_pion[3];  
     TLorentzVector  fProducts_eta[3];  
     TLorentzVector  fProducts_etaprime[3];
+TLorentzVector  fProducts_etaprime_toOmega[3];
     TLorentzVector  fProducts_rho[2];
     TLorentzVector  fProducts_omega[2];
     TLorentzVector  fProducts_omega_dalitz[3];
     TLorentzVector  fProducts_phi[2];
     TLorentzVector  fProducts_phi_dalitz[3];
+TLorentzVector  fProducts_phi_dalitz_toPi0[3];
     TLorentzVector  fProducts_jpsi[2];
 
     Bool_t fInit;
