@@ -147,8 +147,11 @@ set(HDRS ${HDRS}
 # It will create G_ARG1.cxx and G_ARG1.h / ARG1 = function first argument
 get_directory_property(incdirs INCLUDE_DIRECTORIES)
 generate_dictionary("${MODULE}" "${MODULE}LinkDef.h" "${HDRS}" "${incdirs}")
-
-set(ROOT_DEPENDENCIES Cint Core Geom Graf Hist MathCore Net RIO Tree XMLParser)
+if(${ROOT_VERSION_MAJOR} EQUAL 6)
+	set(ROOT_DEPENDENCIES Cling Core Geom Graf Hist MathCore Net RIO Tree XMLParser)
+else()
+	set(ROOT_DEPENDENCIES Cint Core Geom Graf Hist MathCore Net RIO Tree XMLParser)
+endif(${ROOT_VERSION_MAJOR} EQUAL 6)
 set(ALIROOT_DEPENDENCIES STEERBase RAWDatabase AliHLTHOMER)
 # Generate the ROOT map
 # Dependecies
