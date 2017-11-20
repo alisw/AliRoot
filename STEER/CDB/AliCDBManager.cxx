@@ -332,6 +332,7 @@ AliCDBManager::AliCDBManager():
   fStartRunLHCPeriod(-1),
   fEndRunLHCPeriod(-1),
   fLHCPeriod(""),
+  fMaxDate(0),
   fKey(0)
 {
   // default constuctor
@@ -536,6 +537,7 @@ AliCDBStorage* AliCDBManager::GetStorage(const AliCDBParam* param) {
       aStorage->SetURI(param->GetURI());
       if(fRun >= 0) {
         if( aStorage->GetType() == "alien" || aStorage->GetType() == "local" )
+          aStorage->SetMaxDate(fMaxDate);
           aStorage->QueryCDB(fRun);
       }
       return aStorage;
@@ -1604,6 +1606,13 @@ void AliCDBManager::SetRun(Int_t run) {
 }
 
 //_____________________________________________________________________________
+void AliCDBManager::SetMaxDate(time_t maxDate) {
+  if (maxDate == fMaxDate) return;
+  if (fRun > -1) AliFatal("Cannot call AliCDBManager::SetMaxDate() after run was set!");
+  fMaxDate = maxDate;
+}
+
+//_____________________________________________________________________________
 void AliCDBManager::ClearPromptCache(){
 // clear AliCDBEntry prompt cache
 
@@ -1738,6 +1747,7 @@ void AliCDBManager::QueryCDB() {
     return;
   }
   if(fDefaultStorage->GetType() == "alien" || fDefaultStorage->GetType() == "local"){
+    if (!fDefaultStorage->GetMaxDate()) fDefaultStorage->SetMaxDate(fMaxDate);  // no override if set per storage
     fDefaultStorage->QueryCDB(fRun);
   //} else {
   //	AliDebug(2,"Skipping query for valid files, it used only in grid...");
@@ -1752,6 +1762,7 @@ void AliCDBManager::QueryCDB() {
       AliDebug(2,Form("Querying specific storage %s",aCalibType->GetName()));
       AliCDBStorage *aStorage = GetStorage(aPar);
       if(aStorage->GetType() == "alien" || aStorage->GetType() == "local"){
+        if (!aStorage->GetMaxDate()) aStorage->SetMaxDate(fMaxDate);  // no override if set per storage
         aStorage->QueryCDB(fRun, aCalibType->GetName());
       } else {
         AliDebug(2,

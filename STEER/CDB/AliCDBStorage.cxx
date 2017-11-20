@@ -38,7 +38,8 @@ AliCDBStorage::AliCDBStorage():
   fType(),
   fBaseFolder(),
   fNretry(0),
-  fInitRetrySeconds(0)
+  fInitRetrySeconds(0),
+  fMaxDate(0)
 {
   // constructor
 
@@ -415,6 +416,26 @@ Bool_t AliCDBStorage::Put(AliCDBEntry* entry, const char* mirrors, AliCDBManager
 }
 
 //_____________________________________________________________________________
+time_t AliCDBStorage::GuidToCreationTimestamp(const TString &guid) const {
+  static const Int_t order[8] = { 14, 16, 9, 11, 0, 2, 4, 6 };
+  char buf[3];
+  buf[2] = '\0';
+  time_t timeval = 0;
+  for (Int_t i=0; i<8; i++) {
+    buf[0] = guid[order[i]];
+    buf[1] = guid[order[i]+1];
+    timeval |= strtol(buf, 0x0, 16);
+    if (timeval & 0xFF00000000000000) {
+      timeval &= 0x0FFFFFFFFFFFFFFF;
+    }
+    else {
+      timeval <<= 8;
+    }
+  }
+  return (timeval - 0x01b21dd213814000L) / 10000000; // result is in seconds
+}
+
+//_____________________________________________________________________________
 void AliCDBStorage::QueryCDB(Int_t run, const char* pathFilter,
     Int_t version, AliCDBMetaData* md){
 // query CDB for files valid for given run, and fill list fValidFileIds
@@ -479,6 +500,13 @@ void AliCDBStorage::PrintQueryCDB(){
   }
   message += Form("\n\tTotal: %d objects found\n", fValidFileIds.GetEntriesFast());
   AliInfo(Form("%s", message.Data()));
+}
+
+//_____________________________________________________________________________
+void AliCDBStorage::SetMaxDate(time_t maxDate) {
+  if (maxDate == fMaxDate) return;
+  if (fRun > -1) AliFatal("Cannot call SetMaxDate() after run was set!");
+  fMaxDate = maxDate;
 }
 
 //_____________________________________________________________________________
