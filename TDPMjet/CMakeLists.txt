@@ -45,6 +45,7 @@ generate_dictionary("${MODULE}" "${MODULE}LinkDef.h" "${HDRS}" "${incdirs}")
 
 if(DPMJET_FOUND)
   # Use external DPMJET if found
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
   link_directories(${DPMJET_LIBPATH})
 endif()
 
