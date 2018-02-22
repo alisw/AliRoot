@@ -241,7 +241,8 @@ class AliAODHeader : public AliVAODHeader {
   Double32_t  fZDCP2Energy;         ///< reconstructed energy in the proton2 ZDC
   Double32_t  fZDCEMEnergy[2];      ///< reconstructed energy in the electromagnetic ZDCs
   Int_t       fNQTheta;             ///< number of QTheta elements
-  Double32_t *fQTheta;              ///< [fNQTheta] values to store Lee-Yang-Zeros
+  /// values to store Lee-Yang-Zeros
+  Double32_t *fQTheta;              //[fNQTheta] 
   ULong64_t   fTriggerMask;         ///< Trigger Type (mask)
   ULong64_t   fTriggerMaskNext50;   ///< Trigger Type (mask) for upper 50 slots
   TString     fFiredTriggers;       ///< String with fired triggers
