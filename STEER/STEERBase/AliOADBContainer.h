@@ -14,10 +14,22 @@
 #include <TList.h>
 #include <TArrayI.h>
 #include <TObjArray.h>
-
-class TObjArray;
-class TArrayI;
+#include <TString.h>
 class TFile;
+
+class AliOADBCache {
+ public :
+  AliOADBCache(TObject *obj, Int_t r1, Int_t r2) : fRun1(r1), fRun2(r2), fObj(obj) {;}
+  ~AliOADBCache() {delete fObj;}
+  TObject *GetObject(Int_t run) const {if ((run>=fRun1) && (run<=fRun2)) return fObj; else return 0;}
+ private :
+  Int_t fRun1;
+  Int_t fRun2;
+  TObject *fObj;
+  AliOADBCache(const AliOADBCache& cont); 
+  AliOADBCache& operator=(const AliOADBCache & cont);
+};
+
 class AliOADBContainer : public TNamed {
 
  public :
@@ -32,22 +44,25 @@ class AliOADBContainer : public TNamed {
   void   RemoveObject(Int_t index);
   void   AddDefaultObject(TObject* obj);
   void   CleanDefaultList();
+  void   CleanLists();
   TList* GetDefaultList() const {return fDefaultList;}
 // I/O  
   void  WriteToFile(const char* fname)  const;
   Int_t InitFromFile(const char* fname, const char* key);
+  void  SetOwner(Bool_t deflist=1);
 // Getters
   Int_t GetNumberOfEntries()    const {return fEntries;}
   Int_t LowerLimit(Int_t idx)   const {return fLowerLimits[idx];}
   Int_t UpperLimit(Int_t idx)   const {return fUpperLimits[idx];}
   TObjArray* GetObjArray() {return fArray;}
   void SetToZeroObjArray() {fArray=0;}
+  AliOADBCache* GetObjectCache(Int_t run, const char* def="", TString passName="") const;
   TObject* GetObject(Int_t run, const char* def = "", TString passName="") const;
   TObject* GetObjectFromFile(TFile* file, Int_t run, const char* def = "", TString passName="") const;
   TObject* GetObjectByIndex(Int_t run) const;
   TObject* GetPassNameByIndex(Int_t idx) const;
   TObject* GetDefaultObject(const char* key) 
-  {return(fDefaultList->FindObject(key));}
+           {return(fDefaultList->FindObject(key));}
 // Debugging  
   void List();
 // Browsable
