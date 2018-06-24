@@ -56,7 +56,7 @@ void AssertMapping(Int_t runNumber=0) {
 
 	if (!cdbm->IsDefaultStorageSet()) {
 		cdbm->SetDefaultStorage(
-				"local:///cvmfs/alice-ocdb.cern.ch/calibration/data/2015/OCDB");
+				"local:///cvmfs/alice-ocdb.cern.ch/calibration/data/2018/OCDB");
 	}
 
 	cdbm->SetRun(runNumber);
@@ -72,7 +72,7 @@ AliMergeableCollection* BPEVO(Int_t runNumber, const char* output = "mchbepevo.c
 
 	if (!cdb->IsDefaultStorageSet()) {
 		cdb->SetDefaultStorage(
-				"local:///cvmfs/alice-ocdb.cern.ch/calibration/data/2015/OCDB");
+				"local:///cvmfs/alice-ocdb.cern.ch/calibration/data/2018/OCDB");
 	}
 
 	AssertMapping(runNumber);
