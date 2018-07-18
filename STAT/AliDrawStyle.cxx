@@ -45,6 +45,7 @@
 #include "TMultiGraph.h"
 #include "TAxis.h"
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <ios>
 
@@ -775,7 +776,7 @@ TObjArray *AliDrawStyle::ReadCssString(TString inputCSS, TObjArray *cssArray, In
     TString selector = tokenArray->At(i)->GetName();
     TString declaration = tokenArray->At(i + 1)->GetName();
     if (verbose == 4)
-      printf("selector: %s\ndeclaration: %s\n", selector.Data(), declaration.Data());
+      ::Info("selector: %s\ndeclaration: %s\n", selector.Data(), declaration.Data());
     cssArray->AddLast(new TNamed(selector.Data(), declaration.Data()));
   }
   return cssArray;
@@ -788,14 +789,28 @@ TObjArray *AliDrawStyle::ReadCssString(TString inputCSS, TObjArray *cssArray, In
 /// \param inputName     - input file to read
 /// \param verbose       - specify verbose level for ::error and ::info (Int_t should be interpreted as an bit-mask)
 /// \return              - TObjArray  with the pairs TNamed of the CSS <Selector, declaration> or  TObjArray (recursive structure like includes)
-TObjArray *AliDrawStyle::ReadCSSFile(const char *  inputName, TObjArray * cssArray, Int_t verbose) {
-  //check file exist
-  if (gSystem->GetFromPipe(TString("[ -f ") + TString(inputName) +  TString(" ] && echo 1 || echo 0")) == "0") {
-    ::Error("AliDrawStyle::ReadCSSFile","File %s doesn't exist", inputName);
+TObjArray *AliDrawStyle::ReadCSSFile(const char *inputName, TObjArray * cssArray, Int_t verbose) {
+
+  //replace env var to real path, in any case examples will not work.
+  TString inputTStr = TString(inputName);
+  Int_t d = inputTStr.Index('$') + 1;
+  Int_t s = inputTStr.Index('/',d) - d;
+  TString var = TString(inputTStr(d,s));
+  const char* varPath = getenv(var.Data());
+  inputTStr.ReplaceAll(TString("$") + var, TString(varPath));
+
+  //check is file open
+  if (gSystem->AccessPathName(inputTStr.Data())) {
+    ::Error("AliDrawStyle::ReadCSSFile", "File %s doesn't exist", inputName);
     return nullptr;
   }
 
-  TString inputCSS = gSystem->GetFromPipe(TString::Format("cat %s",inputName).Data());     // I expect this variable is defined
+  std::ifstream f(inputTStr.Data());
+  std::stringstream strStream;
+  strStream << f.rdbuf();
+  TString inputCSS = TString(strStream.str());
+
+//  TString inputCSS = gSystem->GetFromPipe(TString::Format("cat %s",inputName).Data());     // I expect this variable is defined
   return AliDrawStyle::ReadCssString(inputCSS, cssArray, verbose);
 }
 
