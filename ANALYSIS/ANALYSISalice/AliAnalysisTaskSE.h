@@ -123,6 +123,7 @@ class AliAnalysisTaskSE : public AliAnalysisTask
     AliInputEventHandler      *fMCEventHandler;     //!<! pointer to MCEventHandler
     AliTrackSelectionFactory  *fTrackSelectionFactory; ///< track selection factory
     AliVTrackSelection        *fTrackSelection;        ///< track selection
+    static const void         *fgBadPtrDummy;       //! static variable to force to load and export the badPtr to AliAnalysisManager
     ClassDef(AliAnalysisTaskSE, 5); // Analysis task for standard jet analysis
 };
  
