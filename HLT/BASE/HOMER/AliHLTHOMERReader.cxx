@@ -20,16 +20,6 @@
 **
 *************************************************************************/
 
-/*
-***************************************************************************
-**
-** $Author$ - Initial Version by Timm Morten Steinbeck
-**
-** $Id$ 
-**
-***************************************************************************
-*/
-
 /** @file   AliHLTHOMERReader.cxx
     @author Timm Steinbeck
     @date   Sep 14 2007
@@ -44,6 +34,7 @@
 
 #include "AliHLTHOMERReader.h"
 #include <sys/ipc.h>
+#include <sys/shm.h>
 //#include <stdio.h>
 #ifdef __SUNPRO_CC
 #include <string.h>
