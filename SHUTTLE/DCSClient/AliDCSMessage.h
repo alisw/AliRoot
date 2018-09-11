@@ -141,7 +141,7 @@ public:
 
         UInt_t GetValues(TObjArray* result) const;
 
-        Bool_t AddValue(AliDCSValue& value); 
+        Bool_t AddValue(AliDCSValue const& value);
 
         void ClearValues();
 
