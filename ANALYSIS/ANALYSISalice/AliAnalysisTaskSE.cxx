@@ -57,6 +57,19 @@
 
 ClassImp(AliAnalysisTaskSE)
 
+namespace
+{
+   const TClass* GetBadPtr()
+   {
+       return AliAnalysisTaskSE::Class();
+   }
+   const void* AliAnalysisManager_InitBadPtr()
+   {
+       AliAnalysisManager::SetBadPtr(GetBadPtr);
+       return NULL;
+   }
+}
+
 /// \file AliAnalysisTaskSE.cxx
 
 AliAODHeader*    AliAnalysisTaskSE::fgAODHeader         = NULL;
@@ -77,6 +90,7 @@ AliAODCaloTrigger* AliAnalysisTaskSE::fgAODEMCALTrigger = NULL;
 AliAODCaloTrigger* AliAnalysisTaskSE::fgAODPHOSTrigger  = NULL;
 TClonesArray*    AliAnalysisTaskSE::fgAODDimuons        = NULL;
 TClonesArray*    AliAnalysisTaskSE::fgAODHmpidRings     = NULL;
+const void*      AliAnalysisTaskSE::fgBadPtrDummy       = AliAnalysisManager_InitBadPtr();
 
 AliAnalysisTaskSE::AliAnalysisTaskSE():
     AliAnalysisTask(),

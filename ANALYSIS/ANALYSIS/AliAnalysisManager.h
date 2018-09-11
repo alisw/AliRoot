@@ -170,7 +170,7 @@ enum EAliAnalysisFlags {
    static void         SetGlobalStr(const char *key, const char *value);
    static void         SetGlobalInt(const char *key, Int_t value);
    static void         SetGlobalDbl(const char *key, Double_t value);
-   
+   static void         SetBadPtr(const TClass* (*ptr)()) {fgGetBadPtr = ptr;}
 
    // Container handling
    AliAnalysisDataContainer *CreateContainer(const char *name, TClass *datatype, 
@@ -290,6 +290,7 @@ private:
    static TString          fgCommonFileName;     //!<! Common output file name (not streamed)
    static TString          fgMacroNames;         //!<! Loaded macro names
    static AliAnalysisManager *fgAnalysisManager; //!<! static pointer to object instance
+   static const TClass* (*fgGetBadPtr)();        //! Bad ptr for check of AliAnalysisTaskSW
    ClassDef(AliAnalysisManager, 21)  // Analysis manager class
 };   
 #endif
