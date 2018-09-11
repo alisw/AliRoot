@@ -117,7 +117,7 @@ AliDCSMessage::AliDCSMessage():
 {
 // default constructor
 	fValues = new TObjArray();
-	fValues->SetOwner(0);
+	fValues->SetOwner(kTRUE);
 
 }
 
@@ -136,7 +136,7 @@ AliDCSMessage::AliDCSMessage(const char* message, UInt_t size):
 
         memcpy(fMessage, message, size);
 	fValues = new TObjArray();
-	fValues->SetOwner(0);
+	fValues->SetOwner(kTRUE);
 }
 
 //______________________________________________________________________
@@ -167,7 +167,7 @@ AliDCSMessage::~AliDCSMessage()
 
 	DestroyMessage();
         DestroyBuffer();
-	if(fValues) delete fValues; fValues=0;
+        SafeDelete(fValues);
 }
 
 //______________________________________________________________________
@@ -1120,6 +1120,9 @@ UInt_t AliDCSMessage::GetValues(TObjArray* result) const
   // result must be owner of the AliDCSValues because fVaule is not!
   // creator of the result array and used GetValues to fill it must delete object by himself!
 
+        if (result->IsOwner())
+                AliFatal("result->IsOwner() == kTRUE");
+
   // TODO do not copy -> corrected?
 
 	if (fType != kResultSet) {
@@ -1129,7 +1132,7 @@ UInt_t AliDCSMessage::GetValues(TObjArray* result) const
 
 	TIter iter(fValues);
 	AliDCSValue* aValue;
-	
+
 	while ((aValue = (AliDCSValue*) iter.Next())) {
 		result->AddLast(aValue);
 	}
@@ -1139,7 +1142,7 @@ UInt_t AliDCSMessage::GetValues(TObjArray* result) const
 
 
 //______________________________________________________________________
-Bool_t AliDCSMessage::AddValue(AliDCSValue& value)
+Bool_t AliDCSMessage::AddValue(AliDCSValue const& value)
 {
   // Adds value to the ResultSet value list.
   // Returns kFALSE in case of error.
@@ -1155,11 +1158,10 @@ Bool_t AliDCSMessage::AddValue(AliDCSValue& value)
     return kFALSE;
   }
 
-  fValues->Add(&value);
+  fValues->Add(new AliDCSValue(value));
 
   return kTRUE;
 }
-
 
 //______________________________________________________________________
 void AliDCSMessage::ClearValues()
