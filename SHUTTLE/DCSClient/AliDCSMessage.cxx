@@ -1117,11 +1117,6 @@ UInt_t AliDCSMessage::GetValues(TObjArray* result) const
   // ResultSet.
   // Returns the number of values got from the message.
   // result: used to return the values. Collection of AliDCSValue.
-  // result must be owner of the AliDCSValues because fVaule is not!
-  // creator of the result array and used GetValues to fill it must delete object by himself!
-
-        if (result->IsOwner())
-                AliFatal("result->IsOwner() == kTRUE");
 
   // TODO do not copy -> corrected?
 
@@ -1134,7 +1129,7 @@ UInt_t AliDCSMessage::GetValues(TObjArray* result) const
 	AliDCSValue* aValue;
 
 	while ((aValue = (AliDCSValue*) iter.Next())) {
-		result->AddLast(aValue);
+                result->AddLast(new AliDCSValue(aValue));
 	}
 
 	return fValues->GetEntriesFast();
