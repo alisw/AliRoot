@@ -24,6 +24,7 @@
 #include "AliTRDCalDCS.h"
 #include "AliTRDCalDCSFEE.h"
 #include "AliTRDCalDCSGTU.h"
+#include "AliLog.h"
 
 ClassImp(AliTRDCalDCS)
   

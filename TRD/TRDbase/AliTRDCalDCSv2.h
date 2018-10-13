@@ -15,6 +15,7 @@
 #include "TObjArray.h"
 
 class TString;
+class TH1F;
 
 class AliTRDCalDCSFEEv2;
 class AliTRDCalDCSPTR;
@@ -30,6 +31,18 @@ class AliTRDCalDCSv2 : public TNamed {
   AliTRDCalDCSv2 &operator=(const AliTRDCalDCSv2 &cd);
   virtual ~AliTRDCalDCSv2() { };
 
+  // Printing of DCS configuration in various ways
+  virtual void Print(Option_t *option="") const;
+
+  void PrintGlobalConfig(Option_t *option="") const;
+
+  // handling the plurality 
+  TH1F* CreatePluralityHistogram(TString (AliTRDCalDCSFEEv2::*fct)() const) const;
+  AliTRDCalDCSFEEv2* FindPluralityChamber(TString (AliTRDCalDCSFEEv2::*fct)() const) const;
+
+  void ForceOverwritePluralityConfig();
+
+  
   void    EvaluateGlobalParameters();
   void    SetFEEArr(TObjArray * const fa)      { fFEEArr              = fa;    }
   void    SetPTRArr(TObjArray * const pa)      { fPTRArr              = pa;    }

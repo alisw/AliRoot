@@ -25,6 +25,11 @@ class AliTRDCalDCSFEEv2 : public TObject {
   virtual ~AliTRDCalDCSFEEv2() { };
   AliTRDCalDCSFEEv2 &operator=(const AliTRDCalDCSFEEv2 &c);
 
+  TString GetConfigNameVersion() const
+  { return GetConfigName() + ":" + GetConfigVersion(); }
+
+  TString GetRstateString(Int_t r, Int_t m);
+  
   void    SetStatusBit(Int_t stbit)                  { fStatusBit           = (Char_t)stbit;        }
   void    SetDCSid(Int_t dcsid)                      { fDCSID               = (Short_t)dcsid;       }
   void    SetSM(Int_t smid)                          { fSM                  = (Char_t)smid;         }
