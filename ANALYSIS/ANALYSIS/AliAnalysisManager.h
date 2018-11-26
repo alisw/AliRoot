@@ -6,7 +6,7 @@
 /// \class AliAnalysisManager
 /// \brief AliAnalysysManager
 /// Manager analysis class. Allows creation of several
-/// analysis tasks and data containers storing their input/output. Allows 
+/// analysis tasks and data containers storing their input/output. Allows
 /// connecting/chaining tasks via shared data containers. Serializes the current
 /// event for all tasks depending only on initial input data.
 /// \author Andrei Gheata
@@ -17,6 +17,9 @@
 #endif
 #ifndef ROOT_THashTable
 #include <THashTable.h>
+#endif
+#ifndef ROOT_TChain
+#include "TChain.h"
 #endif
 
 class TClass;
@@ -219,6 +222,22 @@ enum EAliAnalysisFlags {
    Bool_t               ValidateOutputFiles() const;
    
    static const char*   GetOADBPath();
+
+   static TChain* CreateAODChain (
+      const char* aDataDir = "AODfiles.txt",
+      Int_t aRuns          = 20,
+      Int_t offset         = 0,
+      Bool_t addFileName   = kFALSE,
+      const char* friends  = "",
+      const char* check    = 0 );
+
+   static TChain* CreateESDChain(
+      const char* aDataDir = "ESDfiles.txt",
+      Int_t aRuns          = 20,
+      Int_t offset         = 0,
+      Bool_t addFileName   = kFALSE,
+      Bool_t addFriend     = kFALSE,
+      const char* check    = 0 ) ;
 
    void                 ApplyDebugOptions();
    void                 AddClassDebug(const char *className, Int_t debugLevel);
