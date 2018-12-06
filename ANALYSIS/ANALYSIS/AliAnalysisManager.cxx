@@ -49,6 +49,7 @@
 #include "AliVEvent.h"
 
 using std::ofstream;
+using std::ifstream;
 using std::ios;
 using std::cout;
 using std::endl;
