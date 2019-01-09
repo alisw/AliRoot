@@ -2698,7 +2698,7 @@ float AliTPCDcalibRes::MAD2Sigma(int np, float* y)
   // the input array is not modified
   if (np<2) return 0;
   int nph = np>>1;
-  if (nph&0x1) nph -= 1;
+  if (!(np&0x1)) nph -= 1;
   // don't abuse stack
   float *ycHeap=0, ycStack[np<kMaxOnStack ? np:1],*yc=np<kMaxOnStack ? &ycStack[0] : (ycHeap = new float[np]);
   memcpy(yc,y,np*sizeof(float));
