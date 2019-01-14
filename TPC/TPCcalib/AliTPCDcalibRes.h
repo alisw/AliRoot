@@ -33,7 +33,7 @@
 #include "AliSymMatrix.h"
 #include "AliTPCChebCorr.h"
 #include "AliTPCChebDist.h"
-
+#include "TTreeStream.h"
 
 class AliTPCDcalibRes: public TNamed
 {
@@ -110,6 +110,9 @@ class AliTPCDcalibRes: public TNamed
     UChar_t bsec;            // sector ID (0-35)
     UChar_t flags;           // status flag
     //
+    void dump() { printf("D[0]=%.6f, D[1]=%.6f, D[2]=%.6f, E[0]=%.6f, E[1]=%.6f, E[2]=%.6f, bvox[0]=%i, bvox[1]=%i, bvox[2]=%i, bsec=%i\n",
+                      D[0], D[1], D[2], E[0], E[1], E[2], bvox[0], bvox[1], bvox[2], bsec);
+    }
     bres_t() {memset(this,0,sizeof(bres_t));}
   };
  
@@ -203,6 +206,15 @@ class AliTPCDcalibRes: public TNamed
   int    CheckResiduals(Bool_t* mask,float &rmsLongMA);
 
   const char* GetVoxResFileName() const {return Form("%sTree.root",kResOut);}
+
+  // ----------------------------------- debugging
+  static void dumpToFile(int np, float *data, const char *fName);
+  void DumpToFile(int iSec) const;
+  void CreateDebugStream() { fStream = new TTreeSRedirector("voxelDbgRes.root", "recreate"); }
+  void DeteleDebugStream() { delete fStream; }
+  void createOutputFile();
+  void closeOutputFile();
+  void dumpResults(int iSec);
 
   //------------------------------------ misc. stat. methods
   static Float_t FitPoly1Robust(int np, float* x, float* y, float* res, float* err, float ltmCut);
@@ -418,6 +430,9 @@ class AliTPCDcalibRes: public TNamed
  protected:
   //
   Bool_t   fInitDone;                               // init flag
+  TTreeSRedirector *fStream;
+  TFile *mFileOut;
+  TTree *mTreeOut;
   Bool_t   fUseErrInSmoothing;                      // weight kernel by point error
   Bool_t   fSwitchCache;                            // reset the cache when the reading mode is changing
   Bool_t   fFixAlignmentBug;                        // flag to apply the fix

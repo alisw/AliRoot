@@ -12,6 +12,10 @@
 #include <TKey.h>
 #include <TF2.h>
 
+#include <limits>
+#include <fstream>
+#include <iomanip>
+
 using std::swap;
 
 // this must be standalone f-n, since the signature is important for Chebyshev training
@@ -82,6 +86,9 @@ ClassImp(AliTPCDcalibRes)
 //________________________________________
 AliTPCDcalibRes::AliTPCDcalibRes(int run,Long64_t tmin,Long64_t tmax,const char* resList) : 
   fInitDone(kFALSE)
+  ,fStream(0x0)
+  ,mFileOut(0x0)
+  ,mTreeOut(0x0)
   ,fUseErrInSmoothing(kTRUE)
   ,fSwitchCache(kFALSE)
   ,fFixAlignmentBug(kTRUE)
@@ -570,6 +577,7 @@ void AliTPCDcalibRes::ProcessFromLocalBinnedTrees()
 
   // do per-sector projections and fits
   ProcessResiduals();
+  return; // TODO delete this line after tests
   //
   //  ProcessDispersions();
   //
@@ -1617,7 +1625,7 @@ void AliTPCDcalibRes::ProcessResiduals()
   LoadStatHistos();
   AliSysInfo::AddStamp("ProcResid",0,0,0,0);
   //
-  for (int is=0;is<kNSect2;is++) ProcessSectorResiduals(is);
+  for (int is=0;is<1/*kNSect2*/;is++) ProcessSectorResiduals(is);
   //
   AliSysInfo::AddStamp("ProcResid",1,0,0,0);
   //
@@ -1827,7 +1835,8 @@ void AliTPCDcalibRes::ProcessSectorResiduals(int is)
       if (npBin) {
 	bres_t& resVox = sectData[curBin];
 	GBin2Vox(curBin,resVox.bvox);  // parse voxel
-	ProcessVoxelResiduals(npBin,tg,dy,dz,resVox);	
+	ProcessVoxelResiduals(npBin,tg,dy,dz,resVox);
+  //if (curBin == 9) { npBin = 0; break; }  //TODO delete this line after test
       }
       curBin = binArr[ip];
       npBin = 0;
@@ -1852,8 +1861,12 @@ void AliTPCDcalibRes::ProcessSectorResiduals(int is)
   AliInfoF("Sector%2d. Extracted residuals. Timing: real: %.3f cpu: %.3f",
 	   is, sw.RealTime(), sw.CpuTime());
   sw.Start(kFALSE);
+
+  DumpToFile(is);
+  dumpResults(is);
   
   int nrowOK = ValidateVoxels(is);
+  printf("nrowOK=%i\n", nrowOK);
   if (!nrowOK) AliWarningF("Sector%2d: all X-bins disabled, abandon smoothing",is);
   else Smooth0(is);
   //
@@ -1965,6 +1978,8 @@ void AliTPCDcalibRes::ReProcessSectorResiduals(int is)
 //_________________________________________________________
 Float_t AliTPCDcalibRes::FitPoly1Robust(int np, float* x, float* y, float* res, float* err, float ltmCut)
 {
+  //dumpToFile(np, x, "xAliRoot.txt");
+  //dumpToFile(np, y, "yAliRoot.txt");
   // robust pol1 fit, modifies input arrays order
   res[0] = res[1] = 0.f;
   if (np<2) return -1;
@@ -1974,6 +1989,8 @@ Float_t AliTPCDcalibRes::FitPoly1Robust(int np, float* x, float* y, float* res, 
   // rearrange used events in increasing order
   TStatToolkit::Reorder(np,y,indY);
   TStatToolkit::Reorder(np,x,indY);
+  //dumpToFile(np, x, "xReorderedAliRoot.txt");
+  //dumpToFile(np, y, "yReorderedAliRoot.txt");
   //
   // 1st fit to get crude slope
   int npuse = TMath::Nint(yres[0]);
@@ -1987,13 +2004,18 @@ Float_t AliTPCDcalibRes::FitPoly1Robust(int np, float* x, float* y, float* res, 
   int   *indcmHeap=0,indcmStack[np<kMaxOnStack ? np:1],*indcm=np<kMaxOnStack ? &indcmStack[0] : (indcmHeap=new int[np]);
   //  
   for (int i=np;i--;) ycm[i] = y[i]-(a+b*x[i]);
+  //dumpToFile(np, ycm, "ycmAliRoot.txt");
   TMath::Sort(np,ycm,indcm,kFALSE);
   TStatToolkit::Reorder(np,ycm,indcm);
   TStatToolkit::Reorder(np,y,indcm); // we must keep the same order
   TStatToolkit::Reorder(np,x,indcm);
+  //dumpToFile(np, x, "x2ndReorderedAliRoot.txt");
+  //dumpToFile(np, y, "y2ndReorderedAliRoot.txt");
+  //dumpToFile(npuse, ycm+offs, "dataAliRoot.txt");
   //
   // robust estimate of sigma after crude slope correction
   float sigMAD = AliTPCDcalibRes::MAD2Sigma(npuse,ycm+offs);
+  //printf("sigMAD=%f\n", sigMAD);
   // find LTM estimate matching to sigMAD, keaping at least given fraction
   indY = AliTPCDcalibRes::LTMUnbinnedSig(np, ycm, yres, sigMAD,0.5,kTRUE);
   delete[] ycmHeap;
@@ -2012,15 +2034,30 @@ Float_t AliTPCDcalibRes::FitPoly1Robust(int np, float* x, float* y, float* res, 
 //_________________________________________________
 void AliTPCDcalibRes::ProcessVoxelResiduals(int np, float* tg, float *dy, float *dz, bres_t& voxRes)
 {
+  //for (int i=0; i<np; ++i) {
+  //  printf(" %06i: |\t dy=%f \t|\t dz=%f \t|\t tg=%f\n", i, dy[i], dz[i], tg[i]);
+  //}
   // extract X,Y,Z distortions of the voxel
+  //printf("processing voxel residuals for vox %i with %i points\n", GetVoxGBin(voxRes.bvox), np);
   if (np<fMinEntriesVoxel) return;
   TVectorF zres(7);
   voxRes.flags = 0;
   if (!TStatToolkit::LTMUnbinned(np,dz,zres,fLTMCut)) return; 
   //
+  //printf("################## after call to LTMUnbinned ###################\n");
+  //for (int i=0; i<np; ++i) {
+  //  printf(" %06i: |\t dy=%f \t|\t dz=%f \t|\t tg=%f\n", i, dy[i], dz[i], tg[i]);
+  //}
   float ab[2],err[3];
   float sigMAD = FitPoly1Robust(np,tg,dy,ab,err,fLTMCut);
   if (sigMAD<0) return;
+  //printf("results: a=%f, b=%f, err0=%f, err1=%f, err2=%f, sigMAD=%f\n", ab[0], ab[1], err[0], err[1], err[2], sigMAD);
+  //printf("a = %f\n", ab[0]);
+  //printf("b = %f\n", ab[1]);
+  //printf("err0 = %f\n", err[0]);
+  //printf("err1 = %f\n", err[1]);
+  //printf("err2 = %f\n", err[2]);
+  //printf("sigMAD = %f\n", sigMAD);
   float corrErr = err[0]*err[2];
   corrErr = corrErr>0 ? err[1]/TMath::Sqrt(corrErr) : -999;
   //printf("N:%3d A:%+e B:%+e / %+e %+e %+e | %+e %+e / %+e %+e\n",np,a,b,err[0],err[1],err[2], zres[1],zres[2], zres[3],zres[4]);
@@ -2035,10 +2072,12 @@ void AliTPCDcalibRes::ProcessVoxelResiduals(int np, float* tg, float *dy, float 
   voxRes.D[kResD] = voxRes.dYSigMAD = sigMAD; // later will be overriden by real dispersion
   voxRes.dZSigLTM = zres[2];
   //
+  //voxRes.dump();
+  //
   // store the statistics
-  ULong64_t binStat = GetBin2Fill(voxRes.bvox,kVoxV);
-  voxRes.stat[kVoxV] = fArrNDStat[voxRes.bsec]->At(binStat);
-  for (int iv=kVoxDim;iv--;) voxRes.stat[iv] = fArrNDStat[voxRes.bsec]->At(binStat+iv-kVoxV);
+  //ULong64_t binStat = GetBin2Fill(voxRes.bvox,kVoxV);
+  //voxRes.stat[kVoxV] = fArrNDStat[voxRes.bsec]->At(binStat);
+  //for (int iv=kVoxDim;iv--;) voxRes.stat[iv] = fArrNDStat[voxRes.bsec]->At(binStat+iv-kVoxV);
   //
   voxRes.flags |= kDistDone;
 }
@@ -4642,4 +4681,71 @@ void AliTPCDcalibRes::WriteDistCorTestTree(int nx, int nphi2sect,int nzside)
   delete resTree;
   flOut->Close();
   delete flOut;
+}
+
+
+void AliTPCDcalibRes::DumpToFile(int iSec) const
+{
+  if (!fStream) {
+    return;
+  }
+  bres_t*  secData = fSectGVoxRes[iSec];
+  for (int iBin=0; iBin<fNGVoxPerSector; ++iBin) {
+    bres_t &resVox = secData[iBin];
+    (*fStream) << "debugTree" <<
+      "sec=" << iSec <<
+      "bin=" << iBin <<
+      "DkResX=" << resVox.D[kResX] <<
+      "DkResY=" << resVox.D[kResY] <<
+      "DkResZ=" << resVox.D[kResZ] <<
+      "EkResX=" << resVox.E[kResX] <<
+      "EkResY=" << resVox.E[kResY] <<
+      "EkResZ=" << resVox.E[kResZ] <<
+      "EXYCorr="  << resVox.EXYCorr  <<
+      "DkResD=" << resVox.D[kResD] <<
+      "dZSigLTM=" << resVox.dZSigLTM <<
+      "bvoxkVoxX=" << resVox.bvox[kVoxX] <<
+      "bvoxkVoxF=" << resVox.bvox[kVoxF] <<
+      "bvoxkVoxZ=" << resVox.bvox[kVoxZ] <<
+      "\n";
+  }
+}
+void AliTPCDcalibRes::dumpToFile(int np, float *data, const char *fName = "output.txt")
+{
+  std::ofstream fOut(fName);
+  if (fOut.is_open()) {
+    for (int i=0; i<np; ++i) {
+      fOut << std::fixed << std::setprecision(std::numeric_limits<float>::digits10 + 1) << data[i] << std::endl;
+    }
+    fOut.close();
+  }
+  else {
+    printf("ERROR: could not open output file\n");
+  }
+}
+
+void AliTPCDcalibRes::createOutputFile()
+{
+  mFileOut = new TFile("voxelResultsAliRoot.root", "recreate");
+  mTreeOut = new TTree("debugTree", "voxel results");
+  mTreeOut->Branch("voxRes", &(fSectGVoxRes[0][0]), "D[4]/F:E[4]/F:DS[4]/F:DC[4]/F:EXYCorr/F:dySigMAD/F:dZSigLTM/F:stat[4]/F:bvox[3]/b:bsec/b:flags/b");
+}
+
+void AliTPCDcalibRes::closeOutputFile()
+{
+  mFileOut->cd();
+  mTreeOut->Write();
+  delete mTreeOut;
+  mFileOut->Close();
+  delete mFileOut;
+}
+
+void AliTPCDcalibRes::dumpResults(int iSec)
+{
+  if (mTreeOut) {
+    for (int iBin = 0; iBin < fNGVoxPerSector ; ++iBin) {
+      mTreeOut->GetBranch("voxRes")->SetAddress(&(fSectGVoxRes[iSec][iBin]));
+      mTreeOut->Fill();
+    }
+  }
 }
