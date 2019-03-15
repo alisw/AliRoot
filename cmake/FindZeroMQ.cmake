@@ -47,7 +47,7 @@ if(ZEROMQ)
                 NO_DEFAULT_PATH
                 DOC "Path to ZeroMQ include header files."
             )       
-else(ZEROMQ)
+elseif(NOT ${ZEROMQ} STREQUAL "Off")
         # Check is the library is installed on the system
     find_library(ZEROMQ_LIBRARIES NAMES zmq
                 DOC "Path to libzmq)"
