@@ -23,6 +23,8 @@
 // 23/01/2004
 //-----------------------------------------------------------------------------
 
+#include <cassert>
+
 #include "AliMUONVGeometryBuilder.h"
 #include "AliMUONGeometryModule.h"
 #include "AliMUONGeometryDetElement.h"
@@ -288,7 +290,8 @@ void AliMUONVGeometryBuilder::SetTransformation(Int_t moduleId,
     = TGeoCombiTrans(translation, rotation);
 
   // Apply frame transform
-  TGeoHMatrix newTransform = ConvertTransform(transformation);
+  TGeoHMatrix newTransform;
+  assert(newTransform = ConvertTransform(transformation));
 
   // Set new transformation
   geometry->SetTransformation(newTransform);

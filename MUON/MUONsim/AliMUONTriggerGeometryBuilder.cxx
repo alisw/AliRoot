@@ -1623,7 +1623,7 @@ void AliMUONTriggerGeometryBuilder::BuildChamberTypeE(Int_t& iVolNum, Int_t icou
     Float_t zRatio = AliMUONConstants::DefaultRatioTriggerChamber(icount);      
     Float_t xEnv = (fgkDXZERO+fgkXMAX/2.)*zRatio;
    
-   Double_t dpar[3];    
+   Double_t dpar[3];     
    Double_t spar[3];    
    Double_t ppar[3];    
 
@@ -1632,6 +1632,9 @@ void AliMUONTriggerGeometryBuilder::BuildChamberTypeE(Int_t& iVolNum, Int_t icou
    Float_t yEnvM = 0;
    yEnvP = (fYEnvMsave + fgkYMIN * zRatio ) * zpm + fgkYMIN * zRatio;
    yEnvM = (fYEnvPsave + fgkYMIN * zRatio ) * zmp + fgkYMIN * zRatio;
+   dpar[0] = (fgkXMAX/2.)*zRatio;
+   dpar[1] =  fgkYMIN*zRatio;
+   dpar[2] = 0.4;
 
    Int_t detElemId = (10+icount+1)*100+15;
    TString volEnv1 = GetVolEnvName(icount, 1);
