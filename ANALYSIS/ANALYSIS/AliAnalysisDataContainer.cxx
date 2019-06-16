@@ -557,16 +557,16 @@ AliAnalysisFileDescriptor::AliAnalysisFileDescriptor(const TFile *file)
                            fOpenTime(0.), fProcessingTime(0.), fThroughput(0.), fTimer()
 {
 // Normal constructor
-   if (file->InheritsFrom("TAlienFile")) {
-      fLfn =(const char*)gROOT->ProcessLine(Form("((TAlienFile*)%p)->GetLfn();", file));
-      fGUID =(const char*)gROOT->ProcessLine(Form("((TAlienFile*)%p)->GetGUID();", file));
-      fUrl =(const char*)gROOT->ProcessLine(Form("((TAlienFile*)%p)->GetUrl();", file));
-      fPfn =(const char*)gROOT->ProcessLine(Form("((TAlienFile*)%p)->GetPfn();", file));
-      fSE = (const char*)gROOT->ProcessLine(Form("((TAlienFile*)%p)->GetSE();", file));
-      fImage = (Int_t)gROOT->ProcessLine(Form("((TAlienFile*)%p)->GetImage();", file));
-      fNreplicas = (Int_t)gROOT->ProcessLine(Form("((TAlienFile*)%p)->GetNreplicas();", file));
-      fOpenedAt = gROOT->ProcessLine(Form("((TAlienFile*)%p)->GetOpenTime();", file));
-      gROOT->ProcessLine(Form("((AliAnalysisFileDescriptor*)%p)->SetOpenTime(((TAlienFile*)%p)->GetElapsed());", this, file));
+   if (file->InheritsFrom("TJAlienFile")) {
+      fLfn =(const char*)gROOT->ProcessLine(Form("((TJAlienFile*)%p)->GetLfn();", file));
+      fGUID =(const char*)gROOT->ProcessLine(Form("((TJAlienFile*)%p)->GetGUID();", file));
+      fUrl =(const char*)gROOT->ProcessLine(Form("((TJAlienFile*)%p)->GetUrl();", file));
+      fPfn =(const char*)gROOT->ProcessLine(Form("((TJAlienFile*)%p)->GetPfn();", file));
+      fSE = (const char*)gROOT->ProcessLine(Form("((TJAlienFile*)%p)->GetSE();", file));
+      fImage = (Int_t)gROOT->ProcessLine(Form("((TJAlienFile*)%p)->GetImage();", file));
+      fNreplicas = (Int_t)gROOT->ProcessLine(Form("((TJAlienFile*)%p)->GetNreplicas();", file));
+      fOpenedAt = gROOT->ProcessLine(Form("((TJAlienFile*)%p)->GetOpenTime();", file));
+      gROOT->ProcessLine(Form("((AliAnalysisFileDescriptor*)%p)->SetOpenTime(((TJAlienFile*)%p)->GetElapsed());", this, file));
    } else {
       fLfn = file->GetName();
       fPfn = file->GetName();
