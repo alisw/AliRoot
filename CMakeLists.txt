@@ -135,6 +135,10 @@ else()
   message(STATUS "Doxygen and Graphviz not found. Disabling support for documentation generation")
 endif()
 
+# TODO: nhardi
+include_directories(${JALIEN_ROOT}/include)
+
+
 # Doxygen documentation is always included
 add_subdirectory(doxygen)
 

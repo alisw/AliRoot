@@ -42,6 +42,7 @@
 #include "AliVEventHandler.h"
 #include "AliAnalysisDataContainer.h"
 #include "AliMultiInputEventHandler.h"
+#include "TAliceCollection.h"
 
 using std::ofstream;
 using std::ifstream;
@@ -1243,7 +1244,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
    TString path;
    Int_t nruns = 0;
    TString schunk, schunk2;
-   TGridCollection *cbase=0, *cadd=0;
+   TAliceCollection *cbase=0, *cadd=0;
    if (!fRunNumbers.Length() && !fRunRange[0]) {
       if (fInputFiles && fInputFiles->GetEntries()) return kTRUE;
       // Make a single data collection from data directory.
@@ -1295,7 +1296,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
          }
          if (ncount == gMaxEntries) {
             Info("CreateDataset", "Dataset %s has more than 15K entries. Trying to merge...", file.Data());
-            cadd = gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data()));
+            cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data())));
             if (!cbase) cbase = cadd;
             else {
                // cbase->AddFast(cadd);
@@ -1305,9 +1306,9 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
             nstart += ncount;
          } else {
             if (cbase) {
-               cadd = gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data()));
-               // cbase->AddFast(cadd);
-               gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd));
+                cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data())));
+               cbase->AddFast(cadd);
+               // gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd)); // NOTE: new code
                delete cadd;
                cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
                delete cbase; cbase = 0;               
@@ -1393,7 +1394,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                           file.Data(),gMaxEntries);
                   return kFALSE;
                }
-               cadd = gGrid->OpenCollection(Form("__tmp%d__%s", stage,file.Data()));
+               cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage,file.Data())));
                if (!cbase) cbase = cadd;
                else {
                   // cbase->AddFast(cadd);
@@ -1403,7 +1404,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                nstart += ncount;
             } else {
                if (cbase && fNrunsPerMaster<2) {
-                  cadd = gGrid->OpenCollection(Form("__tmp%d__%s", stage,file.Data()));
+                   cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage,file.Data())));
                   // cbase->AddFast(cadd);
                   gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd));
                   delete cadd;
@@ -1438,12 +1439,12 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
             nruns++;
             if (((nruns-1)%fNrunsPerMaster) == 0) {
                schunk = os->GetString();
-               cbase = gGrid->OpenCollection(file.Data());
+               cbase = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
             } else {
-               cadd = gGrid->OpenCollection(file.Data());
+               cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
                printf("   Merging collection <%s> into masterjob input...\n", file.Data());
-               // cbase->AddFast(cadd);
-               gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd));
+               cbase->AddFast(cadd);
+               // gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd)); //NOTE: new code
                delete cadd;
             }
             if ((nruns%fNrunsPerMaster)!=0 && os!=arr->Last()) {
@@ -1536,7 +1537,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                           file.Data(),gMaxEntries);
                   return kFALSE;
                }
-               cadd = gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data()));
+               cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data())));
                if (!cbase) cbase = cadd;
                else {
                   cbase->Add(cadd);
@@ -1545,7 +1546,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                nstart += ncount;
             } else {
                if (cbase && fNrunsPerMaster<2) {
-                  cadd = gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data()));
+                   cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data())));
 		            cbase->Add(cadd);
                   delete cadd;
                   cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
@@ -1584,9 +1585,9 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
             printf("   Merging collection <%s> into %d runs chunk...\n",file.Data(),fNrunsPerMaster);
             if (((nruns-1)%fNrunsPerMaster) == 0) {
                schunk = Form(fRunPrefix.Data(), irun);
-               cbase = gGrid->OpenCollection(file.Data());
+               cbase = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
             } else {
-               cadd = gGrid->OpenCollection(file.Data());
+                cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
                // cbase->AddFast(cadd);
                gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd));
                delete cadd;
