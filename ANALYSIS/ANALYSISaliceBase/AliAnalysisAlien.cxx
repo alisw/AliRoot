@@ -1213,405 +1213,405 @@ Int_t AliAnalysisAlien::CopyLocalDataset(const char *griddir, const char *patter
 //______________________________________________________________________________
 Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
 {
-// Create dataset for the grid data directory + run number.
-   const Int_t gMaxEntries = 15000;
-   if (fProductionMode || TestBit(AliAnalysisGrid::kOffline)) return kTRUE;
-   if (!Connect()) {
-      Error("CreateDataset", "Cannot create dataset with no grid connection");
-      return kFALSE;
-   }   
+    // Create dataset for the grid data directory + run number.
+    const Int_t gMaxEntries = 15000;
+    if (fProductionMode || TestBit(AliAnalysisGrid::kOffline)) return kTRUE;
+    if (!Connect()) {
+        Error("CreateDataset", "Cannot create dataset with no grid connection");
+        return kFALSE;
+    }
 
-   // Cd workspace
-   if (!TestBit(AliAnalysisGrid::kTest)) CdWork();
-   TString workdir = gGrid->GetHomeDirectory();
-   workdir += fGridWorkingDir;
+    // Cd workspace
+    if (!TestBit(AliAnalysisGrid::kTest)) CdWork();
+    TString workdir = gGrid->GetHomeDirectory();
+    workdir += fGridWorkingDir;
 
-   // Compose the 'find' command arguments
-   TString format;
-   TString command;
-   TString delimiter = pattern;
-   delimiter.Strip();
-   if (delimiter.Contains(" ")) delimiter = "";
-   else delimiter = " ";
-   TString options = "-x collection ";
-   if (TestBit(AliAnalysisGrid::kTest)) options += Form("-l %d ", fNtestFiles);
-   else options += Form("-l %d ", gMaxEntries);  // Protection for the find command
-   TString conditions = "";
-   Int_t nstart = 0;
-   Int_t ncount = 0;
-   Int_t stage = 0;
-   TString file;
-   TString path;
-   Int_t nruns = 0;
-   TString schunk, schunk2;
-   TAliceCollection *cbase=0, *cadd=0, *res=0;
+    // Compose the 'find' command arguments
+    TString format;
+    TString command;
+    TString delimiter = pattern;
+    delimiter.Strip();
+    if (delimiter.Contains(" ")) delimiter = "";
+    else delimiter = " ";
+    TString options = "-x collection ";
+    if (TestBit(AliAnalysisGrid::kTest)) options += Form("-l %d ", fNtestFiles);
+    else options += Form("-l %d ", gMaxEntries);  // Protection for the find command
+    TString conditions = "";
+    Int_t nstart = 0;
+    Int_t ncount = 0;
+    Int_t stage = 0;
+    TString file;
+    TString path;
+    Int_t nruns = 0;
+    TString schunk, schunk2;
+    TAliceCollection *cbase=0, *cadd=0, *res=0;
 
-   if (!fRunNumbers.Length() && !fRunRange[0]) {
-      if (fInputFiles && fInputFiles->GetEntries()) return kTRUE;
-      // Make a single data collection from data directory.
-      path = fGridDataDir;
-      if (!DirectoryExists(path)) {
-         Error("CreateDataset", "Path to data directory %s not valid",fGridDataDir.Data());
-         return kFALSE;
-      }
-//      CdWork();
-      if (TestBit(AliAnalysisGrid::kTest)) file = "wn.xml";
-      else file = Form("%s.xml", gSystem->BaseName(path));
-      // cholm - Identical loop - should be put in common function for code simplification
-      while (1) {
-         ncount = 0;
-         stage++;
-         if (gSystem->AccessPathName(file) || TestBit(AliAnalysisGrid::kTest) || fOverwriteMode) {
-            command = "find ";
-            command += Form("%s -o %d ",options.Data(), nstart);
-            command += path;
-            command += delimiter;
-            command += pattern;
-            command += conditions;
-            printf("command: %s\n", command.Data());
-            res = dynamic_cast<TAliceCollection*>(gGrid->OpenCollectionQuery(gGrid->Command(command)));
+    if (!fRunNumbers.Length() && !fRunRange[0]) {
+        if (fInputFiles && fInputFiles->GetEntries()) return kTRUE;
+        // Make a single data collection from data directory.
+        path = fGridDataDir;
+        if (!DirectoryExists(path)) {
+            Error("CreateDataset", "Path to data directory %s not valid",fGridDataDir.Data());
+            return kFALSE;
+        }
+        //      CdWork();
+        if (TestBit(AliAnalysisGrid::kTest)) file = "wn.xml";
+        else file = Form("%s.xml", gSystem->BaseName(path));
+        // cholm - Identical loop - should be put in common function for code simplification
+        while (1) {
+            ncount = 0;
+            stage++;
+            if (gSystem->AccessPathName(file) || TestBit(AliAnalysisGrid::kTest) || fOverwriteMode) {
+                command = "find ";
+                command += Form("%s -o %d ",options.Data(), nstart);
+                command += path;
+                command += delimiter;
+                command += pattern;
+                command += conditions;
+                printf("command: %s\n", command.Data());
+                res = dynamic_cast<TAliceCollection*>(gGrid->OpenCollectionQuery(gGrid->Command(command)));
 
-            if(res->GetSize() == 0) {
-                Error("CreateDataset","Dataset %s produced by the previous find command is empty !", file.Data());
-                delete res;
+                if(res->GetSize() == 0) {
+                    Error("CreateDataset","Dataset %s produced by the previous find command is empty !", file.Data());
+                    delete res;
+                    return kFALSE;
+                }
+
+                ncount = res->GetSize();
+            }
+            if (ncount == gMaxEntries) {
+                Info("CreateDataset", "Dataset %s has more than 15K entries. Trying to merge...", file.Data());
+                cadd = res;
+                if (!cbase) cbase = cadd;
+                else {
+                    cbase->AddFast(cadd);
+                    delete cadd;
+                }
+                nstart += ncount;
+            } else {
+                if (cbase) {
+                    cadd = res;
+                    printf("... please wait - TAlienCollection::Add() scales badly...\n");
+                    cbase->AddFast(cadd);
+                    cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
+                    delete cadd;
+                    delete cbase; cbase = 0;
+                } else {
+                    cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
+                    TFile::Cp(Form("file://%s", file.Data()), file.Data());
+                }
+                Info("CreateDataset", "Created dataset %s with %d files", file.Data(), nstart+ncount);
+                break;
+            }
+        }
+        Bool_t fileExists = FileExists(file);
+        if (!TestBit(AliAnalysisGrid::kTest) && (!fileExists || fOverwriteMode)) {
+            // Copy xml file to alien space
+            if (fileExists) gGrid->Rm(file);
+            TFile::Cp(Form("file:%s",file.Data()), Form("alien://%s/%s",workdir.Data(), file.Data()));
+            if (!FileExists(file)) {
+                Error("CreateDataset", "Command %s did NOT succeed", command.Data());
                 return kFALSE;
             }
+            // Update list of files to be processed.
+        }
+        AddDataFile(Form("%s/%s", workdir.Data(), file.Data()));
+        return kTRUE;
+    }
 
-               ncount = res->GetSize();
-         }
-         if (ncount == gMaxEntries) {
-            Info("CreateDataset", "Dataset %s has more than 15K entries. Trying to merge...", file.Data());
-            cadd = res;
-            if (!cbase) cbase = cadd;
-            else {
-               cbase->AddFast(cadd);
-               delete cadd;
+    // Several runs
+    Bool_t nullResult = kTRUE;
+    if (fRunNumbers.Length()) {
+        TObjArray *arr = fRunNumbers.Tokenize(" ");
+        TObjString *os;
+        TIter next(arr);
+        while ((os=(TObjString*)next())) {
+            nstart = 0;
+            stage = 0;
+            path = Form("%s/%s", fGridDataDir.Data(), os->GetString().Data());
+            if (!DirectoryExists(path)) continue;
+            //         CdWork();
+            if (TestBit(AliAnalysisGrid::kTest)) file = "wn.xml";
+            else file = Form("%s.xml", os->GetString().Data());
+            // cholm - Identical loop - should be put in common function for code simplification
+            // If local collection file does not exist, create it via 'find' command.
+            while (1) {
+                ncount = 0;
+                stage++;
+                if (gSystem->AccessPathName(file) || TestBit(AliAnalysisGrid::kTest) || fOverwriteMode) {
+                    command = "alien_find ";
+                    command +=  Form("%s -o %d ",options.Data(), nstart);
+                    command += path;
+                    command += delimiter;
+                    command += pattern;
+                    command += conditions;
+                    res = gGrid->Command(command);
+                    // if (res) delete res;
+                    // Write standard output to file
+                    //gROOT->ProcessLine(Form("gGrid->Stdout(); > __tmp%d__%s", stage,file.Data()));
+                    // gSystem->Exec(Form("%s > __tmp%d__%s 2>/dev/null", command.Data(), stage, file.Data()));
+                    Bool_t hasGrep = (gSystem->Exec("grep --version 2>/dev/null > /dev/null")==0)?kTRUE:kFALSE;
+                    Bool_t nullFile = kFALSE;
+                    if (!hasGrep) {
+                        Warning("CreateDataset", "'grep' command not available on this system - cannot validate the result of the grid 'find' command");
+                    } else {
+                        nullFile = (gSystem->Exec(Form("grep -c /event __tmp%d__%s 2>/dev/null > __tmp__",stage,file.Data()))==0)?kFALSE:kTRUE;
+                        if (nullFile) {
+                            Warning("CreateDataset","Dataset %s produced by: <%s> is empty !", file.Data(), command.Data());
+                            gSystem->Exec("rm -f __tmp*");
+                            fRunNumbers.ReplaceAll(os->GetString().Data(), "");
+                            break;
+                        }
+                        TString line;
+                        ifstream in;
+                        in.open("__tmp__");
+                        in >> line;
+                        in.close();
+                        gSystem->Exec("rm -f __tmp__");
+                        ncount = line.Atoi();
+                    }
+                    nullResult = kFALSE;
+                }
+                if (ncount == gMaxEntries) {
+                    Info("CreateDataset", "Dataset %s has more than 15K entries. Trying to merge...", file.Data());
+                    if (fNrunsPerMaster > 1) {
+                        Error("CreateDataset", "File %s has more than %d entries. Please set the number of runs per master to 1 !",
+                              file.Data(),gMaxEntries);
+                        return kFALSE;
+                    }
+                    cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage,file.Data())));
+                    if (!cbase) cbase = cadd;
+                    else {
+                        // cbase->AddFast(cadd);
+                        gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd));
+                        delete cadd;
+                    }
+                    nstart += ncount;
+                } else {
+                    if (cbase && fNrunsPerMaster<2) {
+                        cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage,file.Data())));
+                        // cbase->AddFast(cadd);
+                        gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd));
+                        delete cadd;
+                        cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
+                        delete cbase; cbase = 0;
+                    } else {
+                        TFile::Cp(Form("__tmp%d__%s",stage, file.Data()), file.Data());
+                    }
+                    gSystem->Exec("rm -f __tmp*");
+                    Info("CreateDataset", "Created dataset %s with %d files", file.Data(), nstart+ncount);
+                    break;
+                }
             }
-            nstart += ncount;
-         } else {
-            if (cbase) {
-               cadd = res;
-               printf("... please wait - TAlienCollection::Add() scales badly...\n");
-               cbase->AddFast(cadd);
-               cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
-               delete cadd;
-               delete cbase; cbase = 0;
+            if (TestBit(AliAnalysisGrid::kTest)) break;
+            // Check if there is one run per master job.
+            if (fNrunsPerMaster<2) {
+                if (FileExists(file)) {
+                    if (fOverwriteMode) gGrid->Rm(file);
+                    else {
+                        Info("CreateDataset", "\n#####   Dataset %s exist. Skipping creation...", file.Data());
+                        continue;
+                    }
+                }
+                // Copy xml file to alien space
+                TFile::Cp(Form("file:%s",file.Data()), Form("alien://%s/%s",workdir.Data(), file.Data()));
+                if (!FileExists(file)) {
+                    Error("CreateDataset", "Command %s did NOT succeed", command.Data());
+                    delete arr;
+                    return kFALSE;
+                }
             } else {
-               cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
-               TFile::Cp(Form("file://%s", file.Data()), file.Data());
+                nruns++;
+                if (((nruns-1)%fNrunsPerMaster) == 0) {
+                    schunk = os->GetString();
+                    cbase = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
+                } else {
+                    cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
+                    printf("   Merging collection <%s> into masterjob input...\n", file.Data());
+                    cbase->AddFast(cadd);
+                    // gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd)); //NOTE: new code
+                    delete cadd;
+                }
+                if ((nruns%fNrunsPerMaster)!=0 && os!=arr->Last()) {
+                    continue;
+                }
+                schunk += Form("_%s.xml", os->GetString().Data());
+                if (FileExists(schunk)) {
+                    if (fOverwriteMode) gGrid->Rm(file);
+                    else {
+                        Info("CreateDataset", "\n#####   Dataset %s exist. Skipping creation...", schunk.Data());
+                        continue;
+                    }
+                }
+                printf("Exporting merged collection <%s> and copying to AliEn\n", schunk.Data());
+                cbase->ExportXML(Form("file://%s", schunk.Data()),kFALSE,kFALSE, schunk, "Merged runs");
+                TFile::Cp(Form("file:%s",schunk.Data()), Form("alien://%s/%s",workdir.Data(), schunk.Data()));
+                if (!FileExists(schunk)) {
+                    Error("CreateDataset", "Copy command did NOT succeed for %s", schunk.Data());
+                    delete arr;
+                    return kFALSE;
+                }
             }
-            Info("CreateDataset", "Created dataset %s with %d files", file.Data(), nstart+ncount);
-            break;
-         }
-      }
-      Bool_t fileExists = FileExists(file);
-      if (!TestBit(AliAnalysisGrid::kTest) && (!fileExists || fOverwriteMode)) {
-         // Copy xml file to alien space
-         if (fileExists) gGrid->Rm(file);
-         TFile::Cp(Form("file:%s",file.Data()), Form("alien://%s/%s",workdir.Data(), file.Data()));
-         if (!FileExists(file)) {
-            Error("CreateDataset", "Command %s did NOT succeed", command.Data());
+        }
+        delete arr;
+        if (nullResult) {
+            Error("CreateDataset", "No valid dataset corresponding to the query!");
             return kFALSE;
-         }
-         // Update list of files to be processed.
-      }
-      AddDataFile(Form("%s/%s", workdir.Data(), file.Data()));
-      return kTRUE;
-   }
-
-   // Several runs
-   Bool_t nullResult = kTRUE;
-   if (fRunNumbers.Length()) {
-      TObjArray *arr = fRunNumbers.Tokenize(" ");
-      TObjString *os;
-      TIter next(arr);
-      while ((os=(TObjString*)next())) {
-         nstart = 0;
-         stage = 0;
-         path = Form("%s/%s", fGridDataDir.Data(), os->GetString().Data());
-         if (!DirectoryExists(path)) continue;
-//         CdWork();
-         if (TestBit(AliAnalysisGrid::kTest)) file = "wn.xml";
-         else file = Form("%s.xml", os->GetString().Data());
-	 // cholm - Identical loop - should be put in common function for code simplification
-         // If local collection file does not exist, create it via 'find' command.
-         while (1) {
-            ncount = 0;
-            stage++;
-            if (gSystem->AccessPathName(file) || TestBit(AliAnalysisGrid::kTest) || fOverwriteMode) {
-               command = "alien_find ";
-               command +=  Form("%s -o %d ",options.Data(), nstart);
-               command += path;
-               command += delimiter;
-               command += pattern;
-               command += conditions;
-               //TGridResult *res = gGrid->Command(command);
-               //if (res) delete res;
-               // Write standard output to file
-               //gROOT->ProcessLine(Form("gGrid->Stdout(); > __tmp%d__%s", stage,file.Data()));
-               gSystem->Exec(Form("%s > __tmp%d__%s 2>/dev/null", command.Data(), stage, file.Data()));
-               Bool_t hasGrep = (gSystem->Exec("grep --version 2>/dev/null > /dev/null")==0)?kTRUE:kFALSE;
-               Bool_t nullFile = kFALSE;
-               if (!hasGrep) {
-                  Warning("CreateDataset", "'grep' command not available on this system - cannot validate the result of the grid 'find' command");
-               } else {
-                  nullFile = (gSystem->Exec(Form("grep -c /event __tmp%d__%s 2>/dev/null > __tmp__",stage,file.Data()))==0)?kFALSE:kTRUE;
-                  if (nullFile) {
-                     Warning("CreateDataset","Dataset %s produced by: <%s> is empty !", file.Data(), command.Data());
-                     gSystem->Exec("rm -f __tmp*");
-                     fRunNumbers.ReplaceAll(os->GetString().Data(), "");
-                     break;
-                  }   
-                  TString line;
-                  ifstream in;
-                  in.open("__tmp__");
-                  in >> line;
-                  in.close();
-                  gSystem->Exec("rm -f __tmp__");   
-                  ncount = line.Atoi();
-               }
-               nullResult = kFALSE;         
+        }
+    } else {
+        // Process a full run range.
+        for (Int_t irun=fRunRange[0]; irun<=fRunRange[1]; irun++) {
+            format = Form("%%s/%s", fRunPrefix.Data());
+            nstart = 0;
+            stage = 0;
+            path = Form(format.Data(), fGridDataDir.Data(), irun);
+            if (!DirectoryExists(path)) continue;
+            //         CdWork();
+            format = Form("%s.xml", fRunPrefix.Data());
+            if (TestBit(AliAnalysisGrid::kTest)) file = "wn.xml";
+            else file = Form(format.Data(), irun);
+            if (FileExists(file) && fNrunsPerMaster<2 && !TestBit(AliAnalysisGrid::kTest)) {
+                if (fOverwriteMode) gGrid->Rm(file);
+                else {
+                    Info("CreateDataset", "\n#####   Dataset %s exist. Skipping creation...", file.Data());
+                    continue;
+                }
             }
-            if (ncount == gMaxEntries) {
-               Info("CreateDataset", "Dataset %s has more than 15K entries. Trying to merge...", file.Data());
-               if (fNrunsPerMaster > 1) {
-                  Error("CreateDataset", "File %s has more than %d entries. Please set the number of runs per master to 1 !", 
-                          file.Data(),gMaxEntries);
-                  return kFALSE;
-               }
-               cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage,file.Data())));
-               if (!cbase) cbase = cadd;
-               else {
-                  // cbase->AddFast(cadd);
-                  gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd));
-                  delete cadd;
-               }   
-               nstart += ncount;
+            // cholm - Identical loop - should be put in common function for code simplification
+            // If local collection file does not exist, create it via 'find' command.
+            while (1) {
+                ncount = 0;
+                stage++;
+                if (gSystem->AccessPathName(file) || TestBit(AliAnalysisGrid::kTest) || fOverwriteMode) {
+                    command = "alien_find ";
+                    command +=  Form("%s -o %d ",options.Data(), nstart);
+                    command += path;
+                    command += delimiter;
+                    command += pattern;
+                    command += conditions;
+                    //TGridResult *res = gGrid->Command(command);
+                    //if (res) delete res;
+                    // Write standard output to file
+                    gSystem->Exec(Form("%s > __tmp%d__%s 2>/dev/null", command.Data(), stage, file.Data()));
+                    //gROOT->ProcessLine(Form("gGrid->Stdout(); > __tmp%d__%s", stage,file.Data()));
+                    Bool_t hasGrep = (gSystem->Exec("grep --version 2>/dev/null > /dev/null")==0)?kTRUE:kFALSE;
+                    Bool_t nullFile = kFALSE;
+                    if (!hasGrep) {
+                        Warning("CreateDataset", "'grep' command not available on this system - cannot validate the result of the grid 'find' command");
+                    } else {
+                        nullFile = (gSystem->Exec(Form("grep -c /event __tmp%d__%s 2>/dev/null > __tmp__",stage,file.Data()))==0)?kFALSE:kTRUE;
+                        if (nullFile) {
+                            Warning("CreateDataset","Dataset %s produced by: <%s> is empty !", file.Data(), command.Data());
+                            gSystem->Exec("rm -f __tmp*");
+                            break;
+                        }
+                        TString line;
+                        ifstream in;
+                        in.open("__tmp__");
+                        in >> line;
+                        in.close();
+                        gSystem->Exec("rm -f __tmp__");
+                        ncount = line.Atoi();
+                    }
+                    nullResult = kFALSE;
+                }
+                if (ncount == gMaxEntries) {
+                    Info("CreateDataset", "Dataset %s has more than 15K entries. Trying to merge...", file.Data());
+                    if (fNrunsPerMaster > 1) {
+                        Error("CreateDataset", "File %s has more than %d entries. Please set the number of runs per master to 1 !",
+                              file.Data(),gMaxEntries);
+                        return kFALSE;
+                    }
+                    cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data())));
+                    if (!cbase) cbase = cadd;
+                    else {
+                        cbase->Add(cadd);
+                        delete cadd;
+                    }
+                    nstart += ncount;
+                } else {
+                    if (cbase && fNrunsPerMaster<2) {
+                        cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data())));
+                        cbase->Add(cadd);
+                        delete cadd;
+                        cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
+                        delete cbase; cbase = 0;
+                    } else {
+                        TFile::Cp(Form("__tmp%d__%s",stage, file.Data()), file.Data());
+                    }
+                    Info("CreateDataset", "Created dataset %s with %d files", file.Data(), nstart+ncount);
+                    break;
+                }
+            }
+            if (TestBit(AliAnalysisGrid::kTest)) break;
+            // Check if there is one run per master job.
+            if (fNrunsPerMaster<2) {
+                if (FileExists(file)) {
+                    if (fOverwriteMode) gGrid->Rm(file);
+                    else {
+                        Info("CreateDataset", "\n#####   Dataset %s exist. Skipping creation...", file.Data());
+                        continue;
+                    }
+                }
+                // Copy xml file to alien space
+                TFile::Cp(Form("file:%s",file.Data()), Form("alien://%s/%s",workdir.Data(), file.Data()));
+                if (!FileExists(file)) {
+                    Error("CreateDataset", "Command %s did NOT succeed", command.Data());
+                    return kFALSE;
+                }
             } else {
-               if (cbase && fNrunsPerMaster<2) {
-                   cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage,file.Data())));
-                  // cbase->AddFast(cadd);
-                  gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd));
-                  delete cadd;
-                  cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
-                  delete cbase; cbase = 0;               
-               } else {
-                  TFile::Cp(Form("__tmp%d__%s",stage, file.Data()), file.Data());
-               }
-               gSystem->Exec("rm -f __tmp*");   
-               Info("CreateDataset", "Created dataset %s with %d files", file.Data(), nstart+ncount);
-               break;
+                nruns++;
+                // Check if the collection for the chunk exist locally.
+                Int_t nchunk = (nruns-1)/fNrunsPerMaster;
+                if (FileExists(fInputFiles->At(nchunk)->GetName())) {
+                    if (fOverwriteMode) gGrid->Rm(fInputFiles->At(nchunk)->GetName());
+                    else continue;
+                }
+                printf("   Merging collection <%s> into %d runs chunk...\n",file.Data(),fNrunsPerMaster);
+                if (((nruns-1)%fNrunsPerMaster) == 0) {
+                    schunk = Form(fRunPrefix.Data(), irun);
+                    cbase = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
+                } else {
+                    cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
+                    // cbase->AddFast(cadd);
+                    gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd));
+                    delete cadd;
+                }
+                format = Form("%%s_%s.xml", fRunPrefix.Data());
+                schunk2 = Form(format.Data(), schunk.Data(), irun);
+                if ((nruns%fNrunsPerMaster)!=0 && irun!=fRunRange[1] && schunk2 != fInputFiles->Last()->GetName()) {
+                    continue;
+                }
+                schunk = schunk2;
+                if (FileExists(schunk)) {
+                    if (fOverwriteMode) gGrid->Rm(schunk);
+                    else {
+                        Info("CreateDataset", "\n#####   Dataset %s exist. Skipping creation...", schunk.Data());
+                        continue;
+                    }
+                }
+                printf("Exporting merged collection <%s> and copying to AliEn.\n", schunk.Data());
+                cbase->ExportXML(Form("file://%s", schunk.Data()),kFALSE,kFALSE, schunk, "Merged runs");
+                if (FileExists(schunk)) {
+                    if (fOverwriteMode) gGrid->Rm(schunk);
+                    else {
+                        Info("CreateDataset", "\n#####   Dataset %s exist. Skipping copy...", schunk.Data());
+                        continue;
+                    }
+                }
+                TFile::Cp(Form("file:%s",schunk.Data()), Form("alien://%s/%s",workdir.Data(), schunk.Data()));
+                if (!FileExists(schunk)) {
+                    Error("CreateDataset", "Copy command did NOT succeed for %s", schunk.Data());
+                    return kFALSE;
+                }
             }
-         }   
-         if (TestBit(AliAnalysisGrid::kTest)) break;
-         // Check if there is one run per master job.
-         if (fNrunsPerMaster<2) {
-            if (FileExists(file)) {
-               if (fOverwriteMode) gGrid->Rm(file);
-               else {
-                  Info("CreateDataset", "\n#####   Dataset %s exist. Skipping creation...", file.Data());
-                  continue;
-               }   
-            }        
-            // Copy xml file to alien space
-            TFile::Cp(Form("file:%s",file.Data()), Form("alien://%s/%s",workdir.Data(), file.Data()));
-            if (!FileExists(file)) {
-               Error("CreateDataset", "Command %s did NOT succeed", command.Data());
-               delete arr;
-               return kFALSE;
-            }
-         } else {
-            nruns++;
-            if (((nruns-1)%fNrunsPerMaster) == 0) {
-               schunk = os->GetString();
-               cbase = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
-            } else {
-               cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
-               printf("   Merging collection <%s> into masterjob input...\n", file.Data());
-               cbase->AddFast(cadd);
-               // gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd)); //NOTE: new code
-               delete cadd;
-            }
-            if ((nruns%fNrunsPerMaster)!=0 && os!=arr->Last()) {
-               continue;
-            }   
-            schunk += Form("_%s.xml", os->GetString().Data());
-            if (FileExists(schunk)) {               
-               if (fOverwriteMode) gGrid->Rm(file);
-               else {
-                  Info("CreateDataset", "\n#####   Dataset %s exist. Skipping creation...", schunk.Data());
-                  continue;
-               }   
-            }        
-            printf("Exporting merged collection <%s> and copying to AliEn\n", schunk.Data());
-            cbase->ExportXML(Form("file://%s", schunk.Data()),kFALSE,kFALSE, schunk, "Merged runs");
-            TFile::Cp(Form("file:%s",schunk.Data()), Form("alien://%s/%s",workdir.Data(), schunk.Data()));
-            if (!FileExists(schunk)) {
-               Error("CreateDataset", "Copy command did NOT succeed for %s", schunk.Data());
-               delete arr;
-               return kFALSE;
-            }
-         }
-      }   
-      delete arr;
-      if (nullResult) {
-         Error("CreateDataset", "No valid dataset corresponding to the query!");
-         return kFALSE;
-      }
-   } else {
-      // Process a full run range.
-      for (Int_t irun=fRunRange[0]; irun<=fRunRange[1]; irun++) {
-         format = Form("%%s/%s", fRunPrefix.Data());
-         nstart = 0;
-         stage = 0;
-         path = Form(format.Data(), fGridDataDir.Data(), irun);
-         if (!DirectoryExists(path)) continue;
-//         CdWork();
-         format = Form("%s.xml", fRunPrefix.Data());
-         if (TestBit(AliAnalysisGrid::kTest)) file = "wn.xml";
-         else file = Form(format.Data(), irun);
-         if (FileExists(file) && fNrunsPerMaster<2 && !TestBit(AliAnalysisGrid::kTest)) {         
-            if (fOverwriteMode) gGrid->Rm(file);
-            else {
-               Info("CreateDataset", "\n#####   Dataset %s exist. Skipping creation...", file.Data());
-               continue;
-            }   
-         }
-	 // cholm - Identical loop - should be put in common function for code simplification
-         // If local collection file does not exist, create it via 'find' command.
-         while (1) {
-            ncount = 0;
-            stage++;
-            if (gSystem->AccessPathName(file) || TestBit(AliAnalysisGrid::kTest) || fOverwriteMode) {
-               command = "alien_find ";
-               command +=  Form("%s -o %d ",options.Data(), nstart);
-               command += path;
-               command += delimiter;
-               command += pattern;
-               command += conditions;
-               //TGridResult *res = gGrid->Command(command);
-               //if (res) delete res;
-               // Write standard output to file
-               gSystem->Exec(Form("%s > __tmp%d__%s 2>/dev/null", command.Data(), stage, file.Data()));
-               //gROOT->ProcessLine(Form("gGrid->Stdout(); > __tmp%d__%s", stage,file.Data()));
-               Bool_t hasGrep = (gSystem->Exec("grep --version 2>/dev/null > /dev/null")==0)?kTRUE:kFALSE;
-               Bool_t nullFile = kFALSE;
-               if (!hasGrep) {
-                  Warning("CreateDataset", "'grep' command not available on this system - cannot validate the result of the grid 'find' command");
-               } else {
-                  nullFile = (gSystem->Exec(Form("grep -c /event __tmp%d__%s 2>/dev/null > __tmp__",stage,file.Data()))==0)?kFALSE:kTRUE;
-                  if (nullFile) {
-                     Warning("CreateDataset","Dataset %s produced by: <%s> is empty !", file.Data(), command.Data());
-                     gSystem->Exec("rm -f __tmp*");
-                     break;
-                  }   
-                  TString line;
-                  ifstream in;
-                  in.open("__tmp__");
-                  in >> line;
-                  in.close();
-                  gSystem->Exec("rm -f __tmp__");   
-                  ncount = line.Atoi();
-               }
-               nullResult = kFALSE;         
-            }   
-            if (ncount == gMaxEntries) {
-               Info("CreateDataset", "Dataset %s has more than 15K entries. Trying to merge...", file.Data());
-               if (fNrunsPerMaster > 1) {
-                  Error("CreateDataset", "File %s has more than %d entries. Please set the number of runs per master to 1 !", 
-                          file.Data(),gMaxEntries);
-                  return kFALSE;
-               }
-               cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data())));
-               if (!cbase) cbase = cadd;
-               else {
-                  cbase->Add(cadd);
-                  delete cadd;
-               }   
-               nstart += ncount;
-            } else {
-               if (cbase && fNrunsPerMaster<2) {
-                   cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(Form("__tmp%d__%s", stage, file.Data())));
-		            cbase->Add(cadd);
-                  delete cadd;
-                  cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
-                  delete cbase; cbase = 0;               
-               } else {
-                  TFile::Cp(Form("__tmp%d__%s",stage, file.Data()), file.Data());
-               }
-               Info("CreateDataset", "Created dataset %s with %d files", file.Data(), nstart+ncount);
-               break;
-            }
-         }   
-         if (TestBit(AliAnalysisGrid::kTest)) break;
-         // Check if there is one run per master job.
-         if (fNrunsPerMaster<2) {
-            if (FileExists(file)) {
-               if (fOverwriteMode) gGrid->Rm(file);
-               else {
-                  Info("CreateDataset", "\n#####   Dataset %s exist. Skipping creation...", file.Data());
-                  continue;
-               }   
-            }        
-            // Copy xml file to alien space
-            TFile::Cp(Form("file:%s",file.Data()), Form("alien://%s/%s",workdir.Data(), file.Data()));
-            if (!FileExists(file)) {
-               Error("CreateDataset", "Command %s did NOT succeed", command.Data());
-               return kFALSE;
-            }
-         } else {
-            nruns++;
-            // Check if the collection for the chunk exist locally.
-            Int_t nchunk = (nruns-1)/fNrunsPerMaster;
-            if (FileExists(fInputFiles->At(nchunk)->GetName())) {
-               if (fOverwriteMode) gGrid->Rm(fInputFiles->At(nchunk)->GetName());
-               else continue;
-            }   
-            printf("   Merging collection <%s> into %d runs chunk...\n",file.Data(),fNrunsPerMaster);
-            if (((nruns-1)%fNrunsPerMaster) == 0) {
-               schunk = Form(fRunPrefix.Data(), irun);
-               cbase = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
-            } else {
-                cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
-               // cbase->AddFast(cadd);
-               gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd));
-               delete cadd;
-            }
-            format = Form("%%s_%s.xml", fRunPrefix.Data());
-            schunk2 = Form(format.Data(), schunk.Data(), irun);
-            if ((nruns%fNrunsPerMaster)!=0 && irun!=fRunRange[1] && schunk2 != fInputFiles->Last()->GetName()) {
-               continue;
-            }   
-            schunk = schunk2;
-            if (FileExists(schunk)) {
-               if (fOverwriteMode) gGrid->Rm(schunk);
-               else {
-                  Info("CreateDataset", "\n#####   Dataset %s exist. Skipping creation...", schunk.Data());
-                  continue;
-               }   
-            }        
-            printf("Exporting merged collection <%s> and copying to AliEn.\n", schunk.Data());
-            cbase->ExportXML(Form("file://%s", schunk.Data()),kFALSE,kFALSE, schunk, "Merged runs");
-            if (FileExists(schunk)) {
-               if (fOverwriteMode) gGrid->Rm(schunk);
-               else {
-                  Info("CreateDataset", "\n#####   Dataset %s exist. Skipping copy...", schunk.Data());
-                  continue;
-               }   
-            }   
-            TFile::Cp(Form("file:%s",schunk.Data()), Form("alien://%s/%s",workdir.Data(), schunk.Data()));
-            if (!FileExists(schunk)) {
-               Error("CreateDataset", "Copy command did NOT succeed for %s", schunk.Data());
-               return kFALSE;
-            }
-         }   
-      }
-      if (nullResult) {
-         Error("CreateDataset", "No valid dataset corresponding to the query!");
-         return kFALSE;
-      }      
-   }      
-   return kTRUE;
+        }
+        if (nullResult) {
+            Error("CreateDataset", "No valid dataset corresponding to the query!");
+            return kFALSE;
+        }
+    }
+    return kTRUE;
 }
 
 //______________________________________________________________________________
