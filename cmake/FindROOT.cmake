@@ -204,8 +204,18 @@ if(ROOTSYS)
         endif()
 
         # api/include always exists
-        if(EXISTS "${ALIEN}/api/include")
+        if(EXISTS "ALIEN_LIBS location: ${ALIEN}/api/include")
             include_directories(SYSTEM ${ALIEN}/api/include)
+        endif()
+
+        message(INFO "JALIEN_LIBS location: ${JALIEN_LIBS}/include")
+        if(EXISTS "${JALIEN_LIBS}/include")
+          include_directories(SYSTEM "${JALIEN_LIBS}/include")
+        endif()
+
+        message(INFO "${ALIEN_LIBS}/include")
+        if(EXISTS "${ALIEN_LIBS}/include")
+          include_directories(SYSTEM "${ALIEN_LIBS}/include")
         endif()
 
         set(ROOT_HASALIEN TRUE)
