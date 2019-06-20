@@ -1244,7 +1244,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
    TString path;
    Int_t nruns = 0;
    TString schunk, schunk2;
-   TAliceCollection *cbase=0, *cadd=0;
+   TAliceCollection *cbase=0, *cadd=0, *res=0;
 
    if (!fRunNumbers.Length() && !fRunRange[0]) {
       if (fInputFiles && fInputFiles->GetEntries()) return kTRUE;
@@ -1269,7 +1269,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
             command += pattern;
             command += conditions;
             printf("command: %s\n", command.Data());
-            TGridResult *res = gGrid->Command(command);
+            res = dynamic_cast<TAliceCollection*>(gGrid->OpenCollectionQuery(gGrid->Command(command)));
 
             if(res->GetSize() == 0) {
                 Error("CreateDataset","Dataset %s produced by the previous find command is empty !", file.Data());
