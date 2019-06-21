@@ -1410,7 +1410,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                         delete cbase; cbase = 0;
                     } else {
                         cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
-                        TFile::Cp(Form("file://%s", file.Data()), fileData());
+                        TFile::Cp(Form("file://%s", file.Data()), file.Data());
                         // TFile::Cp(Form("__tmp%d__%s",stage, file.Data()), file.Data());
                     }
                     // gSystem->Exec("rm -f __tmp*");
@@ -1504,7 +1504,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                     command += delimiter;
                     command += pattern;
                     command += conditions;
-                    res = gGrid->Command(command);
+                    res = dynamic_cast<TAliceFile*>(gGrid->OpenCollectionQuery(gGrid->Command(command)));
                     //if (res) delete res;
                     // Write standard output to file
                     // gSystem->Exec(Form("%s > __tmp%d__%s 2>/dev/null", command.Data(), stage, file.Data()));
