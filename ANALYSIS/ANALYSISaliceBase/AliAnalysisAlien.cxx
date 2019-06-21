@@ -1345,7 +1345,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                     command += delimiter;
                     command += pattern;
                     command += conditions;
-                    res = dyanmic_cast<TAliceCollection*>(gGrid->OpenCollectionQuery(gGrid->Command(command)));
+                    res = dynamic_cast<TAliceCollection*>(gGrid->OpenCollectionQuery(gGrid->Command(command)));
                     // if (res) delete res;
                     // Write standard output to file
                     //gROOT->ProcessLine(Form("gGrid->Stdout(); > __tmp%d__%s", stage,file.Data()));
@@ -1370,7 +1370,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                     //     gSystem->Exec("rm -f __tmp__");
                     //     ncount = line.Atoi();
                     // }
-                    nullFile = res->GetSize() == 0;
+                    Bool_t nullFile = res->GetSize() == 0;
                     if (nullFile) {
                         Warning("CreateDataset","Dataset %s produced by: <%s> is empty !", file.Data(), command.Data());
                         // gSystem->Exec("rm -f __tmp*");
@@ -1378,6 +1378,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                         delete res;
                         break;
                     }
+                    ncount = res->GetSize();
 
                     nullResult = kFALSE;
                 }
