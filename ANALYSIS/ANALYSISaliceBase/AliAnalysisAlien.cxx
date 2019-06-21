@@ -1504,7 +1504,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                     command += delimiter;
                     command += pattern;
                     command += conditions;
-                    res = dynamic_cast<TAliceFile*>(gGrid->OpenCollectionQuery(gGrid->Command(command)));
+                    res = dynamic_cast<TAliceCollection*>(gGrid->OpenCollectionQuery(gGrid->Command(command)));
                     //if (res) delete res;
                     // Write standard output to file
                     // gSystem->Exec(Form("%s > __tmp%d__%s 2>/dev/null", command.Data(), stage, file.Data()));
