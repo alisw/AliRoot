@@ -1233,7 +1233,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
     delimiter.Strip();
     if (delimiter.Contains(" ")) delimiter = "";
     else delimiter = " ";
-    TString options = "-x collection ";
+    TString options = " ";
     if (TestBit(AliAnalysisGrid::kTest)) options += Form("-l %d ", fNtestFiles);
     else options += Form("-l %d ", gMaxEntries);  // Protection for the find command
     TString conditions = "";
@@ -1271,13 +1271,13 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                 printf("command: %s\n", command.Data());
                 res = dynamic_cast<TAliceCollection*>(gGrid->OpenCollectionQuery(gGrid->Command(command)));
 
-                if(res->GetSize() == 0) {
+                if(res->GetNofGroups() == 0) {
                     Error("CreateDataset","Dataset %s produced by the previous find command is empty !", file.Data());
                     delete res;
                     return kFALSE;
                 }
 
-                ncount = res->GetSize();
+                ncount = res->GetNofGroups();
             }
             if (ncount == gMaxEntries) {
                 Info("CreateDataset", "Dataset %s has more than 15K entries. Trying to merge...", file.Data());
@@ -1298,7 +1298,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                     delete cbase; cbase = 0;
                 } else {
                     cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
-                    TFile::Cp(Form("file://%s", file.Data()), file.Data());
+                    // TFile::Cp(Form("file://%s", file.Data()), file.Data());
                 }
                 Info("CreateDataset", "Created dataset %s with %d files", file.Data(), nstart+ncount);
                 break;
@@ -1370,7 +1370,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                     //     gSystem->Exec("rm -f __tmp__");
                     //     ncount = line.Atoi();
                     // }
-                    Bool_t nullFile = res->GetSize() == 0;
+                    Bool_t nullFile = res->GetNofGroups() == 0;
                     if (nullFile) {
                         Warning("CreateDataset","Dataset %s produced by: <%s> is empty !", file.Data(), command.Data());
                         // gSystem->Exec("rm -f __tmp*");
@@ -1378,7 +1378,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                         delete res;
                         break;
                     }
-                    ncount = res->GetSize();
+                    ncount = res->GetNofGroups();
 
                     nullResult = kFALSE;
                 }
@@ -1409,8 +1409,11 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                         delete cadd;
                         delete cbase; cbase = 0;
                     } else {
+                        Warning("CreateDataset", "Here comes the tricky part...");
+                        cbase = res;
                         cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
-                        TFile::Cp(Form("file://%s", file.Data()), file.Data());
+                        // TFile::Cp(Form("file://%s", file.Data()), file.Data());
+                        delete cbase;
                         // TFile::Cp(Form("__tmp%d__%s",stage, file.Data()), file.Data());
                     }
                     // gSystem->Exec("rm -f __tmp*");
@@ -1528,14 +1531,14 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                     //     gSystem->Exec("rm -f __tmp__");
                     //     ncount = line.Atoi();
                     // }
-                    Bool_t nullFile = res->GetSize() == 0;
+                    Bool_t nullFile = res->GetNofGroups() == 0;
                     if (nullFile) {
                         Warning("CreateDataset","Dataset %s produced by: <%s> is empty !", file.Data(), command.Data());
                         // gSystem->Exec("rm -f __tmp*");
                         delete res;
                         break;
                     }
-                    ncount = res->GetSize() == 0;
+                    ncount = res->GetNofGroups() == 0;
                     nullResult = kFALSE;
                 }
                 if (ncount == gMaxEntries) {
@@ -1561,8 +1564,9 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                         delete cadd;
                         delete cbase; cbase = 0;
                     } else {
+                        cbase = res;
                         cbase->ExportXML(Form("file://%s", file.Data()),kFALSE,kFALSE, file, "Merged entries for a run");
-                        TFile::Cp(Form("file://%s", file.Data()), file.Data());
+                        // TFile::Cp(Form("file://%s", file.Data()), file.Data());
                         // TFile::Cp(Form("__tmp%d__%s",stage, file.Data()), file.Data());
                     }
                     Info("CreateDataset", "Created dataset %s with %d files", file.Data(), nstart+ncount);
