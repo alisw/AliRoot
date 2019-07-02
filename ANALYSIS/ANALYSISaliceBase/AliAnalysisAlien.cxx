@@ -312,8 +312,8 @@ AliAnalysisAlien::AliAnalysisAlien(const AliAnalysisAlien& other)
                   fTreeName(other.fTreeName)
 {
 // Copy ctor.
-   fGridJDL = gGrid->GetJDLGenerator();
-   fMergingJDL = gGrid->GetJDLGenerator();
+   fGridJDL = NULL;
+   fMergingJDL = NULL;
    fRunRange[0] = other.fRunRange[0];
    fRunRange[1] = other.fRunRange[1];
    if (other.fInputFiles) {
@@ -360,8 +360,8 @@ AliAnalysisAlien &AliAnalysisAlien::operator=(const AliAnalysisAlien& other)
 // Assignment.
    if (this != &other) {
       AliAnalysisGrid::operator=(other);
-      fGridJDL = gGrid->GetJDLGenerator();
-      fMergingJDL = gGrid->GetJDLGenerator();
+      fGridJDL                 = NULL;
+      fMergingJDL              = NULL;
       fPrice                   = other.fPrice;
       fTTL                     = other.fTTL;
       fSplitMaxInputFileNumber = other.fSplitMaxInputFileNumber;
@@ -1598,6 +1598,13 @@ Bool_t AliAnalysisAlien::CreateJDL()
       Error("CreateJDL", "Alien connection required");
       return kFALSE;
    }   
+   // Initialize the JDLs
+   if (fGridJDL) delete fGridJDL;
+   fGridJDL = gGrid->GetJDLGenerator();
+
+   if (fMergingJDL) delete fMergingJDL;
+   fMergingJDL = gGrid->GetJDLGenerator();
+
    // Check validity of alien workspace
    TString workdir;
    if (!fProductionMode && !fGridWorkingDir.BeginsWith("/alice")) workdir = gGrid->GetHomeDirectory();
@@ -2608,8 +2615,9 @@ void AliAnalysisAlien::SetDefaults()
 {
 // Set default values for everything. What cannot be filled will be left empty.
    if (fGridJDL) delete fGridJDL;
-   fGridJDL = gGrid->GetJDLGenerator();
-   fMergingJDL = gGrid->GetJDLGenerator();
+   if (fMergingJDL) delete fMergingJDL;
+   fGridJDL                    = NULL;
+   fMergingJDL                 = NULL;
    fPrice                      = 1;
    fTTL                        = 30000;
    fSplitMaxInputFileNumber    = 100;
