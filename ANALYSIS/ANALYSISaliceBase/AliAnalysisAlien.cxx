@@ -1140,7 +1140,7 @@ Int_t AliAnalysisAlien::CopyLocalDataset(const char *griddir, const char *patter
       Error("CopyLocalDataset", "Data directory %s not existing.", griddir);
       return 0;
    }
-   TString command = Form("find -z -l %d %s %s", nfiles, griddir, pattern);
+   TString command = Form("find -l %d %s %s", nfiles, griddir, pattern);
    printf("Running command: %s\n", command.Data());
    TGridResult *res = gGrid->Command(command);
    Int_t nfound = res->GetEntries();
