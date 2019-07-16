@@ -1130,7 +1130,6 @@ Int_t  AliGenPythia::GenerateMB()
       TParticle *mother;
       Bool_t  theQ=kFALSE,theQbar=kFALSE,inYcut=kFALSE;
       Bool_t  theChild=kFALSE;
-      Bool_t  triggered=kFALSE;
       Float_t y;  
       Int_t   pdg, mpdg, mpdgUpperFamily;
       Bool_t  theHFFound=kFALSE;
@@ -1147,9 +1146,6 @@ Int_t  AliGenPythia::GenerateMB()
 			     (partCheck->Energy()-partCheck->Pz()+1.e-13));
 	  if(fUseYCutHQ && y>fYMinHQ && y<fYMaxHQ) inYcut=kTRUE;
 	  if(!fUseYCutHQ && y>fYMin && y<fYMax) inYcut=kTRUE;
-	}
-	if(fTriggerParticle) {
-	  if(TMath::Abs(pdg)==fTriggerParticle) triggered=kTRUE;
 	}
 	if(fCutOnChild==1 && TMath::Abs(pdg) == fPdgCodeParticleforAcceptanceCut) {
 	  Int_t mi = partCheck->GetFirstMother() - 1;
@@ -1199,12 +1195,6 @@ Int_t  AliGenPythia::GenerateMB()
 	delete[] pParent;
 	return 0;	
       }
-
-      if(fTriggerParticle && !triggered) { // particle requested is not produced
-	delete[] pParent;
-	return 0;	
-      }
-
     }
 
     //Introducing child cuts in case kPyW, kPyZ, kPyMb, and kPyMbNonDiff
