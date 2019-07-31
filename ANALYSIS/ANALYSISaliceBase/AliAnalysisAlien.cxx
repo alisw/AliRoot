@@ -43,6 +43,7 @@
 #include "AliAnalysisDataContainer.h"
 #include "AliMultiInputEventHandler.h"
 #include "TAliceCollection.h"
+#include "TAliceJobStatus.h"
 
 using std::ofstream;
 using std::ifstream;
@@ -2394,15 +2395,15 @@ const char *AliAnalysisAlien::GetJobStatus(Int_t jobidstart, Int_t lastid, Int_t
    TGridJobStatusList *list = gGrid->Ps("");
    if (!list) return mstatus;
    Int_t nentries = list->GetSize();
-   TGridJobStatus *status;
+   TAliceJobStatus *status;
    Int_t pid;
    for (Int_t ijob=0; ijob<nentries; ijob++) {
-      status = (TGridJobStatus *)list->At(ijob);
+      status = dynamic_cast<TAliceJobStatus*>(list->At(ijob));
       // To avoid explicit casting, we need TGridJobStatus::GetKey interface
-      pid = gROOT->ProcessLine(Form("atoi(((TJAlienJobStatus*)%p)->GetKey(\"queueId\"));", status));
+      pid = atoi(status->GetKey("queueId"));
       if (pid<jobidstart) continue;
       if (pid == lastid) {
-         gROOT->ProcessLine(Form("sprintf((char*)%p,((TJAlienJobStatus*)%p)->GetKey(\"status\"));",mstatus, status));
+         strncpy(mstatus, status->GetKey("status"), 20);
       }   
       switch (status->GetStatus()) {
          case TGridJobStatus::kWAITING:
