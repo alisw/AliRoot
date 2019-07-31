@@ -3664,7 +3664,7 @@ Bool_t AliAnalysisAlien::StartAnalysis(Long64_t nentries, Long64_t firstEntry)
       jobID = fGridJobIDs;
    }   
          
-   if (fDropToShell) {
+   if (fDropToShell && gGrid->InheritsFrom("TAlien")) {
       Info("StartAnalysis", "\n#### STARTING AN ALIEN SHELL FOR YOU. EXIT WHEN YOUR JOB %s HAS FINISHED. #### \
       \n You may exit at any time and terminate the job later using the option <terminate> \
       \n ##################################################################################", jobID.Data());
@@ -3843,7 +3843,7 @@ Bool_t AliAnalysisAlien::SubmitMerging()
       if (!fRunNumbers.Length() && !fRunRange[0]) break;
    }
    if (!ntosubmit) return kTRUE;
-   if (fDropToShell) {
+   if (fDropToShell && gGrid->InheritsFrom("TAlien")) {
       Info("StartAnalysis", "\n #### STARTING AN ALIEN SHELL FOR YOU. You can exit any time or inspect your jobs in a different shell.##########\
                              \n Make sure your jobs are in a final state (you can resubmit failed ones via 'masterjob <id> resubmit ERROR_ALL')\
                              \n Rerun in 'terminate' mode to submit all merging stages, each AFTER the previous one completed. The final merged \
