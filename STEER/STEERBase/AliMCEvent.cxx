@@ -1038,6 +1038,10 @@ void AliMCEvent::AssignGeneratorIndex() {
 	  AssignGeneratorIndex(i, dmin, dmax);
 	}
       }
+      else{
+	// Need this to set proper indices (npart for suppressed HIJING still set to actual number)
+	npart = 2;
+      }
       nsumpart -= npart;
     }
   }
