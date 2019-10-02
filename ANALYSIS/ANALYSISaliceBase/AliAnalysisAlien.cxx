@@ -49,19 +49,19 @@
 #    if __has_include("TJAlienCollection.h")
 #       include "TJAlienCollection.h"
 TGridCollection *createGridCollection(char const*basedir) {
-  return gGrid ? gGrid->OpenCollection(basedir) : new TJAlienCollection::Open(basedir);
+  return gGrid ? gGrid->OpenCollection(basedir) : TJAlienCollection::Open(basedir);
 }
 #       define ConcreteAlienCollection TJAlienCollection
 #    elif __has_include("TAliceCollection.h")
 #       include "TAlienCollection.h"
 TGridCollection *createGridCollection(char const*basedir) {
-  return gGrid ? gGrid->OpenCollection(basedir) : new TAlienCollection::Open(basedir);
+  return gGrid ? gGrid->OpenCollection(basedir) : TAlienCollection::Open(basedir);
 }
 #    endif
 #else
 #include "TJAlienCollection.h"
 TGridCollection *createGridCollection(char const*basedir) {
-  return gGrid ? gGrid->OpenCollection(basedir) : new TJAlienCollection::Open(basedir);
+  return gGrid ? gGrid->OpenCollection(basedir) : TJAlienCollection::Open(basedir);
 }
 #endif
 
