@@ -52,7 +52,7 @@ TGridCollection *createGridCollection(char const*basedir) {
   return gGrid ? gGrid->OpenCollection(basedir) : TJAlienCollection::Open(basedir);
 }
 #       define ConcreteAlienCollection TJAlienCollection
-#    elif __has_include("TAliceCollection.h")
+#    elif __has_include("TAlienCollection.h")
 #       include "TAlienCollection.h"
 TGridCollection *createGridCollection(char const*basedir) {
   return gGrid ? gGrid->OpenCollection(basedir) : TAlienCollection::Open(basedir);
