@@ -43,15 +43,28 @@
 #include "AliAnalysisDataContainer.h"
 #include "AliMultiInputEventHandler.h"
 #include "TAliceCollection.h"
-#if(ALIEN_TYPE == JALIEN)
-#include "TJAlienCollection.h"
-#define ConcreteAlienCollection "TJAlienCollection"
-#elif(ALIEN_TYPE == ALIEN)
-#include "TAlienCollection.h"
-#define ConcreteAlienCollection "TAlienCollection"
+// This is to make sure we create the correct TGridCollection
+// when we are not connected to the grid and gGrid is not there
+#if defined __has_include
+#    if __has_include("TJAlienCollection.h")
+#       include "TJAlienCollection.h"
+TGridCollection *createGridCollection(char const*basedir) {
+  return gGrid ? gGrid->OpenCollection(basedir) : new TJAlienCollection(basedir);
+}
+#       define ConcreteAlienCollection TJAlienCollection
+#    elif __has_include("TAliceCollection.h")
+#       include "TAlienCollection.h"
+TGridCollection *createGridCollection(char const*basedir) {
+  return gGrid ? gGrid->OpenCollection(basedir) : new TAlienCollection(basedir);
+}
+#    endif
 #else
-#error "Could not determine Alien type"
+#include "TJAlienCollection.h"
+TGridCollection *createGridCollection(char const*basedir) {
+  return gGrid ? gGrid->OpenCollection(basedir) : new TJAlienCollection(basedir);
+}
 #endif
+
 #include "TAliceJobStatus.h"
 
 using std::ofstream;
@@ -2825,7 +2838,7 @@ Bool_t AliAnalysisAlien::MergeInfo(const char *output, const char *collection)
 // Merges a collection of output files using concatenation.
    TString scoll(collection);
    if (!scoll.Contains(".xml")) return kFALSE;
-   TGridCollection *coll = gGrid ? gGrid->OpenCollection(basedir) : new ConcreteAlienCollection::Open(basedir);
+   TGridCollection *coll = createGridCollection(basedir);
    if (!coll) {
       ::Error("MergeInfo", "Input XML %s collection empty.", collection);
       return kFALSE;
@@ -2885,7 +2898,7 @@ Bool_t AliAnalysisAlien::MergeOutput(const char *output, const char *basedir, In
    if (sbasedir.Contains(".xml")) {
       // Merge files pointed by the xml - ignore nmaxmerge and set ichunk to 0
       nmaxmerge = 9999999;
-      TGridCollection *coll = gGrid ? gGrid->OpenCollection(basedir) : new ConcreteAlienCollection::Open(basedir);
+      TGridCollection *coll = createGridCollection(basedir);
       if (!coll) {
          ::Error("MergeOutput", "Input XML collection empty.");
          return kFALSE;
