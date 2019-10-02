@@ -49,19 +49,19 @@
 #    if __has_include("TJAlienCollection.h")
 #       include "TJAlienCollection.h"
 TGridCollection *createGridCollection(char const*basedir) {
-  return gGrid ? gGrid->OpenCollection(basedir) : new TJAlienCollection(basedir);
+  return gGrid ? gGrid->OpenCollection(basedir) : new TJAlienCollection::Open(basedir);
 }
 #       define ConcreteAlienCollection TJAlienCollection
 #    elif __has_include("TAliceCollection.h")
 #       include "TAlienCollection.h"
 TGridCollection *createGridCollection(char const*basedir) {
-  return gGrid ? gGrid->OpenCollection(basedir) : new TAlienCollection(basedir);
+  return gGrid ? gGrid->OpenCollection(basedir) : new TAlienCollection::Open(basedir);
 }
 #    endif
 #else
 #include "TJAlienCollection.h"
 TGridCollection *createGridCollection(char const*basedir) {
-  return gGrid ? gGrid->OpenCollection(basedir) : new TJAlienCollection(basedir);
+  return gGrid ? gGrid->OpenCollection(basedir) : new TJAlienCollection::Open(basedir);
 }
 #endif
 
@@ -2838,7 +2838,7 @@ Bool_t AliAnalysisAlien::MergeInfo(const char *output, const char *collection)
 // Merges a collection of output files using concatenation.
    TString scoll(collection);
    if (!scoll.Contains(".xml")) return kFALSE;
-   TGridCollection *coll = createGridCollection(basedir);
+   TGridCollection *coll = createGridCollection(collection);
    if (!coll) {
       ::Error("MergeInfo", "Input XML %s collection empty.", collection);
       return kFALSE;
