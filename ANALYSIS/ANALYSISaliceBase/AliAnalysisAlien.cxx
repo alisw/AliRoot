@@ -1267,7 +1267,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
    TString path;
    Int_t nruns = 0;
    TString schunk, schunk2;
-   TAliceCollection *cbase=0, *cadd=0, *res=0;
+   TAliceCollection *cbase=0, *cadd=0, *res=0, *cbase_m=0, *cadd_m=0;
 
    if (!fRunNumbers.Length() && !fRunRange[0]) {
       if (fInputFiles && fInputFiles->GetEntries()) return kTRUE;
@@ -1430,12 +1430,12 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
             nruns++;
             if (((nruns-1)%fNrunsPerMaster) == 0) {
                schunk = os->GetString();
-               cbase = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
+               cbase_m = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
             } else {
-               cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
+               cadd_m = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
                printf("   Merging collection <%s> into masterjob input...\n", file.Data());
-               cbase->AddFast(cadd);
-               delete cadd;
+               cbase_m->AddFast(cadd_m);
+               delete cadd_m;
             }
             if ((nruns%fNrunsPerMaster)!=0 && os!=arr->Last()) {
                continue;
@@ -1445,12 +1445,15 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                if (fOverwriteMode) gGrid->Rm(file);
                else {
                   Info("CreateDataset", "\n#####   Dataset %s exist. Skipping creation...", schunk.Data());
+                  delete cbase_m;
                   continue;
                }   
             }        
             printf("Exporting merged collection <%s> and copying to AliEn\n", schunk.Data());
-            cbase->ExportXML(Form("file://%s", schunk.Data()),kFALSE,kFALSE, schunk, "Merged runs");
+            cbase_m->ExportXML(Form("file://%s", schunk.Data()),kFALSE,kFALSE, schunk, "Merged runs");
             TFile::Cp(Form("file:%s",schunk.Data()), Form("alien://%s/%s",workdir.Data(), schunk.Data()));
+            delete cbase_m;
+
             if (!FileExists(schunk)) {
                Error("CreateDataset", "Copy command did NOT succeed for %s", schunk.Data());
                delete arr;
@@ -1561,11 +1564,11 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
             printf("   Merging collection <%s> into %d runs chunk...\n",file.Data(),fNrunsPerMaster);
             if (((nruns-1)%fNrunsPerMaster) == 0) {
                schunk = Form(fRunPrefix.Data(), irun);
-               cbase = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
+               cbase_m = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
             } else {
-                cadd = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
-               gROOT->ProcessLine(Form("((TJAlienCollection*)%p)->AddFast((TGridCollection*)%p)",cbase,cadd));
-               delete cadd;
+               cadd_m = dynamic_cast<TAliceCollection*>(gGrid->OpenCollection(file.Data()));
+               cbase_m->AddFast(cadd_m);
+               delete cadd_m;
             }
             format = Form("%%s_%s.xml", fRunPrefix.Data());
             schunk2 = Form(format.Data(), schunk.Data(), irun);
@@ -1581,7 +1584,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                }   
             }        
             printf("Exporting merged collection <%s> and copying to AliEn.\n", schunk.Data());
-            cbase->ExportXML(Form("file://%s", schunk.Data()),kFALSE,kFALSE, schunk, "Merged runs");
+            cbase_m->ExportXML(Form("file://%s", schunk.Data()),kFALSE,kFALSE, schunk, "Merged runs");
             if (FileExists(schunk)) {
                if (fOverwriteMode) gGrid->Rm(schunk);
                else {
