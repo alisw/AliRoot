@@ -1302,7 +1302,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
 
             ncount = cadd->GetNofGroups();
          }
-         if (ncount == gMaxEntries) {
+         if (ncount >= gMaxEntries) {
             Info("CreateDataset", "Dataset %s has more than 15K entries. Trying to merge...", file.Data());
             if (!cbase) cbase = cadd;
             else {
@@ -1379,7 +1379,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
 
                nullResult = kFALSE;
             }
-            if (ncount == gMaxEntries) {
+            if (ncount >= gMaxEntries) {
                Info("CreateDataset", "Dataset %s has more than 15K entries. Trying to merge...", file.Data());
                if (fNrunsPerMaster > 1) {
                   Error("CreateDataset", "File %s has more than %d entries. Please set the number of runs per master to 1 !", 
@@ -1506,7 +1506,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
                ncount = cadd->GetNofGroups() == 0;
                nullResult = kFALSE;
             }
-            if (ncount == gMaxEntries) {
+            if (ncount >= gMaxEntries) {
                Info("CreateDataset", "Dataset %s has more than 15K entries. Trying to merge...", file.Data());
                if (fNrunsPerMaster > 1) {
                   Error("CreateDataset", "File %s has more than %d entries. Please set the number of runs per master to 1 !", 
