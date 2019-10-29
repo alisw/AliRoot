@@ -1267,7 +1267,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
    TString path;
    Int_t nruns = 0;
    TString schunk, schunk2;
-   TAliceCollection *cbase=0, *cadd=0, *cbaseM=0, *caddM=0;
+   TAliceCollection *cbase=0, *cadd=0, *cbaseM=0;
 
    if (!fRunNumbers.Length() && !fRunRange[0]) {
       if (fInputFiles && fInputFiles->GetEntries()) return kTRUE;
