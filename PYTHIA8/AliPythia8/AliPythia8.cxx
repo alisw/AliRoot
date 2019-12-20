@@ -686,7 +686,7 @@ void AliPythia8::ConfigHeavyFlavor()
     //
     // All QCD processes
     //
-    ReadString("HardQCD:all = on");
+    ReadString("SoftQCD:nonDiffractive = on");
 
     // No multiple interactions
     ReadString("PartonLevel:MPI = off");
