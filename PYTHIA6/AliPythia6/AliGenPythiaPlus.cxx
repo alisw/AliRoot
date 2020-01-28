@@ -464,6 +464,16 @@ void AliGenPythiaPlus::Init()
 	fParentSelect[6]= 5332;
 	fFlavorSelect   = 5;	
 	break;
+    case kPyHeavyFlavppMNRwmi:
+	fParentSelect[0]=  511;  //settings to selct decay products
+	fParentSelect[1]=  521;
+	fParentSelect[2]=  531;
+	fParentSelect[3]= 5122;
+	fParentSelect[4]= 5132;
+	fParentSelect[5]= 5232;
+	fParentSelect[6]= 5332;
+	fFlavorSelect    =  5;
+	break;
     case kPyBeautyUnforced:
 	fParentSelect[0] =  511;
 	fParentSelect[1] =  521;
@@ -695,6 +705,7 @@ void AliGenPythiaPlus::Generate()
       fProcess != kPyZgamma &&
 	    fProcess != kPyCharmppMNRwmi && 
 	    fProcess != kPyBeautyppMNRwmi &&
+	    fProcess != kPyHeavyFlavppMNRwmi &&
       fProcess != kPyWPWHG &&
 	    fProcess != kPyJetsPWHG &&
             fProcess != kPyCharmPWHG &&
@@ -1008,7 +1019,7 @@ Int_t  AliGenPythiaPlus::GenerateMB()
 
     // Check if there is a ccbar or bbbar pair with at least one of the two
     // in fYMin < y < fYMax
-    if (fProcess == kPyCharmppMNRwmi || fProcess == kPyBeautyppMNRwmi) {
+    if (fProcess == kPyCharmppMNRwmi || fProcess == kPyBeautyppMNRwmi || fProcess == kPyHeavyFlavppMNRwmi ) {
       TParticle *partCheck;
       TParticle *mother;
       Bool_t  theQ=kFALSE,theQbar=kFALSE,inYcut=kFALSE;
@@ -1018,7 +1029,10 @@ Int_t  AliGenPythiaPlus::GenerateMB()
       for(i=0; i<np; i++) {
 	partCheck = (TParticle*)fParticles.At(i);
 	pdg = partCheck->GetPdgCode();  
-	if(TMath::Abs(pdg) == fFlavorSelect) { // quark  
+	Bool_t flavSel=kFALSE;
+	if(TMath::Abs(pdg) == fFlavorSelect) flavSel=kTRUE;
+	if(fProcess == kPyHeavyFlavppMNRwmi && (TMath::Abs(pdg) == 4 || TMath::Abs(pdg) == 5)) flavSel=kTRUE;
+	if(flavSel) { // quark  
 	  if(pdg>0) { theQ=kTRUE; } else { theQbar=kTRUE; }
 	  y = 0.5*TMath::Log((partCheck->Energy()+partCheck->Pz()+1.e-13)/
 			     (partCheck->Energy()-partCheck->Pz()+1.e-13));
