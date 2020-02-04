@@ -68,7 +68,7 @@ AliGenPythiaPlus::AliGenPythiaPlus():
     fQuench(0),
     fPtKick(1.),
     fFullEvent(kTRUE),
-    fDecayer(new AliDecayerPythia()),
+    fDecayer(0),
     fDebugEventFirst(-1),
     fDebugEventLast(-1),
     fEtMinJet(0.),      
@@ -137,6 +137,7 @@ AliGenPythiaPlus::AliGenPythiaPlus():
 {
 // Default Constructor
   fEnergyCMS = 5500.;
+ 
   if (!AliPythiaRndm::GetPythiaRandom()) 
       AliPythiaRndm::SetPythiaRandom(GetRandom());
 }
@@ -172,7 +173,7 @@ AliGenPythiaPlus::AliGenPythiaPlus(AliPythiaBase* pythia)
      fQuench(kFALSE),
      fPtKick(1.),
      fFullEvent(kTRUE),
-     fDecayer(new AliDecayerPythia()),
+     fDecayer(0),
      fDebugEventFirst(-1),
      fDebugEventLast(-1),
      fEtMinJet(0.),      
@@ -246,6 +247,7 @@ AliGenPythiaPlus::AliGenPythiaPlus(AliPythiaBase* pythia)
     fEnergyCMS = 5500.;
     fName = "Pythia";
     fTitle= "Particle Generator using PYTHIA";
+    fDecayer = pythia->Decayer();
     SetForceDecay();
     // Set random number generator 
     if (!AliPythiaRndm::GetPythiaRandom()) 
@@ -446,6 +448,16 @@ void AliGenPythiaPlus::Init()
 	fParentSelect[6]= 5332;
 	fFlavorSelect   = 5;	
 	break;
+    case kPyHeavyFlavppMNRwmi:
+	fParentSelect[0]=  511;  //settings to selct decay products
+	fParentSelect[1]=  521;
+	fParentSelect[2]=  531;
+	fParentSelect[3]= 5122;
+	fParentSelect[4]= 5132;
+	fParentSelect[5]= 5232;
+	fParentSelect[6]= 5332;
+	fFlavorSelect    =  5;
+	break;
     case kPyBeautyUnforced:
 	fParentSelect[0] =  511;
 	fParentSelect[1] =  521;
@@ -622,9 +634,44 @@ void AliGenPythiaPlus::Generate()
 	Int_t* pSelected = new Int_t[np];
 	Int_t* trackIt   = new Int_t[np];
 	for (i = 0; i < np; i++) {
-	    pParent[i]   = -1;
-	    pSelected[i] =  0;
-	    trackIt[i]   =  0;
+	  pParent[i]   = -1;
+	  pSelected[i] =  0;
+	  trackIt[i]   =  0;
+
+	  if(fPythia->Version() == 8){
+	    // order parent quarks by flavour
+	    TParticle* iparticle = (TParticle *) fParticles.At(i);
+	    Int_t pdgPart = TMath::Abs(iparticle->GetPdgCode());
+	    if(pdgPart>=100){ // hadrons
+	      Int_t kfl=pdgPart;
+	      if (kfl > 100000) kfl %= 100000; // resonance
+	      if (kfl > 10000)  kfl %= 10000;  // resonance
+	      if (kfl > 10) kfl/=100; // meson
+	      if (kfl > 10) kfl/=10; // baryon
+	      Int_t iMo1 = iparticle->GetFirstMother();
+	      Int_t iMo2 = iparticle->GetSecondMother();
+	      if(iMo1 >=0 && iMo2 >=0){ // particle with two mothers
+		TParticle* mother1 = (TParticle *) fParticles.At(iMo1);
+		TParticle* mother2 = (TParticle *) fParticles.At(iMo2);
+		Int_t absPdgMo1 = TMath::Abs(mother1->GetPdgCode());
+		Int_t absPdgMo2 = TMath::Abs(mother2->GetPdgCode());
+		if( (absPdgMo1<=6 || absPdgMo1==21) && (absPdgMo2<=6 || absPdgMo2==21) ){
+		  // parton parents
+		  if(absPdgMo1!=kfl && absPdgMo2==kfl){
+		    // assign as first mother the quark with same flavour as the hadron
+		    iparticle->SetFirstMother(iMo2);
+		    iparticle->SetLastMother(iMo1);
+		  }
+		  if(absPdgMo1!=kfl && absPdgMo2!=kfl && absPdgMo1<absPdgMo2){
+		    // in case no quark has the flavour of the hadron
+		    // assign as first mother the one with higher pdg code
+		    iparticle->SetFirstMother(iMo2);
+		    iparticle->SetLastMother(iMo1);
+		  }
+		}
+	      }
+	    }
+	  }
 	}
 
 	Int_t nc = 0;        // Total n. of selected particles
@@ -642,6 +689,7 @@ void AliGenPythiaPlus::Generate()
       fProcess != kPyZgamma &&
 	    fProcess != kPyCharmppMNRwmi && 
 	    fProcess != kPyBeautyppMNRwmi &&
+	    fProcess != kPyHeavyFlavppMNRwmi &&
       fProcess != kPyWPWHG &&
 	    fProcess != kPyJetsPWHG &&
             fProcess != kPyCharmPWHG &&
@@ -706,6 +754,7 @@ void AliGenPythiaPlus::Generate()
 		    if (kfl == fFlavorSelect) flavorOK = kTRUE;
 		}
 		switch (fStackFillOpt) {
+		case kHeavyFlavor:
 		case kFlavorSelection:
 		    selectOK = kTRUE;
 		    break;
@@ -952,7 +1001,7 @@ Int_t  AliGenPythiaPlus::GenerateMB()
 
     // Check if there is a ccbar or bbbar pair with at least one of the two
     // in fYMin < y < fYMax
-    if (fProcess == kPyCharmppMNRwmi || fProcess == kPyBeautyppMNRwmi) {
+    if (fProcess == kPyCharmppMNRwmi || fProcess == kPyBeautyppMNRwmi || fProcess == kPyHeavyFlavppMNRwmi ) {
       TParticle *partCheck;
       TParticle *mother;
       Bool_t  theQ=kFALSE,theQbar=kFALSE,inYcut=kFALSE;
@@ -962,7 +1011,10 @@ Int_t  AliGenPythiaPlus::GenerateMB()
       for(i=0; i<np; i++) {
 	partCheck = (TParticle*)fParticles.At(i);
 	pdg = partCheck->GetPdgCode();  
-	if(TMath::Abs(pdg) == fFlavorSelect) { // quark  
+	Bool_t flavSel=kFALSE;
+	if(TMath::Abs(pdg) == fFlavorSelect) flavSel=kTRUE;
+	if(fProcess == kPyHeavyFlavppMNRwmi && (TMath::Abs(pdg) == 4 || TMath::Abs(pdg) == 5)) flavSel=kTRUE;
+	if(flavSel) { // quark  
 	  if(pdg>0) { theQ=kTRUE; } else { theQbar=kTRUE; }
 	  y = 0.5*TMath::Log((partCheck->Energy()+partCheck->Pz()+1.e-13)/
 			     (partCheck->Energy()-partCheck->Pz()+1.e-13));
@@ -971,7 +1023,7 @@ Int_t  AliGenPythiaPlus::GenerateMB()
 	}
 
 	if(fCutOnChild && TMath::Abs(pdg) == fPdgCodeParticleforAcceptanceCut) {
-	  Int_t mi = partCheck->GetFirstMother() - 1;
+	  Int_t mi = (fPythia->Version() == 6) ? (partCheck->GetFirstMother() - 1) :(partCheck->GetFirstMother()) ;
 	  if(mi<0) continue;
 	  mother = (TParticle*)fParticles.At(mi);
 	  mpdg=TMath::Abs(mother->GetPdgCode());
@@ -1022,6 +1074,8 @@ Int_t  AliGenPythiaPlus::GenerateMB()
 	if ((ks == 1  && kf!=0 && KinematicSelection(iparticle, 0)) ||
 	    (ks != 1) ||
 	    ((fProcess == kPyJets || fProcess == kPyJetsPWHG) && ks == 21 && km == 0 && i>1)) {
+
+	    if(fStackFillOpt == kHeavyFlavor && !IsFromHeavyFlavor(i)) continue;
 	    nc++;
 	    if (ks == 1) trackIt = 1;
 
@@ -1522,6 +1576,27 @@ void AliGenPythiaPlus::RotatePhi(Bool_t& okdd)
   
   // reset the value for next event
   fPHOSRotateCandidate = -1;
+}
+
+/// Check if this is a heavy flavor decay product
+Bool_t AliGenPythiaPlus::IsFromHeavyFlavor(Int_t ipart)
+{
+  TParticle *  part = (TParticle *) fParticles.At(ipart);
+  Int_t mpdg = TMath::Abs(part->GetPdgCode());
+  Int_t mfl  = Int_t (mpdg / TMath::Power(10, Int_t(TMath::Log10(mpdg))));
+  if (mfl >= 4 && mfl < 6) return kTRUE; // HF hadron
+  
+  // seach if originates from HF haron decay
+  Int_t imo = (fPythia->Version() == 6) ? (part->GetFirstMother()-1) : (part->GetFirstMother());
+  TParticle* pm = part;
+  while (imo >  -1) {
+    pm  =  (TParticle*)fParticles.At(imo);
+    mpdg = TMath::Abs(pm->GetPdgCode());
+    mfl  = Int_t (mpdg / TMath::Power(10, Int_t(TMath::Log10(mpdg))));
+    if ((mfl > 3) && (mfl <6) && mpdg > 400) return kTRUE;
+    imo = (fPythia->Version() == 6) ? (pm->GetFirstMother()-1) : (pm->GetFirstMother());
+  }
+  return kFALSE;
 }
 
 ///
