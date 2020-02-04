@@ -2999,7 +2999,7 @@ void TStatToolkit::MakeDistortionMapFast(THnBase * histo, TTreeSRedirector *pcst
 /// \param projectionInfo     -
 /// \param options            - option - parameterize statistic to extract
 /// \param verbose            - verbosity of extraction
-void TStatToolkit::MakePDFMap(THnBase *histo, TTreeSRedirector *pcstream, TMatrixD &projectionInfo, map<string, string> pdfOptions, Int_t verbose)
+void TStatToolkit::MakePDFMap(THnBase *histo, TTreeSRedirector *pcstream, TMatrixD &projectionInfo, std::map<string, string> pdfOptions, Int_t verbose)
 {
   //
   if (histo->GetNdimensions()<=1) {
