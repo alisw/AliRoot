@@ -46,6 +46,7 @@
 #include "TMatrixF.h"
 #include "TList.h"
 #include <float.h>
+#include <string>
 //#include "TGraph2D.h"
 //#include "TGraph.h"
 class THashList;
