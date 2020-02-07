@@ -19,6 +19,7 @@ add_subdirectory(AliPythia8)
 # NOTE: this is a symlink. Select the Pythia minor version by changing where it
 # points to!
 add_subdirectory(pythia8)
+add_subdirectory(pythia8243)
 # add_subdirectory(pythia8210dev)
 
 message(STATUS "PYTHIA8 enabled")
