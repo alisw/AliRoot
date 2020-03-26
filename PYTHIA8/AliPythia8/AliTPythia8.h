@@ -60,8 +60,10 @@
 */
 
 #include "TGenerator.h"
-#include "Pythia.h"
+#include "Pythia8/Pythia.h"
 
+using std::endl;
+using std::cout; 
 
 class TClonesArray;
 class TObjArray;
@@ -112,6 +114,7 @@ protected:
     
 private:
    void                    AddParticlesToPdgDataBase() const;
+   void                    UpdateParticleProperties() const;
    ClassDef(AliTPythia8, 3)   // Interface class of Pythia8
 };
 

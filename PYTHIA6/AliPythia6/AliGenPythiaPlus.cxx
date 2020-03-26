@@ -68,7 +68,7 @@ AliGenPythiaPlus::AliGenPythiaPlus():
     fQuench(0),
     fPtKick(1.),
     fFullEvent(kTRUE),
-    fDecayer(new AliDecayerPythia()),
+    fDecayer(0),
     fDebugEventFirst(-1),
     fDebugEventLast(-1),
     fEtMinJet(0.),      
@@ -119,6 +119,7 @@ AliGenPythiaPlus::AliGenPythiaPlus():
     fEleInCalo(kFALSE),
     fEleInEMCAL(kFALSE), // not in use
     fCheckBarrel(kFALSE),
+    fCheckBarrelCalos(kFALSE),
     fCheckEMCAL(kFALSE),
     fCheckPHOS(kFALSE),
     fCheckPHOSeta(kFALSE),
@@ -126,17 +127,25 @@ AliGenPythiaPlus::AliGenPythiaPlus():
     fTriggerParticleMinPt(0), 
     fPhotonMinPt(0), // not in use
     fElectronMinPt(0), // not in use
-    fPHOSMinPhi(219.),
-    fPHOSMaxPhi(321.),
+    fPHOSMinPhi(250.),
+    fPHOSMaxPhi(320.),
     fPHOSEta(0.13),
-    fEMCALMinPhi(79.),
-    fEMCALMaxPhi(191.),
-    fEMCALEta(0.71),
+    fEMCALMinPhi(80.),
+    fEMCALMaxPhi(187.),
+    fEMCALEta(0.7),
+    fDCALMinPhi(260.),
+    fDCALMaxPhi(320.),
+    fDCALMinEta(0.22),
+    fDCALMaxEta(0.7),
+    fDCALMinPhiThird(320.),
+    fDCALMaxPhiThird(327.),
+    fDCALEtaThird(0.7),
     fItune(-1), 
     fInfo(1) 
 {
 // Default Constructor
   fEnergyCMS = 5500.;
+ 
   if (!AliPythiaRndm::GetPythiaRandom()) 
       AliPythiaRndm::SetPythiaRandom(GetRandom());
 }
@@ -172,7 +181,7 @@ AliGenPythiaPlus::AliGenPythiaPlus(AliPythiaBase* pythia)
      fQuench(kFALSE),
      fPtKick(1.),
      fFullEvent(kTRUE),
-     fDecayer(new AliDecayerPythia()),
+     fDecayer(0),
      fDebugEventFirst(-1),
      fDebugEventLast(-1),
      fEtMinJet(0.),      
@@ -223,6 +232,7 @@ AliGenPythiaPlus::AliGenPythiaPlus(AliPythiaBase* pythia)
      fEleInCalo(kFALSE),
      fEleInEMCAL(kFALSE), // not in use
      fCheckBarrel(kFALSE),
+     fCheckBarrelCalos(kFALSE),
      fCheckEMCAL(kFALSE),
      fCheckPHOS(kFALSE),
      fCheckPHOSeta(kFALSE),
@@ -230,12 +240,19 @@ AliGenPythiaPlus::AliGenPythiaPlus(AliPythiaBase* pythia)
      fTriggerParticleMinPt(0), 
      fPhotonMinPt(0), // not in use
      fElectronMinPt(0), // not in use
-     fPHOSMinPhi(219.),
-     fPHOSMaxPhi(321.),
+     fPHOSMinPhi(250.),
+     fPHOSMaxPhi(320.),
      fPHOSEta(0.13),
-     fEMCALMinPhi(79.),
-     fEMCALMaxPhi(191.),
-     fEMCALEta(0.71),
+     fEMCALMinPhi(80.),
+     fEMCALMaxPhi(187.),
+     fEMCALEta(0.7),
+     fDCALMinPhi(260.),
+     fDCALMaxPhi(320.),
+     fDCALMinEta(0.22),
+     fDCALMaxEta(0.7),
+     fDCALMinPhiThird(320.),
+     fDCALMaxPhiThird(327.),
+     fDCALEtaThird(0.7),
      fItune(-1),
      fInfo(1) 
 {
@@ -246,6 +263,7 @@ AliGenPythiaPlus::AliGenPythiaPlus(AliPythiaBase* pythia)
     fEnergyCMS = 5500.;
     fName = "Pythia";
     fTitle= "Particle Generator using PYTHIA";
+    fDecayer = pythia->Decayer();
     SetForceDecay();
     // Set random number generator 
     if (!AliPythiaRndm::GetPythiaRandom()) 
@@ -360,7 +378,9 @@ void AliGenPythiaPlus::Init()
     fPythia->SetInitialAndFinalStateRadiation(fGinit, fGfinal);
 
 //  pt - kick
-    fPythia->SetIntrinsicKt(fPtKick);
+//  10/4/2017
+//  this line has been removed since it overwrites the settings of the standard tunes
+//  fPythia->SetIntrinsicKt(fPtKick);
 
     if (fReadFromFile) {
 	fRL  =  AliRunLoader::Open(fFileName, "Partons");
@@ -443,6 +463,16 @@ void AliGenPythiaPlus::Init()
 	fParentSelect[5]= 5232;
 	fParentSelect[6]= 5332;
 	fFlavorSelect   = 5;	
+	break;
+    case kPyHeavyFlavppMNRwmi:
+	fParentSelect[0]=  511;  //settings to selct decay products
+	fParentSelect[1]=  521;
+	fParentSelect[2]=  531;
+	fParentSelect[3]= 5122;
+	fParentSelect[4]= 5132;
+	fParentSelect[5]= 5232;
+	fParentSelect[6]= 5332;
+	fFlavorSelect    =  5;
 	break;
     case kPyBeautyUnforced:
 	fParentSelect[0] =  511;
@@ -620,9 +650,44 @@ void AliGenPythiaPlus::Generate()
 	Int_t* pSelected = new Int_t[np];
 	Int_t* trackIt   = new Int_t[np];
 	for (i = 0; i < np; i++) {
-	    pParent[i]   = -1;
-	    pSelected[i] =  0;
-	    trackIt[i]   =  0;
+	  pParent[i]   = -1;
+	  pSelected[i] =  0;
+	  trackIt[i]   =  0;
+
+	  if(fPythia->Version() == 8){
+	    // order parent quarks by flavour
+	    TParticle* iparticle = (TParticle *) fParticles.At(i);
+	    Int_t pdgPart = TMath::Abs(iparticle->GetPdgCode());
+	    if(pdgPart>=100){ // hadrons
+	      Int_t kfl=pdgPart;
+	      if (kfl > 100000) kfl %= 100000; // resonance
+	      if (kfl > 10000)  kfl %= 10000;  // resonance
+	      if (kfl > 10) kfl/=100; // meson
+	      if (kfl > 10) kfl/=10; // baryon
+	      Int_t iMo1 = iparticle->GetFirstMother();
+	      Int_t iMo2 = iparticle->GetSecondMother();
+	      if(iMo1 >=0 && iMo2 >=0){ // particle with two mothers
+		TParticle* mother1 = (TParticle *) fParticles.At(iMo1);
+		TParticle* mother2 = (TParticle *) fParticles.At(iMo2);
+		Int_t absPdgMo1 = TMath::Abs(mother1->GetPdgCode());
+		Int_t absPdgMo2 = TMath::Abs(mother2->GetPdgCode());
+		if( (absPdgMo1<=6 || absPdgMo1==21) && (absPdgMo2<=6 || absPdgMo2==21) ){
+		  // parton parents
+		  if(absPdgMo1!=kfl && absPdgMo2==kfl){
+		    // assign as first mother the quark with same flavour as the hadron
+		    iparticle->SetFirstMother(iMo2);
+		    iparticle->SetLastMother(iMo1);
+		  }
+		  if(absPdgMo1!=kfl && absPdgMo2!=kfl && absPdgMo1<absPdgMo2){
+		    // in case no quark has the flavour of the hadron
+		    // assign as first mother the one with higher pdg code
+		    iparticle->SetFirstMother(iMo2);
+		    iparticle->SetLastMother(iMo1);
+		  }
+		}
+	      }
+	    }
+	  }
 	}
 
 	Int_t nc = 0;        // Total n. of selected particles
@@ -640,9 +705,10 @@ void AliGenPythiaPlus::Generate()
       fProcess != kPyZgamma &&
 	    fProcess != kPyCharmppMNRwmi && 
 	    fProcess != kPyBeautyppMNRwmi &&
+	    fProcess != kPyHeavyFlavppMNRwmi &&
       fProcess != kPyWPWHG &&
 	    fProcess != kPyJetsPWHG &&
-	    fProcess != kPyCharmPWHG &&
+            fProcess != kPyCharmPWHG &&
      fProcess != kPyBeautyPWHG) {
 	    
 	    for (i = 0; i < np; i++) {
@@ -704,6 +770,7 @@ void AliGenPythiaPlus::Generate()
 		    if (kfl == fFlavorSelect) flavorOK = kTRUE;
 		}
 		switch (fStackFillOpt) {
+		case kHeavyFlavor:
 		case kFlavorSelection:
 		    selectOK = kTRUE;
 		    break;
@@ -863,14 +930,17 @@ Int_t  AliGenPythiaPlus::GenerateMB()
     const Float_t kconv = 0.001 / 2.999792458e8;
     
     Int_t np = (fHadronisation) ? fParticles.GetEntriesFast() : fNpartons;
-    
     Int_t* pParent = new Int_t[np];
     for (i=0; i< np; i++) pParent[i] = -1;
+  
     if (fProcess == kPyJets || fProcess == kPyDirectGamma || fProcess == kPyJetsPWHG || 
         fProcess == kPyCharmPWHG || fProcess == kPyBeautyPWHG ) {
-	TParticle* jet1 = (TParticle *) fParticles.At(6);
-	TParticle* jet2 = (TParticle *) fParticles.At(7);
-	if (!CheckTrigger(jet1, jet2)) {
+       // 6,7 particles in PYTHIA6
+
+       TParticle* jet1 = (TParticle *) fParticles.At(4);
+       TParticle* jet2 = (TParticle *) fParticles.At(5);
+
+       if (!CheckTrigger(jet1, jet2)) {
 	  delete [] pParent;
 	  return 0;
 	}
@@ -882,7 +952,7 @@ Int_t  AliGenPythiaPlus::GenerateMB()
     if ( ( fFragPhotonInCalo || fPi0InCalo || 
            fEtaInCalo        || fEleInCalo || 
            fHadronInCalo     || fDecayPhotonInCalo   ) && 
-         ( fCheckPHOS || fCheckEMCAL || fCheckBarrel )    ) 
+         ( fCheckPHOS || fCheckEMCAL || fCheckBarrel || fCheckBarrelCalos)    ) 
     {
       Bool_t ok = TriggerOnSelectedParticles(np);
       
@@ -949,7 +1019,7 @@ Int_t  AliGenPythiaPlus::GenerateMB()
 
     // Check if there is a ccbar or bbbar pair with at least one of the two
     // in fYMin < y < fYMax
-    if (fProcess == kPyCharmppMNRwmi || fProcess == kPyBeautyppMNRwmi) {
+    if (fProcess == kPyCharmppMNRwmi || fProcess == kPyBeautyppMNRwmi || fProcess == kPyHeavyFlavppMNRwmi ) {
       TParticle *partCheck;
       TParticle *mother;
       Bool_t  theQ=kFALSE,theQbar=kFALSE,inYcut=kFALSE;
@@ -959,7 +1029,10 @@ Int_t  AliGenPythiaPlus::GenerateMB()
       for(i=0; i<np; i++) {
 	partCheck = (TParticle*)fParticles.At(i);
 	pdg = partCheck->GetPdgCode();  
-	if(TMath::Abs(pdg) == fFlavorSelect) { // quark  
+	Bool_t flavSel=kFALSE;
+	if(TMath::Abs(pdg) == fFlavorSelect) flavSel=kTRUE;
+	if(fProcess == kPyHeavyFlavppMNRwmi && (TMath::Abs(pdg) == 4 || TMath::Abs(pdg) == 5)) flavSel=kTRUE;
+	if(flavSel) { // quark  
 	  if(pdg>0) { theQ=kTRUE; } else { theQbar=kTRUE; }
 	  y = 0.5*TMath::Log((partCheck->Energy()+partCheck->Pz()+1.e-13)/
 			     (partCheck->Energy()-partCheck->Pz()+1.e-13));
@@ -968,7 +1041,7 @@ Int_t  AliGenPythiaPlus::GenerateMB()
 	}
 
 	if(fCutOnChild && TMath::Abs(pdg) == fPdgCodeParticleforAcceptanceCut) {
-	  Int_t mi = partCheck->GetFirstMother() - 1;
+	  Int_t mi = (fPythia->Version() == 6) ? (partCheck->GetFirstMother() - 1) :(partCheck->GetFirstMother()) ;
 	  if(mi<0) continue;
 	  mother = (TParticle*)fParticles.At(mi);
 	  mpdg=TMath::Abs(mother->GetPdgCode());
@@ -1019,6 +1092,8 @@ Int_t  AliGenPythiaPlus::GenerateMB()
 	if ((ks == 1  && kf!=0 && KinematicSelection(iparticle, 0)) ||
 	    (ks != 1) ||
 	    ((fProcess == kPyJets || fProcess == kPyJetsPWHG) && ks == 21 && km == 0 && i>1)) {
+
+	    if(fStackFillOpt == kHeavyFlavor && !IsFromHeavyFlavor(i)) continue;
 	    nc++;
 	    if (ks == 1) trackIt = 1;
 
@@ -1248,6 +1323,41 @@ Bool_t AliGenPythiaPlus::CheckTrigger(const TParticle* jet1, const TParticle* je
 	    ij = 1;
 	    ig = 0;
 	}
+      
+      // Search the physical direct photon
+      // and recover its eta and phi
+      if ( fProcess == kPyDirectGamma )      
+      {
+        const TParticle * jets[] = {jet1,jet2};
+        Int_t status = jets[ig]->GetStatusCode();
+        Int_t index  = jets[ig]->GetDaughter(0);
+        Int_t pdg    = jets[ig]->GetPdgCode();
+        Int_t np     = fParticles.GetEntriesFast();
+        
+        //printf("Search physical photon...\n");
+        TParticle * photon = 0;
+        while ( status!=1 )
+        {
+          if ( pdg!=kGamma || index < 0 || index >= np)
+          {
+            AliWarning(Form("Photon with daughter PDG <%d> or negative/large index <%d>/<%d>, skip event",pdg,index,np));
+            return kFALSE;
+          }
+          
+          //printf("\t daught %d, status %d, pdg %d, eta %2.2f, phi %2.2f\n",index,status,pdg,eta[ig],phi[ig]);
+          photon = (TParticle*) fParticles.At(index);
+          if(!photon) return kFALSE;
+          
+          status = photon->GetStatusCode();
+          index  = photon->GetDaughter(0);
+          pdg    = photon->GetPdgCode();
+          eta[ig]= photon->Eta();
+          phi[ig]= photon->Phi();
+        }
+        //printf("final:   daught %d, status %d, pdg %d, eta %2.2f, phi %2.2f\n",index,status,pdg,eta[ig],phi[ig]);
+        //printf("...found\n");
+      }
+      
 	//Check eta range first...
 	if ((eta[ij] < fEtaMaxJet   && eta[ij] > fEtaMinJet) &&
 	    (eta[ig] < fEtaMaxGamma && eta[ig] > fEtaMinGamma))
@@ -1257,6 +1367,11 @@ Bool_t AliGenPythiaPlus::CheckTrigger(const TParticle* jet1, const TParticle* je
 		(phi[ig] < fPhiMaxGamma && phi[ig] > fPhiMinGamma))
 	    {
 		triggered = kTRUE;
+                if ( fCheckBarrelCalos )
+                {
+                  Float_t phiGJ = phi[ig]*180./TMath::Pi(); //Convert to degrees
+                  if ( !IsInBarrelCalorimeters(phiGJ,TMath::Abs(eta[ig])) ) triggered = kFALSE;
+                }
 	    }
 	}
     }
@@ -1392,6 +1507,21 @@ Bool_t AliGenPythiaPlus::IsInBarrel(Float_t eta) const
 }
 
 ///
+/// \return true if particle in EMCAL or DCAL or PHOS acceptance
+/// Acceptance slightly larger to be considered.
+///
+/// \param phi        particle azimuthal angle in degrees
+/// \param eta        particle pseudorapidity,  etamin=-etamax
+///
+Bool_t AliGenPythiaPlus::IsInBarrelCalorimeters(Float_t phi, Float_t eta) 
+{
+  if      ( IsInEMCAL(phi,eta   ) ) return kTRUE ;
+  else if ( IsInDCAL (phi,eta   ) ) return kTRUE ;
+  else if ( IsInPHOS (phi,eta,-1) ) return kTRUE ;
+  else                              return kFALSE;
+}
+
+///
 /// \return true if particle in EMCAL acceptance
 /// Acceptance slightly larger to be considered.
 ///
@@ -1402,6 +1532,30 @@ Bool_t AliGenPythiaPlus::IsInEMCAL(Float_t phi, Float_t eta) const
 {
   if(phi > fEMCALMinPhi  && phi < fEMCALMaxPhi && 
      eta < fEMCALEta  ) 
+    return kTRUE;
+  else 
+    return kFALSE;
+}
+
+///
+/// \return true if particle in DCAL acceptance
+/// Acceptance slightly larger to be considered.
+///
+/// \param phi        particle azimuthal angle in degrees
+/// \param eta        particle pseudorapidity,  etamin=-etamax
+///
+Bool_t AliGenPythiaPlus::IsInDCAL(Float_t phi, Float_t eta) const
+{
+  Bool_t fullSM  = kFALSE;
+  Bool_t thirdSM = kFALSE;
+  
+  if(phi > fDCALMinPhi  && phi < fDCALMaxPhi && 
+     eta > fDCALMinEta  && eta < fDCALMaxEta   ) fullSM = kTRUE;
+  
+  if(phi > fDCALMinPhiThird  && phi < fDCALMaxPhiThird && 
+     eta < fDCALEtaThird  ) thirdSM = kTRUE;
+  
+  if ( fullSM || thirdSM )
     return kTRUE;
   else 
     return kFALSE;
@@ -1486,6 +1640,27 @@ void AliGenPythiaPlus::RotatePhi(Bool_t& okdd)
   fPHOSRotateCandidate = -1;
 }
 
+/// Check if this is a heavy flavor decay product
+Bool_t AliGenPythiaPlus::IsFromHeavyFlavor(Int_t ipart)
+{
+  TParticle *  part = (TParticle *) fParticles.At(ipart);
+  Int_t mpdg = TMath::Abs(part->GetPdgCode());
+  Int_t mfl  = Int_t (mpdg / TMath::Power(10, Int_t(TMath::Log10(mpdg))));
+  if (mfl >= 4 && mfl < 6) return kTRUE; // HF hadron
+  
+  // seach if originates from HF haron decay
+  Int_t imo = (fPythia->Version() == 6) ? (part->GetFirstMother()-1) : (part->GetFirstMother());
+  TParticle* pm = part;
+  while (imo >  -1) {
+    pm  =  (TParticle*)fParticles.At(imo);
+    mpdg = TMath::Abs(pm->GetPdgCode());
+    mfl  = Int_t (mpdg / TMath::Power(10, Int_t(TMath::Log10(mpdg))));
+    if ((mfl > 3) && (mfl <6) && mpdg > 400) return kTRUE;
+    imo = (fPythia->Version() == 6) ? (pm->GetFirstMother()-1) : (pm->GetFirstMother());
+  }
+  return kFALSE;
+}
+
 ///
 /// Check the eta/phi correspond to the detectors acceptance
 /// iparticle is the index of the particle to be checked, for PHOS rotation case
@@ -1499,6 +1674,7 @@ Bool_t AliGenPythiaPlus::CheckDetectorAcceptance(Float_t phi, Float_t eta, Int_t
   if     (fCheckPHOS   && IsInPHOS  (phi,eta,iparticle)) return kTRUE;
   else if(fCheckEMCAL  && IsInEMCAL (phi,eta)) return kTRUE;
   else if(fCheckBarrel && IsInBarrel(    eta)) return kTRUE;
+  else if(fCheckBarrelCalos && IsInBarrelCalorimeters(phi,eta)) return kTRUE;
   else                                         return kFALSE;
 }
 
@@ -1513,9 +1689,9 @@ Bool_t AliGenPythiaPlus::CheckDetectorAcceptance(Float_t phi, Float_t eta, Int_t
 Bool_t AliGenPythiaPlus::TriggerOnSelectedParticles(Int_t np)
 {
   AliDebug(1,Form("** Check: frag photon %d, pi0 %d, eta %d, electron %d, hadron %d, decay %d; "
-                  " in PHOS %d, EMCAL %d, Barrel %d; with pT > %2.2f GeV/c**",
+                  " in PHOS %d, EMCAL %d, Barrel %d; Barrel calos %d, with pT > %2.2f GeV/c**",
                   fFragPhotonInCalo,fPi0InCalo, fEtaInCalo,fEleInCalo,fHadronInCalo,fDecayPhotonInCalo,
-                  fCheckPHOS,fCheckEMCAL, fCheckBarrel,fTriggerParticleMinPt)); 
+                  fCheckPHOS,fCheckEMCAL, fCheckBarrel,fCheckBarrelCalos,fTriggerParticleMinPt)); 
     
   Bool_t ok = kFALSE;
   for (Int_t i=0; i< np; i++) 

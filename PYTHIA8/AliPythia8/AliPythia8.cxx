@@ -66,7 +66,10 @@ AliPythia8::AliPythia8():
     fYScale(0.),
     fPtScale(0.),
     fNJetMin(0),
-    fNJetMax(0)
+    fNJetMax(0),
+    fDecayLonglived(kFALSE),
+    fDecayer(0)
+    
 {
 // Default Constructor
 //
@@ -89,10 +92,18 @@ AliPythia8::AliPythia8(const AliPythia8& pythia):
     fYScale(0.),
     fPtScale(0.),
     fNJetMin(0),
-    fNJetMax(0)
+    fNJetMax(0),
+    fDecayLonglived(kFALSE),
+    fDecayer(0)
 {
     // Copy Constructor
     pythia.Copy(*this);
+}
+
+AliDecayer* AliPythia8::Decayer()
+{
+  if (!fDecayer) fDecayer = new AliDecayerPythia8();
+  return fDecayer;
 }
 
 void AliPythia8::ProcInit(Process_t process, Float_t energy, StrucFunc_t strucfunc, Int_t tune)
@@ -106,13 +117,15 @@ void AliPythia8::ProcInit(Process_t process, Float_t energy, StrucFunc_t strucfu
     fStrucFunc = strucfunc;
     ReadString("111:mayDecay  = on");
 //...Switch off decay of K0L, Lambda, Sigma+-, Xi0-, Omega-.
-    ReadString("310:mayDecay  = off");
-    ReadString("3122:mayDecay = off");
-    ReadString("3112:mayDecay = off");
-    ReadString("3222:mayDecay = off");
-    ReadString("3312:mayDecay = off");
-    ReadString("3322:mayDecay = off");
-    ReadString("3334:mayDecay = off");
+    if(!fDecayLonglived){
+        ReadString("310:mayDecay  = off");
+        ReadString("3122:mayDecay = off");
+        ReadString("3112:mayDecay = off");
+        ReadString("3222:mayDecay = off");
+        ReadString("3312:mayDecay = off");
+        ReadString("3322:mayDecay = off");
+        ReadString("3334:mayDecay = off");
+    }
     // Select structure function 
     //          ReadString("PDF:useLHAPDF = on");
     //	  ReadString(Form("PDF:LHAPDFset = %s", AliStructFuncType::PDFsetName(fStrucFunc).Data()));
@@ -124,6 +137,10 @@ void AliPythia8::ProcInit(Process_t process, Float_t energy, StrucFunc_t strucfu
 //
 // Pythia initialisation for selected processes//
 //
+//
+// remove default from decayer initialisation
+    ReadString("SoftQCD:elastic = off");
+    
     switch (process) 
     {
     case kPyOldUEQ2ordered:  //Old underlying events with Q2 ordered QCD processes
@@ -489,6 +506,37 @@ void AliPythia8::ProcInit(Process_t process, Float_t energy, StrucFunc_t strucfu
 	ReadString("ParticleData:mbRun = 4.75");
 	AtlasTuning();
 	break; 
+     case kPyHeavyFlavppMNRwmi:
+      // Tuning of Pythia parameters aimed to get a resonable agreement
+      // between with the NLO calculation by Mangano, Nason, Ridolfi for the
+      // b-bbar single inclusive and double differential distributions.
+      // This parameter settings are meant to work with pp collisions
+      // and with kCTEQ5L PDFs.
+      // Added multiple interactions according to ATLAS tune settings.
+      // To get a "reasonable" agreement with MNR results, events have to be 
+      // generated with the minimum ptHard (AliGenPythia::SetPtHard)
+      // set to 2.76 GeV.
+      // To get a "perfect" agreement with MNR results, events have to be 
+      // generated in four ptHard bins with the following relative 
+      // normalizations:
+      // 2.76-4 GeV:  5% 
+      //    4-6 GeV: 31%
+      //    6-8 GeV: 28%
+      //     >8 GeV: 36%
+	 ConfigHeavyFlavor();
+	 // QCD scales
+	 ReadString("SigmaProcess:factorMultFac = 1.");
+	 // Intrinsic <kT>
+	ReadString("BeamRemnants:primordialKT = on");
+	ReadString("BeamRemnants:primordialKTsoft = 0.");
+	ReadString("BeamRemnants:primordialKThard = 1.0");
+	ReadString("BeamRemnants:halfScaleForKT = 0.");
+	ReadString("BeamRemnants:halfMassForKT = 0.");
+	// Set c and b quark masses
+	ReadString("ParticleData:mcRun = 1.20");
+	ReadString("ParticleData:mbRun = 4.75");
+	AtlasTuning();
+	break; 
     case kPyW:
 	//Inclusive production of W+/-
 	//f fbar -> W+ 
@@ -570,7 +618,7 @@ void AliPythia8::SetNuclei(Int_t /*a1*/, Int_t /*a2*/)
 
 AliPythia8* AliPythia8::Instance()
 { 
-// Set random number generator 
+// return singleton instance
     if (fgAliPythia8) {
 	return fgAliPythia8;
     } else {
@@ -593,6 +641,10 @@ void  AliPythia8::ResetDecayTable()
 //    for (i = 1; i < 2001; i++) SetMDME(i,1,fDefMDME[i]);
 }
 
+void  AliPythia8::PrintDecayTable()
+{
+  Pythia8()->particleData.listChanged(); 
+}
 void  AliPythia8::SetDecayTable()
 {
 //  Set default values for pythia decay switches
@@ -667,7 +719,7 @@ void AliPythia8::ConfigHeavyFlavor()
     //
     // All QCD processes
     //
-    ReadString("HardQCD:all = on");
+    ReadString("SoftQCD:nonDiffractive = on");
 
     // No multiple interactions
     ReadString("PartonLevel:MPI = off");
