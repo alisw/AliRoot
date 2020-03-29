@@ -304,9 +304,19 @@ C
 	BB=SQRT(BMIN**2+RLU_HIJING(0)*(BMAX**2-BMIN**2))
 	PHI=2.0*HIPR1(40)*RLU_HIJING(0)
 
+C	R+FIX: REPLACE HARDCODED 50 WITH IHPR2 PARAMETER IF PROVIDED
+	MAXMISS=50
+	IF (IHPR2(30).GT.0) THEN
+	   MAXMISS=IHPR2(30)
+        ENDIF
+        
 50	MISS=MISS+1
-	IF(MISS.GT.50) THEN
+        IF(MISS.GT.50) THEN
+           WRITE(6,*) ' !!! WARNING: very large number of attempts'           
+        ENDIF
+	IF(MISS.GT.MAXMISS) THEN
 	   WRITE(6,*) 'infinite loop happened in  HIJING'
+	   WRITE(6,*) 'try to increase IHPR2(30)'
 	   STOP
 	ENDIF
 
