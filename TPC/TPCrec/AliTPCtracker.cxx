@@ -311,8 +311,10 @@ Int_t AliTPCtracker::AcceptCluster(AliTPCseed * seed, AliTPCclusterMI * cluster)
   Double_t sy2=0,  erry2LM=0,  erry2HM=0, erry2Res=0,erry2OccudEdx=0, erry2Ratio=0;//ErrY2(seed,cluster);
   Double_t sz2=0,  errz2LM=0,  errz2HM=0, errz2Res=0,errz2OccudEdx=0, errz2Ratio=0;//ErrZ2(seed,cluster);
   ErrY2Z2(seed,cluster,sy2,sz2);
-  erry2Res=sy2;
-  errz2Res=sz2;
+  Float_t serry2=seed->GetErrorY2Syst();
+  Float_t serrz2=seed->GetErrorZ2Syst();
+  erry2Res=sy2-serry2;
+  errz2Res=sz2-serrz2;
   const Float_t kMinSigma2=0.02*0.02;
   if (AliTPCReconstructor::GetRecoParam()->GetUseClusterErrordEdxCorrection()||AliTPCReconstructor::GetRecoParam()->GetUseClusterErrordEdxMultCorrection()) {
     const Float_t kdEdxMIP=50., kClusterMIP=20.;
@@ -371,8 +373,12 @@ Int_t AliTPCtracker::AcceptCluster(AliTPCseed * seed, AliTPCclusterMI * cluster)
     seed->SetErrorY2(erry2Res);   ///
     seed->SetErrorZ2(errz2Res);   ///
   }
-  Double_t sdistancey2 = erry2Res+seed->GetSigmaY2();
-  Double_t sdistancez2 = errz2Res+seed->GetSigmaZ2();
+  //
+  seed->SetErrorY2(erry2Res+serry2);
+  seed->SetErrorZ2(errz2Res+serrz2);
+  Double_t sdistancey2 = erry2Res+serry2+seed->GetSigmaY2();
+  Double_t sdistancez2 = errz2Res+serrz2+seed->GetSigmaZ2();
+  //
   Double_t dy=seed->GetCurrentCluster()->GetY()-yt;
   Double_t dz=seed->GetCurrentCluster()->GetZ()-zt;
   Double_t rdistancey2 = dy*dy/sdistancey2;
@@ -421,6 +427,8 @@ Int_t AliTPCtracker::AcceptCluster(AliTPCseed * seed, AliTPCclusterMI * cluster)
       "zt="<<zt<<
       "gcl.="<<&gcl<<
       "gtr.="<<&gtr<<
+      "serry2="<<serry2<<
+      "serrz2="<<serrz2<<
       "erry2="<<sy2<<
       "errz2="<<sz2<<
       "erry2LMC="<<erry2LM<<
