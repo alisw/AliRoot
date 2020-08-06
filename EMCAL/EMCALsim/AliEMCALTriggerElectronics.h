@@ -36,6 +36,9 @@ public:
   
   virtual void   Digits2Trigger(TClonesArray* digits, const Int_t V0M[], AliEMCALTriggerData* data);	
   virtual void   Reset();  
+
+  Float_t GetADCscaleMC() { return fADCscaleMC; }
+  void SetADCscaleMC(Float_t input) { fADCscaleMC = input; }
   
   virtual AliEMCALTriggerTRU* GetTRU( Int_t iTRU ) {return (AliEMCALTriggerTRU*)fTRU->At(iTRU);}
   virtual AliEMCALTriggerSTU* GetSTU( Bool_t isDCAL = false ) {return isDCAL ? fSTUDCAL : fSTU;}
@@ -51,6 +54,7 @@ private:
   AliEMCALGeometry     *fGeometry; ///< EMCal geometry
  
   Int_t                fMedianMode; // 0 for no median subtraction, 1 for median sub.
+  Float_t              fADCscaleMC; //< Scaling up MC raw digits so samples match total energy
   TClonesArray*        fTRUDCAL;  //< 14 TRU
   AliEMCALTriggerSTU*  fSTUDCAL;  //< 1 STU for DCAL
  
