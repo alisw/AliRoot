@@ -48,6 +48,8 @@ message(STATUS "Build folder: ${AliRoot_BINARY_DIR}")
 message(STATUS "Source folder: ${AliRoot_SOURCE_DIR}")
 message(STATUS "Installation folder: ${CMAKE_INSTALL_PREFIX}")
 
+set(CMAKE_Fortran_FLAGS "-w -fallow-argument-mismatch -fallow-invalid-boz -O2")
+
 # CMake supports different build types by default. We want the DEBUG build type
 # to have "-g -O0" flags: by default it only has "-g"
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -D__DEBUG")
