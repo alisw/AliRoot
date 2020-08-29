@@ -142,18 +142,23 @@ void AliEMCALTriggerSTU::L1(int type)
   TVector2 s1, s2, s3, s4;
   fDCSConfig->GetSegmentation(s1, s2, s3, s4);
   Int_t fBkg = 0;
+  // As patch sizes are stored as doubles, there is no integer division problem for the scaling
   switch (type)
   {
     case kL1GammaHigh:
     case kL1GammaLow:
       SetSubRegionSize(s1); 
       SetPatchSize(s2);
+      fBkg = fBkgRho * (PatchSize()->X() * PatchSize()->Y() / 64);
+      // for 2x2 patches, this is (2*2)/(8*8)
       break;
     case kL1JetHigh:
     case kL1JetLow:
       SetSubRegionSize(s3);
       SetPatchSize(s4);
       fBkg = fBkgRho * (PatchSize()->X() * PatchSize()->Y() / 4);
+      // for 8x8 patches, this is (2*2)/4
+      // for 16x16 patches, this is (4*4)/4
       break;
     default:
       AliError("Not supported L1 trigger type");
