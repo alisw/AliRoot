@@ -63,6 +63,13 @@ public:
       Double_t pdf1;       // PDF (id1, x1, Q) - x*f(x)
       Double_t pdf2;       // PDF (id2, x2, Q) - x*f(x)
    };
+   static const char * fgCsHeaderBranchString; // "sigma_gen/D:sigma_err,pt_hard,ntrials";
+   struct CrossSectionHeader_t {
+      Double_t sigma_gen;   ///< gen. cross section
+      Double_t sigma_err;   ///< error of the gen. cross section
+      Double_t pt_hard;     ///< pt of the hard process
+      Int_t ntrials;        ///< number of trials
+   };
 
    // Default constructor/destructor stuff, don't inherit from this class unless you handle the tree pointer
    inline THepMCParser() : fTree(0) {;} // nullptr in c++11
@@ -114,7 +121,7 @@ public:
    // heavy ions or parton distribution functions available. This function will pull them
    // out if available.
    // The caller must supply allocated structures which will then be filled.
-   static std::string ParseGenEvent2HeaderStructs(HepMC::GenEvent *, HeavyIonHeader_t &, PdfHeader_t &, bool fillZeroOnMissingHeavyIon = true, bool fillZeroOnMissingPdf = true);
+   static std::string ParseGenEvent2HeaderStructs(HepMC::GenEvent *, HeavyIonHeader_t &, PdfHeader_t &, CrossSectionHeader_t &, bool fillZeroOnMissingHeavyIon = true, bool fillZeroOnMissingPdf = true, bool fillZeroOnMissingCs = true);
 
 
 };
