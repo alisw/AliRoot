@@ -51,6 +51,7 @@ void AliGenReaderHepMC::Init()
 
 Int_t AliGenReaderHepMC::NextEvent()
 {
+   const Double_t kPbToMb = 1e-9; // Cross section units: pb to mb;
    // Clean memory
    if (fGenEvent) delete fGenEvent;
    // Read the next event
@@ -59,7 +60,8 @@ Int_t AliGenReaderHepMC::NextEvent()
       fParticleIterator->Reset();
       THepMCParser::HeavyIonHeader_t heavyIonHeader;
       THepMCParser::PdfHeader_t pdfHeader;
-      THepMCParser::ParseGenEvent2HeaderStructs(fGenEvent,heavyIonHeader,pdfHeader,true,true);
+      THepMCParser::CrossSectionHeader_t csHeader;
+      THepMCParser::ParseGenEvent2HeaderStructs(fGenEvent,heavyIonHeader,pdfHeader,csHeader,true,true,true);
       fGenEventHeader = new AliGenHepMCEventHeader(
             heavyIonHeader.Ncoll_hard,
             heavyIonHeader.Npart_proj,
@@ -82,7 +84,11 @@ Int_t AliGenReaderHepMC::NextEvent()
             pdfHeader.x2,
             pdfHeader.scalePDF,
             pdfHeader.pdf1,
-            pdfHeader.pdf2
+            pdfHeader.pdf2,
+            csHeader.sigma_gen * kPbToMb,
+            csHeader.sigma_err * kPbToMb,
+            csHeader.pt_hard,
+            csHeader.ntrials
       );
       // propagate the event weight from HepMC to the event header
       HepMC::WeightContainer weights = fGenEvent->weights();

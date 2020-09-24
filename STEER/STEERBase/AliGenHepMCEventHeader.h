@@ -36,7 +36,11 @@ public:
          Double_t x2,         // fraction of beam momentum carried by second parton ("target side")
          Double_t scalePDF,   // Q-scale used in evaluation of PDF's   (in GeV)
          Double_t pdf1,       // PDF (id1, x1, Q) - x*f(x)
-         Double_t pdf2        // PDF (id2, x2, Q) - x*f(x)
+         Double_t pdf2,       // PDF (id2, x2, Q) - x*f(x)
+         Float_t  sigma_gen,  // Cross section (for pp collisions)
+         Float_t  sigma_err,  // Error of the cross section (for pp collisions)
+         Float_t  pthard,     // pt-hard (event scale, for pp collisions)
+         Int_t    ntrials     // number of trials (in case of jet-jet productions, for pp collisions)
    );
    virtual ~AliGenHepMCEventHeader() {}
 
@@ -65,9 +69,15 @@ public:
    Double_t pdf1() const {return fpdf1;} // PDF (id1, x1, Q) - x*f(x)
    Double_t pdf2() const {return fpdf2;} // PDF (id2, x2, Q) - x*f(x)
 
+   Float_t  sigma_gen() const { return fSigmaGen; }
+   Float_t  sigma_err() const { return fSigmaErr; }
+   Float_t  pthard() const { return fPtHard; }
+   Int_t    ntrials() const { return fNtrials; }
+
    // convenience functions to check if the headers are containing information
    Bool_t   HeavyIonInfoValid();
    Bool_t   PDFValid();
+   Bool_t   CrossSectionValid();
 
 protected:
 
@@ -95,7 +105,13 @@ protected:
    Double_t fpdf1;       // PDF (id1, x1, Q) - x*f(x)
    Double_t fpdf2;       // PDF (id2, x2, Q) - x*f(x)
 
-   ClassDef(AliGenHepMCEventHeader, 2)  // Event header for HepMC event
+   // For pp generators
+   Double_t  fSigmaGen;   ///< Cross section
+   Double_t  fSigmaErr;   ///< Error on the cross section
+   Double_t  fPtHard;     ///< Pt of the hard process
+   Int_t     fNtrials;    ///< Number of trials
+
+   ClassDef(AliGenHepMCEventHeader, 3)  // Event header for HepMC event
 };
 
 
