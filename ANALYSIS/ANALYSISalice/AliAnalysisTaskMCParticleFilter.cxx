@@ -43,6 +43,7 @@
 #include "AliGenPythiaEventHeader.h"
 #include "AliGenCocktailEventHeader.h"
 #include "AliGenEventHeaderTunedPbPb.h"
+#include "AliGenHepMCEventHeader.h"
 #include "AliESDtrack.h"
 #include "AliAODTrack.h"
 #include "AliAODPid.h"
@@ -277,17 +278,21 @@ void AliAnalysisTaskMCParticleFilter::UserExec(Option_t */*option*/)
   AliCollisionGeometry    *colG = 0;
   AliGenDPMjetEventHeader *dpmH = 0;
   AliGenEventHeaderTunedPbPb *tunedH = 0;
+  AliGenHepMCEventHeader *hmcH = 0;
 
   // it can be only one save some casts
   // assuming PYTHIA and HIJING are the most likely ones...
   if(!pyH){
-      hiH = dynamic_cast<AliGenHijingEventHeader*>(mcEH);
-      if(!hiH){
-	  dpmH = dynamic_cast<AliGenDPMjetEventHeader*>(mcEH);
-	  if(!dpmH){
-	    tunedH = dynamic_cast<AliGenEventHeaderTunedPbPb*>(mcEH);
-	  }
+    hiH = dynamic_cast<AliGenHijingEventHeader*>(mcEH);
+    if(!hiH){
+      dpmH = dynamic_cast<AliGenDPMjetEventHeader*>(mcEH);
+      if(!dpmH){
+        hmcH = dynamic_cast<AliGenHepMCEventHeader*>(mcEH);
+        if(!hmcH) {
+          tunedH = dynamic_cast<AliGenEventHeaderTunedPbPb*>(mcEH);
+        } 
       }
+    }
   }
   
   if (hiH || dpmH) colG = dynamic_cast<AliCollisionGeometry*>(mcEH);
@@ -302,10 +307,11 @@ void AliAnalysisTaskMCParticleFilter::UserExec(Option_t */*option*/)
     if (ccEH) {
       TList *genHeaders = ccEH->GetHeaders();
       for (int imch=0; imch<genHeaders->GetEntries(); imch++) {
-	if(!pyH)pyH = dynamic_cast<AliGenPythiaEventHeader*>(genHeaders->At(imch));
-	if(!hiH)hiH = dynamic_cast<AliGenHijingEventHeader*>(genHeaders->At(imch));
-	if(!colG)colG = dynamic_cast<AliCollisionGeometry *>(genHeaders->At(imch));
-	if(!dpmH)dpmH = dynamic_cast<AliGenDPMjetEventHeader*>(genHeaders->At(imch));
+        if(!pyH)pyH = dynamic_cast<AliGenPythiaEventHeader*>(genHeaders->At(imch));
+        if(!hiH)hiH = dynamic_cast<AliGenHijingEventHeader*>(genHeaders->At(imch));
+        if(!colG)colG = dynamic_cast<AliCollisionGeometry *>(genHeaders->At(imch));
+        if(!dpmH)dpmH = dynamic_cast<AliGenDPMjetEventHeader*>(genHeaders->At(imch));
+        if(!hmcH)hmcH = dynamic_cast<AliGenHepMCEventHeader*>(genHeaders->At(imch));
       }
     }
   }
@@ -314,6 +320,7 @@ void AliAnalysisTaskMCParticleFilter::UserExec(Option_t */*option*/)
   if(hiH)ntrials = hiH->Trials();
   if(dpmH)ntrials = dpmH->Trials();
   if(pyH)ntrials = pyH->Trials();
+  if(hmcH)ntrials = hmcH->ntrials();
   if(ntrials)((TH1F*)(fHistList->FindObject("h1Trials")))->Fill("#sum{ntrials}",ntrials); 
   
 
@@ -326,6 +333,11 @@ void AliAnalysisTaskMCParticleFilter::UserExec(Option_t */*option*/)
   else if(tunedH) {
     fAODMcHeader->SetReactionPlaneAngle(tunedH->GetPsi2());
     fAODMcHeader->SetCrossSection(tunedH->GetCentrality());
+  }
+
+  if(hmcH) {
+    fAODMcHeader->SetCrossSection(hmcH->sigma_gen());
+    fAODMcHeader->SetPtHard(hmcH->pthard());
   }
 
 
