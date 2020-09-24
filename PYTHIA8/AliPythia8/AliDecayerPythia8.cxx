@@ -591,6 +591,7 @@ void AliDecayerPythia8::ForceDecay()
     break;
     case kXic0Semileptonic:
       ForceHadronicD(0,0,0,1,0);  // Xic0 -> Xi e nu
+    break;
     case kHadronicDWithout4BodiesDsPhiPi:
       ForceHadronicD(0,0,0,0,1);
     break;
