@@ -41,7 +41,11 @@ AliGenHepMCEventHeader::AliGenHepMCEventHeader():
    fx2(0.0),
    fscalePDF(0.0),
    fpdf1(0.0),
-   fpdf2(0.0)
+   fpdf2(0.0),
+   fSigmaGen(0.0),
+   fSigmaErr(0.0),
+   fPtHard(-1.0),
+   fNtrials(0.0)
 {
    // Default Constructor
 }
@@ -69,7 +73,11 @@ AliGenHepMCEventHeader::AliGenHepMCEventHeader(const char* name):
    fx2(0.0),
    fscalePDF(0.0),
    fpdf1(0.0),
-   fpdf2(0.0)
+   fpdf2(0.0),
+   fSigmaGen(0.0),
+   fSigmaErr(0.0),
+   fPtHard(-1.0),
+   fNtrials(0.0)
 {
    // Constructor
 }
@@ -96,7 +104,11 @@ AliGenHepMCEventHeader::AliGenHepMCEventHeader(
       Double_t var_x2,         // fraction of beam momentum carried by second parton ("target side")
       Double_t var_scalePDF,   // Q-scale used in evaluation of PDF's   (in GeV)
       Double_t var_pdf1,       // PDF (id1, x1, Q) - x*f(x)
-      Double_t var_pdf2        // PDF (id2, x2, Q) - x*f(x)
+      Double_t var_pdf2,       // PDF (id2, x2, Q) - x*f(x)
+      Float_t  sigma_gen,      // Cross section (for pp collisions)
+      Float_t  sigma_err,      // Error of the cross section (for pp collisions, if supported by generator)
+      Float_t  pthard,         // pt-hard (event scale, for pp collisions)
+      Int_t    ntrials         // number of trials (in case of jet-jet productions, for pp collisions)
 ):
    fNcoll_hard(var_Ncoll_hard),
    fNpart_proj(var_Npart_proj),
@@ -119,7 +131,11 @@ AliGenHepMCEventHeader::AliGenHepMCEventHeader(
    fx2(var_x2),
    fscalePDF(var_scalePDF),
    fpdf1(var_pdf1),
-   fpdf2(var_pdf2)
+   fpdf2(var_pdf2),
+   fSigmaGen(sigma_gen),
+   fSigmaErr(sigma_err),
+   fPtHard(pthard),
+   fNtrials(ntrials)   
 {
    // The Constructor
 }
@@ -150,4 +166,11 @@ Bool_t AliGenHepMCEventHeader::PDFValid() {
          fscalePDF != 0.0 ||
          fpdf1 != 0.0 ||
          fpdf2 != 0.0;
+}
+
+Bool_t AliGenHepMCEventHeader::CrossSectionValid() {
+   return fSigmaGen != 0. ||
+          fSigmaErr != 0. ||
+          fPtHard != 0. ||
+          fNtrials != 0;
 }
