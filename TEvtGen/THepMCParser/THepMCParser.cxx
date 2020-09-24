@@ -43,10 +43,12 @@ void THepMCParser::init(HepMC::IO_BaseClass * events)
    fTree->Branch("HeavyIonInfo", &heavyIonHeader, THepMCParser::fgHeavyIonHeaderBranchString);
    THepMCParser::PdfHeader_t pdfHeader;
    fTree->Branch("PdfInfo", &pdfHeader, THepMCParser::fgPdfHeaderBranchString);
+   THepMCParser::CrossSectionHeader_t csHeader;
+   fTree->Branch("CrossSectionInfo", &csHeader, THepMCParser::fgCsHeaderBranchString);
    HepMC::GenEvent* evt =  0; // nullptr
    while ((evt = events->read_next_event())) {
       string errMsg1 = ParseGenEvent2TCloneArray(evt,array);
-      string errMsg2 = ParseGenEvent2HeaderStructs(evt,heavyIonHeader,pdfHeader);
+      string errMsg2 = ParseGenEvent2HeaderStructs(evt,heavyIonHeader,pdfHeader,csHeader);
       if (errMsg1.length() == 0 && errMsg2.length() == 0) {
          fTree->Fill();
       } else {
@@ -632,13 +634,15 @@ void THepMCParser::ExploreVertex(HepMC::GenVertex * vertex, list<HepMC::GenVerte
 
 const char * THepMCParser::fgHeavyIonHeaderBranchString = "Ncoll_hard/I:Npart_proj:Npart_targ:Ncoll:spectator_neutrons:spectator_protons:N_Nwounded_collisions:Nwounded_N_collisions:Nwounded_Nwounded_collisions:impact_parameter/F:event_plane_angle:eccentricity:sigma_inel_NN";
 const char * THepMCParser::fgPdfHeaderBranchString = "id1/I:id2:pdf_id1:pdf_id2:x1/D:x2:scalePDF:pdf1:pdf2";
+const char * THepMCParser::fgCsHeaderBranchString =  "sigma_gen/D:sigma_err,pt_hard,ntrials";
 
-string THepMCParser::ParseGenEvent2HeaderStructs(HepMC::GenEvent * genEvent, HeavyIonHeader_t & heavyIonHeader, PdfHeader_t & pdfHeader, bool fillZeroOnMissingHeavyIon, bool fillZeroOnMissingPdf)
+string THepMCParser::ParseGenEvent2HeaderStructs(HepMC::GenEvent * genEvent, HeavyIonHeader_t & heavyIonHeader, PdfHeader_t & pdfHeader, CrossSectionHeader_t &csheader, bool fillZeroOnMissingHeavyIon, bool fillZeroOnMissingPdf, bool fillZeroOnMissingCs)
 {
    HepMC::HeavyIon * heavyIon = genEvent->heavy_ion();
    HepMC::PdfInfo * pdfInfo = genEvent->pdf_info();
-   if ((!heavyIon && !fillZeroOnMissingHeavyIon) || (!pdfInfo && !fillZeroOnMissingPdf)) {
-      return "HeavyIonInfo and/or PdfInfo not defined for this event, did you read it with IO_GenEvent?";
+   HepMC::GenCrossSection *csInfo = genEvent->cross_section();
+   if ((!heavyIon && !fillZeroOnMissingHeavyIon) || (!pdfInfo && !fillZeroOnMissingPdf) || (!csInfo && !fillZeroOnMissingCs)) {
+      return "HeavyIonInfo and/or PdfInfo and/or CrossSectionInfo not defined for this event, did you read it with IO_GenEvent?";
    }
    if (heavyIon) {
       heavyIonHeader.Ncoll_hard = heavyIon->Ncoll_hard();
@@ -689,6 +693,21 @@ string THepMCParser::ParseGenEvent2HeaderStructs(HepMC::GenEvent * genEvent, Hea
       pdfHeader.scalePDF = 0.0;
       pdfHeader.pdf1 = 0.0;
       pdfHeader.pdf2 = 0.0;
+   }
+   if(csInfo) {
+      csheader.sigma_gen = csInfo->cross_section();
+      csheader.sigma_err = csInfo->cross_section_error();
+      csheader.pt_hard = genEvent->event_scale();
+      if(genEvent->weights().has_key("NTrial")) {
+         csheader.ntrials = genEvent->weights()["NTrial"];
+      } else {
+         csheader.ntrials = 1;
+      }
+   } else {
+      csheader.sigma_gen = 0;
+      csheader.sigma_err = 0;
+      csheader.pt_hard = 0; 
+      csheader.ntrials = 0;
    }
    return "";
 }
