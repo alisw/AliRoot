@@ -17,6 +17,7 @@
 /// \file GPUReconstruction.cxx
 /// \author David Rohr
 
+#include <array>
 #include <cstring>
 #include <cstdio>
 #include <iostream>
