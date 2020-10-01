@@ -187,8 +187,9 @@ class AliGenPythiaPlus : public AliGenMC
       fTriggerMultiplicityPtMin = ptmin;}
 
     // Trigger on a single particle (not related to calorimeter trigger above)
-    virtual void    SetTriggerParticle(Int_t particle = 0, Float_t etamax = 0.9) 
-	{fTriggerParticle = particle; fTriggerEta = etamax;}
+    virtual void    SetTriggerParticle(Int_t particle = 0, Float_t etamax = 0.9, Float_t ptmin = -1, Float_t ptmax = 1000)
+	{fTriggerParticle = particle; fTriggerEta = etamax; fTriggerMinPt = ptmin; fTriggerMaxPt = ptmax;}
+    virtual void  SetTriggerY(Float_t dy) {fTriggerY = dy;}
     //
     // Heavy flavor options
     //
@@ -336,6 +337,9 @@ class AliGenPythiaPlus : public AliGenMC
     Bool_t  fHFoff;                 // Flag for switching heafy flavor production off
     Int_t   fTriggerParticle;       // Trigger on this particle ...
     Float_t fTriggerEta;            // .. within |eta| < fTriggerEta
+    Float_t fTriggerY;              // .. within |y|   < fTriggerY
+    Float_t fTriggerMinPt;          // .. within pt > fTriggerMinPt
+    Float_t fTriggerMaxPt;          // .. within pt < fTriggerMaxPt
     Int_t       fTriggerMultiplicity;       // Trigger on events with a minimum charged multiplicity
     Float_t     fTriggerMultiplicityEta;    // in a given eta range
     Float_t     fTriggerMultiplicityEtaMin;    // in a given eta min
@@ -393,7 +397,7 @@ class AliGenPythiaPlus : public AliGenMC
     AliGenPythiaPlus(const AliGenPythiaPlus &Pythia);
     AliGenPythiaPlus & operator=(const AliGenPythiaPlus & rhs);
 
-    ClassDef(AliGenPythiaPlus, 7)
+    ClassDef(AliGenPythiaPlus, 8)
 
 };
 #endif
