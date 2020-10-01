@@ -146,34 +146,35 @@ void AliPDG::AddParticlesToPdgDataBase()
   // Needed for other generators
   // So check if already defined
 
-
+  /// UPDATED VALUES FROM CODATA 2018
   Int_t ionCode = kion+10020;
   if(!pdgDB->GetParticle(ionCode)){
-      pdgDB->AddParticle("Deuteron","Deuteron", 1.875613, kTRUE,
+      pdgDB->AddParticle("Deuteron","Deuteron", 1.87561294257, kTRUE,
 			 0,3,"Ion",ionCode);
   }
   pdgDB->AddAntiParticle("AntiDeuteron", - ionCode);
 
   ionCode = kion+10030;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Triton","Triton", 2.80925, kFALSE,
+    pdgDB->AddParticle("Triton","Triton", 2.80892113298, kFALSE,
                      khShGev/(12.33*kYear2Sec),3,"Ion",ionCode);
   }
   pdgDB->AddAntiParticle("AntiTriton", - ionCode);
 
   ionCode = kion+20030;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("HE3","HE3", 2.80923,kFALSE,
+    pdgDB->AddParticle("HE3","HE3", 2.80839160743, kFALSE,
                      0,6,"Ion",ionCode);
   }
   pdgDB->AddAntiParticle("AntiHE3", - ionCode);
 
   ionCode = kion+20040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Alpha","Alpha", 3.727379, kTRUE,
+    pdgDB->AddParticle("Alpha","Alpha", 3.7273794066, kTRUE,
 		       khShGev/(12.33*kYear2Sec), 6, "Ion", ionCode);
   }
   pdgDB->AddAntiParticle("AntiAlpha", - ionCode);
+  /// PLEASE UPDATE REGULARLY
 
 // Special particles
 //
