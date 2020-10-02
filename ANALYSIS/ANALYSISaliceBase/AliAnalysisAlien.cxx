@@ -4348,8 +4348,10 @@ void AliAnalysisAlien::WriteAnalysisMacro(Long64_t nentries, Long64_t firstentry
             out << "   plugin->SetFriendChainName(\"" << fFriendChainName << "\",\"" << fFriendLibs << "\");" << endl;
          if (IsUseMCchain())
             out << "   plugin->SetUseMCchain();" << endl;
-         if (fMCLoop)
+         if (fMCLoop) {
             out << "   plugin->SetMCLoop(kTRUE);" << endl;  
+            out << "   plugin->SetNMCevents(" << GetNMCevents() << ");" << std::endl;
+         }  
          out << "   mgr->SetGridHandler(plugin);" << endl;
          if (AliAnalysisManager::GetAnalysisManager()) {
             out << "   mgr->SetDebugLevel(" << AliAnalysisManager::GetAnalysisManager()->GetDebugLevel() << ");" << endl;
