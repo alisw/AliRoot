@@ -77,6 +77,7 @@ AliAnalysisManager::AliAnalysisManager(const char *name, const char *title)
                     fEventPool(0),
                     fCurrentEntry(-1),
                     fNSysInfo(0),
+                    fNumberOfEvents(0),
                     fMode(kLocalAnalysis),
                     fInitOK(kFALSE),
                     fMustClean(kFALSE),
@@ -151,6 +152,7 @@ AliAnalysisManager::AliAnalysisManager(const AliAnalysisManager& other)
                     fEventPool(NULL),
                     fCurrentEntry(-1),
                     fNSysInfo(0),
+                    fNumberOfEvents(0),
                     fMode(other.fMode),
                     fInitOK(other.fInitOK),
                     fMustClean(other.fMustClean),
@@ -338,6 +340,7 @@ Bool_t AliAnalysisManager::EventLoop(Long64_t nevents)
 /// If the tree is memory resident, the handler should never call TTree::Fill
 /// method.
 
+   fNumberOfEvents = nevents;
    cout << "===== RUNNING IN EVENT LOOP MODE: " << GetName() << endl;
    if (!fInputEventHandler) {
      Error("EventLoop", "No input handler: exiting");
@@ -1869,6 +1872,7 @@ Long64_t AliAnalysisManager::StartAnalysis(const char *type, Long64_t nentries, 
       Info("===", "Add an AliAnalysisAlien object as plugin for this manager and configure it.");
       return -1;
    }
+   fNumberOfEvents = nentries;
    TTree *tree = NULL;
    return StartAnalysis(type, tree, nentries, firstentry);
 }
@@ -1894,6 +1898,7 @@ Long64_t AliAnalysisManager::StartAnalysis(const char *type, TTree * const tree,
       AliLog::SetGlobalLogLevel(AliLog::kInfo);
    }
    fMaxEntries = nentries;
+   fNumberOfEvents = nentries;
    fIsRemote = kFALSE;
    TString anaType = type;
    anaType.ToLower();
@@ -2127,6 +2132,7 @@ Long64_t AliAnalysisManager::StartAnalysis(const char *type, const char *dataset
       Error("StartAnalysis", "Cannot process datasets in %s mode. Try PROOF.", type);
       return -1;
    }   
+   fNumberOfEvents = nentries;
    fMode = kProofAnalysis;
    TString line;
    TString proofProcessOpt;
@@ -2197,6 +2203,7 @@ Long64_t AliAnalysisManager::StartAnalysis(const char *type, TFileCollection* da
     Error("StartAnalysis", "Cannot process datasets in %s mode. Try PROOF.", type);
     return -1;
   }
+  fNumberOfEvents = nentries;
   fMode = kProofAnalysis;
   TString line;
   TString proofProcessOpt;

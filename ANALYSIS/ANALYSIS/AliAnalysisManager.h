@@ -120,6 +120,7 @@ enum EAliAnalysisFlags {
    AliVEventHandler*   GetInputEventHandler() const   {return fInputEventHandler;}
    AliVEventHandler*   GetMCtruthEventHandler() const {return fMCtruthEventHandler;}
    Int_t               GetNsysInfo() const        {return fNSysInfo;}
+   Long64_t            GetNumberOfEvents() const  {return fNumberOfEvents;}
    AliVEventHandler*   GetOutputEventHandler() const  {return fOutputEventHandler;}
    TObjArray          *GetOutputs() const         {return fOutputs;}
    TObjArray          *GetParamOutputs() const    {return fParamCont;}
@@ -248,6 +249,7 @@ private:
    AliVEventPool          *fEventPool;           ///< Event pool for mixing analysis
    Long64_t                fCurrentEntry;        //!<! Current processed entry in the tree
    Long64_t                fNSysInfo;            ///< Event frequency for collecting system information
+   Long64_t                fNumberOfEvents;      ///< Number of events to be processed in the event loop
    EAliAnalysisExecMode    fMode;                ///< Execution mode
    Bool_t                  fInitOK;              ///< Initialisation done
    Bool_t                  fMustClean;           ///< Flag to let ROOT do cleanup
