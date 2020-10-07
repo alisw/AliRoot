@@ -447,7 +447,7 @@ AliCDBId* AliCDBGrid::GetEntryId(const AliCDBId& queryId) {
     TString pattern = "Run*.root";
     TString optionQuery = "-y";
     if(selectedId.GetVersion() >= 0) {
-      pattern.Prepend(Form("_v%d_s0",selectedId.GetVersion()));
+      pattern.Insert(pattern.Index(".root"), Form("_v%d_s0",selectedId.GetVersion()));
       optionQuery = "";
     }
 
