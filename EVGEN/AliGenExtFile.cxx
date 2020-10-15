@@ -301,7 +301,7 @@ void AliGenExtFile::Generate()
     if(fSetUserTrig){
       AliStack *stack = AliRunLoader::Instance()->Stack();
       if(!fUserTrigger(stack)){
-	stack->Reset();
+	stack->Clean();
         consecutiveDiscardedEvents++;
         if(consecutiveDiscardedEvents>fLimitDiscardedEvents){AliFatal(Form("More than %i events discarded consequently",fLimitDiscardedEvents));}
         continue;
@@ -314,7 +314,7 @@ void AliGenExtFile::Generate()
       AliInfo(Form("mult cut : %i",fMultCut));
       AliStack *stack = AliRunLoader::Instance()->Stack();
       if(!MultiplicityTrigger(stack)){
-	stack->Reset();
+	stack->Clean();
         consecutiveDiscardedEvents++;
         if(consecutiveDiscardedEvents>fLimitDiscardedEvents){AliFatal(Form("More than %i events discarded consequently",fLimitDiscardedEvents));}
         continue;
@@ -327,7 +327,7 @@ void AliGenExtFile::Generate()
       AliInfo(Form("pT cut : %f GeV/c",fPtCut));
       AliStack *stack = AliRunLoader::Instance()->Stack();
       if(!PtTrigger(stack)){
-	stack->Reset();
+	stack->Clean();
         consecutiveDiscardedEvents++;
         if(consecutiveDiscardedEvents>fLimitDiscardedEvents){AliFatal(Form("More than %i events discarded consequently",fLimitDiscardedEvents));}
         continue;
