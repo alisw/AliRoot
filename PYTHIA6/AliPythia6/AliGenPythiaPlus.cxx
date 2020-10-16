@@ -909,6 +909,11 @@ void AliGenPythiaPlus::Generate()
   	} else {
 	    nc = GenerateMB();
 	} // mb ?
+
+  ///---------------------------------------------------------------------------
+  // Application of the user trigger
+  if(!ApplyUserTrigger()) continue;
+  ///---------------------------------------------------------------------------
 	
 	GetSubEventTime();
 
