@@ -459,7 +459,13 @@ void AliITSsimulationSDD::HitsToAnalogDigits( AliITSmodule *mod ) {
     
     // Compute number of segments to brake step path into
     drTime = drPath/driftSpeed;  //   Drift Time
-    sigA   = TMath::Sqrt(2.*dfCoeff*drTime+s1*s1);// Sigma along the anodes
+    Double_t sig2A=2.*dfCoeff*drTime+s1*s1; // square of sigma along the anodes
+    if(sig2A < 0){
+      AliInfo(Form("negative sigma^2 (%e) at anodes: drPath=%e driftSpeed=%e dfCoeff=%e s1=%e",
+		   sig2A,drPath,driftSpeed,dfCoeff,s1));
+      continue;
+    }
+    sigA   = TMath::Sqrt(sig2A);// Sigma along the anodes
     // calcuate the number of time the path length should be split into.
     nOfSplits = (Int_t) (1. + 10000.*pathInSDD/sigA);
     if(fFlag) nOfSplits = 1;
