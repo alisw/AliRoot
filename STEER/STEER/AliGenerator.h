@@ -192,7 +192,7 @@ class AliGenerator : public TNamed, public AliRndm
     ///-------------------------------------------------------------------------
     // Custom trigger
     Bool_t fSetUserTrig;
-    Bool_t (*fUserTrigger)(AliStack*);
+    Bool_t (*fUserTrigger)(AliStack*); //!
     ///-------------------------------------------------------------------------
 
  private:

@@ -56,7 +56,7 @@ class AliGenExtFile : public AliGenMC
     Double_t fPtCut;
 
     // Custom trigger
-    Bool_t (*fUserTrigger)(AliStack*);
+    Bool_t (*fUserTrigger)(AliStack*); //!
     ///
 
  private:
