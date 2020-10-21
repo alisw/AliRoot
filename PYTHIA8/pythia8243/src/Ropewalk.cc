@@ -107,7 +107,7 @@ void RopeDipole::propagateInit(double deltat) {
   double mTc2 = pcm.pT2() + pcm.m2Calc();
   double mTa2 = pam.pT2() + pam.m2Calc();
   
-  if (mTc2 <= 0 || mTc2 <= 0) {
+  if (mTc2 <= 0 || mTa2 <= 0) {
     infoPtr->errorMsg("Error in RopeDipole::propagateInit: Tried to"
       "propagate a RopeDipoleEnd with mT2 <= 0");
     return;
