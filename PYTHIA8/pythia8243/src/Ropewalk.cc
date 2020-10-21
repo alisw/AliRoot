@@ -103,12 +103,18 @@ void RopeDipole::propagateInit(double deltat) {
   // Dipole end momenta.
   Vec4 pcm = d1.getParticlePtr()->p();
   Vec4 pam = d2.getParticlePtr()->p();
-  double mTc = sqrt(pcm.pT2() + pcm.m2Calc());
-  double mTa = sqrt(pam.pT2() + pam.m2Calc());
-  if (mTc == 0 || mTa == 0)
+  
+  double mTc2 = pcm.pT2() + pcm.m2Calc();
+  double mTa2 = pam.pT2() + pam.m2Calc();
+  
+  if (mTc2 <= 0 || mTc2 <= 0) {
     infoPtr->errorMsg("Error in RopeDipole::propagateInit: Tried to"
-      "propagate a RopeDipoleEnd with mT = 0");
-
+      "propagate a RopeDipoleEnd with mT2 <= 0");
+    return;
+  }
+  double mTc = sqrt(mTc2);
+  double mTa = sqrt(mTa2);
+  
   // New vertices in the lab frame.
   Vec4 newv1 = Vec4(d1.getParticlePtr()->xProd() + deltat * pcm.px() / mTc,
                 d1.getParticlePtr()->yProd() + deltat * pcm.py() / mTc, 0, 0);
