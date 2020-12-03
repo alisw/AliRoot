@@ -208,7 +208,6 @@ void AliT0Digitizer::Digitize(Option_t* /*option*/)
   Int_t ph2Mip = fParam->GetPh2Mip();     
   Float_t channelWidth = fParam->GetChannelWidth() ;  
   Float_t delayVertex = fParam->GetTimeDelayTVD();
-   
 
   zdetC = TMath::Abs(fParam->GetZPosition("T0/C/PMT1"));
   zdetA  = TMath::Abs(fParam->GetZPosition("T0/A/PMT15"));
@@ -225,6 +224,8 @@ void AliT0Digitizer::Digitize(Option_t* /*option*/)
   Int_t timeDiff=99999, meanTime=99999;
   Int_t sumMult =0;   fSumMult=0;
   bestATDC = 99999;  bestCTDC = 99999;
+  Float_t avHitTimeA = 12528; // ps
+  Float_t avHitTimeC = 2478;  // ps
   ftimeCFD -> Reset();
   fADC -> Reset();
   fADC0 -> Reset();
@@ -254,7 +255,7 @@ void AliT0Digitizer::Digitize(Option_t* /*option*/)
     TString gen=genHeader->GetName();
     printf(" generator %s\n", genname);
 
-       //read Hits 
+    // read Hits
     pInStartLoader->LoadHits("READ");//probably it is necessary to load them before
     fHits = fT0->Hits ();
     TTree *th = pInStartLoader->TreeH();
@@ -275,23 +276,30 @@ void AliT0Digitizer::Digitize(Option_t* /*option*/)
       brHits->GetEntry(track);
       nhits = fHits->GetEntriesFast();
       for (hit=0;hit<nhits;hit++) {
-	startHit   = (AliT0hit*) fHits->UncheckedAt(hit);
-	if (!startHit) {
-	  AliError("The unchecked hit doesn't exist");
-	  break;
-	}
-	pmt=startHit->Pmt();
-	Int_t numpmt=pmt-1;
-	Double_t e=startHit->Etot();
-	volume = startHit->Volume();
-	if(volume==3) numpmt=24+pmt-1;
-	if(e>0 ) {
-	  countE[numpmt]++;
-	  besttime[numpmt] = startHit->Time();
-	  if(besttime[numpmt]<time[numpmt]) {
-	    time[numpmt]=besttime[numpmt];
-	  }
-	} //photoelectron accept 
+        startHit = (AliT0hit *)fHits->UncheckedAt(hit);
+        if (!startHit) {
+          AliError("The unchecked hit doesn't exist");
+          break;
+        }
+        pmt = startHit->Pmt();
+        Int_t numpmt = pmt - 1;
+        Double_t e = startHit->Etot();
+        volume = startHit->Volume();
+        if (volume == 3)
+          numpmt = 24 + pmt - 1;
+        if (e > 0) {
+          countE[numpmt]++;
+          besttime[numpmt] = startHit->Time();
+          if (volume == 1 && (startHit->Time() > avHitTimeA + 2000 ||
+                              startHit->Time() < avHitTimeA - 2000))
+            continue;
+          if (volume == 2 && (startHit->Time() > avHitTimeC + 2000 ||
+                              startHit->Time() < avHitTimeC - 2000))
+            continue;
+          if (besttime[numpmt] < time[numpmt]) {
+            time[numpmt] = besttime[numpmt];
+          }
+        } // photoelectron accept
       } //hits loop
     } //track loop
     
@@ -301,78 +309,89 @@ void AliT0Digitizer::Digitize(Option_t* /*option*/)
     Float_t koef=(zdetA-zdetC)/c; //correction position difference by cable
     for (Int_t ipmt=0; ipmt<12; ipmt++) {
       if (countE[ipmt] > threshold) {
-	timeGaus[ipmt]=gRandom->Gaus(time[ipmt],25)+koef;
-	if (timeGaus[ipmt]<besttimeC) {
-	  besttimeC=timeGaus[ipmt]; //timeC
-	  pmtBestC=ipmt;}
+        timeGaus[ipmt] = gRandom->Gaus(time[ipmt], 25) + koef;
+        if (timeGaus[ipmt] < besttimeC) {
+          besttimeC = timeGaus[ipmt]; // timeC
+          pmtBestC = ipmt;
+        }
       }
     }
     for ( Int_t ipmt=12; ipmt<24; ipmt++) {
       if (countE[ipmt] > threshold) {
-	timeGaus[ipmt]=gRandom->Gaus(time[ipmt],25); 
-	if (timeGaus[ipmt]<besttimeA) {
-	  besttimeA=timeGaus[ipmt]; //timeA
-	  pmtBestA=ipmt;}
+        timeGaus[ipmt] = gRandom->Gaus(time[ipmt], 25);
+        if (timeGaus[ipmt] < besttimeA) {
+          besttimeA = timeGaus[ipmt]; // timeA
+          pmtBestA = ipmt;
+        }
       }	
     }
     if (fRun2) {
       for ( Int_t ipmt=24; ipmt<28; ipmt++)  {
-	if (countE[ipmt] > threshold) {
-	  timeGaus[ipmt]=gRandom->Gaus(time[ipmt],25); 
-	  trLED= Int_t (timeGaus[ipmt]/channelWidth) ;
-	  ftimeLED->AddAt(trLED,ipmt-24);
-	  printf("@@@@ pmt %i countE%i timeLED %i \n",ipmt,countE[ipmt], trLED);
-	}
+        if (countE[ipmt] > threshold) {
+          timeGaus[ipmt] = gRandom->Gaus(time[ipmt], 25);
+          trLED = Int_t(timeGaus[ipmt] / channelWidth);
+          ftimeLED->AddAt(trLED, ipmt - 24);
+          printf("@@@@ pmt %i countE%i timeLED %i \n", ipmt, countE[ipmt],
+                 trLED);
+        }
       }
     }
     timeDelayCFD[0] = fParam->GetTimeDelayCFD(0);
- 
+
     for (Int_t i=0; i<24; i++) {
       Float_t  al = countE[i]; 
       if (al>threshold && timeGaus[i]<50000 ) {
-	//fill ADC
-	// QTC procedure:
-	// phe -> mV 0.3; 1MIP ->500phe -> ln (amp (mV)) = 5;
-	// max 200ns, HIJING  mean 50000phe -> 15000mv -> ln = 15 (s zapasom)
-	// channel 25ps
-	qt= al/ph2Mip;  // 50mv/Mip amp in mV 
-	// before will we have calibration for high multiplicity 
-	//	  if (qt > 115.) qt =115.; //must be fix!!!
-	//  fill TDC
-	timeDelayCFD[i] = fParam->GetTimeDelayCFD(i);
-	trCFD = Int_t (timeGaus[i]/channelWidth + timeDelayCFD[i]); 
-	
-	TGraph* gr = ((TGraph*)fAmpLED.At(i));
-	if(gr) sl = gr->Eval(qt);
-	
-	TGraph* gr1 = ((TGraph*)fAmpQTC.At(i));
-	if(gr1)  qtCh = gr1->Eval(qt);
-	fADC0->AddAt(0,i);
-	if(qtCh>0) {
-	  if(fRun2)
-	    fADC->AddAt(Int_t(1000.*qt),i);
-	  else
-	    fADC->AddAt(Int_t(qtCh),i);
-	}
-	//	  sumMult += Int_t ((al*gain[i]/ph2Mip)*50) ;
-	sumMult += Int_t (qtCh/sumMultCoeff)  ;
-	
-	// put slewing 
-	TGraph *fu=(TGraph*) fParam ->GetWalk(i);
-	if (fu)  slew=fu->Eval(Float_t(qtCh));
-	if (!fRun2) trCFD = trCFD + Int_t(slew); //for the same channel as cosmic
-	ftimeCFD->AddAt(Int_t (trCFD),i);
-	
-	trLED = Int_t(trCFD  + sl );
-	if (!fRun2) ftimeLED->AddAt(trLED,i); 
-	  AliDebug(1,Form("  pmt %i : delay %f time in ns %f time in channels %i  LEd %i  ",  i, timeDelayCFD[i], timeGaus[i],trCFD, trLED ));
-	  AliDebug(1,Form(" qt in MIP %f led-cfd in  %f qt in channels %f   ",qt, sl, qtCh));
+        // fill ADC
+        // QTC procedure:
+        // phe -> mV 0.3; 1MIP ->500phe -> ln (amp (mV)) = 5;
+        // max 200ns, HIJING  mean 50000phe -> 15000mv -> ln = 15 (s zapasom)
+        // channel 25ps
+        qt = al / ph2Mip; // 50mv/Mip amp in mV
+        // before will we have calibration for high multiplicity
+        //	  if (qt > 115.) qt =115.; //must be fix!!!
+        //  fill TDC
+        timeDelayCFD[i] = fParam->GetTimeDelayCFD(i);
+        trCFD = Int_t(timeGaus[i] / channelWidth + timeDelayCFD[i]);
+
+        TGraph *gr = ((TGraph *)fAmpLED.At(i));
+        if (gr)
+          sl = gr->Eval(qt);
+
+        TGraph *gr1 = ((TGraph *)fAmpQTC.At(i));
+        if (gr1)
+          qtCh = gr1->Eval(qt);
+        fADC0->AddAt(0, i);
+        if (qtCh > 0) {
+          if (fRun2)
+            fADC->AddAt(Int_t(1000. * qt), i);
+          else
+            fADC->AddAt(Int_t(qtCh), i);
+        }
+        //	  sumMult += Int_t ((al*gain[i]/ph2Mip)*50) ;
+        sumMult += Int_t(qtCh / sumMultCoeff);
+
+        // put slewing
+        TGraph *fu = (TGraph *)fParam->GetWalk(i);
+        if (fu)
+          slew = fu->Eval(Float_t(qtCh));
+        if (!fRun2)
+          trCFD = trCFD + Int_t(slew); // for the same channel as cosmic
+        ftimeCFD->AddAt(Int_t(trCFD), i);
+
+        trLED = Int_t(trCFD + sl);
+        if (!fRun2)
+          ftimeLED->AddAt(trLED, i);
+        AliDebug(1, Form("  pmt %i : delay %f time in ns %f time in channels "
+                         "%i  LEd %i  ",
+                         i, timeDelayCFD[i], timeGaus[i], trCFD, trLED));
+        AliDebug(1, Form(" qt in MIP %f led-cfd in  %f qt in channels %f   ",
+                         qt, sl, qtCh));
       }
     } //pmt loop
 
     //folding with alignmentz position distribution  
     if ( besttimeC > 10000. && besttimeC <15000) bestCTDC=Int_t ((besttimeC+timeDelayCFD[pmtBestC])/channelWidth);
- 
+
     if( besttimeA > 10000. && besttimeA <15000)  bestATDC=Int_t ((besttimeA+timeDelayCFD[pmtBestA])/channelWidth);
 
     if (bestATDC < 99999 && bestCTDC < 99999) {
@@ -387,7 +406,7 @@ void AliT0Digitizer::Digitize(Option_t* /*option*/)
     if (gen.Contains("EPOSLHC_p-p"))  refpoint = 100;
     printf("!! refpoint before writing in digits %i\n",refpoint);
     fT0->AddDigit(bestATDC,bestCTDC,meanTime,timeDiff,fSumMult, refpoint, ftimeCFD,fADC0,ftimeLED,fADC);
-     
+
     AliDebug(10,Form(" Digits wrote refpoint %i bestATDC %i bestCTDC %i  meanTime %i  timeDiff %i fSumMult %i ",refpoint ,bestATDC,bestCTDC,meanTime,timeDiff,fSumMult ));
     pOutStartLoader->UnloadHits();
   } //input streams loop
