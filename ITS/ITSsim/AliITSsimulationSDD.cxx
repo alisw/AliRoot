@@ -498,7 +498,15 @@ void AliITSsimulationSDD::HitsToAnalogDigits( AliITSmodule *mod ) {
       } // end if driftPath < 0
       drTime     = driftPath/driftSpeed; // drift time for segment.
       // Sigma along the anodes for track segment.
-      sigA       = TMath::Sqrt(2.*dfCoeff*drTime+s1*s1);
+      Double_t sigSqA=2.*dfCoeff*drTime+s1*s1; // square of sigma along the anodes
+      if(sigSqA < 0 || sigSqA > 1E6){
+	// protection for negative or too large values of sigSqA causing FPE with fluka when computing sqrt
+	// The maximum value of sigSqA should be of about 50000, a safety margin is applied cutting at 1e6
+	AliInfo(Form("Anomalous sigma^2 (%e) for track segment: drPath=%e driftSpeed=%e drTime=%e dfCoeff=%e s1=%e",
+		     sigSqA,drPath,driftSpeed,drTime,dfCoeff,s1));
+	continue;
+      }
+      sigA       = TMath::Sqrt(sigSqA);// Sigma along the anodes
       sigT       = sigA/driftSpeed;
 
       drTime+=tof; // take into account Time Of Flight from production point
@@ -508,7 +516,7 @@ void AliITSsimulationSDD::HitsToAnalogDigits( AliITSmodule *mod ) {
       if(zAnode>nofAnodes) zAnode-=nofAnodes;  // to have the anode number between 0. and 256.
       iAnode = (Int_t) (1.001+zAnode); // iAnode in range 1-256 !!!!
       
-	// Peak amplitude in nanoAmpere
+      // Peak amplitude in nanoAmpere
       amplitude  = fScaleSize*160.*depEnergy/
 	(timeStep*eVpairs*2.*acos(-1.));
       chargeloss = 1.-cHloss*driftPath/1000.;
