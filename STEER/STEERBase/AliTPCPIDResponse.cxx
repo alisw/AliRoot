@@ -1,4 +1,4 @@
-    /**************************************************************************
+ /**************************************************************************
  * Copyright(c) 1998-1999, ALICE Experiment at CERN, All rights reserved. *
  *                                                                        *
  * Author: The ALICE Off-line Project.                                    *
@@ -104,6 +104,8 @@ AliTPCPIDResponse::AliTPCPIDResponse():
   fOROClongWeight(1.),
   fPileupCorrectionStrategy(kPileupCorrectionInExpectedSignal),
   fPileupCorrectionRequested(kFALSE),
+  fSigmaParametrization(0x0),
+  fMultiplicityNormalization(1),
   fRecoPassNameUsed(),
   fSplineArray()
 {
@@ -238,6 +240,8 @@ AliTPCPIDResponse::AliTPCPIDResponse(const AliTPCPIDResponse& that):
   fOROClongWeight(that.fOROClongWeight),
   fPileupCorrectionStrategy(that.fPileupCorrectionStrategy),
   fPileupCorrectionRequested(that.fPileupCorrectionRequested),
+  fSigmaParametrization(that.fSigmaParametrization),
+  fMultiplicityNormalization(that.fMultiplicityNormalization),
   fRecoPassNameUsed(that.fRecoPassNameUsed),
   fSplineArray()
 {
@@ -360,6 +364,9 @@ AliTPCPIDResponse& AliTPCPIDResponse::operator=(const AliTPCPIDResponse& that)
   fOROClongWeight            = that.fOROClongWeight;
   fPileupCorrectionStrategy  = that.fPileupCorrectionStrategy;
   fPileupCorrectionRequested = that.fPileupCorrectionRequested;
+  fPileupCorrectionRequested = that.fPileupCorrectionRequested;
+  fSigmaParametrization      = that.fSigmaParametrization;
+  fMultiplicityNormalization = that.fMultiplicityNormalization;
   fRecoPassNameUsed          = that.fRecoPassNameUsed;
 
   return *this;
@@ -643,6 +650,11 @@ Double_t AliTPCPIDResponse::GetExpectedSigma(const AliVTrack* track,
   // for the specified particle type 
   //
   
+  // use TF1 sigma parametrization if provided
+  if (fSigmaParametrization) {
+    return GetExpectedSigmaTF1(track, species);
+  }
+
   //if (!responseFunction)
     //return 999;
     
@@ -1999,6 +2011,18 @@ Bool_t AliTPCPIDResponse::InitFromOADB(const Int_t run, const Int_t pass, TStrin
     AliInfoF("Setting multiplicity estimator %d (%s)", (Int_t)fMultiplityEstimator, names[fMultiplityEstimator].Data());
   }
 
+  //===| sigma parametrization TF1 |============================================
+  fSigmaParametrization = static_cast<TF1*>(arr->FindObject("SigmaParametrization"));
+  if (fSigmaParametrization) {
+    AliInfoF("Setting sigma parametrization function %s", fSigmaParametrization->GetTitle());
+  }
+
+  const TNamed *multiplicityNormalization = static_cast<TNamed*>(arr->FindObject("MultiplicityNormalization"));
+  if (multiplicityNormalization) {
+    fMultiplicityNormalization = TString(multiplicityNormalization->GetTitle()).Atof();
+    AliInfoF("Setting multiplicity normalization %.2f", fMultiplicityNormalization);
+  }
+
   return kTRUE;
 }
 
@@ -2264,4 +2288,28 @@ TString AliTPCPIDResponse::GetChecksum(const TObject* obj)
   gSystem->Exec(Form("rm -rf %s", uniquePathName.Data()));
 
   return checksum;
+}
+
+Double_t AliTPCPIDResponse::GetExpectedSigmaTF1(const AliVTrack* track, AliPID::EParticleType species, Int_t dEdxType) const
+{
+  Double_t values[7];
+  GetTF1ParametrizationValues(values, track, species, dEdxType);
+  return fSigmaParametrization->EvalPar(values);
+}
+
+void AliTPCPIDResponse::GetTF1ParametrizationValues(Double_t values[7], const AliVTrack* track, AliPID::EParticleType species, Int_t dEdxType) const
+{
+  const Double_t maxCl[5] = {63, 64, 32, 96, 159};
+  const Double_t ncl = track->GetTPCsignalN();
+  const Double_t p = track->GetTPCmomentum();
+  const Double_t bg = p / AliPID::ParticleMassZ(Int_t(species));
+  const Double_t bbAlpeh = AliExternalTrackParam::BetheBlochAleph(bg);
+
+  values[0] = fMIP / bbAlpeh;
+  values[1] = track->GetTPCTgl();
+  values[2] = track->GetTPCmomentum();
+  values[3] = Double_t(species);
+  values[4] = track->GetInnerParam() ? track->GetInnerParam()->GetSigned1Pt() : track->GetSigned1Pt();
+  values[5] = TMath::Sqrt(maxCl[dEdxType]  / ncl);
+  values[6] = fCurrentEventMultiplicity / fMultiplicityNormalization;
 }
