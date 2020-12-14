@@ -2315,13 +2315,18 @@ void AliTPCPIDResponse::GetTF1ParametrizationValues(Double_t values[7], const Al
 }
 
 
-
+/// This is the empirical ALEPH parameterization of the Bethe-Bloch formula.
+/// Compared to the  AliExternalTrackParam::BetheBlochAleph here it is save version not failing in minimization
+/// \param bg    - beta gamma
+/// \param kp1
+/// \param kp2
+/// \param kp3
+/// \param kp4
+/// \param kp5
+/// \return
 Double_t  AliTPCPIDResponse::BetheBlochAleph(Double_t bg, Double_t kp1, Double_t kp2, Double_t kp3, Double_t kp4, Double_t kp5){
-   // This is the empirical ALEPH parameterization of the Bethe-Bloch formula.
+  //
   // It is normalized to 1 at the minimum.
-  // bg - beta*gamma
-  // The default values for the kp* parameters are for ALICE TPC.
-  // The returned value is in MIP units
   //
   if (bg<0) return 0;
   const Double_t kEpsilon=1e-12;
