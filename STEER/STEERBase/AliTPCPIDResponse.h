@@ -308,7 +308,9 @@ public:
   //===| Helpers |==============================================================
   static TString GetChecksum(const TObject* obj);
   static TObjArray* GetMultiplicityCorrectionArrayFromString(const TString& corrections);
-
+  //
+  static Double_t BetheBlochAleph(Double_t bg, Double_t kp1, Double_t kp2, Double_t kp3, Double_t kp4, Double_t kp5);
+  static double   sigmadEdxPt(double p, double PID, double resol=0.01 );
 protected:
   Double_t GetExpectedSignal(const AliVTrack* track,
                              AliPID::EParticleType species,

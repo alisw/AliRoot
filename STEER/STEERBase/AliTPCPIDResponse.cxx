@@ -2313,3 +2313,41 @@ void AliTPCPIDResponse::GetTF1ParametrizationValues(Double_t values[7], const Al
   values[5] = TMath::Sqrt(maxCl[dEdxType]  / ncl);
   values[6] = fCurrentEventMultiplicity / fMultiplicityNormalization;
 }
+
+
+
+Double_t  AliTPCPIDResponse::BetheBlochAleph(Double_t bg, Double_t kp1, Double_t kp2, Double_t kp3, Double_t kp4, Double_t kp5){
+   // This is the empirical ALEPH parameterization of the Bethe-Bloch formula.
+  // It is normalized to 1 at the minimum.
+  // bg - beta*gamma
+  // The default values for the kp* parameters are for ALICE TPC.
+  // The returned value is in MIP units
+  //
+  if (bg<0) return 0;
+  const Double_t kEpsilon=1e-12;
+  Double_t beta = bg/TMath::Sqrt(1.+ bg*bg);
+  if (beta<kEpsilon) beta=kEpsilon;
+  if (bg<kEpsilon) bg=kEpsilon;
+  Double_t aa = TMath::Power(beta,kp4);
+  Double_t bb = TMath::Power(1./bg,kp5);
+  bb=TMath::Log(TMath::Abs(kp3+bb));
+  return (kp2-aa-bb)*kp1/aa;
+}
+
+
+/// returns relative dEdx resolution contribution due relative pt resolution
+/// defualt pt resolution 1% * sqrt(dEdx)
+/// \param p        - particle momenta
+/// \param PID      - particle PID
+/// \param resol    - elative resolution - at low pt should be ~ 1 per MIP
+/// \return
+double AliTPCPIDResponse::sigmadEdxPt(double p, double PID, double resol ){
+  Double_t mass =AliPID::ParticleMass(PID);
+  double bg = p/mass;
+  double dEdx = AliExternalTrackParam::BetheBlochAleph(bg);
+  double deltaP=resol*TMath::Sqrt(dEdx);
+  double bgDelta=p*(1+deltaP)/mass;
+  double dEdx2=AliExternalTrackParam::BetheBlochAleph(bgDelta);
+  double deltaRel = TMath::Abs(dEdx2-dEdx)/dEdx;
+  return deltaRel;
+}
