@@ -3442,7 +3442,7 @@ Float_t AliPIDResponse::GetTOFsignalTunedOnData(const AliVTrack *t) const
   Double_t tofSignal = t->GetTOFsignalTunedOnData();
 
 
-//  if(tofSignal <  99999) return (Float_t)tofSignal; // it has been already set
+  if(tofSignal <  99999) return (Float_t)tofSignal; // it has been already set
 
   // read additional mismatch fraction
   Float_t addmism = GetTOFPIDParams()->GetTOFadditionalMismForMC();
