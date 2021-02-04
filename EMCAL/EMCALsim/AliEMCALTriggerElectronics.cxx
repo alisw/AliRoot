@@ -478,7 +478,13 @@ void AliEMCALTriggerElectronics::Digits2Trigger(TClonesArray* digits, const Int_
 //              posMap[px + j % sizeX][py + j / sizeX] = digits->GetEntriesFast();
               posMap[px + j / sizeX][py + j % sizeX] = digits->GetEntriesFast();
 
-              new((*digits)[digits->GetEntriesFast()]) AliEMCALTriggerRawDigit(id, 0x0, 0);
+              // Previously this created digits only with the upper left fastOR id
+              //new((*digits)[digits->GetEntriesFast()]) AliEMCALTriggerRawDigit(id, 0x0, 0);
+              // Now use the proper FastOR ID
+              Int_t newID = -1;
+              fGeometry->GetAbsFastORIndexFromPositionInEMCAL(py + j % sizeX,px + j / sizeX, newID);
+              new((*digits)[digits->GetEntriesFast()]) AliEMCALTriggerRawDigit(newID, 0x0, 0);
+
                 
               dig = (AliEMCALTriggerRawDigit*)digits->At(digits->GetEntriesFast() - 1);							
             } else {
