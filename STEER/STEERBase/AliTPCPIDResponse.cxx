@@ -2294,7 +2294,7 @@ Double_t AliTPCPIDResponse::GetExpectedSigmaTF1(const AliVTrack* track, AliPID::
 {
   Double_t values[7];
   GetTF1ParametrizationValues(values, track, species, dEdxType);
-  return fSigmaParametrization->EvalPar(values);
+  return fSigmaParametrization->EvalPar(values)*(fMIP/values[0]);
 }
 
 void AliTPCPIDResponse::GetTF1ParametrizationValues(Double_t values[7], const AliVTrack* track, AliPID::EParticleType species, Int_t dEdxType) const
@@ -2305,7 +2305,8 @@ void AliTPCPIDResponse::GetTF1ParametrizationValues(Double_t values[7], const Al
   const Double_t bg = p / AliPID::ParticleMassZ(Int_t(species));
   const Double_t bbAlpeh = AliExternalTrackParam::BetheBlochAleph(bg);
 
-  values[0] = fMIP / bbAlpeh;
+  // values[0] = fMIP / bbAlpeh;   // bbAlelp is already normalized to the MIP
+  values[0] = 1. / bbAlpeh;
   values[1] = track->GetTPCTgl();
   values[2] = track->GetTPCmomentum();
   values[3] = Double_t(species);
