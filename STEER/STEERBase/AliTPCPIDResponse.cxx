@@ -38,6 +38,7 @@
 #include <TMD5.h>
 #include <TGrid.h>
 #include <TObjString.h>
+#include "TVectorD.h"
 
 #include "AliLog.h"
 #include "AliExternalTrackParam.h"
@@ -195,6 +196,8 @@ AliTPCPIDResponse::~AliTPCPIDResponse()
   delete fCorrFuncSigmaMultiplicity;
   fCorrFuncSigmaMultiplicity = 0x0;
   if (fgInstance==this) fgInstance=0;
+
+  delete fSigmaParametrization;
 
   delete fOADBContainer;
 }
@@ -2012,14 +2015,32 @@ Bool_t AliTPCPIDResponse::InitFromOADB(const Int_t run, const Int_t pass, TStrin
   }
 
   //===| sigma parametrization TF1 |============================================
-  fSigmaParametrization = static_cast<TF1*>(arr->FindObject("SigmaParametrization"));
-  if (fSigmaParametrization) {
-    AliInfoF("Setting sigma parametrization function %s", fSigmaParametrization->GetTitle());
-  }
+  TObjArray* arrSigmaParam = dynamic_cast<TObjArray*>(arr->FindObject("SigmaParametrization"));
+  if (arrSigmaParam) {
+    if (arrSigmaParam->GetEntriesFast() != 3) {
+      AliFatalF("Number of entries for TF1 Sigma parametrization (%d) does not match expectation (3)", arrSigmaParam->GetEntriesFast());
+    }
 
-  const TNamed *multiplicityNormalization = static_cast<TNamed*>(arr->FindObject("MultiplicityNormalization"));
-  if (multiplicityNormalization) {
+    const TNamed* tf1Sigma = dynamic_cast<TNamed*>(arrSigmaParam->FindObject("SigmaParametrization"));
+    const TVectorD* tf1SigmaParams = dynamic_cast<TVectorD*>(arrSigmaParam->At(1));
+    const TNamed *multiplicityNormalization = dynamic_cast<TNamed*>(arrSigmaParam->FindObject("MultiplicityNormalization"));
+
+    if (!(tf1Sigma && tf1SigmaParams && multiplicityNormalization)) {
+      AliFatalF("Expected input for TF1 sigma parametrization missing, function definition (%p), function parameters (%p), multiplicity Normalization (%p)", tf1Sigma, tf1SigmaParams, multiplicityNormalization);
+    }
+
+    fSigmaParametrization  = new TF1(tf1Sigma->GetName(), tf1Sigma->GetTitle());
+    fSigmaParametrization->SetParameters(tf1SigmaParams->GetMatrixArray());
+
+    TString params;
+    for (int ipar = 0; ipar<fSigmaParametrization->GetNpar(); ++ipar) {
+      params += TString::Format("%.4g, ", fSigmaParametrization->GetParameter(ipar));
+    }
     fMultiplicityNormalization = TString(multiplicityNormalization->GetTitle()).Atof();
+
+    AliInfo("This error in TF1 can be ignored: 'has dimension 7 instead of 1'");
+    AliInfoF("Setting sigma parametrization function %s", fSigmaParametrization->GetTitle());
+    AliInfoF("Setting sigma parametrization parameters %s", params.Data());
     AliInfoF("Setting multiplicity normalization %.2f", fMultiplicityNormalization);
   }
 
