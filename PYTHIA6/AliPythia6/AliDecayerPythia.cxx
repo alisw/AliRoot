@@ -593,6 +593,8 @@ void AliDecayerPythia::ForceDecay()
      case kLcpK0SBDTsig:
         ForceHadronicD(0,0,4);
         break;
+     case kLcLpi:
+        ForceHadronicD(0,0,5);
      case kEtaPrime:
 	if(gRandom->Rndm()<0.5) {
 		products1[0]=211;
@@ -936,6 +938,8 @@ void AliDecayerPythia::ForceHadronicD(Int_t optUse4Bodies, Int_t optUseDtoV0, In
 
    Int_t prodLcLambdaPiPlPi0[3] = {iLambda, kPiPlus, kPi0};
    Int_t multLcLambdaPiPlPi0[3] = {1,1,1};
+   
+   Int_t prodLcLambdaPi[2] = {3122, 211};
     if (optForceLcChannel == 1) { //pKpi
       ForceParticleDecay(4122,prodLcpKpi,multLcpKpi,3,1);
     }
@@ -951,6 +955,10 @@ void AliDecayerPythia::ForceHadronicD(Int_t optUse4Bodies, Int_t optUseDtoV0, In
       ForceParticleDecay(311,310,1); // K0 -> K0S
       ForceParticleDecay(310,211,2); // K0S -> pi+ pi-
     }
+    if(optForceLcChannel == 5) { // Lc -> Lambda Pi+
+      ForceParticleDecay(4122,prodLcLambdaPi,multLcLambdaPi,2,1);
+    }
+    
 
   
 
