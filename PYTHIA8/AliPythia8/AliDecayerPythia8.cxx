@@ -589,6 +589,9 @@ void AliDecayerPythia8::ForceDecay()
     case kLcpK0S:
       ForceHadronicD(0,0,2,0,0);  // Lc -> p K0S
     break;
+    case kLcLpi:
+      ForceHadronicD(0,0,5,0,0);  // Lc -> Lambda pi
+    break;
     case kXic0Semileptonic:
       ForceHadronicD(0,0,0,1,0);  // Xic0 -> Xi e nu
     break;
@@ -827,6 +830,10 @@ void AliDecayerPythia8::ForceHadronicD(Int_t optUse4Bodies, Int_t optUseDtoV0, I
       // for K0s -> pi+pi-
       fPythia8->ReadString("310:onMode = off");
       fPythia8->ReadString("310:onIfAll = 211 211");
+    }
+    
+    if (optForceLcChannel == 5) { // force only Lc -> Lambda pi+
+       fPythia8->ReadString("4122:onIfMatch = 3122 211");     
     }
 
     // Xic+ -> pK*0
