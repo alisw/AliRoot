@@ -941,6 +941,8 @@ void AliDecayerPythia::ForceHadronicD(Int_t optUse4Bodies, Int_t optUseDtoV0, In
    Int_t multLcLambdaPiPlPi0[3] = {1,1,1};
    
    Int_t prodLcLambdaPi[2] = {3122, 211};
+   Int_t multLcLambdaPi[2] = {1,1};
+   
     if (optForceLcChannel == 1) { //pKpi
       ForceParticleDecay(4122,prodLcpKpi,multLcpKpi,3,1);
     }
