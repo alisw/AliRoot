@@ -20,6 +20,7 @@
 #include "AliEMCALGeometry.h"
 #include "AliRunLoader.h"
 #include "AliCDBManager.h"
+#include "AliCDBEntry.h"
 #include "AliEMCAL.h" 
 #include "AliRun.h" 
 #include "AliEMCALTriggerDCSConfig.h"
@@ -32,7 +33,10 @@
 #include "AliEMCALTriggerPatch.h"
 #include "AliEMCALTriggerTRUDCSConfig.h"
 #include "AliEMCALTriggerSTUDCSConfig.h"
+#include "AliEMCALTriggerConstants.h"
+#include "AliEMCALSimParam.h"
 
+#include <TRandom.h>
 #include <TVector2.h>
 
 /// \cond CLASSIMP
@@ -44,6 +48,7 @@ ClassImp(AliEMCALTriggerElectronics) ;
 //__________________
 AliEMCALTriggerElectronics::AliEMCALTriggerElectronics(const AliEMCALTriggerDCSConfig *dcsConf) : TObject(),
 fADCscaleMC(1.239958),
+fL1ADCNoise(0),
 fTRU(new TClonesArray("AliEMCALTriggerTRU",52)),
 fSTU(0x0),
 fGeometry(0)
@@ -51,6 +56,25 @@ fGeometry(0)
   TVector2 rSize;
 	
   rSize.Set(4.,24.);	
+
+  AliEMCALSimParam * fSimParam = 0;
+  if (AliCDBManager::Instance()->IsDefaultStorageSet()) {
+    AliCDBEntry *entry = (AliCDBEntry*) AliCDBManager::Instance()->Get("EMCAL/Calib/SimParam");
+    if (entry) fSimParam = (AliEMCALSimParam *) entry->GetObject();
+  }
+
+  if (fSimParam==0) {
+    AliWarning("Could not get the EMCALSimParam instance from OCDB. Using Default");
+    fSimParam = AliEMCALSimParam::GetInstance();
+  }
+
+  if (fSimParam==0) {
+    AliWarning("Could not get the EMCALSimParam instance");
+  }
+  else {
+    fL1ADCNoise = fSimParam->GetL1ADCNoise();
+    if (AliDebugLevel()) fSimParam->Print("");
+  }
 
   AliRunLoader *rl = AliRunLoader::Instance();
   if (rl->GetAliRun() && rl->GetAliRun()->GetDetector("EMCAL")) {
@@ -392,35 +416,48 @@ void AliEMCALTriggerElectronics::Digits2Trigger(TClonesArray* digits, const Int_
       {  
         for (int k = 0; k < iTRU->RegionSize()->Y(); k++) // eta
         {
-          if (reg[j][k]  // (phi,eta)
-//					if (true 
-            && 
-            fGeometry->GetAbsFastORIndexFromPositionInTRU(i, k, j, id)  // (iTRU, Eta, Phi, FastOR)
-//						fGeometry->GetAbsFastORIndexFromPositionInTRU(i, j, k, id)
-            &&
-            fGeometry->GetPositionInEMCALFromAbsFastORIndex(id, py, px)) // (FastOR, Eta, Phi)
-  //					fGeometry->GetPositionInEMCALFromAbsFastORIndex(id, px, py))
+
+          if (!fGeometry->GetAbsFastORIndexFromPositionInTRU(i, k, j, id)) continue;  // (iTRU, Eta, Phi, FastOR)
+          if (!fGeometry->GetPositionInEMCALFromAbsFastORIndex(id, py, px)) continue; // (FastOR, Eta, Phi)
+          int L1Timesum = 0;
+
+          if (reg[j][k])  // (phi,eta)
           {
+            // 14b to 12b STU time sums
+            reg[j][k] >>= 2;
+            L1Timesum = reg[j][k];
+            //dig->SetL1TimeSum(reg[j][k]);
+          }
+
+          // Adding noise here
+          // L1Timesum += noise
+
+          // sigma = noise (GeV) / 0.07874 (GeV/ADC); // sigma in L1 ADC
+          double sigma = fL1ADCNoise / EMCALTrigger::kEMCL1ADCtoGeV ; // sigma in L1 ADC
+          if (sigma > 0) { // disable noise if sigma <= 0
+            double noise = gRandom->Gaus(0,sigma);
+            int noiseInt = 0;
+            if (noise >= 1) noiseInt = (int) floor(noise);
+            L1Timesum += noiseInt;
+          }
+
+          if (L1Timesum > 0) {
+
             pos = posMap[px][py];
-                  
+
             if (pos == -1)
             {
               // Add a new digit
               posMap[px][py] = digits->GetEntriesFast();
-
               new((*digits)[digits->GetEntriesFast()]) AliEMCALTriggerRawDigit(id, 0x0, 0);
-                    
-              dig = (AliEMCALTriggerRawDigit*)digits->At(digits->GetEntriesFast() - 1);							
+              dig = (AliEMCALTriggerRawDigit*)digits->At(digits->GetEntriesFast() - 1);
             }
             else
             {
               dig = (AliEMCALTriggerRawDigit*)digits->At(pos);
             }
-            
-            // 14b to 12b STU time sums
-            reg[j][k] >>= 2; 
+            dig->SetL1TimeSum(L1Timesum);
 
-            dig->SetL1TimeSum(reg[j][k]);
           }
         }
       }
