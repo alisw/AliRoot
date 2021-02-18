@@ -19,6 +19,8 @@
 #include "AliEMCALSimParam.h"
 #include "AliLog.h"
 
+#include <iostream>
+
 /// \cond CLASSIMP
 ClassImp(AliEMCALSimParam);
 /// \endcond
@@ -42,7 +44,8 @@ fTimeResolutionPar1(0),
 fNADCEC(0),//Digitizer
 fA(0.),
 fB(0.),
-fECPrimThreshold(0.) //SDigitizer   
+fECPrimThreshold(0.), //SDigitizer
+fL1ADCNoise(0.0)//TriggerElectronics
 {
   // Parameters in Digitizer
   fMeanPhotonElectron = 4400;    // electrons per GeV 
@@ -61,12 +64,13 @@ fECPrimThreshold(0.) //SDigitizer
   fA                  = 0;
   fB                  = 1.e+6; // Dynamic range now 2 TeV
   fECPrimThreshold    = 0.05;  // GeV	// threshold for deposit energy of hit
+
 }
 
 ///
 /// Copy constructor.
 //-----------------------------------------------------------------------------
-AliEMCALSimParam::AliEMCALSimParam(const AliEMCALSimParam& ):
+/*AliEMCALSimParam::AliEMCALSimParam(const AliEMCALSimParam& ):
 TNamed(),
 fDigitThreshold(0),
 fMeanPhotonElectron(0),
@@ -80,12 +84,13 @@ fTimeResolutionPar1(0),
 fNADCEC(0),
 fA(0.),
 fB(0.),
-fECPrimThreshold(0.)//SDigitizer
+fECPrimThreshold(0.),//SDigitizer
+fL1ADCNoise(0)//TriggerElectronics
 {
   AliError("Should not use copy constructor for singleton") ;
   
   fgSimParam = this ;
-}
+}*/
 
 ///
 /// Get Instance
@@ -101,35 +106,55 @@ AliEMCALSimParam * AliEMCALSimParam::GetInstance()
 ///
 /// Assignment operator.
 //-----------------------------------------------------------------------------
-AliEMCALSimParam& AliEMCALSimParam::operator = (const AliEMCALSimParam& simParam)
+/*AliEMCALSimParam& AliEMCALSimParam::operator = (const AliEMCALSimParam& simParam)
 {
   if(this != &simParam) 
     AliError("Should not use operator= for singleton\n") ;
   
   return *this;
-}
+}*/
 
 ///
 /// Print simulation parameters to stdout
 //-----------------------------------------------------------------------------
 void AliEMCALSimParam::Print(Option_t *) const
 { 
-  printf("=== Parameters in Digitizer === \n");
-  printf("\t Electronics noise in EMC (fPinNoise)       = %f, (fTimeNoise) = %e\n", fPinNoise, fTimeNoise) ;
-  printf("\t Threshold  in EMC  (fDigitThreshold)       = %d\n", fDigitThreshold)  ;
-  printf("\t Time Resolution (fTimeResolutionPar0)      = %g\n", fTimeResolutionPar0) ;
-  printf("\t Time Resolution (fTimeResolutionPar1)      = %g\n", fTimeResolutionPar1) ;
-  printf("\t Time Delay (fTimeDelay)                    = %g\n", fTimeDelay) ;
-  printf("\t Time Delay OCDB (fTimeDelayFromOCDB)       = %d\n", fTimeDelayFromOCDB) ;
-  printf("\t Mean Photon-Electron (fMeanPhotonElectron) = %d, Gain Fluc. (fGainFluctuations) %2.1f\n", 
-         fMeanPhotonElectron,fGainFluctuations)  ;
-  printf("\t N channels in EC section ADC (fNADCEC)     = %d\n", fNADCEC) ;
-
-  printf("\n");
-
-  printf("=== Parameters in SDigitizer === \n");
-  printf("\t sdigitization parameters       A = %f\n",     fA);
-  printf("\t                                B = %f\n",     fB);
-  printf("\t Threshold for EC Primary assignment  = %f\n", fECPrimThreshold);
+  AliInfoStream() << *this << std::endl;
+  return;
 }
 
+
+
+///
+/// Print simulation parameters to stream
+//-----------------------------------------------------------------------------
+void AliEMCALSimParam::PrintStream(std::ostream &stream) const {
+  stream << "=== Sim Params ===" << std::endl;
+
+
+  stream << "=== Parameters in Digitizer === " << std::endl;
+  stream << "\t Electronics noise in EMC (fPinNoise)       = "<<fPinNoise<<", (fTimeNoise) = "<<fTimeNoise ;
+  stream << "\t Threshold  in EMC  (fDigitThreshold)       = "<<fDigitThreshold<<std::endl ;
+  stream << "\t Time Resolution (fTimeResolutionPar0)      = "<<fTimeResolutionPar0<<std::endl ;
+  stream << "\t Time Resolution (fTimeResolutionPar1)      = "<<fTimeResolutionPar1<<std::endl;
+  stream << "\t Time Delay (fTimeDelay)                    = "<<fTimeDelay<<std::endl ;
+  stream << "\t Time Delay OCDB (fTimeDelayFromOCDB)       = "<<fTimeDelayFromOCDB<<std::endl ;
+  stream << "\t Mean Photon-Electron (fMeanPhotonElectron) = "<<fMeanPhotonElectron<<", Gain Fluc. (fGainFluctuations) "<<fGainFluctuations<<std::endl;
+  stream << "\t N channels in EC section ADC (fNADCEC)     = "<<fNADCEC<<std::endl ;
+
+  stream << std::endl;
+
+  stream << "=== Parameters in SDigitizer === "<<std::endl;
+  stream << "\t sdigitization parameters       A = "<<fA<<std::endl;
+  stream << "\t                                B = "<<fB<<std::endl;
+  stream << "\t Threshold for EC Primary assignment  = "<<fECPrimThreshold<<std::endl;
+
+  stream << "=== Parameters in TriggerElectronics === "<<std::endl;
+  stream << "\t L1 FastOR timesum noise (fL1ADCNoise) = "<<fL1ADCNoise<<std::endl;
+
+}
+
+std::ostream &operator<<(std::ostream &stream, const AliEMCALSimParam &param) {
+  param.PrintStream(stream);
+  return stream;
+}
