@@ -55,6 +55,7 @@ private:
  
   Int_t                fMedianMode; // 0 for no median subtraction, 1 for median sub.
   Float_t              fADCscaleMC; //< Scaling up MC raw digits so samples match total energy
+  Float_t              fL1ADCNoise; //< Sigma of noise added to the L1 Timesums in MC
   TClonesArray*        fTRUDCAL;  //< 14 TRU
   AliEMCALTriggerSTU*  fSTUDCAL;  //< 1 STU for DCAL
  

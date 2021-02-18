@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 #include "TNamed.h"
+#include <iosfwd>
 
 class AliEMCALSimParam : public TNamed 
 {
@@ -25,9 +26,9 @@ class AliEMCALSimParam : public TNamed
 public:
 
   AliEMCALSimParam();
-  AliEMCALSimParam(const AliEMCALSimParam& recoParam);
-  AliEMCALSimParam& operator = (const AliEMCALSimParam& recoParam);
   virtual ~AliEMCALSimParam() {}
+  void PrintStream(std::ostream &stream) const;
+
 
   static AliEMCALSimParam * GetInstance() ;
   virtual void Print(Option_t * option="") const ;
@@ -52,6 +53,7 @@ public:
   void     SetTimeResolutionPar0(Double_t val){ fTimeResolutionPar0  = val ; }
   void     SetTimeResolutionPar1(Double_t val){ fTimeResolutionPar1  = val ; }
   void     SetNADCED(Int_t val)               { fNADCEC              = val ; }
+
   void     SetMeanPhotonElectron(Int_t val)   { fMeanPhotonElectron  = val ; }
   void     SetGainFluctuations(Float_t val)   { fGainFluctuations    = val ; }
 
@@ -64,7 +66,17 @@ public:
   void     SetB(Float_t val)                  { fB                   = val ; }
   void     SetECPrimaryThreshold(Float_t val) { fECPrimThreshold     = val ; }
 
+  // Parameters used in TriggerElectronics for simulations
+  Float_t GetL1ADCNoise()              const { return fL1ADCNoise         ; }
+
+  void     SetL1ADCNoise(Float_t val)        { fL1ADCNoise          = val ; }
+
+
+
 private:
+
+  AliEMCALSimParam(const AliEMCALSimParam& recoParam);
+  AliEMCALSimParam& operator = (const AliEMCALSimParam& recoParam);
 
   static AliEMCALSimParam * fgSimParam ; // pointer to the unique instance of the class
 
@@ -84,12 +96,22 @@ private:
   Float_t fA ;                     ///< Pedestal parameter
   Float_t fB ;                     ///< Slope Digitizition parameters
   Float_t fECPrimThreshold ;       ///< To store primary if EC Shower Elos > threshold
+
+  // TriggerElectronics (simulation)
+  Float_t fL1ADCNoise ;          ///< Noise in FastOR Timesums for L1
 		
   /// \cond CLASSIMP
-  ClassDef(AliEMCALSimParam,7) ;
+  ClassDef(AliEMCALSimParam,8) ;
   /// \endcond
 
 };
+
+/// \brief Output stream operator for AliEMCALSimParams
+/// \param stream Stream where to print the params on
+/// \param param SimParams object to be printed
+/// \return Stream after printing the params
+std::ostream &operator<<(std::ostream &stream, const AliEMCALSimParam &param);
+
 
 #endif // ALIEMCALSIMPARAM_H
 
