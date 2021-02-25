@@ -28,7 +28,9 @@ public:
     kAl = 15,
     kOpGlass = 16,
     kOpGlassCathode = 19,
-    kSensAir = 22
+    kSensAir = 22,
+    kCable = 23,
+    kMCPwalls = 25
   };
 
   AliFITv8();
@@ -50,6 +52,8 @@ public:
   void SetVZEROGeo(TGeoVolume *alice);
   void SetVZEROGeoOld(TGeoVolume *alice);
   void SetOneMCP(TGeoVolume *stl);
+  void SetCablesA(TGeoVolume *stl);
+  TGeoVolume *SetCablesSize(int mod);
   virtual void StepManager();
 
 protected:
@@ -84,6 +88,17 @@ private:
       Double_t **efficMet,
       Double_t **aReflMet) const; // should be called at the very end of the
                                   // simulation to free the memory
+  Float_t mPosModuleAx[24] = {-11.8, -5.9,  0,     5.9,  11.8,  -11.8,
+                              -5.9,  0,     5.9,   11.8, -12.8, -6.9,
+                              6.9,   12.8,  -11.8, -5.9, 0,     5.9,
+                              11.8,  -11.8, -5.9,  0,    5.9,   11.8};
+  Float_t mPosModuleAy[24] = {11.9, 11.9,  12.9,  11.9,  11.9,  6.0,
+                              6.0,  7.0,   6.0,   6.0,   -0.1,  -0.1,
+                              0.1,  0.1,   -6.0,  -6.0,  -7.0,  -6.0,
+                              -6.0, -11.9, -11.9, -12.9, -11.9, -11.9};
+  Float_t pstartA[3] = {20, 20, 5.};
+  Float_t pstartC[3] = {20, 20, 5.5};
+  Float_t pinstart[3] = {2.9491, 2.9491, 2.75};
 
   // V0+ parameters related to geometry
   Double_t fV0PlusR0, fV0PlusR1, fV0PlusR2, fV0PlusR3, fV0PlusR4, fV0PlusR5,
@@ -246,16 +261,16 @@ private:
                                         // screw types.
   static const float
       sDrMinScrewTypes[6]; //{0.25, 0.25, 0.4, 0.4, 0.4, 0.4};     // <-- Radii
-                           //of the thinner part of the screw types.
+                           // of the thinner part of the screw types.
   static const float
       sDrMaxScrewTypes[6]; //{0, 0.5, 0.6, 0.6, 0.6, 0};           // <-- Radii
-                           //of the thicker part of the screw types.
+                           // of the thicker part of the screw types.
   static const float
       sDzMaxScrewTypes[6]; //{6.02, 13.09, 13.1, 23.1, 28.3, 5};   // <-- Length
-                           //of the thinner part of the screw types.
+                           // of the thinner part of the screw types.
   static const float
       sDzMinScrewTypes[6]; //{0, 6.78, 6.58, 15.98, 21.48, 0};     // <-- Length
-                           //of the thicker part of the screw types.
+                           // of the thicker part of the screw types.
 
   /// Rod Properties:
   static const float
@@ -265,22 +280,22 @@ private:
                                       // Number of the different screw types.
   static const float
       sDxMinRodTypes[4]; //{0.366, 0.344, 0.344, 0.344};   // <-- Width of the
-                         //thinner part of the rod types.
+                         // thinner part of the rod types.
   static const float
       sDxMaxRodTypes[4]; //{0.536, 0.566, 0.566, 0.716};   // <-- Width of the
-                         //thicker part of the rod types.
+                         // thicker part of the rod types.
   static const float
       sDyMinRodTypes[4]; //{0.5, 0.8, 0.8, 0.8};           // <-- Height of the
-                         //thinner part of the rod types.
+                         // thinner part of the rod types.
   static const float
       sDyMaxRodTypes[4]; //{0.9, 1.2, 1.2, 1.2};           // <-- Height of the
-                         //thicker part of the rod types.
+                         // thicker part of the rod types.
   static const float
       sDzMaxRodTypes[4]; //{12.5, 12.5, 22.5, 27.7};       // <-- Length of the
-                         //thinner part of the rod types.
+                         // thinner part of the rod types.
   static const float
       sDzMinRodTypes[4]; //{7.45, 7.45, 17.45, 22.65};     // <-- Length of the
-                         //thicker part of the rod types.
+                         // thicker part of the rod types.
 
   static const float sCellRingRadii[10]; //!
 
@@ -448,7 +463,7 @@ private:
   void
   initializeMetalContainer(); //   <-- Initialize the metal container volume.
 
-  ClassDef(AliFITv8, 1) // Class for FIT version 6
+  ClassDef(AliFITv8, 2) // Class for FIT version 6
 };
 
 #endif
