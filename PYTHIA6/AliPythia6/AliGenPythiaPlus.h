@@ -50,6 +50,8 @@ class AliGenPythiaPlus : public AliGenMC
     virtual void    SetProcess(Process_t proc = kPyCharm) {fProcess = proc;}
     // Select structure function
     virtual void    SetStrucFunc(StrucFunc_t func =  kCTEQ5L) {fStrucFunc = func;}
+    // Rewieght pt, hard spectrum with pT/p0^n, set power n
+    virtual void    SetWeightPower(Float_t power = 0.) { fWeightPower = power; }
     // Select pt of hard scattering 
     virtual void    SetPtHard(Float_t ptmin = 0, Float_t ptmax = 1.e10)
 	{fPtHardMin = ptmin; fPtHardMax = ptmax; }
@@ -290,6 +292,7 @@ class AliGenPythiaPlus : public AliGenMC
     Int_t       fNev;               //Number of events 
     Int_t       fFlavorSelect;      //Heavy Flavor Selection
     Float_t     fXsection;          //Cross-section
+    Float_t     fWeightPower;       //power for cross section weights; 0 means no reweighting
     Float_t     fPtHardMin;         //lower pT-hard cut 
     Float_t     fPtHardMax;         //higher pT-hard cut
     Float_t     fYHardMin;          //lower  y-hard cut 

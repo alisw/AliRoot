@@ -37,6 +37,11 @@ class AliPythia8 :public AliTPythia8, public AliPythiaBase
     virtual Int_t GetParticles(TClonesArray *particles) {return ImportParticles(particles, "All");}
     // Treat protons as inside nuclei
     virtual void  SetNuclei(Int_t a1, Int_t a2);
+    /**
+     * @brief Use weighted cross sections
+     * @param pow Weight power
+     */
+    virtual void SetWeightPower(Double_t pow);
     // Print particle properties
     virtual void PrintParticles();
     // Reset the decay table
