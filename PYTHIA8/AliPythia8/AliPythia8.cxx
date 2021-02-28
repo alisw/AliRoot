@@ -771,6 +771,10 @@ void AliPythia8::SetYHardRange(Float_t /*ymin*/, Float_t /*ymax*/)
     
 }
 
+void AliPythia8::SetWeightPower(Double_t pow){
+    ReadString("PhaseSpace:bias2Selection = on");
+    ReadString(Form("PhaseSpace:bias2SelectionPow = %13.3f", pow));
+}
 
 void AliPythia8::SetFragmentation(Int_t flag)
 {
