@@ -39,6 +39,11 @@ class AliPythiaBase : public AliRndm
     virtual Int_t GetParticles(TClonesArray */*particles*/){return -1;}
     virtual void  PrintStatistics() {;}
     virtual void  EventListing() {;}
+    /**
+     * @brief Use weighted cross sections
+     * @param pow Weight power
+     */
+    virtual void SetWeightPower(Double_t pow) {;}
     // Treat protons as inside nuclei
     virtual void  SetNuclei(Int_t /*a1*/, Int_t /*a2*/) {;}
     // Print particle properties
