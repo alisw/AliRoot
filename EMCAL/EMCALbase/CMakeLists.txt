@@ -133,14 +133,22 @@ install(FILES ${HDRS} DESTINATION include)
 add_executable(testemcaltrudcsconfig TestsAliEMCALTriggerTRUDCSConfig.cxx)
 target_link_libraries(testemcaltrudcsconfig ${MODULE} ${LIBDEPS})
 add_test(func_EMCALbase_AliEMCALTriggerTRUDCSConfig 
-    testemcaltrudcsconfig)
+    ENV
+    PATH=$ENV{PATH}
+    LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib:$ENV{LD_LIBRARY_PATH}
+    DYLD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib:$ENV{DYLD_LIBRARY_PATH}
+    ${CMAKE_INSTALL_PREFIX}/bin/testemcaltrudcsconfig)
 install(TARGETS testemcaltrudcsconfig RUNTIME DESTINATION bin)
 
 # STU DCS config unit test
 add_executable(testemcalstudcsconfig TestsAliEMCALTriggerSTUDCSConfig.cxx)
 target_link_libraries(testemcalstudcsconfig ${MODULE} ${LIBDEPS})
 add_test(func_EMCALbase_AliEMCALTriggerSTUDCSConfig 
-    testemcalstudcsconfig)
+    ENV
+    PATH=$ENV{PATH}
+    LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib:$ENV{LD_LIBRARY_PATH}
+    DYLD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib:$ENV{DYLD_LIBRARY_PATH}
+    ${CMAKE_INSTALL_PREFIX}/bin/testemcalstudcsconfig)
 install(TARGETS testemcalstudcsconfig RUNTIME DESTINATION bin)
 
 # Static version if DA enabled
