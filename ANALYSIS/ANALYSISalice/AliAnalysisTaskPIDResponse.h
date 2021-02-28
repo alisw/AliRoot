@@ -41,7 +41,8 @@ public:
   void SetTuneOnData(Bool_t flag, Int_t recopass, TString recoPassName){fIsTunedOnData=flag; fRecoPassTuned=recopass; fRecoPassNameTuned=recoPassName;}
   Bool_t GetTunedOnData() const { return fIsTunedOnData; };
   void SetTuneOnDataMask(Int_t mask){fTunedOnDataMask=mask;};
-  
+  void ResetTuneOnDataTOF(Bool_t flag=kTRUE) {fResetTuneOnDataTOF = flag;}
+
   void SetUseTPCEtaCorrection(Bool_t useTPCEtaCorrection) { fUseTPCEtaCorrection = useTPCEtaCorrection; };
   Bool_t UseTPCEtaCorrection() const { return fUseTPCEtaCorrection; };
   
@@ -82,7 +83,8 @@ private:
   Bool_t  fIsTunedOnData;              ///< flag to tune MC on data (dE/dx)
   Int_t   fTunedOnDataMask;            ///< mask to activate tuning on data on specific detectors
   Int_t   fRecoPassTuned;              ///< Reco pass tuned on data for MC
-  
+  Bool_t  fResetTuneOnDataTOF;         ///< Flag to force recomputation of tune-on-data for TOF   
+
   Bool_t fUseTPCEtaCorrection;          ///< Use TPC eta correction
   Bool_t fUseTPCMultiplicityCorrection; ///< Use TPC multiplicity correction
   Bool_t fUseTPCPileupCorrection;       ///< Use TPC multiplicity correction
@@ -100,6 +102,6 @@ private:
   AliAnalysisTaskPIDResponse(const AliAnalysisTaskPIDResponse &other);
   AliAnalysisTaskPIDResponse& operator=(const AliAnalysisTaskPIDResponse &other);
   
-  ClassDef(AliAnalysisTaskPIDResponse,11)  // Task to properly set the PID response functions of all detectors
+  ClassDef(AliAnalysisTaskPIDResponse,12)  // Task to properly set the PID response functions of all detectors
 };
 #endif

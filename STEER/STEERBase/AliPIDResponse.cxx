@@ -107,6 +107,7 @@ fUseTRDClusterCorrection(kFALSE),
 fUseTRDCentralityCorrection(kFALSE),
 fTOFtail(0.9),
 fTOFPIDParams(NULL),
+fResetTuneOnDataTOF(kFALSE),
 fHMPIDPIDParams(NULL),
 fEMCALPIDParams(NULL),
 fCurrentEvent(NULL),
@@ -186,6 +187,7 @@ fUseTRDClusterCorrection(other.fUseTRDClusterCorrection),
 fUseTRDCentralityCorrection(other.fUseTRDCentralityCorrection),
 fTOFtail(0.9),
 fTOFPIDParams(NULL),
+fResetTuneOnDataTOF(kFALSE),
 fHMPIDPIDParams(NULL),
 fEMCALPIDParams(NULL),
 fCurrentEvent(NULL),
@@ -256,6 +258,7 @@ AliPIDResponse& AliPIDResponse::operator=(const AliPIDResponse &other)
     fEMCALPIDParams=NULL;
     fTOFtail=0.9;
     fTOFPIDParams=NULL;
+    fResetTuneOnDataTOF=other.fResetTuneOnDataTOF;
     fHMPIDPIDParams=NULL;
     fCurrentEvent=other.fCurrentEvent;
     fCurrentMCEvent=other.fCurrentMCEvent;
@@ -683,17 +686,26 @@ void AliPIDResponse::InitialiseEvent(AliVEvent *event, Int_t pass, TString recoP
   // Set centrality percentile for TRD
   fTRDResponse.SetCentrality(fCurrCentrality);
 
-  // switch off some TOF channel according to OADB to match data TOF matching eff
-  if (fTuneMConData && ((fTuneMConDataMask & kDetTOF) == kDetTOF) && fTOFPIDParams->GetTOFmatchingLossMC() > 0.01){
+  if (fTuneMConData) {
     Int_t ntrk = event->GetNumberOfTracks();
-    for(Int_t i=0;i < ntrk;i++){
-      AliVParticle *trk = event->GetTrack(i);
-      Int_t channel = GetTOFResponse().GetTOFchannel(trk);
-      Int_t swoffEachOfThem = Int_t(100./fTOFPIDParams->GetTOFmatchingLossMC() + 0.5);
-      if(!(channel%swoffEachOfThem)) ((AliVTrack *) trk)->ResetStatus(AliVTrack::kTOFout);
+    // force recomputation of TOF Nsigma with tune-on-data to have latest development of tail parametrisation in old AODs
+    if(fResetTuneOnDataTOF) {
+      for(Int_t iTrack = 0; iTrack < ntrk; iTrack++) {
+        AliVTrack* track=dynamic_cast<AliVTrack*>(event->GetTrack(iTrack));
+        if(!track || track->GetTOFsignalTunedOnData() > 99999) continue;
+        track->SetTOFsignalTunedOnData(100000);
+      }
+    }
+    // switch off some TOF channel according to OADB to match data TOF matching eff
+    if(((fTuneMConDataMask & kDetTOF) == kDetTOF) && fTOFPIDParams->GetTOFmatchingLossMC() > 0.01){
+      for(Int_t i=0;i < ntrk;i++){
+        AliVParticle *trk = event->GetTrack(i);
+        Int_t channel = GetTOFResponse().GetTOFchannel(trk);
+        Int_t swoffEachOfThem = Int_t(100./fTOFPIDParams->GetTOFmatchingLossMC() + 0.5);
+        if(!(channel%swoffEachOfThem)) ((AliVTrack *) trk)->ResetStatus(AliVTrack::kTOFout);
+      }
     }
   }
-
 }
 
 //______________________________________________________________________________

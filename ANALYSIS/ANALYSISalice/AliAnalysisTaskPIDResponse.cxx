@@ -79,6 +79,7 @@ fRecoPass(0),
 fIsTunedOnData(kFALSE),
 fTunedOnDataMask(0),
 fRecoPassTuned(0),
+fResetTuneOnDataTOF(kFALSE),
 fUseTPCEtaCorrection(kTRUE),
 fUseTPCMultiplicityCorrection(kTRUE),
 fUseTPCPileupCorrection(kTRUE),
@@ -172,7 +173,10 @@ void AliAnalysisTaskPIDResponse::UserExec(Option_t */*option*/)
 
   if (fRun!=fOldRun){
     SetRecoInfo();
-    if(fIsTunedOnData) fPIDResponse->SetTunedOnData(kTRUE,fRecoPassTuned, fRecoPassNameTuned);
+    if(fIsTunedOnData) {
+      fPIDResponse->SetTunedOnData(kTRUE,fRecoPassTuned, fRecoPassNameTuned);
+      if(fResetTuneOnDataTOF) fPIDResponse->ResetTuneOnDataTOF();
+    }
 
     fOldRun=fRun;
 
@@ -186,6 +190,7 @@ void AliAnalysisTaskPIDResponse::UserExec(Option_t */*option*/)
   }
 
   fPIDResponse->InitialiseEvent(event,fRecoPass, fRecoPassName);
+    
   fPIDResponse->SetCurrentMCEvent(MCEvent());
   AliESDpid *pidresp = dynamic_cast<AliESDpid*>(fPIDResponse);
   if(pidresp && AliAnalysisManager::GetAnalysisManager()->GetMCtruthEventHandler()){

@@ -199,6 +199,7 @@ public:
   // TOF setting
   void SetTOFtail(Float_t tail=0.9){if(tail > 0) fTOFtail=tail; else printf("TOF tail should be greater than 0 (nothing done)\n");};
   void SetTOFResponse(AliVEvent *vevent,EStartTimeType_t option);
+  void ResetTuneOnDataTOF(Bool_t flag=kTRUE) {fResetTuneOnDataTOF = flag;}
 
   // TunedOnData functionality
   virtual Float_t GetITSsignalTunedOnData(const AliVTrack *t) const;
@@ -291,6 +292,7 @@ private:
 
   Float_t fTOFtail;                    //! TOF tail effect used in TOF probability
   AliTOFPIDParams *fTOFPIDParams;      //! TOF PID Params - period depending (OADB loaded)
+  Bool_t fResetTuneOnDataTOF;          /// flag to reset TOF tune-on-data in event initialisation
 
   AliHMPIDPIDParams *fHMPIDPIDParams;  //! HMPID PID Params (OADB loaded)
 
@@ -406,7 +408,7 @@ private:
   EDetPidStatus GetPHOSPIDStatus(const AliVTrack *track) const;
   EDetPidStatus GetEMCALPIDStatus(const AliVTrack *track) const;
 
-  ClassDef(AliPIDResponse, 20);  //PID response handling
+  ClassDef(AliPIDResponse, 21);  //PID response handling
 };
 
 #endif
