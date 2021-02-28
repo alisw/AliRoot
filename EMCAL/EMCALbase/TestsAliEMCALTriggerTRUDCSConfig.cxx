@@ -166,9 +166,9 @@ namespace EMCAL {
          */
         bool TestStream(){
           std::string reference = std::string("SELPF: 1e1f, L0SEL: 1, L0COSM: 100, GTHRL0: 132, RLBKSTU: 0, FW: 21\n")
-                                + std::string("Reg0: 00000000000000000000010000000000\nReg1: 00000000000000000000000000000000\n")
-                                + std::string("Reg2: 00000000000000000000001000000000\nReg3: 00000000000000000111110011110001\n")
-                                + std::string("Reg4: 00000000000000000000000000000000\nReg5: 00000000000000000000000000000000\n");
+                                + std::string("Reg0: 00000000000000000000010000000000 (1024)\nReg1: 00000000000000000000000000000000 (0)\n")
+                                + std::string("Reg2: 00000000000000000000001000000000 (512)\nReg3: 00000000000000000111110011110001 (31985)\n")
+                                + std::string("Reg4: 00000000000000000000000000000000 (0)\nReg5: 00000000000000000000000000000000 (0)\n");
           
           AliEMCALTriggerTRUDCSConfig test;
           ConfigureReference(test);
