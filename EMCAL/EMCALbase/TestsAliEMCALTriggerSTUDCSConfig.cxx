@@ -26,6 +26,7 @@
  ************************************************************************************/
 #include <cstdlib>
 #include <bitset>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -165,14 +166,15 @@ namespace EMCAL {
          * @return false Test failed (operator<< to string produces different string)
          */
         bool TestStream() {
-          std::string reference = std::string("Gamma High: (0, 0, 115)\nGamma Low:  (0, 0, 51)\nJet High:   (0, 0, 255)\nJet Low:    (0, 0, 204)\n")
-                                + std::string("GetRawData: 1, Region: -1, Median: 0Firmware: 2a012, PHOS Scale: (0, 0, 0, 0)\n");
+          std::stringstream reference;
+          reference << "Gamma High: (0, 0, 115)\nGamma Low:  (0, 0, 51)\nJet High:   (0, 0, 255)\nJet Low:    (0, 0, 204)\n"
+                    << "GetRawData: 1, Region: " << std::hex << -1 << std::dec << "(" << std::bitset<32>(-1) << "), Median: 0, Firmware: 2a012, PHOS Scale: (0, 0, 0, 0)\n";
           
           AliEMCALTriggerSTUDCSConfig test;
           ConfigureReference(test);
           std::stringstream testmaker;
           testmaker << test;
-          return testmaker.str() == reference;
+          return testmaker.str() == reference.str();
         }
       }
     }
