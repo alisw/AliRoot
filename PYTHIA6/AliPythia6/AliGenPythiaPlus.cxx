@@ -56,6 +56,7 @@ AliGenPythiaPlus::AliGenPythiaPlus():
     fNev(0),
     fFlavorSelect(0),
     fXsection(0.),
+    fWeightPower(0.),
     fPtHardMin(0.),
     fPtHardMax(1.e4),
     fYHardMin(-1.e10),
@@ -172,6 +173,7 @@ AliGenPythiaPlus::AliGenPythiaPlus(AliPythiaBase* pythia)
      fNev(0),
      fFlavorSelect(0),
      fXsection(0.),
+     fWeightPower(0.),
      fPtHardMin(0.),
      fPtHardMax(1.e4),
      fYHardMin(-1.e10),
@@ -369,7 +371,8 @@ void AliGenPythiaPlus::Init()
 //
     fParentWeight=1./Float_t(fNpart);
 //
-
+    if (fWeightPower != 0)
+      fPythia->SetWeightPower(fWeightPower);
     
     fPythia->SetPtHardRange(fPtHardMin, fPtHardMax);
     fPythia->SetYHardRange(fYHardMin, fYHardMax);
