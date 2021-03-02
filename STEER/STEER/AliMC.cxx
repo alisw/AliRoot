@@ -395,8 +395,8 @@ void  AliMC::AddParticles()
   TVirtualMC::GetMC()->DefineParticle( 9322136, "Ps_2500", kPTHadron, 2.5 ,  1.0, 1.6455e-23,"Hadron", 4.e-2, 5, 1, 0, 0, 0, 0, 0,  1, kTRUE);
   TVirtualMC::GetMC()->DefineParticle(-9322136, "AntiPs_2500", kPTHadron, 2.5 , -1.0, 1.6455e-23,"Hadron", 4.e-2, 5, 1, 0, 0, 0, 0, 0, -1, kTRUE);
 
-  Int_t psmode[10][3] = {0};
-  Float_t psratio[10] = {0.f};
+  Int_t psmode[7][3] = {0};
+  Float_t psratio[7] = {0.f};
   psratio[0] = 100.;
 
   psmode[0][0] = 333;  // phi
@@ -410,7 +410,7 @@ void  AliMC::AddParticles()
 
 	
   //Ps+- and Ps0 Hidden Strange Pentaquarks
-  for (int j=0; j<10; j++) {
+  for (int j=0; j<7; j++) {
   psmode[j][0] = psmode[j][1] = 0;
   psratio[j] = 0.;
       }
@@ -519,7 +519,7 @@ void  AliMC::AddParticles()
     
     
   // Anti-Ps0
-  for (int j=0; j<10; j++) {
+  for (int j=0; j<7; j++) {
   psmode[j][0] = psmode[j][1] = 0;
   psratio[j] = 0.;
   }
@@ -628,7 +628,7 @@ void  AliMC::AddParticles()
   TVirtualMC::GetMC()->SetDecayMode(-93223120,psratio,psmode);
 	
   //Omega(2012)
-  for (int j = 1; j < 10; j++) {
+  for (int j = 1; j < 7; j++) {
     psmode[j][0] = psmode[j][1] = 0;
     psratio[j] = 0.;
   }
