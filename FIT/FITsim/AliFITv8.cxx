@@ -1776,7 +1776,7 @@ void AliFITv8::CreateGeometry() {
 
   // compensation based on node position within individual detector geometries
   // determine compensated radius
-  Double_t rcomp = crad + pstartC[2] / 2.0; //
+  Double_t rcomp = crad + fstartC[2] / 2.0; //
   for (Int_t i = 0; i < 28; i++) {
     // Get compensated translation data
     xc2[i] =
@@ -1796,7 +1796,7 @@ void AliFITv8::CreateGeometry() {
   TGeoVolumeAssembly *stlinA = new TGeoVolumeAssembly("0STL"); // A side mother/
 
   TGeoVolumeAssembly *stlinC = new TGeoVolumeAssembly("0STR"); // C side mother
-  TVirtualMC::GetMC()->Gsvolu("0INS", "BOX", idtmed[kOpAir], pinstart, 3);
+  TVirtualMC::GetMC()->Gsvolu("0INS", "BOX", idtmed[kOpAir], finstart, 3);
   TGeoVolume *ins = gGeoManager->GetVolume("0INS");
   TGeoTranslation *tr[52];
   TString nameTr;
@@ -1804,10 +1804,10 @@ void AliFITv8::CreateGeometry() {
   // A side Translations
   for (Int_t itr = 0; itr < 24; itr++) {
     nameTr = Form("0TR%i", itr + 1);
-    z = -pstartA[2] + pinstart[2];
-    tr[itr] = new TGeoTranslation(nameTr.Data(), mPosModuleAx[itr],
-                                  mPosModuleAy[itr], z);
-    printf(" itr %i A %f %f %f \n", itr, mPosModuleAx[itr], mPosModuleAx[itr],
+    z = -fstartA[2] + finstart[2];
+    tr[itr] = new TGeoTranslation(nameTr.Data(), fPosModuleAx[itr],
+                                  fPosModuleAy[itr], z);
+    printf(" itr %i A %f %f %f \n", itr, fPosModuleAx[itr], fPosModuleAx[itr],
            z + zdetA);
     tr[itr]->RegisterYourself();
     stlinA->AddNode(ins, itr, tr[itr]);
@@ -1911,12 +1911,12 @@ void AliFITv8::SetOneMCP(TGeoVolume *ins) {
   mgon[2] = 4;
   mgon[3] = 4;
 
-  z = -pinstart[2] + 2 * pal[2];
+  z = -finstart[2] + 2 * pal[2];
   mgon[4] = z;
   mgon[5] = 2 * ptop[0] + preg[2];
   mgon[6] = dP + rat * z * 4 / 3;
 
-  z = -pinstart[2] + 2 * pal[2] + 2 * ptopref[2];
+  z = -finstart[2] + 2 * pal[2] + 2 * ptopref[2];
   mgon[7] = z;
   mgon[8] = mgon[5];
   mgon[9] = dP + z * rat;
@@ -1924,7 +1924,7 @@ void AliFITv8::SetOneMCP(TGeoVolume *ins) {
   mgon[11] = pmcp[0] + preg[2];
   mgon[12] = mgon[9];
 
-  z = -pinstart[2] + 2 * pal[2] + 2 * ptopref[2] + 2 * preg[2] + 2 * pmcp[2];
+  z = -finstart[2] + 2 * pal[2] + 2 * ptopref[2] + 2 * preg[2] + 2 * pmcp[2];
   mgon[13] = z;
   mgon[14] = mgon[11];
   mgon[15] = dP + z * rat * pmcp[2] * 9 / 10;
@@ -1956,10 +1956,10 @@ void AliFITv8::SetOneMCP(TGeoVolume *ins) {
 
   // container for radiator, cathode
   for (Int_t ix = 0; ix < 2; ix++) {
-    xin = -pinstart[0] + 0.3 + (ix + 0.5) * 2 * ptopref[0];
+    xin = -finstart[0] + 0.3 + (ix + 0.5) * 2 * ptopref[0];
     for (Int_t iy = 0; iy < 2; iy++) {
-      z = -pinstart[2] + 2 * pal[2] + ptopref[2];
-      yin = -pinstart[1] + 0.3 + (iy + 0.5) * 2 * ptopref[1];
+      z = -finstart[2] + 2 * pal[2] + ptopref[2];
+      yin = -finstart[1] + 0.3 + (iy + 0.5) * 2 * ptopref[1];
       ntops++;
       ins->AddNode(topref, ntops, new TGeoTranslation(xin, yin, z));
       printf(" 0TOP  full %i x %f y %f z %f \n", ntops, xin, yin, z);
@@ -1971,19 +1971,19 @@ void AliFITv8::SetOneMCP(TGeoVolume *ins) {
     }
   }
   // Al top
-  z = -pinstart[2] + pal[2];
+  z = -finstart[2] + pal[2];
   ins->AddNode(altop, 1, new TGeoTranslation(0, 0, z));
 
   // MCP
   TVirtualMC::GetMC()->Gsvolu("0MTO", "BOX", idtmed[kOpGlass], pmcptopglass,
                               3); // Op  Glass
   TGeoVolume *mcptop = gGeoManager->GetVolume("0MTO");
-  z = -pinstart[2] + 2 * pal[2] + 2 * ptopref[2] + pmcptopglass[2];
+  z = -finstart[2] + 2 * pal[2] + 2 * ptopref[2] + pmcptopglass[2];
   ins->AddNode(mcptop, 1, new TGeoTranslation(0, 0, z));
 
   TVirtualMC::GetMC()->Gsvolu("0MCP", "BOX", idtmed[kAir], pmcp, 3); // glass
   TGeoVolume *mcp = gGeoManager->GetVolume("0MCP");
-  z = -pinstart[2] + 2 * pal[2] + 2 * ptopref[2] + 2 * pmcptopglass[2] +
+  z = -finstart[2] + 2 * pal[2] + 2 * ptopref[2] + 2 * pmcptopglass[2] +
       2 * preg[2] + pmcp[2];
   ins->AddNode(mcp, 1, new TGeoTranslation(0, 0, z));
 
@@ -2010,7 +2010,7 @@ void AliFITv8::SetOneMCP(TGeoVolume *ins) {
                               3); // glass
   TGeoVolume *mcpbase = gGeoManager->GetVolume("0MBA");
   mcpbase->Print();
-  z = -pinstart[2] + 2 * pal[2] + 2 * ptopref[2] + pmcptopglass[2] +
+  z = -finstart[2] + 2 * pal[2] + 2 * ptopref[2] + pmcptopglass[2] +
       2 * pmcp[2] + pmcpbase[2];
   ins->AddNode(mcpbase, 1, new TGeoTranslation(0, 0, z));
   // Al Housing for Support Structure
@@ -2031,8 +2031,8 @@ void AliFITv8::SetCablesA(TGeoVolume *stl) {
   double xcell[24], ycell[24];
 
   for (int imcp = 0; imcp < 24; imcp++) {
-    xcell[na] = mPosModuleAx[imcp];
-    ycell[na] = mPosModuleAy[imcp];
+    xcell[na] = fPosModuleAx[imcp];
+    ycell[na] = fPosModuleAy[imcp];
     TGeoVolume *vol = SetCablesSize(imcp);
     cableplane->AddNode(vol, na, new TGeoTranslation(xcell[na], ycell[na], 0));
     na++;
@@ -2044,10 +2044,10 @@ void AliFITv8::SetCablesA(TGeoVolume *stl) {
   Float_t *ppcablesextend[] = {pcablesextend, pcablesextend, pcablesextendsmall,
                                pcablesextendsmall};
   // left side
-  double xcell_side[] = {-pstartA[0] + pcablesextend[0],
-                         pstartA[0] - pcablesextend[0], 0, 0};
-  double ycell_side[] = {0, 0, -pstartA[1] + pcablesextendsmall[1],
-                         +pstartA[1] - pcablesextendsmall[1]};
+  double xcell_side[] = {-fstartA[0] + pcablesextend[0],
+                         fstartA[0] - pcablesextend[0], 0, 0};
+  double ycell_side[] = {0, 0, -fstartA[1] + pcablesextendsmall[1],
+                         +fstartA[1] - pcablesextendsmall[1]};
 
   for (int icab = 0; icab < 4; icab++) {
     const std::string volName = Form("CAB%2.i", 52 + icab);
@@ -2057,7 +2057,7 @@ void AliFITv8::SetCablesA(TGeoVolume *stl) {
     cableplane->AddNode(
         vol, 1, new TGeoTranslation(xcell_side[icab], ycell_side[icab], 0));
   }
-  float zcableplane = -pstartA[2] + 2 * pinstart[2] + pcableplane[2];
+  float zcableplane = -fstartA[2] + 2 * finstart[2] + pcableplane[2];
   stl->AddNode(cableplane, 1, new TGeoTranslation(0, 0, zcableplane));
 }
 
@@ -2195,10 +2195,6 @@ void AliFITv8::CreateMaterials() {
   AliMedium(19, "OpticalGlassCathode$", 24, 1, isxfld, sxmgmx, 10., .01, .1,
             .003, .003);
   AliMedium(22, "SensAir$", 2, 1, isxfld, sxmgmx, 10., .1, 1., .003, .003);
-  AliMedium(16, "OpticalGlass$", 24, 1, isxfld, sxmgmx, 10., .01, .1, .003,
-            .01);
-  AliMedium(19, "OpticalGlassCathode$", 24, 1, isxfld, sxmgmx, 10., .01, .1,
-            .003, .003);
   AliMedium(23, "Cables$", 23, 1, isxfld, sxmgmx, 10., .1, 1., .003, .003);
   AliMedium(25, "MCPWalls", 25, 1, isxfld, sxmgmx, 10., .1, 1., .003, .003);
 

@@ -88,17 +88,17 @@ private:
       Double_t **efficMet,
       Double_t **aReflMet) const; // should be called at the very end of the
                                   // simulation to free the memory
-  Float_t mPosModuleAx[24] = {-11.8, -5.9,  0,     5.9,  11.8,  -11.8,
+  Float_t fPosModuleAx[24] = {-11.8, -5.9,  0,     5.9,  11.8,  -11.8,
                               -5.9,  0,     5.9,   11.8, -12.8, -6.9,
                               6.9,   12.8,  -11.8, -5.9, 0,     5.9,
                               11.8,  -11.8, -5.9,  0,    5.9,   11.8};
-  Float_t mPosModuleAy[24] = {11.9, 11.9,  12.9,  11.9,  11.9,  6.0,
+  Float_t fPosModuleAy[24] = {11.9, 11.9,  12.9,  11.9,  11.9,  6.0,
                               6.0,  7.0,   6.0,   6.0,   -0.1,  -0.1,
                               0.1,  0.1,   -6.0,  -6.0,  -7.0,  -6.0,
                               -6.0, -11.9, -11.9, -12.9, -11.9, -11.9};
-  Float_t pstartA[3] = {20, 20, 5.};
-  Float_t pstartC[3] = {20, 20, 5.5};
-  Float_t pinstart[3] = {2.9491, 2.9491, 2.75};
+  Float_t fstartA[3] = {20, 20, 5.};
+  Float_t fstartC[3] = {20, 20, 5.5};
+  Float_t finstart[3] = {2.9491, 2.9491, 2.75};
 
   // V0+ parameters related to geometry
   Double_t fV0PlusR0, fV0PlusR1, fV0PlusR2, fV0PlusR3, fV0PlusR4, fV0PlusR5,
