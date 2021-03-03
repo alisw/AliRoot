@@ -10,6 +10,7 @@
 #include <TMath.h>
 #include <AliTPCROC.h>
 #include "TLinearFitter.h"
+#include <TMath.h>
 
 class TH1F;
 class TH2F;
@@ -35,8 +36,8 @@ class AliTPCCalROC : public TNamed {
   UInt_t        GetNchannelsMedium() const     { return (fSector<36)? 0: fkIndexes[64];};
   Bool_t        IsInRange(UInt_t row, UInt_t pad) { return (row<fNRows)? (fkIndexes[row]+pad)<fNChannels:kFALSE;}
   UInt_t        GetNPads(UInt_t row)  const     { return (row<fNRows)? AliTPCROC::Instance()->GetNPads(fSector,row):0;};
-  Float_t      GetValue(UInt_t row, UInt_t pad) const { return ( (row<fNRows) && (fkIndexes[row]+pad)<fNChannels)? fData[fkIndexes[row]+pad]: 0; };
-  Float_t      GetValue(UInt_t channel) const { return  fData[channel]; };
+  Float_t      GetValue(UInt_t channel) const { return  TMath::IsNaN(fData[channel]) ? 0. : fData[channel]; };
+  Float_t      GetValue(UInt_t row, UInt_t pad) const { return ( (row<fNRows) && (fkIndexes[row]+pad)<fNChannels)? GetValue(fkIndexes[row]+pad): 0; };
   void         SetValue(UInt_t row, UInt_t pad, Float_t vd) { if ( row<fNRows && (fkIndexes[row]+pad)<fNChannels)fData[fkIndexes[row]+pad]= vd; }
   void         SetValue(UInt_t channel, Float_t vd) {fData[channel]= vd; }
   void         Reset();
