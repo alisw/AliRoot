@@ -433,7 +433,18 @@ void  AliMC::AddParticles()
   psmode[1][1] = 211; // Pi+
   psratio[1] = 50.98349537;
   TVirtualMC::GetMC()->SetDecayMode(92213320,psratio,psmode);
-    
+      
+  TVirtualMC::GetMC()->DefineParticle( 92231320, "Ps_0_1870", kPTNeutron, 1.87 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
+  psmode[0][0] = 3122; // Lambda
+  psmode[0][1] = 310; // K0S
+  psratio[0] = 19.16379387;
+  psmode[1][0] = 3312; // Xi-
+  psmode[1][1] = 211; // Pi+
+  psratio[1] = 19.93282065;
+  psmode[2][0] = 3114; // Sigma*-
+  psmode[2][1] = 321; // K+
+  psratio[2] = 60.90338549;
+  TVirtualMC::GetMC()->SetDecayMode(92231320,psratio,psmode);
     
 
   TVirtualMC::GetMC()->DefineParticle( 9223132, "Ps_1870", kPTHadron, 1.87 ,  1.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
@@ -450,20 +461,30 @@ void  AliMC::AddParticles()
   psmode[3][1] = 310; // K0
   psratio[3] =  44.54185676;
   TVirtualMC::GetMC()->SetDecayMode(9223132,psratio,psmode);
-    
-    
-  TVirtualMC::GetMC()->DefineParticle( 92231320, "Ps_0_1870", kPTNeutron, 1.87 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
+   
+	
+  TVirtualMC::GetMC()->DefineParticle( 92321320, "Ps_0_2065", kPTNeutron, 2.065 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
+  TVirtualMC::GetMC()->DefineParticle( 93221320, "Ps_0_2255", kPTNeutron, 2.255 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
+  TVirtualMC::GetMC()->DefineParticle( 93223120, "Ps_0_2455", kPTNeutron, 2.455 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
   psmode[0][0] = 3122; // Lambda
   psmode[0][1] = 310; // K0S
-  psratio[0] = 19.16379387;
+  psratio[0] = 23.07571226;
   psmode[1][0] = 3312; // Xi-
   psmode[1][1] = 211; // Pi+
-  psratio[1] = 19.93282065;
+  psratio[1] = 11.83168057;
   psmode[2][0] = 3114; // Sigma*-
   psmode[2][1] = 321; // K+
-  psratio[2] = 60.90338549;
-  TVirtualMC::GetMC()->SetDecayMode(92231320,psratio,psmode);
-    
+  psratio[2] = 36.15089984;
+  psmode[3][0] = 3122; // Lambda
+  psmode[3][1] = 313; // K*0
+  psratio[3] =  23.07571226;
+  psmode[4][0] = 3124; // Lambda(1520)
+  psmode[4][1] = 310; // K0
+  psratio[4] =  17.56650401;
+  TVirtualMC::GetMC()->SetDecayMode(92321320,psratio,psmode);
+  TVirtualMC::GetMC()->SetDecayMode(93221320,psratio,psmode);
+  TVirtualMC::GetMC()->SetDecayMode(93223120,psratio,psmode);
+	
 
   TVirtualMC::GetMC()->DefineParticle( 9232132, "Ps_2065", kPTHadron, 2.065 ,  1.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
   TVirtualMC::GetMC()->DefineParticle( 9322132, "Ps_2255", kPTHadron, 2.255 ,  1.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
@@ -492,31 +513,7 @@ void  AliMC::AddParticles()
   TVirtualMC::GetMC()->SetDecayMode(9232132,psratio,psmode);
   TVirtualMC::GetMC()->SetDecayMode(9322132,psratio,psmode);
   TVirtualMC::GetMC()->SetDecayMode(9322312,psratio,psmode);
-    
-    
-    
-  TVirtualMC::GetMC()->DefineParticle( 92321320, "Ps_0_2065", kPTNeutron, 2.065 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
-  TVirtualMC::GetMC()->DefineParticle( 93221320, "Ps_0_2255", kPTNeutron, 2.255 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
-  TVirtualMC::GetMC()->DefineParticle( 93223120, "Ps_0_2455", kPTNeutron, 2.455 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
-  psmode[0][0] = 3122; // Lambda
-  psmode[0][1] = 310; // K0S
-  psratio[0] = 23.07571226;
-  psmode[1][0] = 3312; // Xi-
-  psmode[1][1] = 211; // Pi+
-  psratio[1] = 11.83168057;
-  psmode[2][0] = 3114; // Sigma*-
-  psmode[2][1] = 321; // K+
-  psratio[2] = 36.15089984;
-  psmode[3][0] = 3122; // Lambda
-  psmode[3][1] = 313; // K*0
-  psratio[3] =  23.07571226;
-  psmode[4][0] = 3124; // Lambda(1520)
-  psmode[4][1] = 310; // K0
-  psratio[4] =  17.56650401;
-  TVirtualMC::GetMC()->SetDecayMode(92321320,psratio,psmode);
-  TVirtualMC::GetMC()->SetDecayMode(93221320,psratio,psmode);
-  TVirtualMC::GetMC()->SetDecayMode(93223120,psratio,psmode);
-    
+
     
   // Anti-Ps0
   for (int j=0; j<7; j++) {
@@ -543,6 +540,19 @@ void  AliMC::AddParticles()
   psratio[1] = 50.98349537;
   TVirtualMC::GetMC()->SetDecayMode(-92213320,psratio,psmode);
     
+      
+  TVirtualMC::GetMC()->DefineParticle( -92231320, "Anti-Ps_0_1870", kPTNeutron, 1.87 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
+  psmode[0][0] = -3122; // Anti-Lambda
+  psmode[0][1] = 310; // K0S
+  psratio[0] = 19.16379387;
+  psmode[1][0] = -3312; // Anti-Xi+
+  psmode[1][1] = -211; // Pi-
+  psratio[1] = 19.93282065;
+  psmode[2][0] = -3114; // Anti-Sigma*+
+  psmode[2][1] = -321; // K-
+  psratio[2] = 60.90338549;
+  TVirtualMC::GetMC()->SetDecayMode(-92231320,psratio,psmode);
+    
     
   TVirtualMC::GetMC()->DefineParticle( -9223132, "Anti-Ps_1870", kPTHadron, 1.87 ,  1.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
   psmode[0][0] = -3122; // Anti-Lambda
@@ -560,25 +570,32 @@ void  AliMC::AddParticles()
   TVirtualMC::GetMC()->SetDecayMode(-9223132,psratio,psmode);
     
     
-    
-  TVirtualMC::GetMC()->DefineParticle( -92231320, "Anti-Ps_0_1870", kPTNeutron, 1.87 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
+  TVirtualMC::GetMC()->DefineParticle( -92321320, "Anti-Ps_0_2065", kPTNeutron, 2.065 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
+  TVirtualMC::GetMC()->DefineParticle( -93221320, "Anti-Ps_0_2255", kPTNeutron, 2.255 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
+  TVirtualMC::GetMC()->DefineParticle( -93223120, "Anti-Ps_0_2455", kPTNeutron, 2.455 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
   psmode[0][0] = -3122; // Anti-Lambda
   psmode[0][1] = 310; // K0S
-  psratio[0] = 19.16379387;
+  psratio[0] = 11.37520332;
   psmode[1][0] = -3312; // Anti-Xi+
   psmode[1][1] = -211; // Pi-
-  psratio[1] = 19.93282065;
+  psratio[1] = 11.83168057;
   psmode[2][0] = -3114; // Anti-Sigma*+
   psmode[2][1] = -321; // K-
-  psratio[2] = 60.90338549;
-  TVirtualMC::GetMC()->SetDecayMode(-92231320,psratio,psmode);
-    
-    
+  psratio[2] = 36.15089984;
+  psmode[3][0] = -3122; // Anti-Lambda
+  psmode[3][1] = -313; // Anti-K*0
+  psratio[3] =  23.07571226;
+  psmode[4][0] = -3124; // Anti-Lambda(1520)
+  psmode[4][1] = 310; // K0
+  psratio[4] =  17.56650401;
+  TVirtualMC::GetMC()->SetDecayMode(-92321320,psratio,psmode);
+  TVirtualMC::GetMC()->SetDecayMode(-93221320,psratio,psmode);
+  TVirtualMC::GetMC()->SetDecayMode(-93223120,psratio,psmode);
+
 
   TVirtualMC::GetMC()->DefineParticle( -9232132, "Anti-Ps_2065", kPTHadron, 2.065 ,  1.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
   TVirtualMC::GetMC()->DefineParticle( -9322132, "Anti-Ps_2255", kPTHadron, 2.255 ,  1.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
   TVirtualMC::GetMC()->DefineParticle( -9322312, "Anti-Ps_2455", kPTHadron, 2.455 ,  1.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
-        
   psmode[0][0] = -3122; // Anti-Lambda
   psmode[0][1] = -321; // K-
   psratio[0] = 0.82970920;
@@ -604,28 +621,6 @@ void  AliMC::AddParticles()
   TVirtualMC::GetMC()->SetDecayMode(-9322132,psratio,psmode);
   TVirtualMC::GetMC()->SetDecayMode(-9322312,psratio,psmode);
     
-    
-  TVirtualMC::GetMC()->DefineParticle( -92321320, "Anti-Ps_0_2065", kPTNeutron, 2.065 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
-  TVirtualMC::GetMC()->DefineParticle( -93221320, "Anti-Ps_0_2255", kPTNeutron, 2.255 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
-  TVirtualMC::GetMC()->DefineParticle( -93223120, "Anti-Ps_0_2455", kPTNeutron, 2.455 ,  0.0, 6.582e-24, "Hadron", 0.1, 1, -1, 0, 1, -1, 0, 0,  1, kTRUE);
-  psmode[0][0] = -3122; // Anti-Lambda
-  psmode[0][1] = 310; // K0S
-  psratio[0] = 11.37520332;
-  psmode[1][0] = -3312; // Anti-Xi+
-  psmode[1][1] = -211; // Pi-
-  psratio[1] = 11.83168057;
-  psmode[2][0] = -3114; // Anti-Sigma*+
-  psmode[2][1] = -321; // K-
-  psratio[2] = 36.15089984;
-  psmode[3][0] = -3122; // Anti-Lambda
-  psmode[3][1] = -313; // Anti-K*0
-  psratio[3] =  23.07571226;
-  psmode[4][0] = -3124; // Anti-Lambda(1520)
-  psmode[4][1] = 310; // K0
-  psratio[4] =  17.56650401;
-  TVirtualMC::GetMC()->SetDecayMode(-92321320,psratio,psmode);
-  TVirtualMC::GetMC()->SetDecayMode(-93221320,psratio,psmode);
-  TVirtualMC::GetMC()->SetDecayMode(-93223120,psratio,psmode);
 	
   //Omega(2012)
   for (int j = 1; j < 7; j++) {
