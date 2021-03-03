@@ -2037,22 +2037,30 @@ void AliFITv8::SetCablesA(TGeoVolume *stl) {
     cableplane->AddNode(vol, na, new TGeoTranslation(xcell[na], ycell[na], 0));
     na++;
   }
-
+  
   // 12 cables extending beyond the frame
   Float_t pcablesextend[3] = {2, 15, 0.245};
   Float_t pcablesextendsmall[3] = {3, 2, 0.245};
-  Float_t *ppcablesextend[] = {pcablesextend, pcablesextend, pcablesextendsmall,
-                               pcablesextendsmall};
+  // Float_t *ppcablesextend[4] = {pcablesextend, pcablesextend, pcablesextendsmall,
+  //                         pcablesextendsmall};
   // left side
-  double xcell_side[] = {-fstartA[0] + pcablesextend[0],
+  double xcell_side[4] = {-fstartA[0] + pcablesextend[0],
                          fstartA[0] - pcablesextend[0], 0, 0};
-  double ycell_side[] = {0, 0, -fstartA[1] + pcablesextendsmall[1],
+  double ycell_side[4] = {0, 0, -fstartA[1] + pcablesextendsmall[1],
                          +fstartA[1] - pcablesextendsmall[1]};
-
-  for (int icab = 0; icab < 4; icab++) {
+  
+   for (int icab = 0; icab < 2; icab++) {
     const std::string volName = Form("CAB%2.i", 52 + icab);
     TVirtualMC::GetMC()->Gsvolu(volName.c_str(), "BOX", idtmed[kCable],
-                                ppcablesextend[icab], 3); // cables
+                                pcablesextend, 3); // cables
+    TGeoVolume *vol = gGeoManager->GetVolume(volName.c_str());
+    cableplane->AddNode(
+        vol, 1, new TGeoTranslation(xcell_side[icab], ycell_side[icab], 0));
+  }
+  for (int icab = 2; icab < 4; icab++) {
+    const std::string volName = Form("CAB%2.i", 52 + icab);
+    TVirtualMC::GetMC()->Gsvolu(volName.c_str(), "BOX", idtmed[kCable],
+                                pcablesextendsmall, 3); // cables
     TGeoVolume *vol = gGeoManager->GetVolume(volName.c_str());
     cableplane->AddNode(
         vol, 1, new TGeoTranslation(xcell_side[icab], ycell_side[icab], 0));
