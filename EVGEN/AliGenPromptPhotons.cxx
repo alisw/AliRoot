@@ -179,7 +179,7 @@ void AliGenPromptPhotons::Init()
   fgTAxTB = new TF1("fgTAxTB",TAxTB,0,ramax,2);
   fgTAxTB->SetParameter(0,rbmax);
 
-  fgTAB = new TF1("fgTAB",TAB,0.,ramax+rbmax,2);
+  fgTAB = new TF1("fgTAB",TTAB,0.,ramax+rbmax,2);
   fgTAB->SetParameter(0,ramax);
   fgTAB->SetParameter(1,rbmax);
 
@@ -414,7 +414,7 @@ Double_t AliGenPromptPhotons::TAxTB(const Double_t* x, const Double_t* par) {
 }
 
 // ---------------------------------------------------------------------------------
-Double_t AliGenPromptPhotons::TAB(const Double_t* x, const Double_t* par) {
+Double_t AliGenPromptPhotons::TTAB(const Double_t* x, const Double_t* par) {
 //---------------------------------------------------
 // input:
 // x[0] - b (fm), impact parameter

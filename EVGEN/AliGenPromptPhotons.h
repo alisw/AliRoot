@@ -74,7 +74,7 @@ class AliGenPromptPhotons : public AliGenerator
   static Double_t TA           (const Double_t *xx, const Double_t *par);
   static Double_t TB           (const Double_t *xx, const Double_t *par);
   static Double_t TAxTB        (const Double_t *xx, const Double_t *par);
-  static Double_t TAB          (const Double_t *xx, const Double_t *par);
+  static Double_t TTAB         (const Double_t *xx, const Double_t *par);
 
   static TF1 *fgDataPt;             // d^{2}#sigma^{pp}/(dp_t dy) from data fit 
   static TF1 *fgWSzA;               // Wood Saxon parameterisation for nucleus A 
