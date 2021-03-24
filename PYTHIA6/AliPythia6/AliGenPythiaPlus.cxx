@@ -1327,6 +1327,9 @@ void AliGenPythiaPlus::MakeHeader()
     ((AliGenPythiaEventHeader*) fHeader)->SetPtHard(fPythia->GetPtHard());
     ((AliGenPythiaEventHeader*) fHeader)->SetXsection(fPythia->GetXSection());
 
+// Store Event weight
+    ((AliGenPythiaEventHeader*) fHeader)->SetEventWeight(fPythia->GetEventWeight());
+
 //
 //  Pass header
 //

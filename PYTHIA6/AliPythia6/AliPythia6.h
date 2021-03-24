@@ -59,6 +59,12 @@ class AliPythia6 : public TPythia6, public AliPythiaBase
     // Common Getters
     virtual void    GetXandQ(Float_t& x1, Float_t& x2, Float_t& q);
     virtual Float_t GetXSection();
+
+    /**
+     * @brief Get the event weight from the underlying pythia process 
+     * @return Event weight 
+     */
+    virtual Float_t GetEventWeight();
     virtual Int_t   ProcessCode();
     virtual Float_t GetPtHard();
     virtual Int_t   GetNMPI();

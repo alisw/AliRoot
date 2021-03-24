@@ -71,6 +71,12 @@ class AliPythiaBase : public AliRndm
     virtual Float_t GetPtHard() {return -1.;}
     virtual Int_t   GetNMPI() {return -1;}
     virtual Int_t   GetNSuperpositions() { return 1; }
+
+    /**
+     * @brief Get the event weight from the underlying pythia process 
+     * @return Event weight 
+     */
+    virtual Float_t GetEventWeight() { return 1; }
     //
     //
     virtual void SetDecayTable() {;}
