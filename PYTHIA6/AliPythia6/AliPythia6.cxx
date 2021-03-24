@@ -1660,6 +1660,11 @@ Float_t AliPythia6::GetPtHard()
     return GetVINT(47);
 }
 
+Float_t AliPythia6::GetEventWeight()
+{
+	return GetVINT(97);
+}
+
 Int_t AliPythia6::ProcessCode()
 {
     // Get the subprocess code
