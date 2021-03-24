@@ -892,7 +892,10 @@ Float_t AliPythia8::GetPtHard()
     return Pythia8()->info.pTHat();
 }
 
-
+Float_t AliPythia8::GetEventWeight()
+{
+    return Pythia8()->info.weight();
+}
 
 
 AliPythia8& AliPythia8::operator=(const  AliPythia8& rhs)
