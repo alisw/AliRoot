@@ -84,6 +84,12 @@ class AliPythia8 :public AliTPythia8, public AliPythiaBase
     virtual void    GetXandQ(Float_t& x1, Float_t& x2, Float_t& q);
     virtual Float_t GetXSection();
     virtual Float_t GetPtHard();
+    
+    /**
+     * @brief Get the event weight from the underlying pythia process 
+     * @return Event weight 
+     */
+    virtual Float_t GetEventWeight();
     virtual Int_t GetNMPI() { return fLastNMPI; }
     virtual Int_t GetNSuperpositions() { return fLastNSuperposition; }
 
