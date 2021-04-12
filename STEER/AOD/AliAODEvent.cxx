@@ -741,7 +741,7 @@ void AliAODEvent::ReadFromTree(TTree *tree, Option_t* opt /*= ""*/)
       // Check if already connected to tree
     TList* connectedList = (TList*) (tree->GetUserInfo()->FindObject("AODObjectsConnectedToTree"));
     if (connectedList && (!strcmp(opt, "reconnect"))) {
-		
+
         // If connected use the connected list of objects
         if (fAODObjects != connectedList) {
            delete fAODObjects;
@@ -749,29 +749,28 @@ void AliAODEvent::ReadFromTree(TTree *tree, Option_t* opt /*= ""*/)
         }   
         
         friendL = tree->GetTree()->GetListOfFriends();
-		if (friendL) 
-		{
-		  // set the branch addresses
-		TIter next(fAODObjects);
-		TNamed *el;
-		while((el=(TNamed*)next())){
-		  TString bname(el->GetName());
-			// check if branch exists under this Name
-		  TBranch *br = tree->GetTree()->GetBranch(bname.Data());
-		  if(br){
-			tree->SetBranchAddress(bname.Data(),fAODObjects->GetObjectRef(el));
-		  } else {
-			br = tree->GetBranch(Form("%s.",bname.Data()));
-			if(br){
-			  tree->SetBranchAddress(Form("%s.",bname.Data()),fAODObjects->GetObjectRef(el));
-			}
-			else{
-			  printf("%s %d AliAODEvent::ReadFromTree() No Branch found with Name %s. \n",
-					 (char*)__FILE__,__LINE__,bname.Data());
-			}	
-		  }
-		}
-	}
+        if (friendL) 
+        {
+          // set the branch addresses
+        TIter next(fAODObjects);
+        TNamed *el;
+        while((el=(TNamed*)next())){
+          TString bname(el->GetName());
+            // check if branch exists under this Name
+          TBranch *br = tree->GetTree()->GetBranch(bname.Data());
+          if(br){
+            tree->SetBranchAddress(bname.Data(),fAODObjects->GetObjectRef(el));
+          } else {
+            br = tree->GetBranch(Form("%s.",bname.Data()));
+            if(br){
+              tree->SetBranchAddress(Form("%s.",bname.Data()),fAODObjects->GetObjectRef(el));
+            }
+            else{
+              printf("%s %d AliAODEvent::ReadFromTree() No Branch found with Name %s. \n", (char*)__FILE__,__LINE__,bname.Data());
+            }	
+          }
+        }
+    }
         
         GetStdContent(); 
         fConnected = kTRUE;
