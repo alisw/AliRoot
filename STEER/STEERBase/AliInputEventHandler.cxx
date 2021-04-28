@@ -89,7 +89,7 @@ Long64_t AliInputEventHandler::GetEntries()
     TChainElement *elem;
     while ((elem = (TChainElement*) next())) {
       if (elem->GetLoadResult() != 0)
-        AliFatal(Form("File %s has status=%d", elem->GetTitle(), elem->GetLoadResult()));
+        AliError(Form("###EEE### %s cannot be opened (status=%d)", elem->GetTitle(), elem->GetLoadResult()));
     }
   }
   if (fTree->GetListOfFriends()) {
@@ -103,7 +103,7 @@ Long64_t AliInputEventHandler::GetEntries()
         TChainElement *elem = nullptr;
         while ((elem = (TChainElement*) next())) {
           if (elem->GetLoadResult() != 0)
-            AliFatal(Form("Friend file %s has status=%d", elem->GetTitle(), elem->GetLoadResult()));
+            AliFatal(Form("Friend file %s cannot be opened has (status=%d)", elem->GetTitle(), elem->GetLoadResult()));
         }
       }
     }
