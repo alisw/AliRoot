@@ -64,7 +64,7 @@
   
 
 #include "AliFITHits.h"
-
+#include "AliLog.h"
 ClassImp(AliFITHits)
 
 
@@ -104,9 +104,14 @@ AliFITHits::AliFITHits(Int_t shunt, Int_t track, Int_t *vol, Float_t *hits):
 {
 //Normal T0 hit ctor
     // printf(" @@@ AliFITHits::AliFITHits constructor \n");
+  if (sizeof(vol)/sizeof(Int_t)>=3) {
     fVolume = vol[2];
     fMCP = vol[1];
     fPmt=vol[0];
+  } else {
+    AliError("Size of vol array too small");
+  }
+  if (sizeof(hits)/sizeof(Float_t)>=13) {
     fX=hits[0];
     fY=hits[1];
     fZ=hits[2];
@@ -120,5 +125,8 @@ AliFITHits::AliFITHits(Int_t shunt, Int_t track, Int_t *vol, Float_t *hits):
     fEloss = hits[10];
     fTlength = hits[11];
     fNphot = hits[12];
+  } else {
+    AliError("Size of hits array too small");
   }
+}
 
