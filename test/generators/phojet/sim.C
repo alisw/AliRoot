@@ -1,14 +1,14 @@
+  R__LOAD_LIBRARY(libDPMJET) // DPMJET, PhoJet and Pythia6115 library
+  R__LOAD_LIBRARY(liblhapdf) // Parton density functions
+  R__LOAD_LIBRARY(libpythia6) // Parton density functions
+  R__LOAD_LIBRARY(libEGPythia6) // TGenerator interface
+  R__LOAD_LIBRARY(libgeant321)
+
+  R__LOAD_LIBRARY(libAliPythia6) // ALICE specific implementations
+  R__LOAD_LIBRARY(libTDPMjet) // DPMJET interface
+
 void sim(Int_t nev=5) {
   // Libraries required by the simulation
-
-  gSystem->Load("liblhapdf"); // Parton density functions
-  gSystem->Load("libEGPythia6"); // TGenerator interface
-  gSystem->Load("libgeant321");
-
-  gSystem->Load("libDPMJET"); // DPMJET, PhoJet and Pythia6115 library
-  gSystem->Load("libAliPythia6"); // ALICE specific implementations
-  gSystem->Load("libTDPMjet"); // DPMJET interface
-
 
   AliSimulation simulator;
   simulator.SetMakeSDigits("TRD TOF PHOS HMPID EMCAL MUON FMD ZDC PMD T0 VZERO");
