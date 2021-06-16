@@ -6,7 +6,7 @@
 #include "cfortran.h"
 //*KEND.
 #endif
-
+const Int_t NMXHKK=250000;
 extern "C" {
 /*========================================================*/
 /* COMMON/DTEVNO/NEVENT,ICASCA				  */
@@ -33,13 +33,13 @@ COMMON_BLOCK_DEF(DtevnoCommon,DTEVNO);
 typedef struct {
    Int_t    nhkk;
    Int_t    nevhkk;
-   Int_t    isthkk[200000];
-   Int_t    idhkk[200000];
-   Int_t    jmohkk[200000][2];
-   Int_t    jdahkk[200000][2];
-   Double_t  phkk[200000][5];
-   Double_t  vhkk[200000][4];
-   Double_t  whkk[200000][4];
+   Int_t    isthkk[NMXHKK];
+   Int_t    idhkk[NMXHKK];
+   Int_t    jmohkk[NMXHKK][2];
+   Int_t    jdahkk[NMXHKK][2];
+   Double_t  phkk[NMXHKK][5];
+   Double_t  vhkk[NMXHKK][4];
+   Double_t  whkk[NMXHKK][4];
 } Dtevt1Common;
 
 #define DTEVT1 COMMON_BLOCK(DTEVT1,dtevt1)
@@ -107,13 +107,13 @@ COMMON_BLOCK_DEF(Dtevt1Common,DTEVT1);
 /*               IHIST(2,NMXHKK)			  */
 /*--------------------------------------------------------*/
 typedef struct {
-   Int_t    idres[200000];
-   Int_t    idxres[200000];
-   Int_t    nobam[200000];
-   Int_t    idbam[200000];
-   Int_t    idch[200000];
+   Int_t    idres[NMXHKK];
+   Int_t    idxres[NMXHKK];
+   Int_t    nobam[NMXHKK];
+   Int_t    idbam[NMXHKK];
+   Int_t    idch[NMXHKK];
    Int_t    npoint[10];
-   Int_t    ihist[200000][2];
+   Int_t    ihist[NMXHKK][2];
 } Dtevt2Common;
 
 #define DTEVT2 COMMON_BLOCK(DTEVT2,dtevt2)
