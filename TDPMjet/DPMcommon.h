@@ -168,7 +168,7 @@ typedef struct {
    Double_t    bimin;
    Double_t    bimax;
    Double_t    xsfrac;
-   Double_t    icent;
+   Int_t       icent;
 } DtimpaCommon;
 
 #define DTIMPA COMMON_BLOCK(DTIMPA,dtimpa)
@@ -229,7 +229,7 @@ typedef struct {
    Int_t        idifr1;
    Int_t        idifr2;
    Int_t        iddpom;
-   Int_t        ipron[15][4];
+   Int_t        ipron[4][15];
 } PoprcsCommon;
 
 #define POPRCS COMMON_BLOCK(POPRCS,poprcs)
@@ -245,7 +245,7 @@ COMMON_BLOCK_DEF(PoprcsCommon,POPRCS);
      &                JMOHEP(2,NMXHEP),JDAHEP(2,NMXHEP),PHEP(5,NMXHEP),
      &                VHEP(4,NMXHEP), NSD1, NSD2, NDD
 */
-const Int_t nmxhep = 4000;
+const Int_t nmxhep = 8000;
 
 typedef struct {
   Int_t    nevhep;
