@@ -47,7 +47,7 @@ class AliDecayerPythia8 : public TVirtualMCDecayer {
   Decay_t       fDecay;            //  Forced decay mode
   Bool_t        fHeavyFlavour;     //! Flag for heavy flavors
   static Bool_t fgInit;            //! initialization flag 
-  ClassDef(AliDecayerPythia8, 3) // Particle Decayer using Pythia8
+  ClassDef(AliDecayerPythia8, 2) // Particle Decayer using Pythia8
 };
 #endif
 
