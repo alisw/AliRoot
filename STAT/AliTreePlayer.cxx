@@ -1172,7 +1172,7 @@ TObjArray  * AliTreePlayer::MakeHistograms(TTree * tree, TString hisString, TStr
   Int_t nExpressions=hisString.CountChar(':')+hisString.CountChar(';')+1;
   TObjArray * formulaArray   = new TObjArray(nExpressions);    // array of all expressions  - OWNER
   TString queryString = "";
-  Int_t hisSizeFull=0;
+  Long_t hisSizeFull=0;
   //
   //  1.) Analyze formula, book list of TObjString
   //
@@ -1307,7 +1307,7 @@ TObjArray  * AliTreePlayer::MakeHistograms(TTree * tree, TString hisString, TStr
         }
       }
       if (verbose&0x1) {
-        ::Info("AliTreePlayer::MakeHistograms","Total size=%d",hisSizeFull);
+        ::Info("AliTreePlayer::MakeHistograms","Total size=%lld",hisSizeFull);
       }
     }
     //    2.3 fill histograms
@@ -1647,6 +1647,7 @@ void AliTreePlayer::MakeCacheTreeChunk(TTree * tree, TString varList, TString ou
   for (Int_t iEntry=firstEntry; iEntry<nEntries; iEntry+=chunkSize) {
     ::Info("Processing chunk","%d",iEntry);
     if (estimate < chunkSize) tree->SetEstimate(chunkSize);
+    if (chunkSize+iEntry>=entriesAll) chunkSize=entriesAll-iEntry;   // ROOT6 does not handle properly query above limit
     Int_t entries = tree->Draw(varList.Data(), selection, "goffpara", chunkSize, iEntry);
     if (entries<=0) break;
     if (entries > estimate) {
