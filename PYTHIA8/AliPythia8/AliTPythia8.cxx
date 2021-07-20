@@ -543,4 +543,6 @@ void AliTPythia8::UpdateParticleProperties() const
   // Set up2date lifetimes for hadrons
   // lambda_b from PDG 2019: tau0 = 1.471 ps = 441 m/c = 0.441 mm/c
   ReadString("5122:tau0 = 4.41000e-01");
+  // Omega_c from PDG 2020: tau0 = 0.08 mm/c
+  ReadString("4332:tau0 = 8.0e-02");
 }
