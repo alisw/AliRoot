@@ -1734,10 +1734,11 @@ TTree* AliTreePlayer::LoadTrees(const char *inputDataList, const char *chRegExp,
     for (Int_t iKey = 0; iKey < keys->GetEntries(); iKey++) {
       if (regExp.Match(keys->At(iKey)->GetName()) == 0) continue;     // is selected
       if (notReg.Match(keys->At(iKey)->GetName()) != 0) continue;     // is rejected
-      TTree *tree = (TTree *) finput->Get(keys->At(iKey)->GetName()); // better to use dynamic cast
+      TTree *tree = dynamic_cast<TTree*> (finput->Get(keys->At(iKey)->GetName())); // better to use dynamic cast
+      if (tree==NULL) continue;
       if (treeBase == NULL) {
         TFile *finput2 = TFile::Open(fileName.Data(),option.Data());
-        treeBase = (TTree *) finput2->Get(keys->At(iKey)->GetName());
+        treeBase =  dynamic_cast<TTree*> (finput2->Get(keys->At(iKey)->GetName()));
       }
       TString fileTitle=tagValue["Title"];
       if (fileTitle.Length()){
