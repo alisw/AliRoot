@@ -39,6 +39,7 @@
 #include <TGButtonGroup.h>
 #include <TObjArray.h>
 #include <TObjString.h>
+#include <TMap.h>
 
 ///\cond CLASSIMP
 ClassImp(AliMUONPainterPlotSelector)
