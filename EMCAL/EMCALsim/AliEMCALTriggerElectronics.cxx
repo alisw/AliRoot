@@ -39,6 +39,9 @@
 #include <TRandom.h>
 #include <TVector2.h>
 
+#include <iostream>
+#include <cstdlib>
+
 /// \cond CLASSIMP
 ClassImp(AliEMCALTriggerElectronics) ;
 /// \endcond
@@ -75,6 +78,8 @@ fGeometry(0)
     fL1ADCNoise = fSimParam->GetL1ADCNoise();
     if (AliDebugLevel()) fSimParam->Print("");
   }
+
+  std::cout << "fL1ADCNoise =" << fL1ADCNoise << std::endl;
 
   AliRunLoader *rl = AliRunLoader::Instance();
   if (rl->GetAliRun() && rl->GetAliRun()->GetDetector("EMCAL")) {
