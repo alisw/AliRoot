@@ -423,6 +423,85 @@ void AliPDG::AddParticlesToPdgDataBase()
                        0.040, -3, "Resonance", -ionCode);
   }
 
+  //Additional Hidden Strangeness Pentaquarks
+    
+  //Ps +/-
+  ionCode = 9322132;
+  if(!pdgDB->GetParticle(ionCode)) {
+    pdgDB->AddParticle("Ps_Plus_1870","Ps_Plus_1870", 1.870, kFALSE,
+                       0.10, 3, "Resonance", ionCode);
+  }
+  if(!pdgDB->GetParticle(-ionCode)) {
+    pdgDB->AddParticle("Anti-Ps_Minus_1870","Anti-Ps_Minus_1870", 1.870, kFALSE,
+                       0.10, -3, "Resonance", -ionCode);
+  }
+  ionCode = 9322312;
+  if(!pdgDB->GetParticle(ionCode)) {
+    pdgDB->AddParticle("Ps_Plus_2065","Ps_Plus_2065", 2.065, kFALSE,
+                       0.10, 3, "Resonance", ionCode);
+  }
+  if(!pdgDB->GetParticle(-ionCode)) {
+    pdgDB->AddParticle("Anti-Ps_Minus_2065","Anti-Ps_Minus_2065", 2.065, kFALSE,
+                       0.10, -3, "Resonance", -ionCode);
+  }
+  ionCode = 9323212;
+  if(!pdgDB->GetParticle(ionCode)) {
+    pdgDB->AddParticle("Ps_Plus_2255","Ps_Plus_2255", 2.255, kFALSE,
+                       0.10, 3, "Resonance", ionCode);
+  }
+  if(!pdgDB->GetParticle(-ionCode)) {
+    pdgDB->AddParticle("Anti-Ps_Minus_2255","Anti-Ps_Minus_2255", 2.255, kFALSE,
+                       0.10, -3, "Resonance", -ionCode);
+  }
+  ionCode = 9332212;
+  if(!pdgDB->GetParticle(ionCode)) {
+    pdgDB->AddParticle("Ps_Plus_2455","Ps_Plus_2455", 2.455, kFALSE,
+                       0.10, 3, "Resonance", ionCode);
+  }
+  if(!pdgDB->GetParticle(-ionCode)) {
+    pdgDB->AddParticle("Anti-Ps_Minus_2455","Anti-Ps_Minus_2455", 2.455, kFALSE,
+                       0.10, -3, "Resonance", -ionCode);
+  }
+
+  //Ps0
+  ionCode = 9322131;
+  if(!pdgDB->GetParticle(ionCode)) {
+    pdgDB->AddParticle("Ps_0_1870","Ps_0_1870", 1.870, kFALSE,
+                       0.10, 0, "Resonance", ionCode);
+  }
+  if(!pdgDB->GetParticle(-ionCode)) {
+    pdgDB->AddParticle("Anti-Ps_0_1870","Anti-Ps_0_1870", 1.870, kFALSE,
+                       0.10, 0, "Resonance", -ionCode);
+  }
+  ionCode = 9322311;
+  if(!pdgDB->GetParticle(ionCode)) {
+    pdgDB->AddParticle("Ps_0_2065","Ps_0_2065", 2.065, kFALSE,
+                       0.10, 0, "Resonance", ionCode);
+  }
+  if(!pdgDB->GetParticle(-ionCode)) {
+    pdgDB->AddParticle("Anti-Ps_0_2065","Anti-Ps_0_2065", 2.065, kFALSE,
+                       0.10, 0, "Resonance", -ionCode);
+  }
+  ionCode = 9323211;
+  if(!pdgDB->GetParticle(ionCode)) {
+    pdgDB->AddParticle("Ps_0_2255","Ps_0_2255", 2.255, kFALSE,
+                       0.10, 0, "Resonance", ionCode);
+  }
+  if(!pdgDB->GetParticle(-ionCode)) {
+    pdgDB->AddParticle("Anti-Ps_0_2255","Anti-Ps_0_2255", 2.255, kFALSE,
+                       0.10, 0, "Resonance", -ionCode);
+  }
+  ionCode = 9332211;
+  if(!pdgDB->GetParticle(ionCode)) {
+    pdgDB->AddParticle("Ps_0_2455","Ps_0_2455", 2.455, kFALSE,
+                       0.10, 0, "Resonance", ionCode);
+  }
+  if(!pdgDB->GetParticle(-ionCode)) {
+    pdgDB->AddParticle("Anti-Ps_0_2455","Anti-Ps_0_2455", 2.455, kFALSE,
+                      0.10, 0, "Resonance", -ionCode);
+  }
+	
+	
   // d*(2380) - dibaryon resonance
 
   ionCode = 900010020; //Arbitrary choice - as deuteron but with leading 9 instead of 10
