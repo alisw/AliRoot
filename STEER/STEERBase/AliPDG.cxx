@@ -501,7 +501,18 @@ void AliPDG::AddParticlesToPdgDataBase()
                       0.10, 0, "Resonance", -ionCode);
   }
 	
-	
+	// Charm pentaquarks
+  // Theta_c: isospin singlet with J=1/2+ (see https://arxiv.org/abs/hep-ph/0409121)
+  ionCode = 9422111;
+  if(!pdgDB->GetParticle(ionCode)) {
+    pdgDB->AddParticle("Theta_c_3100","Theta_c_3100", 3.099, kFALSE,
+                       83.e-6, 0, "Resonance", ionCode); // same width as D*+ (83 keV)
+  }
+  if(!pdgDB->GetParticle(-ionCode)) {
+    pdgDB->AddParticle("Anti-Theta_c_3100","Anti-Theta_c_3100", 3.099, kFALSE,
+                       83.e-6, 0, "Resonance", -ionCode); // same width as D*+ (83 keV)
+  }
+
   // d*(2380) - dibaryon resonance
 
   ionCode = 900010020; //Arbitrary choice - as deuteron but with leading 9 instead of 10
