@@ -473,6 +473,20 @@ void  AliMC::AddParticles()
   // B*_c-
   TVirtualMC::GetMC()->DefineParticle(-543, "B*_c-", kPTHadron, 6.6020, -1.0, 0.0,"Hadron", 0.0, 1, -1, 0, 0, 0, 0, 0, 0, kTRUE);
 
+	// Charm pentaquarks
+  // Theta_c: isospin singlet with J=1/2+ (see https://arxiv.org/abs/hep-ph/0409121)
+  TVirtualMC::GetMC()->DefineParticle( 9422111, "Theta_c_3100", kPTHadron, 3.099, 0., 6.9e-21, "Hadron", 83.e-6, 1, 1, 0, 0, 0, 0, 0,  1, kTRUE);
+  TVirtualMC::GetMC()->DefineParticle(-9422111, "AntiTheta_c_3100", kPTHadron, 3.099, 0., 6.9e-21, "Hadron", 83.e-6, 1, 1, 0, 0, 0, 0, 0, -1, kTRUE);
+
+  for (int j = 1; j < 6; j++) {
+    psmode[j][0] = psmode[j][1] = 0;
+    psratio[j] = 0.;
+  }
+  psmode[0][0] = 413; // D*+
+  psmode[0][1] = -2212; // anti-p
+  psratio[0] = 100.;
+  TVirtualMC::GetMC()->SetDecayMode(3335,psratio,psmode);
+
   // Define the 2- and 3-body phase space decay for the Hyper-Triton
   Int_t mode[6][3];
   Float_t bratio[6];
