@@ -475,8 +475,8 @@ void  AliMC::AddParticles()
 
 	// Charm pentaquarks
   // Theta_c: isospin singlet with J=1/2+ (see https://arxiv.org/abs/hep-ph/0409121)
-  TVirtualMC::GetMC()->DefineParticle( 9422111, "Theta_c_3100", kPTHadron, 3.099, 0., 6.9e-21, "Hadron", 83.e-6, 1, 1, 0, 0, 0, 0, 0,  1, kTRUE);
-  TVirtualMC::GetMC()->DefineParticle(-9422111, "AntiTheta_c_3100", kPTHadron, 3.099, 0., 6.9e-21, "Hadron", 83.e-6, 1, 1, 0, 0, 0, 0, 0, -1, kTRUE);
+  TVirtualMC::GetMC()->DefineParticle( 9422111, "Anti-Theta_c_3100", kPTHadron, 3.099, 0., 6.9e-21, "Hadron", 83.e-6, 1, 1, 0, 0, 0, 0, 0,  -1, kTRUE);
+  TVirtualMC::GetMC()->DefineParticle(-9422111, "Theta_c_3100", kPTHadron, 3.099, 0., 6.9e-21, "Hadron", 83.e-6, 1, 1, 0, 0, 0, 0, 0, 1, kTRUE);
 
   for (int j = 1; j < 6; j++) {
     psmode[j][0] = psmode[j][1] = 0;
