@@ -486,6 +486,9 @@ void  AliMC::AddParticles()
   psmode[0][1] = -2212; // anti-p
   psratio[0] = 100.;
   TVirtualMC::GetMC()->SetDecayMode(9422111,psratio,psmode);
+  psmode[0][0] = -413; // D*-
+  psmode[0][1] = 2212; // p
+  TVirtualMC::GetMC()->SetDecayMode(-9422111,psratio,psmode);
 
   // Define the 2- and 3-body phase space decay for the Hyper-Triton
   Int_t mode[6][3];
