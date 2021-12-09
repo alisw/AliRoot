@@ -271,6 +271,23 @@ else()
       set(ROOT_VERSION_MIN "${ROOT_VERSION_MIN_5}")
     elseif(ROOT_VERSION_MAJOR EQUAL 6)
       set(ROOT_VERSION_MIN "${ROOT_VERSION_MIN_6}")
+
+      # find VMC standalone
+      # VMC standalone will fail if ROOT was found with VMC
+      find_package(VMC)
+      if(VMC_FOUND)
+        message(STATUS "Using standalone VMC")
+        # AliRoot's FindROOT module does not actually provide targets but only does link_libraries(ROOT_LIB_DIR).
+        # So AliRoot finds libs by name in that dir but not as a target.
+        # On the other hand VMCLibrary is linked against targets ROOT::Core etc which come in with a find_package(ROOT CONFIG).
+        # So Let's slightly modify the VMCLibrary target properties...
+        set(VMC_DEPS Core EG Geom Physics)
+        set_target_properties(VMCLibrary PROPERTIES INTERFACE_LINK_LIBRARIES "${VMC_DEPS}")
+        # Alias target before VMC was also found by name "VMC"
+        add_library(VMC ALIAS VMCLibrary)
+        include_directories(${VMC_INCLUDE_DIRS})
+      endif()
+
     else()
       message(FATAL_ERROR "AliRoot works with ROOT 5 or 6 only")
     endif()
