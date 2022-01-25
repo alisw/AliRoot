@@ -1209,6 +1209,10 @@ void  AliMC::AddParticles()
   TVirtualMC::GetMC()->SetDecayMode(-3124,bratio,mode);
 
   // --------------------------------------------------------------------
+    
+    //Sexaquark (uuddss): compact, neutral and stable hypothetical bound state (arxiv.org/abs/1708.08951)
+    TVirtualMC::GetMC()->DefineParticle(6600000020,"Sexaquark",kPTUndefined,2.0,0.0,4.35e+17,"Hadron",0.0,0, 1, 0, 0, 0, 0, 0, 2, kTRUE);
+    TVirtualMC::GetMC()->DefineParticle(-6600000020,"AntiSexaquark",kPTUndefined,2.0,0.0,4.35e+17,"Hadron",0.0,0, 1, 0, 0, 0, 0, 0, -2, kTRUE);
 }
 
 //_______________________________________________________________________
