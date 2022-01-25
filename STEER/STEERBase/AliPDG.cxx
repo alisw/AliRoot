@@ -521,4 +521,16 @@ void AliPDG::AddParticlesToPdgDataBase()
                        0.070, 3, "Resonance", ionCode);
   }
   pdgDB->AddAntiParticle("d*_2380_bar", - ionCode);
+    
+    
+  //Sexaquark (uuddss): compact, neutral and stable hypothetical bound state (arxiv.org/abs/1708.08951)
+  ionCode = 6600000020;
+  if(!pdgDB->GetParticle(ionCode)) {
+     pdgDB->AddParticle("Sexaquark","Sexaquark",2.0, kTRUE,0.0,0,"Special",ionCode);
+  }
+    
+  if(!pdgDB->GetParticle(-ionCode)) {
+      pdgDB->AddParticle("AntiSexaquark","AntiSexaquark",2.0, kTRUE,0.0,0,"Special",-ionCode);
+  }
+    
 }
