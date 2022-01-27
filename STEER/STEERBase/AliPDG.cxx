@@ -524,7 +524,7 @@ void AliPDG::AddParticlesToPdgDataBase()
     
     
   //Sexaquark (uuddss): compact, neutral and stable hypothetical bound state (arxiv.org/abs/1708.08951)
-  ionCode = 6600000020;
+  ionCode = 900000020;
   if(!pdgDB->GetParticle(ionCode)) {
      pdgDB->AddParticle("Sexaquark","Sexaquark",2.0, kTRUE,0.0,0,"Special",ionCode);
   }
