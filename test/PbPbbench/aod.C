@@ -1,3 +1,5 @@
+R__LOAD_LIBRARY(libboost_unit_test_framework)
+R__LOAD_LIBRARY(libzmq)
 void aod(){
 
     gSystem->Load("libANALYSIS");

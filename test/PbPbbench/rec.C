@@ -1,3 +1,4 @@
+R__LOAD_LIBRARY(libzmq)
 void rec() {
   AliReconstruction reco;
 

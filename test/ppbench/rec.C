@@ -1,3 +1,4 @@
+R__LOAD_LIBRARY(libzmq)
 void rec() {
   gSystem->Load("libpythia6.so");
   AliReconstruction reco;

@@ -1,5 +1,8 @@
 void aod(){
 
+    gSystem->Load("libboost_unit_test_framework");
+    gSystem->Load("libzmq");
+    
     gSystem->Load("libANALYSIS");
     gSystem->Load("libANALYSISalice");
 

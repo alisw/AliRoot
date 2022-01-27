@@ -1,4 +1,5 @@
 void runsim(){
+  gSystem->Load("libzmq");
   gSystem->Load("liblhapdf");
   gSystem->Load("libpythia6");
   gSystem->Load("libVMC");
