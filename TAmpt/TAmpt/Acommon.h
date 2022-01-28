@@ -21,9 +21,9 @@ typedef struct {
 COMMON_BLOCK_DEF(HparntCommon,HPARNT);
 
 typedef struct {
-  Int_t      natt;
   Float_t    eatt;
   Int_t      jatt;
+  Int_t      natt;
   Int_t      nt;
   Int_t      np;
   Int_t      n0;
