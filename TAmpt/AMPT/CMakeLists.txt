@@ -39,6 +39,8 @@ set(FSRCS
   hipyset1.35.f
   linana.f
   profile.f
+  gauss3.f
+  gauss4.f	
   zpc.f
   )
 
