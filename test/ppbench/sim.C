@@ -1,4 +1,6 @@
+#ifdef __CLING__
 R__LOAD_LIBRARY(libzmq)
+#endif
 void sim(Int_t nev=20) {
 
   gSystem->Load("liblhapdf");

@@ -1,4 +1,6 @@
+#ifdef __CLING__
 R__LOAD_LIBRARY(libzmq)
+#endif
 void rec() {
   AliReconstruction reco;
 

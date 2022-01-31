@@ -1,3 +1,4 @@
+#ifdef __CLING__
   R__LOAD_LIBRARY(libDPMJET) // DPMJET, PhoJet and Pythia6115 library
   R__LOAD_LIBRARY(liblhapdf) // Parton density functions
   R__LOAD_LIBRARY(libpythia6) // Parton density functions
@@ -6,6 +7,7 @@
 
   R__LOAD_LIBRARY(libAliPythia6) // ALICE specific implementations
   R__LOAD_LIBRARY(libTDPMjet) // DPMJET interface
+#endif
 
 void sim(Int_t nev=5) {
   // Libraries required by the simulation

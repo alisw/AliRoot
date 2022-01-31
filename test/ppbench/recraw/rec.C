@@ -1,4 +1,6 @@
+#ifdef __CLING__
 R__LOAD_LIBRARY(libzmq)
+#endif
 void rec() {
 
   AliEMCALGeometry::GetInstance("EMCAL_COMPLETEV1"); // Do nkt forget to keep consistency with Config.C

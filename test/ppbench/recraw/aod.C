@@ -1,5 +1,7 @@
+#ifdef __CLING__
 R__LOAD_LIBRARY(libboost_unit_test_framework)
 R__LOAD_LIBRARY(libzmq)
+#endif
 void aod(){
 
     gSystem->Load("libANALYSIS");
