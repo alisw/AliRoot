@@ -20,9 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 97                          $: revision of last commit
-// $Author:: odjuvsla                 $: author of last commit
-// $Date:: 2012-10-22 23:25:35 +0200 #$: date of last commit
+// $Rev:: 308                         $: revision of last commit
+// $Author:: aaronstanek              $: author of last commit
+// $Date:: 2019-06-24 19:30:51 +0200 #$: date of last commit
 //
 // Description:
 //
@@ -38,6 +38,7 @@
 #include <string>
 
 #include "filewriter.h"
+#include "inputParameters.h"
 
 
 class eventFileWriter : public fileWriter
@@ -49,6 +50,9 @@ class eventFileWriter : public fileWriter
       
       /** Constructor with name */
       eventFileWriter(std::string filename);
+
+      /** Write out simulation set up */
+      int writeInit(inputParameters &param );
 
       /** Write an UPC event to file */
       int writeEvent(upcEvent &event, int eventnumber);

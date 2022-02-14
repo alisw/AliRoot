@@ -20,9 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 293                         $: revision of last commit
-// $Author:: butter                   $: author of last commit
-// $Date:: 2017-11-11 15:46:05 +0100 #$: date of last commit
+// $Rev:: 311                         $: revision of last commit
+// $Author:: aaronstanek              $: author of last commit
+// $Date:: 2019-07-01 23:49:32 +0200 #$: date of last commit
 //
 // Description:
 //
@@ -65,6 +65,8 @@ photonNucleusCrossSection::photonNucleusCrossSection(const inputParameters& inpu
 	 _quantumGlauber = inputParametersInstance.quantumGlauber();
 	switch(_particleType) {
 	case RHO:
+	case RHO_ee:
+	case RHO_mumu:
 		_slopeParameter = 11.0;  // [(GeV/c)^{-2}]
 		_vmPhotonCoupling = 2.02;
 		_ANORM       = -2.75;
@@ -87,11 +89,12 @@ photonNucleusCrossSection::photonNucleusCrossSection(const inputParameters& inpu
 		_vmPhotonCoupling      = 2.02;
 		_ANORM       = -2.75;
 		_BNORM       = 0;  
-		_defaultC    = 11.0;
+		_defaultC    = 1.0;
 		_channelMass  = _ip->rho0PrimeMass();
 		_width        = _ip->rho0PrimeWidth();
 		break;
 	case OMEGA:
+	case OMEGA_pipipi:
 		_slopeParameter=10.0;
 		_vmPhotonCoupling=23.13;
 		_ANORM=-2.75;
@@ -109,6 +112,15 @@ photonNucleusCrossSection::photonNucleusCrossSection(const inputParameters& inpu
 		_channelMass  = _ip->PhiMass();
 		_width        = _ip->PhiWidth();
 		break;
+	case PHIKK:                        // phi+direct K^+K^- Added Jan. 2022 by Spencer Klein
+	         _slopeParameter=7.0;     // assume slope and coupling are the same as for the phi alone
+	         _vmPhotonCoupling=2.02;
+		 _ANORM=-2.75;              // Choose BNORM/ANORM to give a good number of direct KK and phi; this is amplitude, so the production ratio is 7*7 times larger
+		 _BNORM=9.;
+		 _defaultC=1.0;
+		 _channelMass    =_ip->PhiMass();
+		 _width          =_ip->PhiWidth();
+		 break;
 	case JPSI:
 	case JPSI_ee:
 	case JPSI_mumu:
@@ -601,14 +613,18 @@ photonNucleusCrossSection::sigmagp(const double Wgp)
 	switch(_particleType)
 		{ 
 		case RHO:
+		case RHO_ee:
+		case RHO_mumu:
 		case RHOZEUS:
 		case FOURPRONG:
 			sigmagp_r=1.E-4*(5.0*exp(0.22*log(Wgp))+26.0*exp(-1.23*log(Wgp)));
 			break;
 		case OMEGA:
+		case OMEGA_pipipi:
 			sigmagp_r=1.E-4*(0.55*exp(0.22*log(Wgp))+18.0*exp(-1.92*log(Wgp)));
 			break;                                                      
 		case PHI:
+		case PHIKK:     // Assume the same as the phi.  Added Jan, 2022 by SRK
 			sigmagp_r=1.E-4*0.34*exp(0.22*log(Wgp));
 			break;
 		case JPSI:
@@ -785,7 +801,8 @@ photonNucleusCrossSection::breitWigner(const double W,
 		const double termA  = _channelMass * _width;
 		const double termA2 = termA * termA;
 		const double termB  = W * W - _channelMass * _channelMass;
-		return C * _ANORM * _ANORM * termA2 / (termB * termB + termA2);
+		double C = _ANORM * _ANORM * termA2 / (termB * termB + termA2);
+		return C/W;  // this is dsigma/dW, not dsigma/ds need to convert?
 	}
 
 	// Relativistic Breit-Wigner according to J.D. Jackson,
@@ -802,7 +819,7 @@ photonNucleusCrossSection::breitWigner(const double W,
 	// if below threshold, then return 0.  Added 5/3/2001 SRK
 	// 0.5% extra added for safety margin
         // omega added here 10/26/2014 SRK
-	if( _particleType==RHO ||_particleType==RHOZEUS || _particleType==OMEGA){  
+	if( _particleType==RHO ||_particleType==RHOZEUS || _particleType==OMEGA || _particleType==OMEGA_pipipi){  
 		if (W < 2.01*_ip->pionChargedMass()){
 			nrbw_r=0.;
 			return nrbw_r;
@@ -811,8 +828,28 @@ photonNucleusCrossSection::breitWigner(const double W,
 		ppi0=0.358;
 	}
   
+	// handle rho-->e+e- properly
+	if (_particleType==RHO_ee){
+		if(W<2.*_ip->mel()){
+			nrbw_r=0.;
+			return nrbw_r;
+		}
+		ppi=sqrt(((W/2.)*(W/2.))-_ip->mel()*_ip->mel());
+		ppi0=sqrt(((_channelMass/2.)*(_channelMass/2.))-_ip->mel()*_ip->mel());   
+	}
+
+	// handle rho-->mu+mu- properly
+	if (_particleType==RHO_mumu){
+		if(W<2.*_ip->muonMass()){
+			nrbw_r=0.;
+			return nrbw_r;
+		}
+		ppi=sqrt(((W/2.)*(W/2.))-_ip->muonMass()*_ip->muonMass());
+		ppi0=sqrt(((_channelMass/2.)*(_channelMass/2.))-_ip->muonMass()*_ip->muonMass());
+	}
+  
 	// handle phi-->K+K- properly
-	if (_particleType  ==  PHI){
+	if (_particleType  ==  PHI || _particleType==PHIKK){
 		if (W < 2.*_ip->kaonChargedMass()){
 			nrbw_r=0.;
 			return nrbw_r;

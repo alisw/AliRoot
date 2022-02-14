@@ -20,9 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 293                         $: revision of last commit
-// $Author:: butter                   $: author of last commit
-// $Date:: 2017-11-11 15:46:05 +0100 #$: date of last commit
+// $Rev:: 313                         $: revision of last commit
+// $Author:: aaronstanek              $: author of last commit
+// $Date:: 2019-07-11 22:56:08 +0200 #$: date of last commit
 //
 // Description:
 //    Added incoherent t2-> pt2 selection.  Following pp selection scheme
@@ -68,7 +68,7 @@ Gammaavectormeson::Gammaavectormeson(const inputParameters& inputParametersInsta
         _bslope0=inputParametersInstance.bslope0();
         _bslope_alphaprime=inputParametersInstance.bslope_alphaprime();
         N0 = 0; N1 = 0; N2 = 0; 
-	  if (_VMpidtest == starlightConstants::FOURPRONG){
+	  if (_VMpidtest == starlightConstants::FOURPRONG || _VMpidtest == starlightConstants::OMEGA_pipipi){
 		// create n-body phase-spage generator
 		_phaseSpaceGen = new nBodyPhaseSpaceGen(_randy);
          }
@@ -198,6 +198,51 @@ void Gammaavectormeson::twoBodyDecay(starlightConstants::particleTypeEnum &ipid,
 
 }
 
+//______________________________________________________________________________                                               
+// decays a particle into three particles with isotropic angular distribution
+bool Gammaavectormeson::omega3piDecay
+(starlightConstants::particleTypeEnum& ipid,
+ const double                  ,           // E (unused)
+ const double                  W,          // mass of produced particle
+ const double*                 p,          // momentum of produced particle; expected to have size 3
+ lorentzVector*                decayVecs,  // array of Lorentz vectors of daughter particles; expected to have size 3
+ int&                          iFbadevent)
+{
+	const double parentMass = W;
+
+	// set the mass of the daughter particles
+	const double daughterMass = getDaughterMass(ipid);
+	if (parentMass < 3 * daughterMass){
+		cout << " ERROR: W=" << parentMass << " GeV too small" << endl;
+		iFbadevent = 1;
+		return false;
+	}
+
+	// construct parent four-vector
+	const double        parentEnergy = sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]
+	                                        + parentMass * parentMass);
+	const lorentzVector parentVec(p[0], p[1], p[2], parentEnergy);
+
+	// setup n-body phase-space generator
+	assert(_phaseSpaceGen);
+	static bool firstCall = true;
+	if (firstCall) {
+		const double m[3] = {_ip->pionChargedMass(), _ip->pionChargedMass(), _ip->pionNeutralMass()};
+		_phaseSpaceGen->setDecay(3, m);
+		// estimate maximum phase-space weight
+		_phaseSpaceGen->setMaxWeight(1.01 * _phaseSpaceGen->estimateMaxWeight(_VMWmax));
+		firstCall = false;
+	}
+
+	// generate phase-space event
+	if (!_phaseSpaceGen->generateDecayAccepted(parentVec))
+		return false;
+
+	// set Lorentzvectors of decay daughters
+	for (unsigned int i = 0; i < 3; ++i)
+		decayVecs[i] = _phaseSpaceGen->daughter(i);
+	return true;
+}
 
 //______________________________________________________________________________                                               
 // decays a particle into four particles with isotropic angular distribution
@@ -261,6 +306,7 @@ double Gammaavectormeson::getDaughterMass(starlightConstants::particleTypeEnum &
 		ipid = starlightConstants::PION;
 		break;
 	case starlightConstants::PHI:
+	case starlightConstants::PHIKK:
 		mdec = _ip->kaonChargedMass();
 		ipid = starlightConstants::KAONCHARGE;
 		break;
@@ -268,10 +314,12 @@ double Gammaavectormeson::getDaughterMass(starlightConstants::particleTypeEnum &
 		mdec = _ip->mel();
 		ipid = starlightConstants::ELECTRON;
 		break; 
+	case starlightConstants::RHO_ee:
 	case starlightConstants::JPSI_ee:
 		mdec = _ip->mel();
 		ipid = starlightConstants::ELECTRON;
 		break; 
+	case starlightConstants::RHO_mumu:
 	case starlightConstants::JPSI_mumu:
 		mdec = _ip->muonMass();
 		ipid = starlightConstants::MUON;
@@ -503,20 +551,26 @@ void Gammaavectormeson::momenta(double W,double Y,double &E,double &px,double &p
 	    xt = _randy->Rndom(); 
             if( _bbs.beam1().A()==1 && _bbs.beam2().A() != 1){ 
               if( _ProductionMode == 2 || _ProductionMode ==3){
-                pt2 = 8.*xt*starlightConstants::hbarc/_bbs.beam2().nuclearRadius();  
+		
+ // Changed '8' to '32' 6 times below to extend the region of the p_T calculation up to 1 GeV.c  SRK May 28, 2019
+//  'pt2' is the maximum vector meson momentum.  For heavy nuclei, the '32'coefficient corresonds to about 1 GeV/c
+//  The downside of the larger coefficient is that the sampling runs more slowly.  This could be made into a parameter		
+		
+
+                pt2 = 32.*xt*starlightConstants::hbarc/_bbs.beam2().nuclearRadius();  
               }else{
-                pt2 = 8.*xt*starlightConstants::hbarc/_bbs.beam1().nuclearRadius();  
+                pt2 = 32.*xt*starlightConstants::hbarc/_bbs.beam1().nuclearRadius();  
               }   
             } else if( _bbs.beam2().A()==1 && _bbs.beam1().A() != 1 ){
               if( _ProductionMode == 2 || _ProductionMode ==3){
-                pt2 = 8.*xt*starlightConstants::hbarc/_bbs.beam1().nuclearRadius();  
+                pt2 = 32.*xt*starlightConstants::hbarc/_bbs.beam1().nuclearRadius();  
               }else{
-                pt2 = 8.*xt*starlightConstants::hbarc/_bbs.beam2().nuclearRadius();  
+                pt2 = 32.*xt*starlightConstants::hbarc/_bbs.beam2().nuclearRadius();  
               }  
             } else if (_TargetBeam==1) {
-                pt2 = 8.*xt*starlightConstants::hbarc/_bbs.beam1().nuclearRadius();  
+                pt2 = 32.*xt*starlightConstants::hbarc/_bbs.beam1().nuclearRadius();  
             } else {
-                pt2 = 8.*xt*starlightConstants::hbarc/_bbs.beam2().nuclearRadius();  
+                pt2 = 32.*xt*starlightConstants::hbarc/_bbs.beam2().nuclearRadius();  
             }
 
 	    xtest = _randy->Rndom();
@@ -779,6 +833,7 @@ upcEvent Gammaavectormeson::produceEvent()
 	starlightConstants::particleTypeEnum ipid = starlightConstants::UNKNOWN;
         starlightConstants::particleTypeEnum vmpid = starlightConstants::UNKNOWN; 
 
+	
 	if (_VMpidtest == starlightConstants::FOURPRONG) {
 		double        comenergy = 0;
 		double        mom[3]    = {0, 0, 0};
@@ -791,19 +846,74 @@ upcEvent Gammaavectormeson::produceEvent()
 			  momenta(comenergy, rapidity, E, mom[0], mom[1], mom[2], tcheck,
 				  event._bSlope, event._t, event._ptGam, event._Egam, event._ptPom, event._Epom);
 			else if (_VMinterferencemode==1)
-			  vmpt(comenergy, rapidity, E, mom[0], mom[1], mom[2], tcheck);
+				vmpt(comenergy, rapidity, E, mom[0], mom[1], mom[2], tcheck);
 		} while (!fourBodyDecay(ipid, E, comenergy, mom, decayVecs, iFbadevent));
 		if ((iFbadevent == 0) and (tcheck == 0))
 			for (unsigned int i = 0; i < 4; ++i) {
 				starlightParticle daughter(decayVecs[i].GetPx(),
 				                           decayVecs[i].GetPy(),
 				                           decayVecs[i].GetPz(),
-				                           starlightConstants::UNKNOWN,  // energy 
+							   sqrt(decayVecs[i].GetPx()*decayVecs[i].GetPx()+decayVecs[i].GetPy()*decayVecs[i].GetPy()+decayVecs[i].GetPz()*decayVecs[i].GetPz()+0.139*0.139),//energy 
 				                           starlightConstants::UNKNOWN,  // _mass
-				                           ipid,
-				                           (i < 2) ? -1 : +1);
+							   ipid*(2*(i/2)-1),   // make half of the particles pi^+, half pi^-
+							   i/2);
 				event.addParticle(daughter);
-				event._isGammaavm = true;
+			}
+	} else if (_VMpidtest == starlightConstants::OMEGA_pipipi) {
+		double        comenergy = 0;
+		double        mom[3]    = {0, 0, 0};
+		double        E         = 0;
+		lorentzVector decayVecs[3];
+		do {
+			double rapidity = 0;
+			pickwy(comenergy, rapidity);
+			if (_VMinterferencemode == 0)
+				momenta(comenergy, rapidity, E, mom[0], mom[1], mom[2], tcheck,
+				  event._bSlope, event._t, event._ptGam, event._Egam, event._ptPom, event._Epom);
+			else if (_VMinterferencemode==1)
+				vmpt(comenergy, rapidity, E, mom[0], mom[1], mom[2], tcheck);
+			_nmbAttempts++;
+			bool accepted = true;
+			if (_ptCutEnabled) {
+				for (short i = 0; i < 3; i++) {
+					double pt_chk = 0;
+					pt_chk += pow( decayVecs[i].GetPx() , 2);
+					pt_chk += pow( decayVecs[i].GetPy() , 2);
+					pt_chk += pow( decayVecs[i].GetPz() , 2);
+					pt_chk = sqrt(pt_chk);
+					if (pt_chk < _ptCutMin || pt_chk > _ptCutMax) {
+						accepted = false;
+						break;
+					}
+				}
+			}
+			if (_etaCutEnabled) {
+				for (short i = 0; i < 3; i++) {
+					double eta_chk = pseudoRapidity(
+						decayVecs[i].GetPx(),
+						decayVecs[i].GetPy(),
+						decayVecs[i].GetPz()
+					);
+					if (eta_chk < _etaCutMin || eta_chk > _etaCutMax) {
+						accepted = false;
+						break;
+					}
+				}
+			}
+			if (accepted) {
+				_nmbAccepted++;
+			}
+		} while (!omega3piDecay(ipid, E, comenergy, mom, decayVecs, iFbadevent));
+		if ((iFbadevent == 0) and (tcheck == 0))
+			for (unsigned int i = 0; i < 3; ++i) {
+				starlightParticle daughter(decayVecs[i].GetPx(),
+				                           decayVecs[i].GetPy(),
+				                           decayVecs[i].GetPz(),
+							   sqrt(decayVecs[i].GetPx()*decayVecs[i].GetPx()+decayVecs[i].GetPy()*decayVecs[i].GetPy()+decayVecs[i].GetPz()*decayVecs[i].GetPz()+0.139*0.139),//energy 
+							   starlightConstants::UNKNOWN,  // _mass
+							   ipid*(2*(i/2)-1),   // make half of the particles pi^+, half pi^-
+							   i/2);
+				event.addParticle(daughter);
 			}
 	} else {
 		double comenergy = 0.;

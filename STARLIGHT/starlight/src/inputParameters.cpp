@@ -20,10 +20,12 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 293 $: revision of last commit // $Author:: butter  $: author of last commit
-// $Date:: 2017-11-11 15:46:05 +0100 #$: date of last commit //
+// $Rev:: 311 $: revision of last commit // $Author:: aaronst#$: author of last commit 
+// $Date:: 2019-07-01 23:49:32 +0200 #$: date of last commit // 
 // Description:
 //
+///////////////////////////////////////////////////////////////////////////
+
 
 #include <iostream>
 #include <fstream>
@@ -90,6 +92,7 @@ inputParameters::inputParameters()
 	  _quantumGlauber        (this, "QUANTUM_GLAUBER",0,NOT_REQUIRED),
 	  _bmin                  (this, "BMIN",0,NOT_REQUIRED),
           _bmax                  (this, "BMAX",0,NOT_REQUIRED),
+          _outputHeader          (this, "OUTPUT_HEADER", false, NOT_REQUIRED),
 
           _deuteronSlopePar      (this, "deuteronSlopePar"      , 9.5           , NOT_REQUIRED),
           _protonMass            (this, "protonMass"            , 0.938272046   , NOT_REQUIRED),
@@ -137,12 +140,15 @@ inputParameters::inputParameters()
           _rho0Mass              (this, "rho0Mass"              , 0.769         , NOT_REQUIRED),
           _rho0Width             (this, "rho0Width"             , 0.1517        , NOT_REQUIRED),
           _rho0BrPiPi            (this, "rho0BrPiPi"            , 1.0           , NOT_REQUIRED),
+          _rho0Bree              (this, "rho0Bree"              , 0.0000472     , NOT_REQUIRED), // added from PDGlive (25 Jun 2019)
+          _rho0Brmumu            (this, "rho0Brmumu"            , 0.0000455     , NOT_REQUIRED), // added from PDGlive (25 Jun 2019)
           _rho0PrimeMass         (this, "rho0PrimeMass"         , 1.540         , NOT_REQUIRED),
           _rho0PrimeWidth        (this, "rho0PrimeWidth"        , 0.570         , NOT_REQUIRED),
           _rho0PrimeBrPiPi       (this, "rho0PrimeBrPiPi"       , 1.0           , NOT_REQUIRED),
           _OmegaMass             (this, "OmegaMass"             , 0.78265       , NOT_REQUIRED),
           _OmegaWidth            (this, "OmegaWidth"            , 0.00849       , NOT_REQUIRED),
           _OmegaBrPiPi           (this, "OmegaBrPiPi"           , 0.0153        , NOT_REQUIRED),
+          _OmegaBrPiPiPi         (this, "OmegaBrPiPiPi"         , 0.893         , NOT_REQUIRED), // added from PDGlive (26 Jun 2019)
           _PhiMass               (this, "PhiMass"               , 1.019461      , NOT_REQUIRED),
           _PhiWidth              (this, "PhiWidth"              , 0.004266      , NOT_REQUIRED),
           _PhiBrKK               (this, "PhiBrKK"               , 0.489         , NOT_REQUIRED),
@@ -230,9 +236,18 @@ inputParameters::configureFromFile(const std::string &_configFileName)
 		printWarn << "tritium is not currently supported" << endl;
 		return false;}
 	// check that rho production uses wide resonance option
-	if(_prodParticleId.value()==113 && _productionMode.value()==2){
-		printWarn << endl<< "For rho meson production, you should choose the wide resonance option (production mode = 3)" << endl;
-		return false;}
+	// check that rho production uses wide resonance option
+	switch(_prodParticleId.value()) {
+		case 113:
+		case 113011:
+		case 113013:
+			if(_productionMode.value()==2){
+				printWarn << endl<< "For rho meson production, you should choose the wide resonance option (production mode = 3)" << endl;
+				return false;
+			}
+		default:
+			break;
+	}
 
 	// define interaction type
 	switch (productionMode()) {
@@ -406,6 +421,24 @@ inputParameters::configureFromFile(const std::string &_configFileName)
 		defaultMaxW         = mass + 5 * width;
 		_inputBranchingRatio = rho0BrPiPi();
 		break;
+	case 113011:  // rho(770) -> e+ e-
+		_particleType = RHO_ee;
+		_decayType    = WIDEVMDEFAULT;
+		mass          = rho0Mass();
+		width         = rho0Width();
+		defaultMinW   = 2 * mel();
+		defaultMaxW         = mass + 5 * width;
+		_inputBranchingRatio = rho0Bree(); 
+		break;
+	case 113013:  // rho(770) -> mu+ mu -
+		_particleType = RHO_mumu;
+		_decayType    = WIDEVMDEFAULT;
+		mass          = rho0Mass();
+		width         = rho0Width();
+		defaultMinW   = 2 * muonMass();
+		defaultMaxW         = mass + 5 * width;
+		_inputBranchingRatio = rho0Brmumu(); 
+		break;
 	case 913:  // rho(770) with direct pi+pi- decay, interference given by ZEUS data
 		_particleType = RHOZEUS;
 		_decayType    = WIDEVMDEFAULT;
@@ -422,6 +455,7 @@ inputParameters::configureFromFile(const std::string &_configFileName)
 		width         = rho0PrimeWidth();
 		defaultMinW   = 4 * pionChargedMass();
                 defaultMaxW     = sqrt(beam1LorentzGamma()*beam2LorentzGamma())*2*(starlightConstants::hbarc)/(1.2*pow(float(beam1A()),1./6.)*pow(float(beam2A()),1./6.)); // JES 6.17.2015 to avoid problems with no default
+		if (defaultMaxW>10.){defaultMaxW=10.;}  //SRK May 29, 2019, to avoid an unduly high defaultMaxW
 		_inputBranchingRatio = 1.0;
 		break;
 	case 223:  // omega(782)
@@ -433,6 +467,15 @@ inputParameters::configureFromFile(const std::string &_configFileName)
 		defaultMaxW         = mass + 5 * width;
 		_inputBranchingRatio = OmegaBrPiPi();
 		break;
+	case 223211111:  // omega(782) -> pi0 pi+ pi-
+		_particleType = OMEGA_pipipi;
+		_decayType    = NARROWVMDEFAULT;  
+		mass          = OmegaMass();
+		width         = OmegaWidth();
+		defaultMinW   = mass - 5 * width;
+		defaultMaxW         = mass + 5 * width;
+		_inputBranchingRatio = OmegaBrPiPiPi();
+		break;
 	case 333:  // phi(1020)
 		_particleType = PHI;
 		_decayType    = NARROWVMDEFAULT;
@@ -441,6 +484,14 @@ inputParameters::configureFromFile(const std::string &_configFileName)
 		defaultMinW   = 2 * kaonChargedMass();
 		defaultMaxW         = mass + 5 * width;
 		_inputBranchingRatio = PhiBrKK();
+		break;
+        case 933: // phi(1020) + direct K^+K^-      Added Jan. 2022 by SRK
+                _particleType  = PHIKK;   // need to define PhiKK
+		_decayType     = WIDEVMDEFAULT;   // the K^+K^- continuum is by nature wide
+		mass           = PhiMass();
+		width          = PhiWidth();
+		defaultMinW    = 2*kaonChargedMass();
+		defaultMaxW    = 2.0;    // GeV. The phi is narrow, so a multiple of the phi width isn't useful.  2 GeV is a resaonable choice for now.
 		break;
 	case 443:  // J/psi
 		_particleType = JPSI;

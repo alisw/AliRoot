@@ -20,9 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 293                         $: revision of last commit
-// $Author:: butter                   $: author of last commit
-// $Date:: 2017-11-11 15:46:05 +0100 #$: date of last commit
+// $Rev:: 311                         $: revision of last commit
+// $Author:: aaronstanek              $: author of last commit
+// $Date:: 2019-07-01 23:49:32 +0200 #$: date of last commit
 //
 // Description:
 //
@@ -68,10 +68,15 @@ namespace starlightConstants
 		F0             = 9010221,
 		ZOVERZ03       = 33,
 		RHO            = 113,
+		RHO_ee         = 113011,
+		RHO_mumu       = 113013,
 		RHOZEUS        = 913,
 		FOURPRONG      = 999,
 		OMEGA          = 223,
+		OMEGA_pipipi   = 223211111,
 		PHI            = 333,
+ // added Jan. 2022 by SRK
+		PHIKK          = 933,
 		JPSI           = 443,
 		JPSI_ee        = 443011,
 		JPSI_mumu      = 443013,

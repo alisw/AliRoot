@@ -20,9 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 294                         $: revision of last commit
-// $Author:: butter                   $: author of last commit
-// $Date:: 2018-01-09 16:42:53 +0100 #$: date of last commit
+// $Rev:: 311                         $: revision of last commit
+// $Author:: aaronstanek              $: author of last commit
+// $Date:: 2019-07-01 23:49:32 +0200 #$: date of last commit
 //
 // Description:
 //
@@ -320,10 +320,14 @@ starlight::createEventChannel()
 			}
 		}
 	case RHO:
+	case RHO_ee:
+	case RHO_mumu:
 	case RHOZEUS:
 	case FOURPRONG:
-	case OMEGA:  
+	case OMEGA:
+	case OMEGA_pipipi:  
 	case PHI:
+	case PHIKK:
 	case JPSI:
 	case JPSI_ee:
 	case JPSI_mumu:

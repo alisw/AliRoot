@@ -20,9 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 293                         $: revision of last commit
-// $Author:: butter                   $: author of last commit
-// $Date:: 2017-11-11 15:46:05 +0100 #$: date of last commit
+// $Rev:: 313                         $: revision of last commit
+// $Author:: aaronstanek              $: author of last commit
+// $Date:: 2019-07-11 22:56:08 +0200 #$: date of last commit
 //
 // Description:
 //
@@ -64,6 +64,7 @@ class Gammaavectormeson : public eventChannel
   double pTgamma(double E); 
   void vmpt(double W,double Y,double &E,double &px,double &py, double &pz,int &tcheck);
   void twoBodyDecay(starlightConstants::particleTypeEnum &ipid,double W,double px0,double py0,double pz0,double &px1,double &py1,double&pz1,double &px2,double &py2,double &pz2,int &iFbadevent);
+  bool omega3piDecay(starlightConstants::particleTypeEnum& ipid, const double E, const double W, const double* p, lorentzVector* decayMoms, int& iFbadevent);
   bool fourBodyDecay(starlightConstants::particleTypeEnum& ipid, const double E, const double W, const double* p, lorentzVector* decayMoms, int& iFbadevent);
   double getMass();
   double getWidth();
