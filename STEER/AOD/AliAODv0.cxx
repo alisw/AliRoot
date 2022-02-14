@@ -43,10 +43,6 @@ AliAODv0::AliAODv0(AliAODVertex* rAODVertex, Double_t rDcaV0Daughters, Double_t 
   fDCA[0] = rDcaV0Daughters;
   fDcaV0ToPrimVertex = rDcaV0ToPrimVertex;
 
-  fPx = new Double_t[GetNProngs()];
-  fPy = new Double_t[GetNProngs()];
-  fPz = new Double_t[GetNProngs()];
-
   fPx[0] = rMomPos[0] ;
   fPy[0] = rMomPos[1];
   fPz[0] = rMomPos[2];
