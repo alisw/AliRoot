@@ -34,6 +34,9 @@ class  TGeoVolumeAssembly;
 class AliITSv11 : public AliITS {
 
  public:
+enum kITSDensRegion {kSPDSiChip, kSPDSiSens, kSPDAlBus, kSPDCoolPipes,
+                     kSDDSiAll, kTOTAL};
+
     AliITSv11();
     AliITSv11(const char *title);
     AliITSv11(const char *name, const char *title);
@@ -60,6 +63,8 @@ class AliITSv11 : public AliITS {
 	// calculation based on the Mass of the services.
 	fByThick = kFALSE;}
 
+    virtual void SetDensityFactor(const kITSDensRegion reg, const Double_t fact)
+        { fDensityFactors[reg] = fact; };
 
  protected:
     void SetT2Lmatrix(Int_t uid, Double_t yShift,
@@ -72,6 +77,8 @@ class AliITSv11 : public AliITS {
     Bool_t fByThick;          // Flag to use services materials by thickness
                               // ture, or mass false.
     Int_t  fIDMother;         //! ITS Mother Volume id.
+
+    Double_t fDensityFactors[kTOTAL];
 
     AliITSInitGeometry fInitGeom;   //! Get access to decoding and AliITSgeom init functions
     AliITSv11GeometrySPD     *fSPDgeom; //! SPD Geometry

@@ -5084,7 +5084,7 @@ void AliITSv11GeometrySDD::CreateSDDsensor() {
 
   TGeoMedium *airSDD         = GetMedium("SDD AIR$");
   TGeoMedium *siliconSDD     = GetMedium("SDD SI insensitive$");  // ITSsddSi
-  TGeoMedium *siliconSDDsens = GetMedium("SI$");                  // ITSsddSi
+  TGeoMedium *siliconSDDsens = GetMedium("SI_SDDSENS$");          // ITSsddSi
   TGeoMedium *alSDD          = GetMedium("AL$");                  // ITSal
   TGeoMedium *polyhamideSDD  = GetMedium("SDDKAPTON (POLYCH2)$"); // ITSsddKAPTON_POLYCH2
   TGeoMedium *glassSDD       = GetMedium("STDGLASS$");            // StdGlass
