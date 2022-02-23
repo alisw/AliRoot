@@ -1379,7 +1379,7 @@ TGeoVolume* AliITSv11GeometrySPD::CreateLadder(Int_t layer,TArrayD &sizes,
     // ** MEDIA **
     TGeoMedium *medAir       = GetMedium("AIR$",mgr);
     TGeoMedium *medSPDSiChip = GetMedium("SPD SI CHIP$",mgr); // SPD SI CHIP
-    TGeoMedium *medSi        = GetMedium("SI$",mgr);
+    TGeoMedium *medSi        = GetMedium("SI_SPDSENS$",mgr);
     TGeoMedium *medBumpBond  = GetMedium("COPPER$",mgr);  // ??? BumpBond
 
     // ** SIZES **
