@@ -1174,7 +1174,7 @@ void AliITSv11::CreateMaterials()
     //   AliMaterial(76,"SPDBUS(AL+KPT+EPOX)$",0.19509E+02,0.96502E+01,0.19060E+01,0.15413E+02,0.99900E+03);
     currDensity = dSPDbus;
     if (fDensityFactors[kSPDAlBus] > 0.)
-      currDensity *= fDensityFactors[kSPDSiSens];
+      currDensity *= fDensityFactors[kSPDAlBus];
     AliMixture(76,"SPDBUS(AL+KPT+EPOX)$",aSPDbus,zSPDbus,currDensity,5,wSPDbus);
     AliMedium(76,"SPDBUS(AL+KPT+EPOX)$",76,0,ifield,fieldm,tmaxfd,stemax,deemax,epsil,stmin);
                
