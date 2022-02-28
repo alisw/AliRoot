@@ -8256,7 +8256,7 @@ void AliITSv11GeometrySSD::CreateMaterials(){
   ///////////////////////////////////
   // Silicon Mixture for Sensor
   /////////////////////////////////// 
-  fSSDChipMedium = GetMedium("SPD SI CHIP$");
+  fSSDChipMedium = GetMedium("SSD SI CHIP$");
   fSSDChipGlueMedium = GetMedium("EPOXY$");
   ///////////////////////////////////
   // Stiffener Components Materials
