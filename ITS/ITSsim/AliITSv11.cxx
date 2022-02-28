@@ -990,6 +990,9 @@ void AliITSv11::CreateMaterials()
     AliMixture(7,"SDD SI CHIP$",aSICHIP,zSICHIP,currDensity,6,wSICHIP);
     AliMedium(7,"SDD SI CHIP$",7,0,ifield,fieldm,tmaxfdSi,stemaxSi,deemaxSi,epsilSi,stminSi);
 
+    AliMaterial(16,"SSD SI CHIP$",0.28086E+02,0.14000E+02,0.23300E+01,0.93600E+01,0.99900E+03);
+    AliMedium(16,"SSD SI CHIP$",16,0,ifield,fieldm,tmaxfdSi,stemaxSi,deemaxSi,epsilSi,stminSi);
+
     currDensity = dPhynox;
     if (fDensityFactors[kSPDCoolPipes] > 0.)
       currDensity *= fDensityFactors[kSPDCoolPipes];
