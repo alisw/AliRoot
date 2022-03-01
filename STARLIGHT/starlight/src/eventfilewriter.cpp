@@ -20,9 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 228                         $: revision of last commit
-// $Author:: butter                   $: author of last commit
-// $Date:: 2016-01-18 18:10:17 +0100 #$: date of last commit
+// $Rev:: 308                         $: revision of last commit
+// $Author:: aaronstanek              $: author of last commit
+// $Date:: 2019-06-24 19:30:51 +0200 #$: date of last commit
 //
 // Description:
 //
@@ -47,6 +47,18 @@ eventFileWriter::eventFileWriter(std::string filename)
 : fileWriter(filename)
 { }
 
+//______________________________________________________________________________
+int eventFileWriter::writeInit(inputParameters &_p)
+{
+  // creates a header at the beginning of the output file
+  // copied from eSTARlight on 21 June 2019 by Aaron Stanek
+  _fileStream<<"CONFIG_OPT: "<<_p.productionMode()<<" "<<_p.prodParticleId()<<" "<<_p.nmbEvents()
+	     <<" "<<_p.quantumGlauber()<<" "<<_p.impulseVM()<<" "<<_p.randomSeed()<<std::endl;
+  _fileStream<<"BEAM_1: "<<_p.beam1Z()<<" "<<_p.beam1A()<<" "<<_p.beam1LorentzGamma()<<std::endl;
+  _fileStream<<"BEAM_2: "<<_p.beam2Z()<<" "<<_p.beam2A()<<" "<<_p.beam2LorentzGamma()<<std::endl;
+  
+  return 0;
+}
 
 //______________________________________________________________________________
 int eventFileWriter::writeEvent(upcEvent &event, int eventnumber)

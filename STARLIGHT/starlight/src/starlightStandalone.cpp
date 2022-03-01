@@ -20,9 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 293                         $: revision of last commit
-// $Author:: butter                   $: author of last commit
-// $Date:: 2017-11-11 15:46:05 +0100 #$: date of last commit
+// $Rev:: 311                         $: revision of last commit
+// $Author:: aaronstanek              $: author of last commit
+// $Date:: 2019-07-01 23:49:32 +0200 #$: date of last commit
 //
 // Description:
 //
@@ -125,7 +125,12 @@ starlightStandalone::run()
         _baseFileName = _inputParameters->baseFileName();
         _eventDataFileName = _baseFileName +".out";
 	fileWriter.open(_eventDataFileName);
-
+	//
+	// add a header if the user requests a header
+	if (_inputParameters->outputHeader()) {
+		fileWriter.writeInit(*_inputParameters);
+	}
+	//
 	printInfo << "generating events:" << endl;
 	unsigned int nmbEvents = 0;
 	while (nmbEvents < _nmbEventsTot) {
@@ -140,7 +145,10 @@ starlightStandalone::run()
 	}
 	fileWriter.close();
 
-	if( _starlight->nmbAttempts() == 0 )return true; 
+	if( _starlight->nmbAttempts() == 0 ) {
+		cout << "No attempts" << endl;
+		return true; 
+	}
 
 	double _branchingRatio = _inputParameters->inputBranchingRatio();
 	printInfo << "number of attempts = " << _starlight->nmbAttempts() << ", "

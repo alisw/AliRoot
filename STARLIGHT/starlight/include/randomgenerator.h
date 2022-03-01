@@ -20,9 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 213                         $: revision of last commit
-// $Author:: butter                   $: author of last commit
-// $Date:: 2015-08-15 23:08:02 +0200 #$: date of last commit
+// $Rev:: 300                         $: revision of last commit
+// $Author:: srklein                  $: author of last commit
+// $Date:: 2018-03-27 01:19:31 +0200 #$: date of last commit
 //
 // Description:
 //
@@ -39,7 +39,7 @@ class randomGenerator
 {
 	public:
 	void SetSeed(unsigned int seed);
-	double Rndom(int i=0);
+	virtual double Rndom(int i=0);
 	
 	private:
 	unsigned int _Mt[624];

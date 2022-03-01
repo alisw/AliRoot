@@ -20,12 +20,11 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 259                         $: revision of last commit
-// $Author:: jseger                   $: author of last commit
-// $Date:: 2016-04-19 02:58:25 +0200 #$: date of last commit
+// $Rev:: 303                         $: revision of last commit
+// $Author:: srklein                  $: author of last commit
+// $Date:: 2019-05-28 23:24:50 +0200 #$: date of last commit
 //
 // Description:
-//
 //
 //
 ///////////////////////////////////////////////////////////////////////////

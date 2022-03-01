@@ -20,9 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////
 //
 // File and Version Information:
-// $Rev:: 293                         $: revision of last commit
-// $Author:: butter                   $: author of last commit
-// $Date:: 2017-11-11 15:46:05 +0100 #$: date of last commit
+// $Rev:: 311                         $: revision of last commit
+// $Author:: aaronstanek              $: author of last commit
+// $Date:: 2019-07-01 23:49:32 +0200 #$: date of last commit
 //
 // Description:
 //
@@ -203,6 +203,7 @@ public:
 	int          quantumGlauber        () const { return _quantumGlauber.value();         }  ///< returns the quantum glauber value
 	double       bmin                  () const { return _bmin.value();                   }  // returns the minimum impact parameter for BREAKUP_MODE==6
 	double       bmax                  () const { return _bmax.value();                   }  // returns the maximum impact parameter for BREAKUP_MODE==6
+	bool         outputHeader          () const { return _outputHeader.value();           }  // returns whether the output should have parameters at the start
 
 	starlightConstants::particleTypeEnum    prodParticleType     () const { return _particleType;    }  ///< returns type of produced particle
 	starlightConstants::decayTypeEnum       prodParticleDecayType() const { return _decayType;       }  ///< returns decay type of produced particle
@@ -256,12 +257,15 @@ public:
         double rho0Mass              () const {return _rho0Mass              .value();}
         double rho0Width             () const {return _rho0Width             .value();}
         double rho0BrPiPi            () const {return _rho0BrPiPi            .value();}
+        double rho0Bree              () const {return _rho0Bree              .value();}
+        double rho0Brmumu            () const {return _rho0Brmumu            .value();}
         double rho0PrimeMass         () const {return _rho0PrimeMass         .value();}
         double rho0PrimeWidth        () const {return _rho0PrimeWidth        .value();}
         double rho0PrimeBrPiPi       () const {return _rho0PrimeBrPiPi       .value();}
         double OmegaMass             () const {return _OmegaMass             .value();}
         double OmegaWidth            () const {return _OmegaWidth            .value();}
         double OmegaBrPiPi           () const {return _OmegaBrPiPi           .value();}
+        double OmegaBrPiPiPi         () const {return _OmegaBrPiPiPi         .value();}
         double PhiMass               () const {return _PhiMass               .value();}
         double PhiWidth              () const {return _PhiWidth              .value();}
         double PhiBrKK               () const {return _PhiBrKK               .value();}
@@ -333,6 +337,7 @@ public:
 	void setquantumGlauber        (int v)  {  _quantumGlauber = v;            }  ///< sets the value of quantum_glauber
 	void setbmin             (double v)    {  _bmin=v;                        }  ///< sets the minimum impact parameter (for BREAKUP_MODE==6
 	void setbmax             (double v)    {  _bmax=v;                        }  ///< sets the minimum impact parameter (for BREAKUP_MODE==6
+	void setoutputHeader     (bool v)      {  _outputHeader = v;              }  ///< sets whether the output should have parameters at the start
 
 	void setProdParticleType      (starlightConstants::particleTypeEnum v)    { _particleType = v;    }  ///< sets type of produced particle
 	void setProdParticleDecayType (starlightConstants::decayTypeEnum v)       { _decayType = v;       }  ///< sets decay type of produced particle
@@ -412,6 +417,7 @@ private:
 	parameter<unsigned int, VALIDITY_CHECK>    _quantumGlauber;          ///< Optional parameter.  Set = 1 to use Quantum Glauber calculation, rather than Classical Glauber
 	parameter<double, VALIDITY_CHECK>          _bmin;                    ///< Optional parameter minimum impact parameter for b-range calculation
 	parameter<double, VALIDITY_CHECK>          _bmax;                    /// < Optional parameter maximum impact parameter for b-range calculation
+	parameter<bool, NO_VALIDITY_CHECK>          _outputHeader;           /// < Optional parameter puts parameter information at the top of the output file
 
         parameter<double, VALIDITY_CHECK> _deuteronSlopePar      ;           ///< deuteron slope parameter (effective temperature) [(GeV/c)^-2]
         parameter<double, VALIDITY_CHECK> _protonMass            ;           ///< mass of the proton [GeV/c^2]
@@ -459,12 +465,15 @@ private:
         parameter<double, VALIDITY_CHECK> _rho0Mass              ;           ///< mass of the rho^0 [GeV/c^2]
         parameter<double, VALIDITY_CHECK> _rho0Width             ;           ///< width of the rho^0 [GeV/c^2]
         parameter<double, VALIDITY_CHECK> _rho0BrPiPi            ;           ///< branching ratio rho^0 -> pi^+ pi^-
+        parameter<double, VALIDITY_CHECK> _rho0Bree              ;           ///< branching ratio rho^0 -> e^+ e^-
+        parameter<double, VALIDITY_CHECK> _rho0Brmumu            ;           ///< branching ratio rho^0 -> mu^+ mu^-
         parameter<double, VALIDITY_CHECK> _rho0PrimeMass         ;           ///< mass of the rho'^0 (4 pi^+/- final state) [GeV/c^2]
         parameter<double, VALIDITY_CHECK> _rho0PrimeWidth        ;           ///< width of the rho'^0 (4 pi^+/- final state) [GeV/c^2]
         parameter<double, VALIDITY_CHECK> _rho0PrimeBrPiPi       ;           ///< branching ratio rho'^0 -> pi^+ pi^-
         parameter<double, VALIDITY_CHECK> _OmegaMass             ;           ///< mass of the omega [GeV/c^2]
         parameter<double, VALIDITY_CHECK> _OmegaWidth            ;           ///< width of the omega [GeV/c^2]
         parameter<double, VALIDITY_CHECK> _OmegaBrPiPi           ;           ///< branching ratio omega -> pi^+ pi^-
+        parameter<double, VALIDITY_CHECK> _OmegaBrPiPiPi         ;           ///< branching ratio omega -> pi^0 pi^+ pi^-
         parameter<double, VALIDITY_CHECK> _PhiMass               ;           ///< mass of the phi [GeV/c^2]
         parameter<double, VALIDITY_CHECK> _PhiWidth              ;           ///< width of the phi [GeV/c^2]
         parameter<double, VALIDITY_CHECK> _PhiBrKK               ;           ///< branching ratio phi -> K^+ K^-
