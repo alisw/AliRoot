@@ -162,7 +162,7 @@ class AliGenPythiaPlus : public AliGenMC
     virtual void  SetCheckBarrel       (Bool_t b) {fCheckBarrel  = b;}
     virtual void  SetCheckBarrelCalos  (Bool_t b) {fCheckBarrelCalos = b;}
     
-    virtual void  SetBarrelAcceptance(Float_t deta) {fTriggerEta = deta ;}
+    virtual void  SetBarrelAcceptance(Float_t deta) {fTriggerEtaMin = -deta; fTriggerEtaMax = deta;}
     virtual void  SetDCALAcceptance  (Float_t phimin , Float_t phimax , Float_t etamin , Float_t etamax, // Full SM
                                       Float_t phimin3, Float_t phimax3, Float_t deta3)                   // 1/3 SM
     {fDCALMinPhi      = phimin  ; fDCALMaxPhi      = phimax  ; fDCALMinEta  = etamin ; fDCALMaxEta  = etamax ;  
@@ -190,7 +190,10 @@ class AliGenPythiaPlus : public AliGenMC
 
     // Trigger on a single particle (not related to calorimeter trigger above)
     virtual void    SetTriggerParticle(Int_t particle = 0, Float_t etamax = 0.9, Float_t ptmin = -1, Float_t ptmax = 1000)
-	{fTriggerParticle = particle; fTriggerEta = etamax; fTriggerMinPt = ptmin; fTriggerMaxPt = ptmax;}
+      {fTriggerParticle = particle; fTriggerEtaMin = -etamax; fTriggerEtaMax = etamax; fTriggerMinPt = ptmin; fTriggerMaxPt = ptmax;}
+    virtual void    SetTriggerParticle(Int_t particle, Float_t etamin, Float_t etamax, Float_t ptmin, Float_t ptmax)
+      {fTriggerParticle = particle; fTriggerEtaMin = etamin, fTriggerEtaMax = etamax; fTriggerMinPt = ptmin; fTriggerMaxPt = ptmax;}
+
     virtual void  SetTriggerY(Float_t dy) {fTriggerY = dy;}
     //
     // Heavy flavor options
@@ -339,7 +342,8 @@ class AliGenPythiaPlus : public AliGenMC
     Bool_t  fNewMIS;                // Flag for the new multipple interactions scenario
     Bool_t  fHFoff;                 // Flag for switching heafy flavor production off
     Int_t   fTriggerParticle;       // Trigger on this particle ...
-    Float_t fTriggerEta;            // .. within |eta| < fTriggerEta
+    Float_t fTriggerEtaMax;         // .. within eta < fTriggerEtaMax
+    Float_t fTriggerEtaMin;         // .. within eta > fTriggerEtaMin
     Float_t fTriggerY;              // .. within |y|   < fTriggerY
     Float_t fTriggerMinPt;          // .. within pt > fTriggerMinPt
     Float_t fTriggerMaxPt;          // .. within pt < fTriggerMaxPt
@@ -400,7 +404,7 @@ class AliGenPythiaPlus : public AliGenMC
     AliGenPythiaPlus(const AliGenPythiaPlus &Pythia);
     AliGenPythiaPlus & operator=(const AliGenPythiaPlus & rhs);
 
-    ClassDef(AliGenPythiaPlus, 8)
+    ClassDef(AliGenPythiaPlus, 9)
 
 };
 #endif
