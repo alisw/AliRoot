@@ -2,8 +2,12 @@ R__LOAD_LIBRARY(libpythia8243)
 R__LOAD_LIBRARY(libAliPythia8)
 AliGenerator*  CreateGenerator();
 
-void pythia8(Int_t nev = 1, char* filename = "galice.root")
+void pythia8(Int_t nev = 1, const char* filename = "galice.root")
 {
+    gSystem->Setenv("PYTHIA8DATA", gSystem->ExpandPathName("$ALICE_ROOT/PYTHIA8/pythia8243/xmldoc"));
+    gSystem->Setenv("LHAPDF",      gSystem->ExpandPathName("$ALICE_ROOT/LHAPDF"));
+    gSystem->Setenv("LHAPATH",     gSystem->ExpandPathName("$ALICE_ROOT/LHAPDF/PDFsets"));
+
 //  Runloader
     AliRunLoader* rl = AliRunLoader::Open("galice.root","FASTRUN","recreate");
     
