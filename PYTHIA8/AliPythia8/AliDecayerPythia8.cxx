@@ -25,7 +25,7 @@
 #include <TParticle.h>
 #include "AliTPythia8.h"
 #include "AliDecayerPythia8.h"
-#include "ParticleData.h"
+#include "Pythia8/ParticleData.h"
 
 ClassImp(AliDecayerPythia8)
 

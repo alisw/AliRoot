@@ -8,7 +8,7 @@
 // Implementation of TVirtualMCDecayer using Pythia8
 // Author: andreas.morsch@cern.ch
 
-#include <ParticleData.h>
+#include <Pythia8/ParticleData.h>
 #include <TVirtualMCDecayer.h>
 #include <AliDecayer.h>
 
