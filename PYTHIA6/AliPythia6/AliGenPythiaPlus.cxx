@@ -100,7 +100,8 @@ AliGenPythiaPlus::AliGenPythiaPlus():
     fNewMIS(kFALSE),   
     fHFoff(kFALSE),    
     fTriggerParticle(0),
-    fTriggerEta(0.9),
+    fTriggerEtaMax(0.9),
+    fTriggerEtaMin(-0.9),
     fTriggerY(999.),
     fTriggerMinPt(-1),
     fTriggerMaxPt(1000),
@@ -217,7 +218,8 @@ AliGenPythiaPlus::AliGenPythiaPlus(AliPythiaBase* pythia)
      fNewMIS(kFALSE),   
      fHFoff(kFALSE),    
      fTriggerParticle(0),
-     fTriggerEta(0.9),     
+     fTriggerEtaMax(0.9),
+     fTriggerEtaMin(-0.9),
      fTriggerY(999.),
      fTriggerMinPt(-1),
      fTriggerMaxPt(1000),
@@ -742,7 +744,7 @@ void AliGenPythiaPlus::Generate()
 //
 // Trigger particle selection
 //
-		if(fTriggerParticle!=0 && kf == fTriggerParticle && TMath::Abs(iparticle->Eta()) < fTriggerEta && TMath::Abs(iparticle->Y())<fTriggerY && iparticle->Pt()>fTriggerMinPt && iparticle->Pt()<fTriggerMaxPt) trigPartOK=kTRUE;
+		if(fTriggerParticle!=0 && kf == fTriggerParticle && iparticle->Eta() > fTriggerEtaMin && iparticle->Eta() < fTriggerEtaMax && TMath::Abs(iparticle->Y())<fTriggerY && iparticle->Pt()>fTriggerMinPt && iparticle->Pt()<fTriggerMaxPt) trigPartOK=kTRUE;
 //
 // Heavy Flavor Selection
 //
@@ -1047,7 +1049,7 @@ Int_t  AliGenPythiaPlus::GenerateMB()
 	    if (kf != fTriggerParticle) continue;
 	    if (iparticle->Pt() == 0.) continue;
 	    if (TMath::Abs(iparticle->Y()) > fTriggerY) continue;
-	    if (TMath::Abs(iparticle->Eta()) > fTriggerEta) continue;
+	    if (iparticle->Eta() > fTriggerEtaMax || iparticle->Eta() < fTriggerEtaMin) continue;
 	    if ( iparticle->Pt() > fTriggerMaxPt || iparticle->Pt() < fTriggerMinPt ) continue;
 	    triggered = kTRUE;
 	    break;
@@ -1550,7 +1552,7 @@ void AliGenPythiaPlus::GetSubEventTime()
 ///
 Bool_t AliGenPythiaPlus::IsInBarrel(Float_t eta) const
 {
-  return ( eta < fTriggerEta ) ;
+  return ( eta < fTriggerEtaMax ) ;
 }
 
 ///

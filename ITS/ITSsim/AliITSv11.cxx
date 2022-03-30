@@ -127,6 +127,8 @@ AliITSv11::AliITSv11(const char *title)
   fIdSens    = new Int_t[fIdN];
   for(i=0;i<fIdN;i++) fIdSens[i] = 0;
 
+  for(i=0;i<kTOTAL;i++) fDensityFactors[i] = 1.;
+
   SetDensityServicesByThickness();
   
 }
@@ -173,6 +175,8 @@ AliITSv11::AliITSv11(const char *name, const char *title)
 
   fIdSens    = new Int_t[fIdN];
   for(i=0;i<fIdN;i++) fIdSens[i] = 0;
+
+  for(i=0;i<kTOTAL;i++) fDensityFactors[i] = 1.;
 
   SetDensityServicesByThickness();
   
@@ -945,10 +949,27 @@ void AliITSv11::CreateMaterials()
     Float_t wPhynox[5] = { 0.17   , 0.40   , 0.20   , 0.16   , 0.07  };
     Float_t dPhynox    = 8.3;
 
+    Double_t currDensity;
+
     AliMaterial(1,"SI$",0.28086E+02,0.14000E+02,0.23300E+01,0.93600E+01,0.99900E+03);
     AliMedium(1,"SI$",1,0,ifield,fieldm,tmaxfdSi,stemaxSi,deemaxSi,epsilSi,stminSi);
 
-    AliMaterial(2,"SPD SI CHIP$",0.28086E+02,0.14000E+02,0.23300E+01,0.93600E+01,0.99900E+03);
+    currDensity = 0.23300E+01;
+    if (fDensityFactors[kSPDSiSens] > 0.)
+      currDensity *= fDensityFactors[kSPDSiSens];
+    AliMaterial(30,"SI_SPDSENS$",0.28086E+02,0.14000E+02,currDensity,0.93600E+01,0.99900E+03);
+    AliMedium(30,"SI_SPDSENS$",30,0,ifield,fieldm,tmaxfdSi,stemaxSi,deemaxSi,epsilSi,stminSi);
+
+    currDensity = 0.23300E+01;
+    if (fDensityFactors[kSDDSiAll] > 0.)
+      currDensity *= fDensityFactors[kSDDSiAll];
+    AliMaterial(31,"SI_SDDSENS$",0.28086E+02,0.14000E+02,currDensity,0.93600E+01,0.99900E+03);
+    AliMedium(31,"SI_SDDSENS$",31,0,ifield,fieldm,tmaxfdSi,stemaxSi,deemaxSi,epsilSi,stminSi);
+
+    currDensity = 0.23300E+01;
+    if (fDensityFactors[kSPDSiChip] > 0.)
+      currDensity *= fDensityFactors[kSPDSiChip];
+    AliMaterial(2,"SPD SI CHIP$",0.28086E+02,0.14000E+02,currDensity,0.93600E+01,0.99900E+03);
     AliMedium(2,"SPD SI CHIP$",2,0,ifield,fieldm,tmaxfdSi,stemaxSi,deemaxSi,epsilSi,stminSi);
 
     AliMaterial(3,"SPD SI BUS$",0.28086E+02,0.14000E+02,0.23300E+01,0.93600E+01,0.99900E+03);
@@ -963,10 +984,19 @@ void AliITSv11::CreateMaterials()
     AliMixture(6,"GEN AIR$",aAir,zAir,dAir,4,wAir);
     AliMedium(6,"GEN AIR$",6,0,ifield,fieldm,tmaxfdAir,stemaxAir,deemaxAir,epsilAir,stminAir);
 
-    AliMixture(7,"SDD SI CHIP$",aSICHIP,zSICHIP,dSICHIP,6,wSICHIP);
+    currDensity = dSICHIP;
+    if (fDensityFactors[kSDDSiAll] > 0.)
+      currDensity *= fDensityFactors[kSDDSiAll];
+    AliMixture(7,"SDD SI CHIP$",aSICHIP,zSICHIP,currDensity,6,wSICHIP);
     AliMedium(7,"SDD SI CHIP$",7,0,ifield,fieldm,tmaxfdSi,stemaxSi,deemaxSi,epsilSi,stminSi);
 
-    AliMixture(8,"PHYNOX$",aPhynox,zPhynox,dPhynox,5,wPhynox);
+    AliMaterial(16,"SSD SI CHIP$",0.28086E+02,0.14000E+02,0.23300E+01,0.93600E+01,0.99900E+03);
+    AliMedium(16,"SSD SI CHIP$",16,0,ifield,fieldm,tmaxfdSi,stemaxSi,deemaxSi,epsilSi,stminSi);
+
+    currDensity = dPhynox;
+    if (fDensityFactors[kSPDCoolPipes] > 0.)
+      currDensity *= fDensityFactors[kSPDCoolPipes];
+    AliMixture(8,"PHYNOX$",aPhynox,zPhynox,currDensity,5,wPhynox);
     AliMedium(8,"PHYNOX$",8,0,ifield,fieldm,tmaxfd,stemax,deemax,epsil,stmin);
 
     AliMixture(9,"SDD C (M55J)$",aCM55J,zCM55J,dCM55J,4,wCM55J);
@@ -1145,7 +1175,10 @@ void AliITSv11::CreateMaterials()
     Float_t dSPDbus    = 2.128505;
 
     //   AliMaterial(76,"SPDBUS(AL+KPT+EPOX)$",0.19509E+02,0.96502E+01,0.19060E+01,0.15413E+02,0.99900E+03);
-    AliMixture(76,"SPDBUS(AL+KPT+EPOX)$",aSPDbus,zSPDbus,dSPDbus,5,wSPDbus);
+    currDensity = dSPDbus;
+    if (fDensityFactors[kSPDAlBus] > 0.)
+      currDensity *= fDensityFactors[kSPDAlBus];
+    AliMixture(76,"SPDBUS(AL+KPT+EPOX)$",aSPDbus,zSPDbus,currDensity,5,wSPDbus);
     AliMedium(76,"SPDBUS(AL+KPT+EPOX)$",76,0,ifield,fieldm,tmaxfd,stemax,deemax,epsil,stmin);
                
     AliMixture(77,"SDD X7R capacitors$",aX7R,zX7R,dX7R,6,wX7R);
@@ -1154,7 +1187,10 @@ void AliITSv11::CreateMaterials()
     AliMixture(78,"SDD ruby sph. Al2O3$",aAlOxide,zAlOxide,dAlOxide,2,wAlOxide);
     AliMedium(78,"SDD ruby sph. Al2O3$",78,0,ifield,fieldm,tmaxfd,stemax,deemax,epsil,stmin);
 
-    AliMaterial(79,"SDD SI insensitive$",0.28086E+02,0.14000E+02,0.23300E+01,0.93600E+01,0.99900E+03);
+    currDensity = 0.23300E+01;
+    if (fDensityFactors[kSDDSiAll] > 0.)
+      currDensity *= fDensityFactors[kSDDSiAll];
+    AliMaterial(79,"SDD SI insensitive$",0.28086E+02,0.14000E+02,currDensity,0.93600E+01,0.99900E+03);
     AliMedium(79,"SDD SI insensitive$",79,0,ifield,fieldm,tmaxfd,stemax,deemax,epsil,stmin);
 
     AliMixture(80,"SDD HV microcable$",aHVm,zHVm,dHVm,5,wHVm);
