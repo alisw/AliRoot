@@ -199,27 +199,52 @@ void AliPDG::AddParticlesToPdgDataBase()
 		       2.5e-15, 3, "Ion", ionCode);
   }
 
+  //hyper hydrogen 4 ground state
   ionCode = 1010010040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hyperhydrog4","Hyperhydrog4", 3.931, kFALSE,
+    pdgDB->AddParticle("Hyperhydrog4","Hyperhydrog4", 3.9226, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
-
+  //anti hyper hydrogen 4 ground state
   ionCode = -1010010040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperhydrog4","AntiHyperhydrog4", 3.931, kFALSE,
+    pdgDB->AddParticle("AntiHyperhydrog4","AntiHyperhydrog4", 3.9226, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
-
+  //hyper hydrogen 4 excited state
+  ionCode = 1010010041;
+  if(!pdgDB->GetParticle(ionCode)){
+    pdgDB->AddParticle("Hyperhydrog4*","Hyperhydrog4*", 3.9237, kFALSE,
+		       2.5e-15, 3, "Ion", ionCode);
+  }
+  //anti hyper hydrogen 4 excited state
+  ionCode = -1010010041;
+  if(!pdgDB->GetParticle(ionCode)){
+    pdgDB->AddParticle("AntiHyperhydrog4*","AntiHyperhydrog4*", 3.9237, kFALSE,
+		       2.5e-15, 3, "Ion", ionCode);
+  }
+  //hyper helium 4 ground state
   ionCode = 1010020040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hyperhelium4","Hyperhelium4", 3.929, kFALSE,
+    pdgDB->AddParticle("Hyperhelium4","Hyperhelium4", 3.9217, kFALSE,
 		       2.5e-15, 6, "Ion", ionCode);
   }
-
+  //anti hyper helium 4 ground state
   ionCode = -1010020040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperhelium4","AntiHyperhelium4", 3.929, kFALSE,
+    pdgDB->AddParticle("AntiHyperhelium4","AntiHyperhelium4", 3.9217, kFALSE,
+		       2.5e-15, 6, "Ion", ionCode);
+  }
+  //hyper helium 4 excited state
+  ionCode = 1010020041;
+  if(!pdgDB->GetParticle(ionCode)){
+    pdgDB->AddParticle("Hyperhelium4*","Hyperhelium4*", 3.9231, kFALSE,
+		       2.5e-15, 6, "Ion", ionCode);
+  }
+  //anti hyper helium 4 excited state
+  ionCode = -1010020041;
+  if(!pdgDB->GetParticle(ionCode)){
+    pdgDB->AddParticle("AntiHyperhelium4*","AntiHyperhelium4*", 3.9231, kFALSE,
 		       2.5e-15, 6, "Ion", ionCode);
   }
 
