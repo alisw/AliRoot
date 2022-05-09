@@ -44,6 +44,7 @@ namespace its
 {
 class TrackerTraits;
 class VertexerTraits;
+class TimeFrame;
 } // namespace its
 } // namespace o2
 
@@ -89,7 +90,6 @@ class GPUReconstruction
   static constexpr GeometryType geometryType = GeometryType::ALIROOT;
 #endif
 
-  static constexpr const char* const DEVICE_TYPE_NAMES[] = {"INVALID", "CPU", "CUDA", "HIP", "OCL", "OCL2"};
   static DeviceType GetDeviceType(const char* type);
   enum InOutPointerType : unsigned int { CLUSTER_DATA = 0,
                                          SLICE_OUT_TRACK = 1,
@@ -109,10 +109,11 @@ class GPUReconstruction
                                          CLUSTER_NATIVE_MC = 15,
                                          TPC_DIGIT_MC = 16,
                                          TRD_SPACEPOINT = 17,
-                                         TRD_TRIGGERRECORDS = 18 };
+                                         TRD_TRIGGERRECORDS = 18,
+                                         TF_SETTINGS = 19 };
   static constexpr const char* const IOTYPENAMES[] = {"TPC HLT Clusters", "TPC Slice Tracks", "TPC Slice Track Clusters", "TPC Cluster MC Labels", "TPC Track MC Informations", "TPC Tracks", "TPC Track Clusters", "TRD Tracks", "TRD Tracklets",
                                                       "TPC Raw Clusters", "TPC Native Clusters", "TRD Tracklet MC Labels", "TPC Compressed Clusters", "TPC Digit", "TPC ZS Page", "TPC Native Clusters MC Labels", "TPC Digit MC Labeels",
-                                                      "TRD Spacepoints", "TRD Triggerrecords"};
+                                                      "TRD Spacepoints", "TRD Triggerrecords", "TF Settings"};
   static unsigned int getNIOTypeMultiplicity(InOutPointerType type) { return (type == CLUSTER_DATA || type == SLICE_OUT_TRACK || type == SLICE_OUT_CLUSTER || type == RAW_CLUSTERS || type == TPC_DIGIT || type == TPC_DIGIT_MC) ? NSLICES : 1; }
 
   // Functionality to create an instance of GPUReconstruction for the desired device
@@ -120,6 +121,7 @@ class GPUReconstruction
   static GPUReconstruction* CreateInstance(DeviceType type = DeviceType::CPU, bool forceType = true, GPUReconstruction* master = nullptr);
   static GPUReconstruction* CreateInstance(int type, bool forceType, GPUReconstruction* master = nullptr) { return CreateInstance((DeviceType)type, forceType, master); }
   static GPUReconstruction* CreateInstance(const char* type, bool forceType, GPUReconstruction* master = nullptr);
+  static bool CheckInstanceAvailable(DeviceType type);
 
   // Helpers for kernel launches
   template <class T, int I = 0>
@@ -226,6 +228,7 @@ class GPUReconstruction
 
   // Helpers to fetch processors from other shared libraries
   virtual void GetITSTraits(std::unique_ptr<o2::its::TrackerTraits>* trackerTraits, std::unique_ptr<o2::its::VertexerTraits>* vertexerTraits);
+  virtual void GetITSTimeframe(std::unique_ptr<o2::its::TimeFrame>* timeFrame);
   bool slavesExist() { return mSlaves.size() || mMaster; }
 
   // Getters / setters for parameters
@@ -241,6 +244,7 @@ class GPUReconstruction
   void SetSettings(const GPUSettingsGRP* grp, const GPUSettingsRec* rec = nullptr, const GPUSettingsProcessing* proc = nullptr, const GPURecoStepConfiguration* workflow = nullptr);
   void SetResetTimers(bool reset) { mProcessingSettings.resetTimers = reset; } // May update also after Init()
   void SetDebugLevelTmp(int level) { mProcessingSettings.debugLevel = level; } // Temporarily, before calling SetSettings()
+  GPUParam& GetNonConstParam() { return mHostConstantMem->param; }             // Kind of hack, but needed for manual updates after SetSettings(), if the default configKeyValues parsing for SetSettings() is used.
   void UpdateGRPSettings(const GPUSettingsGRP* g, const GPUSettingsProcessing* p = nullptr);
   void SetOutputControl(const GPUOutputControl& v) { mOutputControl = v; }
   void SetOutputControl(void* ptr, size_t size);

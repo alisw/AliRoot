@@ -22,7 +22,7 @@
 
 #include "GPUCommonDef.h"
 
-#if defined(__CUDACC__) && !defined(__clang__) && !defined(GPUCA_GPUCODE_GENRTC)
+#if defined(__CUDACC__) && !defined(__clang__) && !defined(GPUCA_GPUCODE_GENRTC) && !defined(GPUCA_GPUCODE_HOSTONLY)
 #include <sm_20_atomic_functions.h>
 #endif
 
@@ -63,6 +63,7 @@ class GPUCommonMath
   template <class T>
   GPUhd() static T Abs(T x);
   GPUd() static float ASin(float x);
+  GPUd() static float ACos(float x);
   GPUd() static float ATan(float x);
   GPUd() static float ATan2(float y, float x);
   GPUd() static float Sin(float x);
@@ -78,6 +79,10 @@ class GPUCommonMath
   GPUd() static bool Finite(float x);
   GPUd() static unsigned int Clz(unsigned int val);
   GPUd() static unsigned int Popcount(unsigned int val);
+
+  GPUhdni() static float Hypot(float x, float y);
+  GPUhdni() static float Hypot(float x, float y, float z);
+  GPUhdni() static float Hypot(float x, float y, float z, float w);
 
   GPUd() static float Log(float x);
   template <class T>
@@ -279,7 +284,7 @@ GPUdi() unsigned int GPUCommonMath::Clz(unsigned int x)
   return x == 0 ? 32 : CHOICE(__builtin_clz(x), __clz(x), __builtin_clz(x)); // use builtin if available
 #else
   for (int i = 31; i >= 0; i--) {
-    if (x & (1 << i)) {
+    if (x & (1u << i)) {
       return (31 - i);
     }
   }
@@ -293,14 +298,25 @@ GPUdi() unsigned int GPUCommonMath::Popcount(unsigned int x)
   // use builtin if available
   return CHOICE(__builtin_popcount(x), __popc(x), __builtin_popcount(x));
 #else
-  unsigned int retVal = 0;
-  for (int i = 0; i < 32; i++) {
-    if (x & (1 << i)) {
-      retVal++;
-    }
-  }
-  return retVal;
+  x = x - ((x >> 1) & 0x55555555);
+  x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+  return (((x + (x >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 #endif
+}
+
+GPUhdi() float GPUCommonMath::Hypot(float x, float y)
+{
+  return Sqrt(x * x + y * y);
+}
+
+GPUhdi() float GPUCommonMath::Hypot(float x, float y, float z)
+{
+  return Sqrt(x * x + y * y + z * z);
+}
+
+GPUhdi() float GPUCommonMath::Hypot(float x, float y, float z, float w)
+{
+  return Sqrt(x * x + y * y + z * z + w * w);
 }
 
 template <class T>
@@ -394,6 +410,8 @@ GPUhdi() int GPUCommonMath::Abs<int>(int x)
 }
 
 GPUdi() float GPUCommonMath::ASin(float x) { return CHOICE(asinf(x), asinf(x), asin(x)); }
+
+GPUdi() float GPUCommonMath::ACos(float x) { return CHOICE(acosf(x), acosf(x), acos(x)); }
 
 GPUdi() float GPUCommonMath::Log(float x) { return CHOICE(logf(x), logf(x), log(x)); }
 

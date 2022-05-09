@@ -21,99 +21,117 @@
 #define GPUDISPLAYBACKEND_H
 
 #include "GPUCommonDef.h"
+#include "../utils/vecpod.h"
+#include <array>
+#include <cstddef>
+#include <memory>
+#include <vector>
 
-namespace GPUCA_NAMESPACE
+#if defined(GPUCA_DISPLAY_GL3W) && !defined(GPUCA_DISPLAY_OPENGL_CORE)
+#define GPUCA_DISPLAY_OPENGL_CORE
+#endif
+
+union hmm_mat4;
+
+namespace GPUCA_NAMESPACE::gpu
 {
-namespace gpu
-{
-class GPUReconstruction;
 class GPUDisplay;
-
+class GPUDisplayFrontend;
+struct GLfb;
 class GPUDisplayBackend
 {
-  friend class GPUDisplay;
+  friend GPUDisplay;
 
  public:
-  GPUDisplayBackend() = default;
-  virtual ~GPUDisplayBackend() = default;
+  GPUDisplayBackend();
+  virtual ~GPUDisplayBackend();
 
-  // Compile time minimum version defined in GPUDisplay.h, keep in sync!
-  static constexpr int GL_MIN_VERSION_MAJOR = 4;
-  static constexpr int GL_MIN_VERSION_MINOR = 5;
+  virtual int ExtInit() { return 0; };
+  virtual bool CoreProfile() { return false; };
+  virtual unsigned int DepthBits() = 0;
 
-  virtual int StartDisplay() = 0;                                                                                            // Start the display. This function returns, and should spawn a thread that runs the display, and calls InitGL
-  virtual void DisplayExit() = 0;                                                                                            // Stop the display. Display thread should call ExitGL and the function returns after the thread has terminated
-  virtual void SwitchFullscreen(bool set) = 0;                                                                               // Toggle full-screen mode
-  virtual void ToggleMaximized(bool set) = 0;                                                                                // Maximize window
-  virtual void SetVSync(bool enable) = 0;                                                                                    // Enable / disable vsync
-  virtual bool EnableSendKey();                                                                                              // Request external keys (e.g. from terminal)
-  virtual void OpenGLPrint(const char* s, float x, float y, float r, float g, float b, float a, bool fromBotton = true) = 0; // Print text on the display (needs the backend to build the font)
+  typedef std::tuple<unsigned int, unsigned int, int> vboList;
 
-  // volatile variables to exchange control informations between display and backend
-  volatile int mDisplayControl = 0; // Control for next event (=1) or quit (=2)
-  volatile int mSendKey = 0;        // Key sent by external entity (usually console), may be ignored by backend.
-  volatile int mNeedUpdate = 0;     // flag that backend shall update the GL window, and call DrawGLScene
+  enum drawType {
+    POINTS = 0,
+    LINES = 1,
+    LINE_STRIP = 2
+  };
+
+  enum backendTypes {
+    TYPE_INVALID = -1,
+    TYPE_OPENGL = 0,
+    TYPE_VULKAN = 1
+  };
+
+  struct DrawArraysIndirectCommand {
+    DrawArraysIndirectCommand(unsigned int a = 0, unsigned int b = 0, unsigned int c = 0, unsigned int d = 0) : count(a), instanceCount(b), first(c), baseInstance(d) {}
+    unsigned int count;
+    unsigned int instanceCount;
+
+    unsigned int first;
+    unsigned int baseInstance;
+  };
+
+  struct FontSymbol {
+    int size[2];
+    int offset[2];
+    int advance;
+  };
+
+  virtual unsigned int drawVertices(const vboList& v, const drawType t) = 0;
+  virtual void ActivateColor(std::array<float, 4>& color) = 0;
+  virtual void setQuality(){};
+  virtual void SetVSync(bool enable){};
+  virtual bool backendNeedRedraw() { return true; }
+  virtual void setDepthBuffer() = 0;
+  virtual int InitBackendA() = 0;
+  virtual void ExitBackendA() = 0;
+  int InitBackend();
+  void ExitBackend();
+  virtual void loadDataToGPU(size_t totalVertizes) = 0;
+  virtual void prepareDraw(const hmm_mat4& proj, const hmm_mat4& view, bool requestScreenshot = false, bool toMixBuffer = false, float includeMixImage = 0.f) = 0;
+  virtual void finishDraw(bool doScreenshot, bool toMixBuffer = false, float includeMixImage = 0.f) = 0;
+  virtual void finishFrame(bool doScreenshot, bool toMixBuffer = false, float includeMixImage = 0.f) = 0;
+  virtual void prepareText() = 0;
+  virtual void finishText() = 0;
+  virtual void pointSizeFactor(float factor) = 0;
+  virtual void lineWidthFactor(float factor) = 0;
+  backendTypes backendType() const { return mBackendType; }
+  const char* backendName() const { return mBackendName; }
+  virtual void resizeScene(unsigned int width, unsigned int height) {}
+  virtual size_t needMultiVBO() { return 0; }
+  virtual void OpenGLPrint(const char* s, float x, float y, float* color, float scale) = 0;
+  static GPUDisplayBackend* getBackend(const char* type);
+  std::vector<char> getPixels();
+  virtual float getYFactor() const { return 1.0f; }
+  virtual int getMaxMSAA() const { return 16; }
 
  protected:
-  virtual int OpenGLMain() = 0;
-  static void* OpenGLWrapper(void*);
+  virtual void addFontSymbol(int symbol, int sizex, int sizey, int offsetx, int offsety, int advance, void* data) = 0;
+  virtual void initializeTextDrawing() = 0;
 
-  static constexpr int INIT_WIDTH = 1024, INIT_HEIGHT = 768;                           // Initial window size, before maximizing
-  static constexpr const char* GL_WINDOW_NAME = "GPU CA TPC Standalone Event Display"; // Title of event display set by backend
-  // Constant key codes for special mKeys (to unify different treatment in X11 / Windows / GLUT / etc.)
-  static constexpr int KEY_UP = 1;
-  static constexpr int KEY_DOWN = 2;
-  static constexpr int KEY_LEFT = 3;
-  static constexpr int KEY_RIGHT = 4;
-  static constexpr int KEY_PAGEUP = 5;
-  static constexpr int KEY_PAGEDOWN = 6;
-  static constexpr int KEY_SPACE = 7;
-  static constexpr int KEY_SHIFT = 8;
-  static constexpr int KEY_ALT = 9;
-  static constexpr int KEY_RALT = 29;
-  static constexpr int KEY_CTRL = 10;
-  static constexpr int KEY_RCTRL = 28;
-  static constexpr int KEY_F1 = 11;
-  static constexpr int KEY_F2 = 12;
-  static constexpr int KEY_F3 = 26;
-  static constexpr int KEY_F4 = 14;
-  static constexpr int KEY_F5 = 15;
-  static constexpr int KEY_F6 = 16;
-  static constexpr int KEY_F7 = 17;
-  static constexpr int KEY_F8 = 18;
-  static constexpr int KEY_F9 = 19;
-  static constexpr int KEY_F10 = 20;
-  static constexpr int KEY_F11 = 21;
-  static constexpr int KEY_F12 = 22;
-  static constexpr int KEY_HOME = 23;
-  static constexpr int KEY_END = 24;
-  static constexpr int KEY_INSERT = 25;
-  static constexpr int KEY_ESCAPE = 27;
-  static constexpr int KEY_ENTER = 13;
+  float getDownsampleFactor(bool screenshot = false);
+  void fillIndirectCmdBuffer();
+  bool smoothFont();
 
-  // Keyboard / Mouse actions
-  bool mMouseDn = false;          // Mouse button down
-  bool mMouseDnR = false;         // Right mouse button down
-  float mMouseDnX, mMouseDnY;     // X/Y position where mouse button was pressed
-  float mouseMvX, mouseMvY;       // Current mouse pointer position
-  int mMouseWheel = 0;            // Incremental value of mouse wheel, ca +/- 100 per wheel tick
-  bool mKeys[256] = {false};      // Array of mKeys currently pressed
-  bool mKeysShift[256] = {false}; // Array whether shift was held during key-press
-  int mDisplayHeight = INIT_HEIGHT;
-  int mDisplayWidth = INIT_WIDTH;
+  GPUDisplay* mDisplay = nullptr;
+  std::vector<int> mIndirectSliceOffset;
+  vecpod<DrawArraysIndirectCommand> mCmdBuffer;
+  bool mFreetypeInitialized = false;
+  bool mFrontendCompatTextDraw = false;
+  std::vector<char> mScreenshotPixels;
 
-  int mMaxFPSRate = 0; // run at highest possible frame rate, do not sleep in between frames
+  int mDownsampleFactor = 1;
 
-  GPUDisplay* mDisplay; // Ptr to display, not owning, set by display when it connects to backend
+  unsigned int mRenderWidth = 0;
+  unsigned int mRenderHeight = 0;
+  unsigned int mScreenWidth = 0;
+  unsigned int mScreenHeight = 0;
 
-  void HandleKeyRelease(unsigned char key);                             // Callback for handling key presses
-  int DrawGLScene(bool mixAnimation = false, float animateTime = -1.f); // Callback to draw the GL scene
-  void HandleSendKey();                                                 // Optional callback to handle key press from external source (e.g. stdin by default)
-  void ReSizeGLScene(int width, int height);                            // Callback when GL window is resized
-  int InitGL(bool initFailure = false);                                 // Callback to initialize the GL Display (to be called in StartDisplay)
-  void ExitGL();                                                        // Callback to clean up the GL Display
+  backendTypes mBackendType = TYPE_INVALID;
+  const char* mBackendName = nullptr;
 };
-} // namespace gpu
-} // namespace GPUCA_NAMESPACE
+} // namespace GPUCA_NAMESPACE::gpu
 
 #endif

@@ -1,8 +1,9 @@
-// Copyright CERN and copyright holders of ALICE O2. This software is
-// distributed under the terms of the GNU General Public License v3 (GPL
-// Version 3), copied verbatim in the file "COPYING".
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
 //
-// See http://alice-o2.web.cern.ch/license for full licensing information.
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 //
 // In applying this license CERN does not waive the privileges and immunities
 // granted to it by virtue of its status as an Intergovernmental Organization
@@ -21,7 +22,7 @@
 #include "GPUCommonDef.h"
 #include "SplineUtil.h"
 
-#if !defined(__CINT__) && !defined(__ROOTCINT__) && !defined(GPUCA_GPUCODE) && !defined(GPUCA_NO_VC) && defined(__cplusplus) && __cplusplus >= 201703L
+#if !defined(__CINT__) && !defined(__ROOTCINT__) && !defined(__ROOTCLING__) && !defined(GPUCA_GPUCODE) && !defined(GPUCA_NO_VC) && defined(__cplusplus) && __cplusplus >= 201703L
 #include <Vc/Vc>
 #include <Vc/SimdArray>
 #endif
@@ -128,7 +129,7 @@ class SplineContainer : public FlatObject
   GPUd() size_t getGridOffset(int dimX) const { return mGrid[dimX].getFlatBufferPtr() - mFlatBufferPtr; }
 
   /// Set X range
-  void setXrange(const DataT xMin[/* mXdim */], const DataT xMax[/* mXdim */]);
+  GPUd() void setXrange(const DataT xMin[/* mXdim */], const DataT xMax[/* mXdim */]);
 
   /// Print method
   void print() const;
@@ -294,7 +295,7 @@ class SplineSpec<DataT, XdimT, YdimT, 0> : public SplineContainer<DataT>
     const auto maxYdimTmp = SplineUtil::getMaxNdim<XdimT>(mYdim);
     const auto maxYdim = maxYdimTmp.get();
 
-    const auto nParameters = 1 << (2 * nXdim);         //total Nr of Parameters necessary for one interpolation
+    // const auto nParameters = 1 << (2 * nXdim);         //total Nr of Parameters necessary for one interpolation
     const auto nKnotParametersPerY = 1 << nXdim;       // Nr of Parameters per Knot per Y dimension
     const auto nKnotParameters = (1 << nXdim) * nYdim; // Nr of Parameters per Knot
 
@@ -320,7 +321,7 @@ class SplineSpec<DataT, XdimT, YdimT, 0> : public SplineContainer<DataT>
     }
     //now start with the interpolation loop:
 
-    auto maxInterpolations = (1 << (2 * maxXdim - 2)) * maxYdim;
+    constexpr auto maxInterpolations = (1 << (2 * maxXdim - 2)) * maxYdim;
 
     DataT S0[maxInterpolations];
     DataT D0[maxInterpolations];
@@ -353,7 +354,7 @@ class SplineSpec<DataT, XdimT, YdimT, 0> : public SplineContainer<DataT>
 
     for (int i = 0; i < nYdim; i++) {
       S[i] = iParameters[i]; // write into result-array
-      //std::cout<<iParameters[i] <<", ";
+      // LOG(info)<<iParameters[i] <<", ";
     }
   } // end interpolateU
 

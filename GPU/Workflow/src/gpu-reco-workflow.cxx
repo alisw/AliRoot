@@ -1,8 +1,9 @@
-// Copyright CERN and copyright holders of ALICE O2. This software is
-// distributed under the terms of the GNU General Public License v3 (GPL
-// Version 3), copied verbatim in the file "COPYING".
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
 //
-// See http://alice-o2.web.cern.ch/license for full licensing information.
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 //
 // In applying this license CERN does not waive the privileges and immunities
 // granted to it by virtue of its status as an Intergovernmental Organization
@@ -20,12 +21,14 @@
 #include "GPUWorkflow/GPUWorkflowSpec.h"
 #include "CommonUtils/ConfigurableParam.h"
 #include "DetectorsRaw/HBFUtilsInitializer.h"
+#include "Framework/CallbacksPolicy.h"
 #include "TPCBase/Sector.h"
 #include "Algorithm/RangeTokenizer.h"
 #include "GlobalTrackingWorkflowHelpers/InputHelper.h"
 #include "ReconstructionDataFormats/GlobalTrackID.h"
 
 #include <unordered_map>
+#include <numeric>
 
 using namespace o2::framework;
 using namespace o2::dataformats;
@@ -33,20 +36,23 @@ using CompletionPolicyData = std::vector<InputSpec>;
 CompletionPolicyData gPolicyData;
 static constexpr unsigned long gTpcSectorMask = 0xFFFFFFFFF;
 
+void customize(std::vector<o2::framework::CallbacksPolicy>& policies)
+{
+  o2::raw::HBFUtilsInitializer::addNewTimeSliceCallback(policies);
+}
+
 void customize(std::vector<ConfigParamSpec>& workflowOptions)
 {
 
   std::vector<ConfigParamSpec> options{
     {"input-type", VariantType::String, "digits", {"digitizer, digits, zsraw, zsonthefly, clustersnative, compressed-clusters-root, compressed-clusters-ctf, trd-tracklets"}},
-    {"output-type", VariantType::String, "tracks", {"clustersnative, tracks, compressed-clusters-ctf, qa, no-shared-cluster-map"}},
+    {"output-type", VariantType::String, "tracks", {"clustersnative, tracks, compressed-clusters-ctf, qa, no-shared-cluster-map, send-clusters-per-sector, trd-tracks"}},
     {"disable-root-input", VariantType::Bool, true, {"disable root-files input reader"}},
     {"disable-mc", VariantType::Bool, false, {"disable sending of MC information"}},
     {"ignore-dist-stf", VariantType::Bool, false, {"do not subscribe to FLP/DISTSUBTIMEFRAME/0 message (no lost TF recovery)"}},
     {"configKeyValues", VariantType::String, "", {"Semicolon separated key=value strings (e.g.: 'TPCHwClusterer.peakChargeThreshold=4;...')"}},
     {"configFile", VariantType::String, "", {"configuration file for configurable parameters"}}};
-
   o2::raw::HBFUtilsInitializer::addConfigOption(options);
-
   std::swap(workflowOptions, options);
 }
 
@@ -75,7 +81,9 @@ enum struct ioType { Digits,
                      Tracks,
                      QA,
                      TRDTracklets,
-                     NoSharedMap };
+                     TRDTracks,
+                     NoSharedMap,
+                     SendClustersPerSector };
 
 static const std::unordered_map<std::string, ioType> InputMap{
   {"digits", ioType::Digits},
@@ -91,7 +99,9 @@ static const std::unordered_map<std::string, ioType> OutputMap{
   {"tracks", ioType::Tracks},
   {"compressed-clusters-ctf", ioType::CompClustCTF},
   {"qa", ioType::QA},
-  {"no-shared-cluster-map", ioType::NoSharedMap}};
+  {"no-shared-cluster-map", ioType::NoSharedMap},
+  {"send-clusters-per-sector", ioType::SendClustersPerSector},
+  {"trd-tracks", ioType::TRDTracks}};
 
 WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
 {
@@ -131,9 +141,10 @@ WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
   cfg.outputQA = isEnabled(outputTypes, ioType::QA);
   cfg.outputSharedClusterMap = (cfg.outputCAClusters || cfg.caClusterer || isEnabled(inputTypes, ioType::Clusters)) && cfg.outputTracks && !isEnabled(outputTypes, ioType::NoSharedMap);
   cfg.processMC = doMC;
-  cfg.sendClustersPerSector = false;
+  cfg.sendClustersPerSector = isEnabled(outputTypes, ioType::SendClustersPerSector);
   cfg.askDISTSTF = !cfgc.options().get<bool>("ignore-dist-stf");
   cfg.readTRDtracklets = isEnabled(inputTypes, ioType::TRDTracklets);
+  cfg.runTRDTracking = isEnabled(outputTypes, ioType::TRDTracks);
   specs.emplace_back(o2::gpu::getGPURecoWorkflowSpec(&gPolicyData, cfg, tpcSectors, gTpcSectorMask, "gpu-reconstruction"));
 
   if (!cfgc.options().get<bool>("ignore-dist-stf")) {
@@ -145,5 +156,5 @@ WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
   // configure dpl timer to inject correct firstTFOrbit: start from the 1st orbit of TF containing 1st sampled orbit
   o2::raw::HBFUtilsInitializer hbfIni(cfgc, specs);
 
-  return std::move(specs);
+  return specs;
 }

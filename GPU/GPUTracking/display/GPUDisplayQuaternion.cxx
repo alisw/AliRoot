@@ -18,7 +18,6 @@
 /// \author David Rohr
 
 #include "GPUDisplay.h"
-#ifdef GPUCA_BUILD_EVENT_DISPLAY
 
 #include <cmath>
 using namespace GPUCA_NAMESPACE::gpu;
@@ -51,5 +50,3 @@ void GPUDisplay::createQuaternionFromMatrix(float* v, const float* mat)
     v[3] = 1;
   }
 }
-
-#endif

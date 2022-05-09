@@ -22,6 +22,7 @@ using namespace GPUCA_NAMESPACE::gpu;
 
 #if defined(GPUCA_ALIROOT_LIB) & !defined(GPUCA_GPUCODE)
 
+#include "GPUCommonConstants.h"
 #include <iostream>
 #include <iomanip>
 #include <limits>
@@ -30,7 +31,7 @@ using namespace std;
 
 void GPUTPCGMPolynomialField::Print() const
 {
-  const double kCLight = 0.000299792458;
+  const double kCLight = gpu_common_constants::kCLight;
   typedef std::numeric_limits<float> flt;
   cout << std::scientific;
 #if __cplusplus >= 201103L

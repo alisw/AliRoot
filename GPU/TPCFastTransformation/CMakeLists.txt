@@ -1,12 +1,13 @@
-# Copyright CERN and copyright holders of ALICE O2. This software is distributed
-# under the terms of the GNU General Public License v3 (GPL Version 3), copied
-# verbatim in the file "COPYING".
+# Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+# See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+# All rights not expressly granted are reserved.
 #
-# See http://alice-o2.web.cern.ch/license for full licensing information.
+# This software is distributed under the terms of the GNU General Public
+# License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 #
 # In applying this license CERN does not waive the privileges and immunities
-# granted to it by virtue of its status as an Intergovernmental Organization or
-# submit itself to any jurisdiction.
+# granted to it by virtue of its status as an Intergovernmental Organization
+# or submit itself to any jurisdiction.
 
 set(MODULE TPCFastTransformation)
 
@@ -16,19 +17,29 @@ set(SRCS
     SplineHelper.cxx
     Spline1DSpec.cxx
     Spline1D.cxx
-    Spline1DHelper.cxx
+    Spline1DHelperOld.cxx
     Spline2DSpec.cxx
     Spline2D.cxx
-    Spline2DHelper.cxx
     ChebyshevFit1D.cxx
-    devtools/IrregularSpline1D.cxx
-    devtools/IrregularSpline2D3D.cxx
-    devtools/SemiregularSpline2D3D.cxx
-    devtools/IrregularSpline2D3DCalibrator.cxx
     TPCFastTransformGeo.cxx
     TPCFastSpaceChargeCorrection.cxx
     TPCFastTransform.cxx
 )
+
+if(ALIGPU_BUILD_TYPE STREQUAL "O2")
+  set(SRCS ${SRCS}
+      Spline1DHelper.cxx
+      Spline2DHelper.cxx
+      SymMatrixSolver.cxx
+      BandMatrixSolver.cxx
+      MultivariatePolynomial.cxx
+      MultivariatePolynomialHelper.cxx
+      devtools/IrregularSpline1D.cxx
+      devtools/IrregularSpline2D3D.cxx
+      devtools/SemiregularSpline2D3D.cxx
+      devtools/IrregularSpline2D3DCalibrator.cxx
+  )
+endif()
 
 string(REPLACE ".cxx" ".h" HDRS_CINT_O2 "${SRCS}")
 set(HDRS_CINT_O2 ${HDRS_CINT_O2} SplineUtil.h devtools/RegularSpline1D.h)
@@ -37,13 +48,15 @@ if(${ALIGPU_BUILD_TYPE} STREQUAL "O2")
   o2_add_library(${MODULE}
                  TARGETVARNAME targetName
                  SOURCES ${SRCS}
-                 PUBLIC_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR} devtools
+                 PUBLIC_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}
+                                            devtools
+                                            ${CMAKE_SOURCE_DIR}/GPU/Common
                  PUBLIC_LINK_LIBRARIES O2::GPUCommon
                                        O2::GPUUtils
                                        Vc::Vc
                                        ROOT::Core ROOT::Matrix ROOT::Tree ROOT::Gpad
-                                       )
-
+                             )
+                 
   o2_target_root_dictionary(${MODULE}
                             HEADERS ${HDRS_CINT_O2}
                             LINKDEF TPCFastTransformationLinkDef_O2.h)
@@ -57,8 +70,17 @@ if(${ALIGPU_BUILD_TYPE} STREQUAL "O2")
               COMPONENT_NAME GPU
               LABELS gpu)
 
+  o2_add_test(MultivarPolynomials
+              COMPONENT_NAME GPU
+              PUBLIC_LINK_LIBRARIES O2::${MODULE}
+              SOURCES test/testMultivarPolynomials.cxx
+              ENVIRONMENT O2_ROOT=${CMAKE_BINARY_DIR}/stage
+              LABELS gpu
+              CONFIGURATIONS RelWithDebInfo Release MinRelSize)
+
   foreach(m
           SplineDemo.C
+          SplineConstructionDemo.C
           fastTransformQA.C
           generateTPCCorrectionNTuple.C)
     o2_add_test_root_macro(macro/${m}
@@ -66,9 +88,9 @@ if(${ALIGPU_BUILD_TYPE} STREQUAL "O2")
                                                  O2::DataFormatsTPC
                                                  O2::TPCSimulation
                                                  O2::TPCReconstruction
-                                                 PUBLIC_INCLUDE_DIRECTORIES
+                          PUBLIC_INCLUDE_DIRECTORIES
                                                  ${CMAKE_BINARY_DIR}/stage/include
-                           LABELS gpu tpc)
+                           LABELS gpu tpc COMPILE_ONLY)
   endforeach()
     foreach(m
           IrregularSpline1DTest.C
@@ -90,7 +112,7 @@ if(${ALIGPU_BUILD_TYPE} STREQUAL "O2")
 endif()
 
 if(${ALIGPU_BUILD_TYPE} STREQUAL "ALIROOT")
-  add_definitions(-DGPUCA_ALIROOT_LIB)
+  add_definitions(-DGPUCA_ALIROOT_LIB -DGPUCA_NO_FMT)
 
   set(SRCS ${SRCS} TPCFastTransformManager.cxx TPCFastTransformQA.cxx
            ${AliRoot_SOURCE_DIR}/HLT/TPCLib/AliHLTTPCGeometry.cxx

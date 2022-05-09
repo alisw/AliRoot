@@ -36,6 +36,7 @@
 #include "GPUTRDTrackletLabels.h"
 #include "GPUMemoryResource.h"
 #include "GPUConstantMem.h"
+#include "GPUMemorySizeScalers.h"
 #include <atomic>
 
 #define GPUCA_LOGGING_PRINTF
@@ -193,6 +194,7 @@ int GPUReconstructionCPU::ExitDevice()
 
 int GPUReconstructionCPU::RunChains()
 {
+  mMemoryScalers->temporaryFactor = 1.;
   mStatNEvents++;
   mNEventsProcessed++;
 

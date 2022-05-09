@@ -1,8 +1,9 @@
-// Copyright CERN and copyright holders of ALICE O2. This software is
-// distributed under the terms of the GNU General Public License v3 (GPL
-// Version 3), copied verbatim in the file "COPYING".
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
 //
-// See http://alice-o2.web.cern.ch/license for full licensing information.
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 //
 // In applying this license CERN does not waive the privileges and immunities
 // granted to it by virtue of its status as an Intergovernmental Organization
@@ -201,6 +202,17 @@ void Spline2DContainer<DataT>::approximateFunction(
   /// approximate a function F with this spline
   Spline2DHelper<DataT> helper;
   helper.approximateFunction(*reinterpret_cast<Spline2D<DataT>*>(this), x1Min, x1Max, x2Min, x2Max, F, nAuxiliaryDataPointsX1, nAuxiliaryDataPointsX2);
+}
+
+template <typename DataT>
+void Spline2DContainer<DataT>::approximateFunctionViaDataPoints(
+  double x1Min, double x1Max, double x2Min, double x2Max,
+  std::function<void(double x1, double x2, double f[])> F,
+  int nAuxiliaryDataPointsX1, int nAuxiliaryDataPointsX2)
+{
+  /// approximate a function F with this spline
+  Spline2DHelper<DataT> helper;
+  helper.approximateFunctionViaDataPoints(*reinterpret_cast<Spline2D<DataT>*>(this), x1Min, x1Max, x2Min, x2Max, F, nAuxiliaryDataPointsX1, nAuxiliaryDataPointsX2);
 }
 
 #ifndef GPUCA_ALIROOT_LIB

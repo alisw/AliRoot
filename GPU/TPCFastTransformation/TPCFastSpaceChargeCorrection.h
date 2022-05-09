@@ -1,8 +1,9 @@
-// Copyright CERN and copyright holders of ALICE O2. This software is
-// distributed under the terms of the GNU General Public License v3 (GPL
-// Version 3), copied verbatim in the file "COPYING".
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
 //
-// See http://alice-o2.web.cern.ch/license for full licensing information.
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 //
 // In applying this license CERN does not waive the privileges and immunities
 // granted to it by virtue of its status as an Intergovernmental Organization
@@ -211,6 +212,9 @@ class TPCFastSpaceChargeCorrection : public FlatObject
     return mSliceInfo[slice];
   }
 
+  /// temporary method with the an way of calculating 2D spline
+  GPUd() int getCorrectionOld(int slice, int row, float u, float v, float& dx, float& du, float& dv) const;
+
   /// _______________  Data members  _______________________________________________
 
   /// _______________  Construction control  _______________________________________________
@@ -274,6 +278,22 @@ GPUdi() int TPCFastSpaceChargeCorrection::getCorrection(int slice, int row, floa
   sv *= spline.getGridX2().getUmax();
   float dxuv[3];
   spline.interpolateU(splineData, su, sv, dxuv);
+  dx = dxuv[0];
+  du = dxuv[1];
+  dv = dxuv[2];
+  return 0;
+}
+
+GPUdi() int TPCFastSpaceChargeCorrection::getCorrectionOld(int slice, int row, float u, float v, float& dx, float& du, float& dv) const
+{
+  const SplineType& spline = getSpline(slice, row);
+  const float* splineData = getSplineData(slice, row);
+  float su = 0, sv = 0;
+  mGeo.convUVtoScaledUV(slice, row, u, v, su, sv);
+  su *= spline.getGridX1().getUmax();
+  sv *= spline.getGridX2().getUmax();
+  float dxuv[3];
+  spline.interpolateUold(splineData, su, sv, dxuv);
   dx = dxuv[0];
   du = dxuv[1];
   dv = dxuv[2];

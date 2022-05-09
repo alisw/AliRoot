@@ -1,12 +1,13 @@
-# Copyright CERN and copyright holders of ALICE O2. This software is distributed
-# under the terms of the GNU General Public License v3 (GPL Version 3), copied
-# verbatim in the file "COPYING".
+# Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+# See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+# All rights not expressly granted are reserved.
 #
-# See http://alice-o2.web.cern.ch/license for full licensing information.
+# This software is distributed under the terms of the GNU General Public
+# License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 #
 # In applying this license CERN does not waive the privileges and immunities
-# granted to it by virtue of its status as an Intergovernmental Organization or
-# submit itself to any jurisdiction.
+# granted to it by virtue of its status as an Intergovernmental Organization
+# or submit itself to any jurisdiction.
 
 set(MODULE GPUTrackingOCL2)
 enable_language(ASM)
@@ -25,7 +26,7 @@ endif()
 set(CL_SRC ${GPUDIR}/Base/opencl-common/GPUReconstructionOCL.cl)
 set(CL_BIN ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCL2Code)
 
-set(OCL_FLAGS -Xclang -fdenormal-fp-math-f32=ieee -cl-mad-enable -cl-no-signed-zeros -ferror-limit=1000 -Xclang -finclude-default-header -Dcl_clang_storage_class_specifiers -Wno-invalid-constexpr -Wno-unused-command-line-argument -cl-std=clc++)
+set(OCL_FLAGS -Xclang -fdenormal-fp-math-f32=ieee -cl-mad-enable -cl-no-signed-zeros -ferror-limit=1000 -Dcl_clang_storage_class_specifiers -Wno-invalid-constexpr -Wno-unused-command-line-argument -cl-std=clc++)
 set(OCL_DEFINECL "-D$<JOIN:$<TARGET_PROPERTY:O2::GPUTracking,COMPILE_DEFINITIONS>,$<SEMICOLON>-D>"
             "-I$<JOIN:$<FILTER:$<TARGET_PROPERTY:O2::GPUTracking,INCLUDE_DIRECTORIES>,EXCLUDE,^/usr/include/?>,$<SEMICOLON>-I>"
             -I${CMAKE_SOURCE_DIR}/Detectors/TRD/base/src
@@ -57,32 +58,15 @@ if(OPENCL2_ENABLED_AMD) # BUILD OpenCL2 binaries for AMD target
     IMPLICIT_DEPENDS CXX ${CL_SRC}
     COMMAND_EXPAND_LISTS)
 
-  # cmake-format: off
-  add_custom_command(
-      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.amd.S
-      COMMAND cat ${GPUDIR}/utils/include.S | sed "s/FILENAMEMOD/_makefile_opencl_program_Base_opencl_GPUReconstructionOCL2_cl_amd/g" | sed "s,FILENAMENORMAL,${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCL2Code.amd,g" > ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.amd.S
-      MAIN_DEPENDENCY ${GPUDIR}/utils/include.S
-  )
-  # cmake-format: on
-
-  # make cmake compile the assembler file, add proper dependency on included
-  # binary code
-  set_source_files_properties(
-    ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.amd.S
-    PROPERTIES
-    LANGUAGE
-    ASM
-    OBJECT_DEPENDS
-    "${CL_BIN}.amd;${GPUDIR}/utils/include.S")
-
-  set(SRCS ${SRCS} ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.amd.S)
+  create_binary_resource(${CL_BIN}.amd ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.amd.o)
+  set(SRCS ${SRCS} ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.amd.o)
 endif()
 
 if(OPENCL2_ENABLED_SPIRV) # BUILD OpenCL2 intermediate code for SPIR-V target
   # executes clang to create llvm IL code
   add_custom_command(
       OUTPUT ${CL_BIN}.bc
-      COMMAND clang
+      COMMAND ${LLVM_CLANG}
               -O0
               -emit-llvm --target=spir64-unknown-unknown
               ${OCL_FLAGS}
@@ -98,57 +82,23 @@ if(OPENCL2_ENABLED_SPIRV) # BUILD OpenCL2 intermediate code for SPIR-V target
       COMMAND ${LLVM_SPIRV} ${CL_BIN}.bc -o=${CL_BIN}.spirv
       MAIN_DEPENDENCY ${CL_BIN}.bc)
 
-  # cmake-format: off
-  add_custom_command(
-      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.spirv.S
-      COMMAND cat ${GPUDIR}/utils/include.S | sed "s/FILENAMEMOD/_makefile_opencl_program_Base_opencl_GPUReconstructionOCL2_cl_spirv/g" | sed "s,FILENAMENORMAL,${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCL2Code.spirv,g" > ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.spirv.S
-      MAIN_DEPENDENCY ${GPUDIR}/utils/include.S
-  )
-  # cmake-format: on
-
-  # make cmake compile the assembler file, add proper dependency on included
-  # binary code
-  set_source_files_properties(
-    ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.spirv.S
-    PROPERTIES
-    LANGUAGE
-    ASM
-    OBJECT_DEPENDS
-    "${CL_BIN}.spirv;${GPUDIR}/utils/include.S")
-
-  set(SRCS ${SRCS} ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.spirv.S)
+  create_binary_resource(${CL_BIN}.spirv ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.spirv.o)
+  set(SRCS ${SRCS} ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.spirv.o)
 endif()
 
 if(OPENCL2_ENABLED) # BUILD OpenCL2 source code for runtime compilation target
   # executes clang to preprocess
   add_custom_command(
       OUTPUT ${CL_BIN}.src
-      COMMAND clang
-              ${OCL_DEFINECL}
+      COMMAND ${LLVM_CLANG}
+              ${OCL_DEFINECL} -cl-no-stdinc
               -E ${CL_SRC} > ${CL_BIN}.src
       MAIN_DEPENDENCY ${CL_SRC}
       IMPLICIT_DEPENDS CXX ${CL_SRC}
       COMMAND_EXPAND_LISTS)
 
-  # cmake-format: off
-  add_custom_command(
-      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.src.S
-      COMMAND cat ${GPUDIR}/utils/include.S | sed "s/FILENAMEMOD/_makefile_opencl_program_Base_opencl_GPUReconstructionOCL2_cl_src/g" | sed "s,FILENAMENORMAL,${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCL2Code.src,g" > ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.src.S
-      MAIN_DEPENDENCY ${GPUDIR}/utils/include.S
-  )
-  # cmake-format: on
-
-  # make cmake compile the assembler file, add proper dependency on included
-  # binary code
-  set_source_files_properties(
-    ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.src.S
-    PROPERTIES
-    LANGUAGE
-    ASM
-    OBJECT_DEPENDS
-    "${CL_BIN}.src;${GPUDIR}/utils/include.S")
-
-  set(SRCS ${SRCS} ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.src.S)
+  create_binary_resource(${CL_BIN}.src ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.src.o)
+  set(SRCS ${SRCS} ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.src.o)
 endif()
 
 if(ALIGPU_BUILD_TYPE STREQUAL "O2")

@@ -42,6 +42,7 @@ namespace tpc
 {
 struct ClusterNativeAccess;
 struct ClusterNative;
+class CalibdEdxContainer;
 } // namespace tpc
 } // namespace o2
 
@@ -59,12 +60,11 @@ namespace gpu
 {
 //class GPUTRDTrackerGPU;
 class GPUTPCGPUTracker;
-class GPUDisplay;
+class GPUDisplayInterface;
 class GPUQA;
 class GPUTPCClusterStatistics;
 class GPUTRDGeometry;
 class TPCFastTransform;
-class TPCdEdxCalibrationSplines;
 class GPUTrackingInputProvider;
 struct GPUChainTrackingFinalContext;
 struct GPUTPCCFChainContext;
@@ -78,6 +78,7 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
   void RegisterPermanentMemoryAndProcessors() override;
   void RegisterGPUProcessors() override;
   int Init() override;
+  int EarlyConfigure() override;
   int PrepareEvent() override;
   int Finalize() override;
   int RunChain() override;
@@ -86,6 +87,7 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
   bool SupportsDoublePipeline() override { return true; }
   int FinalizePipelinedProcessing() override;
   void ClearErrorCodes();
+  void DoQueuedCalibUpdates(int stream); // Forces doing queue calib updates, don't call when you are not sure you are allowed to do so!
 
   // Structures for input and output data
   GPUTrackingInOutPointers& mIOPtrs;
@@ -110,6 +112,7 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
     std::unique_ptr<GPUTPCHitId[]> sliceClusters[NSLICES];
     std::unique_ptr<AliHLTTPCClusterMCLabel[]> mcLabelsTPC;
     std::unique_ptr<GPUTPCMCInfo[]> mcInfosTPC;
+    std::unique_ptr<GPUTPCMCInfoCol[]> mcInfosTPCCol;
     std::unique_ptr<GPUTPCGMMergedTrack[]> mergedTracks;
     std::unique_ptr<GPUTPCGMMergedTrackHit[]> mergedTrackHits;
     std::unique_ptr<GPUTPCGMMergedTrackHitXYZ[]> mergedTrackHitsXYZ;
@@ -117,6 +120,7 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
     std::unique_ptr<GPUTRDSpacePoint[]> trdSpacePoints;
     std::unique_ptr<float[]> trdTriggerTimes;
     std::unique_ptr<int[]> trdTrackletIdxFirst;
+    std::unique_ptr<char[]> trdTrigRecMask;
     std::unique_ptr<GPUTRDTrackGPU[]> trdTracks;
     std::unique_ptr<char[]> clusterNativeMC;
     std::unique_ptr<o2::dataformats::ConstMCTruthContainerView<o2::MCCompLabel>> clusterNativeMCView;
@@ -124,6 +128,7 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
     std::unique_ptr<o2::dataformats::ConstMCTruthContainerView<o2::MCCompLabel>[]> tpcDigitMCView;
     std::unique_ptr<GPUTPCDigitsMCInput> tpcDigitMCMap;
     std::unique_ptr<o2::dataformats::ConstMCTruthContainer<o2::MCCompLabel>> clusterNativeMCBuffer;
+    std::unique_ptr<GPUSettingsTF[]> settingsTF;
   } mIOMem;
 
   // Read / Dump / Clear Data
@@ -140,7 +145,7 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
   int ConvertNativeToClusterData();
   void ConvertNativeToClusterDataLegacy();
   void ConvertRun2RawToNative();
-  void ConvertZSEncoder(bool zs12bit);
+  void ConvertZSEncoder(int version);
   void ConvertZSFilter(bool zs12bit);
 
   // Getters for external usage of tracker classes
@@ -149,7 +154,7 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
   const GPUTPCTracker* GetTPCSliceTrackers() const { return processors()->tpcTrackers; }
   const GPUTPCGMMerger& GetTPCMerger() const { return processors()->tpcMerger; }
   GPUTPCGMMerger& GetTPCMerger() { return processors()->tpcMerger; }
-  GPUDisplay* GetEventDisplay() { return mEventDisplay.get(); }
+  GPUDisplayInterface* GetEventDisplay() { return mEventDisplay.get(); }
   const GPUQA* GetQA() const { return mQA.get(); }
   GPUQA* GetQA() { return mQA.get(); }
   int ForceInitQA();
@@ -159,8 +164,10 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
   int ForwardTPCDigits();
   int RunTPCTrackingSlices();
   int RunTPCTrackingMerger(bool synchronizeOutput = true);
+  template <int I>
   int RunTRDTracking();
-  int DoTRDGPUTracking();
+  template <int I, class T = GPUTRDTracker>
+  int DoTRDGPUTracking(T* externalInstance = nullptr);
   int RunTPCCompression();
   int RunTPCDecompression();
   int RunRefit();
@@ -168,23 +175,24 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
   // Getters / setters for parameters
   const TPCFastTransform* GetTPCTransform() const { return processors()->calibObjects.fastTransform; }
   const TPCPadGainCalib* GetTPCPadGainCalib() const { return processors()->calibObjects.tpcPadGain; }
-  const TPCdEdxCalibrationSplines* GetdEdxSplines() const { return processors()->calibObjects.dEdxSplines; }
+  const o2::tpc::CalibdEdxContainer* GetdEdxCalibContainer() const { return processors()->calibObjects.dEdxCalibContainer; }
   const o2::base::MatLayerCylSet* GetMatLUT() const { return processors()->calibObjects.matLUT; }
   const GPUTRDGeometry* GetTRDGeometry() const { return (GPUTRDGeometry*)processors()->calibObjects.trdGeometry; }
   const o2::base::Propagator* GetO2Propagator() const { return processors()->calibObjects.o2Propagator; }
   void SetTPCFastTransform(std::unique_ptr<TPCFastTransform>&& tpcFastTransform);
-  void SetdEdxSplines(std::unique_ptr<TPCdEdxCalibrationSplines>&& dEdxSplines);
+  void SetdEdxCalibContainer(std::unique_ptr<o2::tpc::CalibdEdxContainer>&& dEdxCalibContainer);
   void SetMatLUT(std::unique_ptr<o2::base::MatLayerCylSet>&& lut);
   void SetTRDGeometry(std::unique_ptr<o2::trd::GeometryFlat>&& geo);
   void SetTPCFastTransform(const TPCFastTransform* tpcFastTransform) { processors()->calibObjects.fastTransform = tpcFastTransform; }
   void SetTPCPadGainCalib(const TPCPadGainCalib* tpcPadGainCalib) { processors()->calibObjects.tpcPadGain = tpcPadGainCalib; }
-  void SetdEdxSplines(const TPCdEdxCalibrationSplines* dEdxSplines) { processors()->calibObjects.dEdxSplines = dEdxSplines; }
+  void SetdEdxCalibContainer(const o2::tpc::CalibdEdxContainer* dEdxCalibContainer) { processors()->calibObjects.dEdxCalibContainer = dEdxCalibContainer; }
   void SetMatLUT(const o2::base::MatLayerCylSet* lut) { processors()->calibObjects.matLUT = lut; }
   void SetTRDGeometry(const o2::trd::GeometryFlat* geo) { processors()->calibObjects.trdGeometry = geo; }
   void SetO2Propagator(const o2::base::Propagator* prop) { processors()->calibObjects.o2Propagator = prop; }
   void SetCalibObjects(const GPUCalibObjectsConst& obj) { processors()->calibObjects = obj; }
   void SetCalibObjects(const GPUCalibObjects& obj) { memcpy((void*)&processors()->calibObjects, (const void*)&obj, sizeof(obj)); }
-  void SetDefaultO2PropagatorForGPU();
+  void SetUpdateCalibObjects(const GPUCalibObjectsConst& obj);
+  void SetDefaultInternalO2Propagator(bool useGPUField);
   void LoadClusterErrors();
   void SetOutputControlCompressedClusters(GPUOutputControl* v) { mSubOutputControls[GPUTrackingOutputs::getIndex(&GPUTrackingOutputs::compressedClusters)] = v; }
   void SetOutputControlClustersNative(GPUOutputControl* v) { mSubOutputControls[GPUTrackingOutputs::getIndex(&GPUTrackingOutputs::clustersNative)] = v; }
@@ -206,6 +214,8 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
     short mMemoryResFlat = -1;
     void* SetPointersFlatObjects(void* mem);
   };
+  void UpdateGPUCalibObjects(int stream);
+  void UpdateGPUCalibObjectsPtrs(int stream);
 
   struct eventStruct // Must consist only of void* ptr that will hold the GPU event ptrs!
   {
@@ -247,16 +257,16 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
 
   // Display / QA
   bool mDisplayRunning = false;
-  std::unique_ptr<GPUDisplay> mEventDisplay;
+  std::unique_ptr<GPUDisplayInterface> mEventDisplay;
   std::unique_ptr<GPUQA> mQA;
   std::unique_ptr<GPUTPCClusterStatistics> mCompressionStatistics;
 
   // Ptr to detector / calibration objects
-  std::unique_ptr<TPCFastTransform> mTPCFastTransformU;     // Global TPC fast transformation object
-  std::unique_ptr<TPCPadGainCalib> mTPCPadGainCalibU;       // TPC gain calibration and cluster finder parameters
-  std::unique_ptr<TPCdEdxCalibrationSplines> mdEdxSplinesU; // TPC dEdx calibration splines
-  std::unique_ptr<o2::base::MatLayerCylSet> mMatLUTU;       // Material Lookup Table
-  std::unique_ptr<o2::trd::GeometryFlat> mTRDGeometryU;     // TRD Geometry
+  std::unique_ptr<TPCFastTransform> mTPCFastTransformU;              // Global TPC fast transformation object
+  std::unique_ptr<TPCPadGainCalib> mTPCPadGainCalibU;                // TPC gain calibration and cluster finder parameters
+  std::unique_ptr<o2::tpc::CalibdEdxContainer> mdEdxCalibContainerU; // TPC dEdx calibration container
+  std::unique_ptr<o2::base::MatLayerCylSet> mMatLUTU;                // Material Lookup Table
+  std::unique_ptr<o2::trd::GeometryFlat> mTRDGeometryU;              // TRD Geometry
 
   // Ptrs to internal buffers
   std::unique_ptr<o2::tpc::ClusterNativeAccess> mClusterNativeAccess;
@@ -265,6 +275,8 @@ class GPUChainTracking : public GPUChain, GPUReconstructionHelpers::helperDelega
   // (Ptrs to) configuration objects
   std::unique_ptr<GPUTPCCFChainContext> mCFContext;
   bool mTPCSliceScratchOnStack = false;
+  GPUCalibObjectsConst mNewCalibObjects;
+  bool mUpdateNewCalibObjects = false;
 
   // Upper bounds for memory allocation
   unsigned int mMaxTPCHits = 0;

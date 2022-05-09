@@ -1,8 +1,9 @@
-// Copyright CERN and copyright holders of ALICE O2. This software is
-// distributed under the terms of the GNU General Public License v3 (GPL
-// Version 3), copied verbatim in the file "COPYING".
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
 //
-// See http://alice-o2.web.cern.ch/license for full licensing information.
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 //
 // In applying this license CERN does not waive the privileges and immunities
 // granted to it by virtue of its status as an Intergovernmental Organization
@@ -18,6 +19,7 @@
 #endif
 
 #include "TPCFastTransform.h"
+#include "GPUCommonLogger.h"
 
 #if !defined(GPUCA_GPUCODE)
 #include <iostream>
@@ -138,15 +140,15 @@ void TPCFastTransform::finishConstruction()
 void TPCFastTransform::print() const
 {
 #if !defined(GPUCA_GPUCODE)
-  std::cout << "TPC Fast Transformation: " << std::endl;
-  std::cout << "mTimeStamp = " << mTimeStamp << std::endl;
-  std::cout << "mApplyCorrection = " << mApplyCorrection << std::endl;
-  std::cout << "mT0 = " << mT0 << std::endl;
-  std::cout << "mVdrift = " << mVdrift << std::endl;
-  std::cout << "mVdriftCorrY = " << mVdriftCorrY << std::endl;
-  std::cout << "mLdriftCorr = " << mLdriftCorr << std::endl;
-  std::cout << "mTOFcorr = " << mTOFcorr << std::endl;
-  std::cout << "mPrimVtxZ = " << mPrimVtxZ << std::endl;
+  LOG(info) << "TPC Fast Transformation: ";
+  LOG(info) << "mTimeStamp = " << mTimeStamp;
+  LOG(info) << "mApplyCorrection = " << mApplyCorrection;
+  LOG(info) << "mT0 = " << mT0;
+  LOG(info) << "mVdrift = " << mVdrift;
+  LOG(info) << "mVdriftCorrY = " << mVdriftCorrY;
+  LOG(info) << "mLdriftCorr = " << mLdriftCorr;
+  LOG(info) << "mTOFcorr = " << mTOFcorr;
+  LOG(info) << "mPrimVtxZ = " << mPrimVtxZ;
   mCorrection.print();
 #endif
 }
@@ -166,7 +168,7 @@ int TPCFastTransform::writeToFile(std::string outFName, std::string name)
   }
   TFile outf(outFName.data(), "recreate");
   if (outf.IsZombie()) {
-    LOG(ERROR) << "Failed to open output file " << outFName;
+    LOG(error) << "Failed to open output file " << outFName;
     return -1;
   }
 
@@ -194,16 +196,16 @@ TPCFastTransform* TPCFastTransform::loadFromFile(std::string inpFName, std::stri
   }
   TFile inpf(inpFName.data());
   if (inpf.IsZombie()) {
-    LOG(ERROR) << "Failed to open input file " << inpFName;
+    LOG(error) << "Failed to open input file " << inpFName;
     return nullptr;
   }
   TPCFastTransform* transform = reinterpret_cast<TPCFastTransform*>(inpf.GetObjectChecked(name.data(), TPCFastTransform::Class()));
   if (!transform) {
-    LOG(ERROR) << "Failed to load " << name << " from " << inpFName;
+    LOG(error) << "Failed to load " << name << " from " << inpFName;
     return nullptr;
   }
   if (transform->mFlatBufferSize > 0 && transform->mFlatBufferContainer == nullptr) {
-    LOG(ERROR) << "Failed to load " << name << " from " << inpFName << ": empty flat buffer container";
+    LOG(error) << "Failed to load " << name << " from " << inpFName << ": empty flat buffer container";
     return nullptr;
   }
   transform->setActualBufferAddress(transform->mFlatBufferContainer);

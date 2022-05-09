@@ -25,12 +25,13 @@ using namespace GPUCA_NAMESPACE::gpu;
 
 int GPUChainTracking::RunRefit()
 {
-#ifdef HAVE_O2HEADERS
+#ifdef GPUCA_HAVE_O2HEADERS
   bool doGPU = GetRecoStepsGPU() & RecoStep::Refit;
   GPUTrackingRefitProcessor& Refit = processors()->trackingRefit;
   GPUTrackingRefitProcessor& RefitShadow = doGPU ? processorsShadow()->trackingRefit : Refit;
 
   const auto& threadContext = GetThreadContext();
+  (void)threadContext;
   SetupGPUProcessor(&Refit, false);
   RefitShadow.SetPtrsFromGPUConstantMem(processorsShadow(), doGPU ? &processorsDevice()->param : nullptr);
   RefitShadow.SetPropagator(doGPU ? processorsShadow()->calibObjects.o2Propagator : GetO2Propagator());

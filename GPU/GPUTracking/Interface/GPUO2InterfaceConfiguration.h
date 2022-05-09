@@ -20,8 +20,8 @@
 #ifndef GPUO2INTERFACECONFIGURATION_H
 #define GPUO2INTERFACECONFIGURATION_H
 
-#ifndef HAVE_O2HEADERS
-#define HAVE_O2HEADERS
+#ifndef GPUCA_HAVE_O2HEADERS
+#define GPUCA_HAVE_O2HEADERS
 #endif
 #ifndef GPUCA_TPC_GEOMETRY_O2
 #define GPUCA_TPC_GEOMETRY_O2
@@ -59,9 +59,9 @@ class GPUReconstruction;
 struct GPUSettingsO2;
 
 struct GPUInterfaceQAOutputs {
-  const std::vector<TH1F>* hist1;
-  const std::vector<TH2F>* hist2;
-  const std::vector<TH1D>* hist3;
+  const std::vector<TH1F>* hist1 = nullptr;
+  const std::vector<TH2F>* hist2 = nullptr;
+  const std::vector<TH1D>* hist3 = nullptr;
 };
 
 struct GPUInterfaceOutputs : public GPUTrackingOutputs {
@@ -78,7 +78,6 @@ struct GPUO2InterfaceConfiguration {
   struct GPUInterfaceSettings {
     int dumpEvents = 0;
     bool outputToExternalBuffers = false;
-    float memoryBufferScaleFactor = 1.f;
     // These constants affect GPU memory allocation only and do not limit the CPU processing
     unsigned long maxTPCZS = 8192ul * 1024 * 1024;
     unsigned int maxTPCHits = 1024 * 1024 * 1024;
@@ -94,13 +93,15 @@ struct GPUO2InterfaceConfiguration {
   GPUSettingsQA configQA;
   GPUInterfaceSettings configInterface;
   GPURecoStepConfiguration configWorkflow;
-  GPUCalibObjects configCalib;
+  GPUCalibObjectsConst configCalib;
 
   GPUSettingsO2 ReadConfigurableParam();
+  void PrintParam();
 
  private:
   friend class GPUReconstruction;
   GPUSettingsO2 ReadConfigurableParam_internal();
+  void PrintParam_internal();
 };
 
 } // namespace gpu

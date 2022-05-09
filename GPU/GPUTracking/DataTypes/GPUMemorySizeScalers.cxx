@@ -18,13 +18,17 @@
 /// \author David Rohr
 
 #include "GPUMemorySizeScalers.h"
+#include "GPULogging.h"
 
 using namespace GPUCA_NAMESPACE::gpu;
 
 void GPUMemorySizeScalers::rescaleMaxMem(size_t newAvailableMemory)
 {
   GPUMemorySizeScalers tmp;
-  double scaleFactor = newAvailableMemory > tmp.availableMemory ? ((double)newAvailableMemory / tmp.availableMemory) : 1.;
+  double scaleFactor = (double)newAvailableMemory / tmp.availableMemory;
+  if (scaleFactor != 1.) {
+    GPUInfo("Rescaling buffer size limits from %lu to %lu bytes of memory (factor %f)", tmp.availableMemory, newAvailableMemory, scaleFactor);
+  }
   tpcMaxPeaks = (double)tmp.tpcMaxPeaks * scaleFactor;
   tpcMaxClusters = (double)tmp.tpcMaxClusters * scaleFactor;
   tpcMaxStartHits = (double)tmp.tpcMaxStartHits * scaleFactor;

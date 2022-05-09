@@ -26,3 +26,8 @@ GPUSettingsO2 GPUO2InterfaceConfiguration::ReadConfigurableParam()
 {
   return ReadConfigurableParam_internal();
 }
+
+void GPUO2InterfaceConfiguration::PrintParam()
+{
+  PrintParam_internal();
+}

@@ -1,12 +1,13 @@
-# Copyright CERN and copyright holders of ALICE O2. This software is distributed
-# under the terms of the GNU General Public License v3 (GPL Version 3), copied
-# verbatim in the file "COPYING".
+# Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+# See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+# All rights not expressly granted are reserved.
 #
-# See http://alice-o2.web.cern.ch/license for full licensing information.
+# This software is distributed under the terms of the GNU General Public
+# License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 #
 # In applying this license CERN does not waive the privileges and immunities
-# granted to it by virtue of its status as an Intergovernmental Organization or
-# submit itself to any jurisdiction.
+# granted to it by virtue of its status as an Intergovernmental Organization
+# or submit itself to any jurisdiction.
 
 o2_add_library(GPUWorkflow
                SOURCES src/GPUWorkflowSpec.cxx
@@ -23,12 +24,6 @@ o2_add_library(GPUWorkflow
                                      O2::DataFormatsGlobalTracking
                                      O2::DataFormatsTRD
                PRIVATE_LINK_LIBRARIES O2::GPUTracking)
-
-if(GPUCA_EVENT_DISPLAY OR
-                      (OPENGL_FOUND AND GLFW_FOUND AND TARGET AliceO2::DebugGUI AND OPENGL_GLU_FOUND
-                      AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin"))
-   target_compile_definitions(${targetName} PRIVATE GPUCA_BUILD_EVENT_DISPLAY)
-endif()
 
 o2_add_executable(reco-workflow
        COMPONENT_NAME gpu
@@ -49,10 +44,14 @@ if(ALIGPU_BUILD_TYPE STREQUAL "O2"
           TARGETVARNAME targetName
           SOURCES src/O2GPUDPLDisplay.cxx
           PUBLIC_LINK_LIBRARIES O2::GPUO2Interface
+                                O2::GPUWorkflowHelper
                                 O2::DataFormatsGlobalTracking
                                 O2::TPCFastTransformation
                                 O2::TRDBase
+                                O2::TOFBase
                                 O2::TPCReconstruction
                                 O2::GlobalTrackingWorkflowHelpers)
   target_include_directories(${targetName} PUBLIC "include")
 endif()
+
+add_subdirectory(helper)

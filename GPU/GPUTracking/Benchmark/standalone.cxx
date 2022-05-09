@@ -24,9 +24,8 @@
 #include "GPUChainTracking.h"
 #include "GPUTPCDef.h"
 #include "GPUQA.h"
-#include "GPUDisplayBackend.h"
+#include "display/GPUDisplayInterface.h"
 #include "genEvents.h"
-#include "GPUMemorySizeScalers.h"
 
 #include <iostream>
 #include <fstream>
@@ -61,18 +60,8 @@
 #include <xmmintrin.h>
 
 #include "GPUO2DataTypes.h"
-#ifdef HAVE_O2HEADERS
+#ifdef GPUCA_HAVE_O2HEADERS
 #include "GPUChainITS.h"
-#endif
-
-#ifdef GPUCA_BUILD_EVENT_DISPLAY
-#ifdef _WIN32
-#include "GPUDisplayBackendWindows.h"
-#else
-#include "GPUDisplayBackendX11.h"
-#include "GPUDisplayBackendGlfw.h"
-#endif
-#include "GPUDisplayBackendGlut.h"
 #endif
 
 using namespace GPUCA_NAMESPACE::gpu;
@@ -86,7 +75,7 @@ extern GPUSettingsStandalone configStandalone;
 
 GPUReconstruction *rec, *recAsync, *recPipeline;
 GPUChainTracking *chainTracking, *chainTrackingAsync, *chainTrackingPipeline;
-#ifdef HAVE_O2HEADERS
+#ifdef GPUCA_HAVE_O2HEADERS
 GPUChainITS *chainITS, *chainITSAsync, *chainITSPipeline;
 #endif
 void unique_ptr_aligned_delete(char* v)
@@ -94,7 +83,7 @@ void unique_ptr_aligned_delete(char* v)
   operator delete(v GPUCA_OPERATOR_NEW_ALIGNMENT);
 }
 std::unique_ptr<char, void (*)(char*)> outputmemory(nullptr, unique_ptr_aligned_delete), outputmemoryPipeline(nullptr, unique_ptr_aligned_delete), inputmemory(nullptr, unique_ptr_aligned_delete);
-std::unique_ptr<GPUDisplayBackend> eventDisplay;
+std::unique_ptr<GPUDisplayFrontendInterface> eventDisplay;
 std::unique_ptr<GPUReconstructionTimeframe> tf;
 int nEventsInDirectory = 0;
 std::atomic<unsigned int> nIteration, nIterationEnd;
@@ -126,7 +115,7 @@ int ReadConfiguration(int argc, char** argv)
     }
     return 1;
   }
-  if (configStandalone.printSettings) {
+  if (configStandalone.printSettings > 1) {
     qConfigPrint();
   }
   if (configStandalone.proc.debugLevel < 0) {
@@ -177,13 +166,13 @@ int ReadConfiguration(int argc, char** argv)
     return 1;
   }
 #endif
-#ifndef HAVE_O2HEADERS
+#ifndef GPUCA_HAVE_O2HEADERS
   configStandalone.runTRD = configStandalone.rundEdx = configStandalone.runCompression = configStandalone.runTransformation = configStandalone.testSyncAsync = configStandalone.testSync = 0;
   configStandalone.rec.ForceEarlyTPCTransform = 1;
   configStandalone.runRefit = false;
 #endif
 #ifndef GPUCA_TPC_GEOMETRY_O2
-  configStandalone.rec.mergerReadFromTrackerDirectly = 0;
+  configStandalone.rec.tpc.mergerReadFromTrackerDirectly = 0;
   configStandalone.proc.ompKernels = false;
   configStandalone.proc.createO2Output = 0;
   if (configStandalone.rundEdx == -1) {
@@ -202,12 +191,6 @@ int ReadConfiguration(int argc, char** argv)
       return 1;
     }
   }
-#ifndef GPUCA_BUILD_EVENT_DISPLAY
-  if (configStandalone.eventDisplay) {
-    printf("EventDisplay not enabled in build\n");
-    return 1;
-  }
-#endif
   if (configStandalone.proc.doublePipeline && configStandalone.testSyncAsync) {
     printf("Cannot run asynchronous processing with double pipeline\n");
     return 1;
@@ -243,8 +226,12 @@ int ReadConfiguration(int argc, char** argv)
   if (configStandalone.eventDisplay) {
     configStandalone.noprompt = 1;
   }
-  if (configStandalone.proc.debugLevel >= 4 && !configStandalone.proc.ompKernels) {
-    configStandalone.proc.ompThreads = 1;
+  if (configStandalone.proc.debugLevel >= 4) {
+    if (configStandalone.proc.ompKernels) {
+      configStandalone.proc.ompKernels = 1;
+    } else {
+      configStandalone.proc.ompThreads = 1;
+    }
   }
 
   if (configStandalone.outputcontrolmem) {
@@ -265,16 +252,26 @@ int ReadConfiguration(int argc, char** argv)
     inputmemory.reset((char*)operator new(configStandalone.inputcontrolmem GPUCA_OPERATOR_NEW_ALIGNMENT));
   }
 
-#if !(defined(CUDA_ENABLED) || defined(OPENCL1_ENABLED) || defined(HIP_ENABLED))
-  if (configStandalone.runGPU) {
-    printf("GPU disables at build time!\n");
-    printf("Press a key to exit!\n");
-    getchar();
-    return 1;
-  }
-#endif
-
   configStandalone.proc.showOutputStat = true;
+
+  if (configStandalone.runGPU && configStandalone.gpuType == "AUTO") {
+    if (GPUReconstruction::CheckInstanceAvailable(GPUReconstruction::DeviceType::CUDA)) {
+      configStandalone.gpuType = "CUDA";
+    } else if (GPUReconstruction::CheckInstanceAvailable(GPUReconstruction::DeviceType::HIP)) {
+      configStandalone.gpuType = "HIP";
+    } else if (GPUReconstruction::CheckInstanceAvailable(GPUReconstruction::DeviceType::OCL2)) {
+      configStandalone.gpuType = "OCL2";
+    } else if (GPUReconstruction::CheckInstanceAvailable(GPUReconstruction::DeviceType::OCL)) {
+      configStandalone.gpuType = "OCL";
+    } else {
+      configStandalone.runGPU = false;
+    }
+  }
+
+  if (configStandalone.printSettings) {
+    qConfigPrint();
+  }
+
   return (0);
 }
 
@@ -282,7 +279,7 @@ int SetupReconstruction()
 {
   if (!configStandalone.eventGenerator) {
     char filename[256];
-    snprintf(filename, 256, "events/%s/", configStandalone.EventsDir);
+    snprintf(filename, 256, "events/%s/", configStandalone.eventsDir);
     if (rec->ReadSettings(filename)) {
       printf("Error reading event config file\n");
       return 1;
@@ -297,13 +294,13 @@ int SetupReconstruction()
   }
 
   chainTracking->mConfigQA = &configStandalone.QA;
-  chainTracking->mConfigDisplay = &configStandalone.GL;
+  chainTracking->mConfigDisplay = &configStandalone.display;
 
   GPUSettingsGRP grp = rec->GetGRPSettings();
   GPUSettingsRec recSet;
-  GPUSettingsProcessing devProc;
+  GPUSettingsProcessing procSet;
   memcpy((void*)&recSet, (void*)&configStandalone.rec, sizeof(GPUSettingsRec));
-  memcpy((void*)&devProc, (void*)&configStandalone.proc, sizeof(GPUSettingsProcessing));
+  memcpy((void*)&procSet, (void*)&configStandalone.proc, sizeof(GPUSettingsProcessing));
   GPURecoStepConfiguration steps;
 
   if (configStandalone.eventGenerator) {
@@ -339,34 +336,16 @@ int SetupReconstruction()
 
   configStandalone.proc.forceMemoryPoolSize = (configStandalone.proc.forceMemoryPoolSize == 1 && configStandalone.eventDisplay) ? 2 : configStandalone.proc.forceMemoryPoolSize;
   if (configStandalone.eventDisplay) {
-#ifdef GPUCA_BUILD_EVENT_DISPLAY
-#ifdef _WIN32
-    if (configStandalone.eventDisplay == 1) {
-      printf("Enabling event display (windows backend)\n");
-      eventDisplay.reset(new GPUDisplayBackendWindows);
+    eventDisplay.reset(GPUDisplayFrontendInterface::getFrontend(configStandalone.display.displayFrontend.c_str()));
+    if (eventDisplay.get() == nullptr) {
+      throw std::runtime_error("Requested display not available");
     }
-
-#else
-    if (configStandalone.eventDisplay == 1) {
-      eventDisplay.reset(new GPUDisplayBackendX11);
-      printf("Enabling event display (X11 backend)\n");
-    }
-    if (configStandalone.eventDisplay == 3) {
-      eventDisplay.reset(new GPUDisplayBackendGlfw);
-      printf("Enabling event display (GLFW backend)\n");
-    }
-
-#endif
-    else if (configStandalone.eventDisplay == 2) {
-      eventDisplay.reset(new GPUDisplayBackendGlut);
-      printf("Enabling event display (GLUT backend)\n");
-    }
-
-#endif
-    devProc.eventDisplay = eventDisplay.get();
+    printf("Enabling event display (%s backend)\n", eventDisplay->frontendName());
+    procSet.eventDisplay = eventDisplay.get();
   }
-  if (devProc.runQA) {
-    devProc.runMC = true;
+
+  if (procSet.runQA) {
+    procSet.runMC = true;
   }
 
   steps.steps = GPUDataTypes::RecoStep::AllRecoSteps;
@@ -412,7 +391,7 @@ int SetupReconstruction()
   }
 
   steps.outputs.clear();
-  steps.outputs.setBits(GPUDataTypes::InOutType::TPCSectorTracks, steps.steps.isSet(GPUDataTypes::RecoStep::TPCSliceTracking) && !recSet.mergerReadFromTrackerDirectly);
+  steps.outputs.setBits(GPUDataTypes::InOutType::TPCSectorTracks, steps.steps.isSet(GPUDataTypes::RecoStep::TPCSliceTracking) && !recSet.tpc.mergerReadFromTrackerDirectly);
   steps.outputs.setBits(GPUDataTypes::InOutType::TPCMergedTracks, steps.steps.isSet(GPUDataTypes::RecoStep::TPCMerging));
   steps.outputs.setBits(GPUDataTypes::InOutType::TPCCompressedClusters, steps.steps.isSet(GPUDataTypes::RecoStep::TPCCompression));
   steps.outputs.setBits(GPUDataTypes::InOutType::TRDTracks, steps.steps.isSet(GPUDataTypes::RecoStep::TRDTracking));
@@ -420,18 +399,32 @@ int SetupReconstruction()
   steps.steps.setBits(GPUDataTypes::RecoStep::TPCDecompression, false);
   steps.inputs.setBits(GPUDataTypes::InOutType::TPCCompressedClusters, false);
 
+  if (steps.steps.isSet(GPUDataTypes::RecoStep::TRDTracking)) {
+    if (recSet.tpc.nWays > 1) {
+      recSet.tpc.nWaysOuter = 1;
+    }
+    if (procSet.createO2Output && !procSet.trdTrackModelO2) {
+      procSet.createO2Output = 1; // Must not be 2, to make sure TPC GPU tracks are still available for TRD
+    }
+  }
+
   if (configStandalone.testSyncAsync || configStandalone.testSync) {
     // Set settings for synchronous
     steps.steps.setBits(GPUDataTypes::RecoStep::TPCdEdx, 0);
     recSet.useMatLUT = false;
     if (configStandalone.testSyncAsync) {
-      devProc.eventDisplay = nullptr;
+      procSet.eventDisplay = nullptr;
     }
   }
 
-  rec->SetSettings(&grp, &recSet, &devProc, &steps);
+#ifdef GPUCA_HAVE_O2HEADERS
+  procSet.useInternalO2Propagator = true;
+  procSet.internalO2PropagatorGPUField = true;
+#endif
+
+  rec->SetSettings(&grp, &recSet, &procSet, &steps);
   if (configStandalone.proc.doublePipeline) {
-    recPipeline->SetSettings(&grp, &recSet, &devProc, &steps);
+    recPipeline->SetSettings(&grp, &recSet, &procSet, &steps);
   }
   if (configStandalone.testSyncAsync) {
     // Set settings for asynchronous
@@ -443,15 +436,15 @@ int SetupReconstruction()
     steps.inputs.setBits(GPUDataTypes::InOutType::TPCClusters, false);
     steps.inputs.setBits(GPUDataTypes::InOutType::TPCCompressedClusters, true);
     steps.outputs.setBits(GPUDataTypes::InOutType::TPCCompressedClusters, false);
-    devProc.runMC = false;
-    devProc.runQA = false;
-    devProc.eventDisplay = eventDisplay.get();
-    devProc.runCompressionStatistics = 0;
-    recSet.DisableRefitAttachment = 0xFF;
-    recSet.loopInterpolationInExtraPass = 0;
-    recSet.MaxTrackQPt = CAMath::Min(recSet.MaxTrackQPt, recSet.tpcRejectQPt);
+    procSet.runMC = false;
+    procSet.runQA = false;
+    procSet.eventDisplay = eventDisplay.get();
+    procSet.runCompressionStatistics = 0;
+    recSet.tpc.disableRefitAttachment = 0xFF;
+    recSet.tpc.loopInterpolationInExtraPass = 0;
+    recSet.maxTrackQPtB5 = CAMath::Min(recSet.maxTrackQPtB5, recSet.tpc.rejectQPtB5);
     recSet.useMatLUT = true;
-    recAsync->SetSettings(&grp, &recSet, &devProc, &steps);
+    recAsync->SetSettings(&grp, &recSet, &procSet, &steps);
   }
 
   if (configStandalone.outputcontrolmem) {
@@ -460,16 +453,6 @@ int SetupReconstruction()
       recPipeline->SetOutputControl(outputmemoryPipeline.get(), configStandalone.outputcontrolmem);
     }
   }
-
-#ifdef HAVE_O2HEADERS
-  chainTracking->SetDefaultO2PropagatorForGPU();
-  if (configStandalone.testSyncAsync) {
-    chainTrackingAsync->SetDefaultO2PropagatorForGPU();
-  }
-  if (configStandalone.proc.doublePipeline) {
-    chainTrackingPipeline->SetDefaultO2PropagatorForGPU();
-  }
-#endif
 
   if (rec->Init()) {
     printf("Error initializing GPUReconstruction!\n");
@@ -490,14 +473,13 @@ int SetupReconstruction()
   if (configStandalone.proc.debugLevel >= 4) {
     rec->PrintKernelOccupancies();
   }
-  rec->MemoryScalers()->factor *= configStandalone.memoryBufferScaleFactor;
   return (0);
 }
 
 int ReadEvent(int n)
 {
   char filename[256];
-  snprintf(filename, 256, "events/%s/" GPUCA_EVDUMP_FILE ".%d.dump", configStandalone.EventsDir, n);
+  snprintf(filename, 256, "events/%s/" GPUCA_EVDUMP_FILE ".%d.dump", configStandalone.eventsDir, n);
   if (configStandalone.inputcontrolmem && !configStandalone.preloadEvents) {
     rec->SetInputControl(inputmemory.get(), configStandalone.inputcontrolmem);
   }
@@ -506,12 +488,12 @@ int ReadEvent(int n)
     return r;
   }
 #if defined(GPUCA_TPC_GEOMETRY_O2) && defined(GPUCA_BUILD_QA) && !defined(GPUCA_O2_LIB)
-  if (configStandalone.proc.runQA && !configStandalone.QA.noMC) {
+  if ((configStandalone.proc.runQA || configStandalone.eventDisplay) && !configStandalone.QA.noMC) {
     chainTracking->ForceInitQA();
-    snprintf(filename, 256, "events/%s/mc.%d.dump", configStandalone.EventsDir, n);
+    snprintf(filename, 256, "events/%s/mc.%d.dump", configStandalone.eventsDir, n);
     if (chainTracking->GetQA()->ReadO2MCData(filename)) {
-      snprintf(filename, 256, "events/%s/mc.%d.dump", configStandalone.EventsDir, 0);
-      if (chainTracking->GetQA()->ReadO2MCData(filename)) {
+      snprintf(filename, 256, "events/%s/mc.%d.dump", configStandalone.eventsDir, 0);
+      if (chainTracking->GetQA()->ReadO2MCData(filename) && configStandalone.proc.runQA) {
         throw std::runtime_error("Error reading O2 MC dump");
       }
     }
@@ -549,10 +531,10 @@ int LoadEvent(int iEvent, int x)
       return 1;
     }
     if (zsFilter) {
-      chainTracking->ConvertZSFilter(configStandalone.zs12bit);
+      chainTracking->ConvertZSFilter(configStandalone.zsVersion >= 2);
     }
     if (encodeZS) {
-      chainTracking->ConvertZSEncoder(configStandalone.zs12bit);
+      chainTracking->ConvertZSEncoder(configStandalone.zsVersion);
     }
   }
   if (!configStandalone.runTransformation) {
@@ -582,6 +564,7 @@ int LoadEvent(int iEvent, int x)
 
   ioPtrEvents[x] = chainTracking->mIOPtrs;
   ioMemEvents[x] = std::move(chainTracking->mIOMem);
+  chainTracking->mIOMem = decltype(chainTracking->mIOMem)();
   return 0;
 }
 
@@ -648,7 +631,7 @@ int RunBenchmark(GPUReconstruction* recUse, GPUChainTracking* chainTrackingUse, 
       }
     }
 
-#ifdef HAVE_O2HEADERS
+#ifdef GPUCA_HAVE_O2HEADERS
     if (tmpRetVal == 0 && configStandalone.testSyncAsync) {
       if (configStandalone.testSyncAsync) {
         printf("Running asynchronous phase\n");
@@ -663,6 +646,8 @@ int RunBenchmark(GPUReconstruction* recUse, GPUChainTracking* chainTrackingUse, 
       chainTrackingAsync->mIOPtrs.tpcPackedDigits = nullptr;
       chainTrackingAsync->mIOPtrs.mcInfosTPC = nullptr;
       chainTrackingAsync->mIOPtrs.nMCInfosTPC = 0;
+      chainTrackingAsync->mIOPtrs.mcInfosTPCCol = nullptr;
+      chainTrackingAsync->mIOPtrs.nMCInfosTPCCol = 0;
       chainTrackingAsync->mIOPtrs.mcLabelsTPC = nullptr;
       chainTrackingAsync->mIOPtrs.nMCLabelsTPC = 0;
       for (int i = 0; i < chainTracking->NSLICES; i++) {
@@ -691,7 +676,9 @@ int RunBenchmark(GPUReconstruction* recUse, GPUChainTracking* chainTrackingUse, 
       configStandalone.continueOnError = 0; // Forced exit from event display loop
       configStandalone.noprompt = 1;
     }
-    if (tmpRetVal && !configStandalone.continueOnError) {
+    if (tmpRetVal == 3 && configStandalone.proc.ignoreNonFatalGPUErrors) {
+      printf("Non-FATAL GPU error occured, ignoring\n");
+    } else if (tmpRetVal && !configStandalone.continueOnError) {
       if (tmpRetVal != 2) {
         printf("Error occured\n");
       }
@@ -716,14 +703,14 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  recUnique.reset(GPUReconstruction::CreateInstance(configStandalone.runGPU ? configStandalone.gpuType : GPUReconstruction::DEVICE_TYPE_NAMES[GPUReconstruction::DeviceType::CPU], configStandalone.runGPUforce));
+  recUnique.reset(GPUReconstruction::CreateInstance(configStandalone.runGPU ? configStandalone.gpuType.c_str() : GPUDataTypes::DEVICE_TYPE_NAMES[GPUDataTypes::DeviceType::CPU], configStandalone.runGPUforce));
   rec = recUnique.get();
   if (configStandalone.testSyncAsync) {
-    recUniqueAsync.reset(GPUReconstruction::CreateInstance(configStandalone.runGPU ? configStandalone.gpuType : GPUReconstruction::DEVICE_TYPE_NAMES[GPUReconstruction::DeviceType::CPU], configStandalone.runGPUforce, rec));
+    recUniqueAsync.reset(GPUReconstruction::CreateInstance(configStandalone.runGPU ? configStandalone.gpuType.c_str() : GPUDataTypes::DEVICE_TYPE_NAMES[GPUDataTypes::DeviceType::CPU], configStandalone.runGPUforce, rec));
     recAsync = recUniqueAsync.get();
   }
   if (configStandalone.proc.doublePipeline) {
-    recUniquePipeline.reset(GPUReconstruction::CreateInstance(configStandalone.runGPU ? configStandalone.gpuType : GPUReconstruction::DEVICE_TYPE_NAMES[GPUReconstruction::DeviceType::CPU], configStandalone.runGPUforce, rec));
+    recUniquePipeline.reset(GPUReconstruction::CreateInstance(configStandalone.runGPU ? configStandalone.gpuType.c_str() : GPUDataTypes::DEVICE_TYPE_NAMES[GPUDataTypes::DeviceType::CPU], configStandalone.runGPUforce, rec));
     recPipeline = recUniquePipeline.get();
   }
   if (rec == nullptr || (configStandalone.testSyncAsync && recAsync == nullptr)) {
@@ -744,7 +731,7 @@ int main(int argc, char** argv)
     }
     chainTrackingPipeline = recPipeline->AddChain<GPUChainTracking>();
   }
-#ifdef HAVE_O2HEADERS
+#ifdef GPUCA_HAVE_O2HEADERS
   if (!configStandalone.proc.doublePipeline) {
     chainITS = rec->AddChain<GPUChainITS>(0);
     if (configStandalone.testSyncAsync) {
@@ -773,7 +760,7 @@ int main(int argc, char** argv)
   for (nEventsInDirectory = 0; true; nEventsInDirectory++) {
     std::ifstream in;
     char filename[256];
-    snprintf(filename, 256, "events/%s/" GPUCA_EVDUMP_FILE ".%d.dump", configStandalone.EventsDir, nEventsInDirectory);
+    snprintf(filename, 256, "events/%s/" GPUCA_EVDUMP_FILE ".%d.dump", configStandalone.eventsDir, nEventsInDirectory);
     in.open(filename, std::ifstream::binary);
     if (in.fail()) {
       break;
@@ -790,13 +777,13 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  int nEvents = configStandalone.NEvents;
+  int nEvents = configStandalone.nEvents;
   if (configStandalone.TF.bunchSim) {
-    nEvents = configStandalone.NEvents > 0 ? configStandalone.NEvents : 1;
+    nEvents = configStandalone.nEvents > 0 ? configStandalone.nEvents : 1;
   } else {
     if (nEvents == -1 || nEvents > nEventsInDirectory) {
       if (nEvents >= 0) {
-        printf("Only %d events available in directors %s (%d events requested)\n", nEventsInDirectory, configStandalone.EventsDir, nEvents);
+        printf("Only %d events available in directors %s (%d events requested)\n", nEventsInDirectory, configStandalone.eventsDir, nEvents);
       }
       nEvents = nEventsInDirectory;
     }

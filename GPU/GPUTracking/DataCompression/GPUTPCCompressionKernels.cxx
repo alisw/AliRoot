@@ -45,7 +45,7 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step0at
     if (!trk.OK()) {
       continue;
     }
-    bool rejectTrk = CAMath::Abs(trk.GetParam().GetQPt()) > processors.param.rec.tpcRejectQPt || trk.MergedLooper();
+    bool rejectTrk = CAMath::Abs(trk.GetParam().GetQPt() * processors.param.par.qptB5Scaler) > processors.param.rec.tpc.rejectQPtB5 || trk.MergedLooper();
     unsigned int nClustersStored = 0;
     CompressedClustersPtrs& GPUrestrict() c = compressor.mPtrs;
     unsigned int lastRow = 0, lastSlice = 0; // BUG: These should be unsigned char, but then CUDA breaks
@@ -62,13 +62,13 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step0at
       if ((attach & gputpcgmmergertypes::attachTrackMask) != i) {
         continue; // Main attachment to different track
       }
-      bool rejectCluster = processors.param.rec.tpcRejectionMode && (rejectTrk || GPUTPCClusterRejection::GetIsRejected(attach));
+      bool rejectCluster = processors.param.rec.tpc.trackFitRejectMode && (rejectTrk || GPUTPCClusterRejection::GetIsRejected(attach));
       if (rejectCluster) {
         compressor.mClusterStatus[hitId] = 1; // Cluster rejected, do not store
         continue;
       }
 
-      if (!(param.rec.tpcCompressionModes & GPUSettings::CompressionTrackModel)) {
+      if (!(param.rec.tpc.compressionTypeMask & GPUSettings::CompressionTrackModel)) {
         continue; // No track model compression
       }
       const ClusterNative& GPUrestrict() orgCl = clusters->clusters[hit.slice][hit.row][hit.num - clusters->clusterOffset[hit.slice][hit.row]];
@@ -107,7 +107,7 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step0at
         unsigned int row = hit.row;
         unsigned int slice = hit.slice;
 
-        if (param.rec.tpcCompressionModes & GPUSettings::CompressionDifferences) {
+        if (param.rec.tpc.compressionTypeMask & GPUSettings::CompressionDifferences) {
           if (lastRow > row) {
             row += GPUCA_ROW_COUNT;
           }
@@ -127,7 +127,7 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step0at
       }
       unsigned short qtot = orgCl.qTot, qmax = orgCl.qMax;
       unsigned char sigmapad = orgCl.sigmaPadPacked, sigmatime = orgCl.sigmaTimePacked;
-      if (param.rec.tpcCompressionModes & GPUSettings::CompressionTruncate) {
+      if (param.rec.tpc.compressionTypeMask & GPUSettings::CompressionTruncate) {
         compressor.truncateSignificantBitsChargeMax(qmax, param);
         compressor.truncateSignificantBitsCharge(qtot, param);
         compressor.truncateSignificantBitsWidth(sigmapad, param);
@@ -218,16 +218,16 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step1un
         bool unattached = attach == 0;
 
         if (unattached) {
-          if (processors.param.rec.tpcRejectionMode >= GPUSettings::RejectionStrategyB) {
+          if (processors.param.rec.tpc.rejectionStrategy >= GPUSettings::RejectionStrategyB) {
             break;
           }
-        } else if (processors.param.rec.tpcRejectionMode >= GPUSettings::RejectionStrategyA) {
+        } else if (processors.param.rec.tpc.rejectionStrategy >= GPUSettings::RejectionStrategyA) {
           if (GPUTPCClusterRejection::GetIsRejected(attach)) {
             break;
           }
           int id = attach & gputpcgmmergertypes::attachTrackMask;
           auto& trk = ioPtrs.mergedTracks[id];
-          if (CAMath::Abs(trk.GetParam().GetQPt()) > processors.param.rec.tpcRejectQPt || trk.MergedLooper()) {
+          if (CAMath::Abs(trk.GetParam().GetQPt() * processors.param.par.qptB5Scaler) > processors.param.rec.tpc.rejectQPtB5 || trk.MergedLooper()) {
             break;
           }
         }
@@ -255,14 +255,14 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step1un
       }
 
       unsigned int count = CAMath::Min(smem.nCount, (unsigned int)GPUCA_TPC_COMP_CHUNK_SIZE);
-      if (param.rec.tpcCompressionModes & GPUSettings::CompressionDifferences) {
-        if (param.rec.tpcCompressionSortOrder == GPUSettings::SortZPadTime) {
+      if (param.rec.tpc.compressionTypeMask & GPUSettings::CompressionDifferences) {
+        if (param.rec.tpc.compressionSortOrder == GPUSettings::SortZPadTime) {
           CAAlgo::sortInBlock(sortBuffer, sortBuffer + count, GPUTPCCompressionKernels_Compare<GPUSettings::SortZPadTime>(clusters->clusters[iSlice][iRow]));
-        } else if (param.rec.tpcCompressionSortOrder == GPUSettings::SortZTimePad) {
+        } else if (param.rec.tpc.compressionSortOrder == GPUSettings::SortZTimePad) {
           CAAlgo::sortInBlock(sortBuffer, sortBuffer + count, GPUTPCCompressionKernels_Compare<GPUSettings::SortZTimePad>(clusters->clusters[iSlice][iRow]));
-        } else if (param.rec.tpcCompressionSortOrder == GPUSettings::SortPad) {
+        } else if (param.rec.tpc.compressionSortOrder == GPUSettings::SortPad) {
           CAAlgo::sortInBlock(sortBuffer, sortBuffer + count, GPUTPCCompressionKernels_Compare<GPUSettings::SortPad>(clusters->clusters[iSlice][iRow]));
-        } else if (param.rec.tpcCompressionSortOrder == GPUSettings::SortTime) {
+        } else if (param.rec.tpc.compressionSortOrder == GPUSettings::SortTime) {
           CAAlgo::sortInBlock(sortBuffer, sortBuffer + count, GPUTPCCompressionKernels_Compare<GPUSettings::SortTime>(clusters->clusters[iSlice][iRow]));
         }
         GPUbarrier();
@@ -271,14 +271,14 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step1un
       for (unsigned int j = get_local_id(0); j < count; j += get_local_size(0)) {
         int outidx = idOffsetOut + totalCount + j;
         if (outidx >= idOffsetOutMax) {
-          compressor.raiseError(GPUErrors::ERROR_COMPRESSION_ROW_HIT_OVERFLOW, outidx, idOffsetOutMax);
+          compressor.raiseError(GPUErrors::ERROR_COMPRESSION_ROW_HIT_OVERFLOW, iSlice * 1000 + iRow, outidx, idOffsetOutMax);
           count = 0;
           break;
         }
         const ClusterNative& GPUrestrict() orgCl = clusters->clusters[iSlice][iRow][sortBuffer[j]];
         unsigned int lastTime = 0;
         unsigned int lastPad = 0;
-        if (param.rec.tpcCompressionModes & GPUSettings::CompressionDifferences) {
+        if (param.rec.tpc.compressionTypeMask & GPUSettings::CompressionDifferences) {
           if (j != 0) {
             const ClusterNative& GPUrestrict() orgClPre = clusters->clusters[iSlice][iRow][sortBuffer[j - 1]];
             lastPad = orgClPre.padPacked;
@@ -298,7 +298,7 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step1un
 
         unsigned short qtot = orgCl.qTot, qmax = orgCl.qMax;
         unsigned char sigmapad = orgCl.sigmaPadPacked, sigmatime = orgCl.sigmaTimePacked;
-        if (param.rec.tpcCompressionModes & GPUSettings::CompressionTruncate) {
+        if (param.rec.tpc.compressionTypeMask & GPUSettings::CompressionTruncate) {
           compressor.truncateSignificantBitsChargeMax(qmax, param);
           compressor.truncateSignificantBitsCharge(qtot, param);
           compressor.truncateSignificantBitsWidth(sigmapad, param);

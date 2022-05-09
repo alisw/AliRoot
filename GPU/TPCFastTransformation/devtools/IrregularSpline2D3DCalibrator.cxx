@@ -1,8 +1,9 @@
-// Copyright CERN and copyright holders of ALICE O2. This software is
-// distributed under the terms of the GNU General Public License v3 (GPL
-// Version 3), copied verbatim in the file "COPYING".
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
 //
-// See http://alice-o2.web.cern.ch/license for full licensing information.
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 //
 // In applying this license CERN does not waive the privileges and immunities
 // granted to it by virtue of its status as an Intergovernmental Organization
@@ -16,6 +17,8 @@
 
 #include "IrregularSpline2D3D.h"
 #include "IrregularSpline2D3DCalibrator.h"
+#include "GPUCommonLogger.h"
+
 #include <cmath>
 #include <iostream>
 
@@ -80,7 +83,7 @@ void IrregularSpline2D3DCalibrator::startCalibration(std::function<void(float, f
 
   // create current spline
   for (int uv = 0; uv < 2; ++uv) {
-    //std::cout<<"n Raster knots: "<<mRaster.getGrid(uv).getNumberOfKnots()<<std::endl;
+    // LOG(info)<<"n Raster knots: "<<mRaster.getGrid(uv).getNumberOfKnots();
     mKnots[uv].clear();
     double du = 1. / (mMaxNKnots[uv] - 1);
     int lastKnot = 0;
@@ -89,7 +92,7 @@ void IrregularSpline2D3DCalibrator::startCalibration(std::function<void(float, f
       d.uv = uv;
       double u = i * du;
       d.rasterKnot = nearbyint(u * (mRaster.getGrid(uv).getNumberOfKnots() - 1));
-      //std::cout<<"uv "<<uv<<" i "<<d.rasterKnot<<" u "<<u<<std::endl;
+      // LOG(info)<<"uv "<<uv<<" i "<<d.rasterKnot<<" u "<<u;
       if (d.rasterKnot <= lastKnot) {
         continue;
       }
@@ -123,7 +126,7 @@ void IrregularSpline2D3DCalibrator::createSpline(IrregularSpline2D3D& sp, std::v
     mTemp[uv].clear();
     mTemp[uv].push_back(0.f);
     for (std::list<KnotData>::iterator i = mKnots[uv].begin(); i != mKnots[uv].end(); ++i) {
-      //std::cout<<"uv "<<uv<<" i "<<i->rasterKnot<<" u "<<mRaster.getGrid(uv).getKnot(i->rasterKnot).u<<std::endl;
+      // LOG(info)<<"uv "<<uv<<" i "<<i->rasterKnot<<" u "<<mRaster.getGrid(uv).getKnot(i->rasterKnot).u;
       mTemp[uv].push_back(mRaster.getGrid(uv).getKnot(i->rasterKnot).u);
     }
     mTemp[uv].push_back(1.f);
@@ -214,7 +217,7 @@ IrregularSpline2D3DCalibrator::Action IrregularSpline2D3DCalibrator::checkAction
       ret.cost = costDn;
     }
   }
-  //if( ret.cost<0 )  std::cout<<"knot "<<knot->rasterKnot<<" area: "<<regionKnotFirst<<"<->"<<regionKnotLast<<" costCurrent "<<costCurrent<<std::endl;
+  // if( ret.cost<0 )  LOG(info)<<"knot "<<knot->rasterKnot<<" area: "<<regionKnotFirst<<"<->"<<regionKnotLast<<" costCurrent "<<costCurrent;
 
   return ret;
 }
@@ -240,7 +243,7 @@ IrregularSpline2D3DCalibrator::Action IrregularSpline2D3DCalibrator::checkAction
 
   getRegionOfInfluence(knot, regionKnotFirst, regionKnotLast);
 
-  // std::cout<<"uv "<<uv<<" knot "<<knot->rasterKnot<<" region: "<<regionKnotFirst<<" <-> "<<regionKnotLast<<std::endl;
+  // LOG(info)<<"uv "<<uv<<" knot "<<knot->rasterKnot<<" region: "<<regionKnotFirst<<" <-> "<<regionKnotLast;
 
   KnotData tmp = *knot;
   std::list<KnotData>::iterator next = mKnots[uv].erase(knot);
@@ -287,7 +290,7 @@ bool IrregularSpline2D3DCalibrator::doCalibrationStep()
   // perform one step of the calibration
 
   // first, try to move a knot
-  //std::cout<<"do step.. "<<std::endl;
+  // LOG(info)<<"do step.. ";
   Action bestAction;
   bestAction.action = Action::Move::No;
   bestAction.cost = 1.e10;
@@ -301,16 +304,16 @@ bool IrregularSpline2D3DCalibrator::doCalibrationStep()
     }
   }
 
-  //std::cout<<"move cost: "<<bestAction.cost<<std::endl;
+  // LOG(info)<<"move cost: "<<bestAction.cost;
   if (bestAction.cost < 0) { // shift the best knot
     if (bestAction.action == Action::Move::Up) {
-      //std::cout<<"move Up uv "<< bestAction.iter->uv<<" knot "<<bestAction.iter->rasterKnot<<" -> "<<bestAction.iter->rasterKnot+1<<std::endl;
+      // LOG(info)<<"move Up uv "<< bestAction.iter->uv<<" knot "<<bestAction.iter->rasterKnot<<" -> "<<bestAction.iter->rasterKnot+1;
       bestAction.iter->rasterKnot++;
     } else if (bestAction.action == Action::Move::Down) {
-      //std::cout<<"move Down uv "<< bestAction.iter->uv<<" knot "<<bestAction.iter->rasterKnot<<" -> "<<bestAction.iter->rasterKnot-1<<std::endl;
+      // LOG(info)<<"move Down uv "<< bestAction.iter->uv<<" knot "<<bestAction.iter->rasterKnot<<" -> "<<bestAction.iter->rasterKnot-1;
       bestAction.iter->rasterKnot--;
     } else {
-      std::cerr << "Internal error!!!" << std::endl;
+      std::cerr << "Internal error!!!";
       return 0;
     }
     createCurrentSpline();
@@ -334,14 +337,14 @@ bool IrregularSpline2D3DCalibrator::doCalibrationStep()
   }
   bestAction.cost = sqrt(bestAction.cost / 3.);
 
-  //std::cout<<"remove cost: "<<bestAction.cost<<std::endl;
+  // LOG(info)<<"remove cost: "<<bestAction.cost;
 
   if (bestAction.cost <= mMaxDeviation) { // move the best knot
     if (bestAction.action == Action::Move::Remove) {
-      //std::cout<<"remove uv "<< bestAction.iter->uv<<" knot "<<bestAction.iter->rasterKnot<<std::endl;
+      // LOG(info)<<"remove uv "<< bestAction.iter->uv<<" knot "<<bestAction.iter->rasterKnot;
       mKnots[bestAction.iter->uv].erase(bestAction.iter);
     } else {
-      std::cout << "Internal error!!!" << std::endl;
+      LOG(info) << "Internal error!!!";
       return 0;
     }
     createCurrentSpline();

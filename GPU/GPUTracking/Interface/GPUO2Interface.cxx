@@ -27,7 +27,7 @@
 #include "GPUQA.h"
 #include "GPUOutputControl.h"
 #include "TPCPadGainCalib.h"
-#include "TPCdEdxCalibrationSplines.h"
+#include "CalibdEdxContainer.h"
 #include <iostream>
 #include <fstream>
 
@@ -75,7 +75,6 @@ int GPUO2Interface::Initialize(const GPUO2InterfaceConfiguration& config)
   if (!mRec->IsGPU() && mRec->GetProcessingSettings().memoryAllocationStrategy == GPUMemoryResource::ALLOCATION_INDIVIDUAL) {
     mRec->MemoryScalers()->factor *= 2;
   }
-  mRec->MemoryScalers()->factor *= mConfig->configInterface.memoryBufferScaleFactor;
   mInitialized = true;
   return (0);
 }
@@ -95,7 +94,11 @@ int GPUO2Interface::RunTracking(GPUTrackingInOutPointers* data, GPUInterfaceOutp
     return (1);
   }
   if (mConfig->configInterface.dumpEvents) {
+    if (mConfig->configProcessing.doublePipeline) {
+      throw std::runtime_error("Cannot dump events in double pipeline mode");
+    }
     static int nEvent = 0;
+    mChain->DoQueuedCalibUpdates(-1);
     mChain->ClearIOPointers();
     mChain->mIOPtrs = *data;
 
@@ -177,7 +180,13 @@ std::unique_ptr<TPCPadGainCalib> GPUO2Interface::getPadGainCalib(const o2::tpc::
   return std::make_unique<TPCPadGainCalib>(in);
 }
 
-std::unique_ptr<TPCdEdxCalibrationSplines> GPUO2Interface::getdEdxCalibrationSplinesDefault()
+std::unique_ptr<o2::tpc::CalibdEdxContainer> GPUO2Interface::getCalibdEdxContainerDefault()
 {
-  return std::make_unique<TPCdEdxCalibrationSplines>();
+  return std::make_unique<o2::tpc::CalibdEdxContainer>();
+}
+
+int GPUO2Interface::UpdateCalibration(const GPUCalibObjectsConst& newCalib)
+{
+  mChain->SetUpdateCalibObjects(newCalib);
+  return 0;
 }

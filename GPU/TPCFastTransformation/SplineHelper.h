@@ -1,8 +1,9 @@
-// Copyright CERN and copyright holders of ALICE O2. This software is
-// distributed under the terms of the GNU General Public License v3 (GPL
-// Version 3), copied verbatim in the file "COPYING".
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
 //
-// See http://alice-o2.web.cern.ch/license for full licensing information.
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 //
 // In applying this license CERN does not waive the privileges and immunities
 // granted to it by virtue of its status as an Intergovernmental Organization
@@ -24,7 +25,7 @@
 #include "TString.h"
 #include "Spline1D.h"
 #include "Spline.h"
-#include "Spline1DHelper.h"
+#include "Spline1DHelperOld.h"
 #include <functional>
 
 namespace GPUCA_NAMESPACE
@@ -85,7 +86,7 @@ class SplineHelper
 
   int getNumberOfDataPoints() const { return mNumberOfDataPoints; }
 
-  const Spline1DHelper<DataT>& getHelper(int dimX) const { return mHelpers[dimX]; }
+  const Spline1DHelperOld<DataT>& getHelper(int dimX) const { return mHelpers[dimX]; }
 
   /// _______________  Utilities   ________________________
 
@@ -110,7 +111,7 @@ class SplineHelper
   int mFdimensions;        ///< number of F dimensions
   int mNumberOfParameters; ///< number of parameters
   int mNumberOfDataPoints; ///< number of data points
-  std::vector<Spline1DHelper<DataT>> mHelpers;
+  std::vector<Spline1DHelperOld<DataT>> mHelpers;
 };
 
 template <typename DataT>

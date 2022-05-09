@@ -1,8 +1,9 @@
-// Copyright CERN and copyright holders of ALICE O2. This software is
-// distributed under the terms of the GNU General Public License v3 (GPL
-// Version 3), copied verbatim in the file "COPYING".
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
 //
-// See http://alice-o2.web.cern.ch/license for full licensing information.
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 //
 // In applying this license CERN does not waive the privileges and immunities
 // granted to it by virtue of its status as an Intergovernmental Organization
@@ -12,10 +13,12 @@
 #include "Framework/ConfigParamSpec.h"
 #include "DataFormatsParameters/GRPObject.h"
 #include "DataFormatsGlobalTracking/RecoContainer.h"
-#include "DetectorsCommonDataFormats/NameConf.h"
+#include "CommonUtils/NameConf.h"
 #include "DetectorsBase/GeometryManager.h"
 #include "TRDBase/GeometryFlat.h"
 #include "TRDBase/Geometry.h"
+#include "TOFBase/Geo.h"
+#include "ITSBase/GeometryTGeo.h"
 #include "DetectorsBase/Propagator.h"
 #include "GPUO2InterfaceDisplay.h"
 #include "GPUO2InterfaceConfiguration.h"
@@ -24,6 +27,8 @@
 #include "GlobalTrackingWorkflowHelpers/InputHelper.h"
 #include "DataFormatsTPC/WorkflowHelper.h"
 #include "DataFormatsTRD/RecoInputContainer.h"
+#include "GPUWorkflowHelper/GPUWorkflowHelper.h"
+#include "DataFormatsITSMFT/TopologyDictionary.h"
 
 using namespace o2::framework;
 using namespace o2::dataformats;
@@ -36,8 +41,9 @@ void customize(std::vector<ConfigParamSpec>& workflowOptions)
 {
   std::vector<o2::framework::ConfigParamSpec> options{
     {"enable-mc", o2::framework::VariantType::Bool, false, {"enable visualization of MC data"}},
-    {"display-clusters", VariantType::String, "TPC,TRD", {"comma-separated list of clusters to display"}},
-    {"display-tracks", VariantType::String, "TPC", {"comma-separated list of tracks to display"}},
+    {"disable-mc", o2::framework::VariantType::Bool, false, {"disable visualization of MC data"}}, // for compatibility, overrides enable-mc
+    {"display-clusters", VariantType::String, "ITS,TPC,TRD,TOF", {"comma-separated list of clusters to display"}},
+    {"display-tracks", VariantType::String, "TPC,ITS,ITS-TPC,TPC-TRD,ITS-TPC-TRD,TPC-TOF,ITS-TPC-TOF", {"comma-separated list of tracks to display"}},
     {"read-from-files", o2::framework::VariantType::Bool, false, {"comma-separated list of tracks to display"}},
     {"disable-root-input", o2::framework::VariantType::Bool, false, {"Disable root input overriding read-from-files"}},
     {"configKeyValues", VariantType::String, "", {"Semicolon separated key=value strings ..."}}};
@@ -66,13 +72,20 @@ void O2GPUDPLDisplaySpec::init(InitContext& ic)
   mTrdGeo.reset(new o2::trd::GeometryFlat(*gm));
   mConfig->configCalib.trdGeometry = mTrdGeo.get();
 
+  mITSDict = std::make_unique<o2::itsmft::TopologyDictionary>();
+  mConfig->configCalib.itsPatternDict = mITSDict.get();
+
+  mConfig->configProcessing.runMC = mUseMC;
+
+  o2::tof::Geo::Init();
+
+  o2::its::GeometryTGeo::Instance()->fillMatrixCache(o2::math_utils::bit2Mask(o2::math_utils::TransformType::T2GRot, o2::math_utils::TransformType::T2G, o2::math_utils::TransformType::L2G, o2::math_utils::TransformType::T2L));
+
   mDisplay.reset(new GPUO2InterfaceDisplay(mConfig.get()));
 }
 
 void O2GPUDPLDisplaySpec::run(ProcessingContext& pc)
 {
-  o2::globaltracking::RecoContainer recoData;
-  recoData.collectData(pc, *mDataRequest);
   static bool first = false;
   if (first == false) {
     if (mDisplay->startDisplay()) {
@@ -80,34 +93,10 @@ void O2GPUDPLDisplaySpec::run(ProcessingContext& pc)
     }
   }
 
+  o2::globaltracking::RecoContainer recoData;
+  recoData.collectData(pc, *mDataRequest);
   GPUTrackingInOutPointers ptrs;
-  if (mClMask[GlobalTrackID::TPC]) {
-    recoData.addTPCClusters(pc, false);
-  }
-  if (mTrkMask[GlobalTrackID::TPC]) {
-    recoData.addTPCTracks(pc, mUseMC);
-  }
-  if (mClMask[GlobalTrackID::TRD]) {
-    recoData.addTRDTracklets(pc);
-  }
-  if (mClMask[GlobalTrackID::TPC]) {
-    ptrs.clustersNative = &recoData.inputsTPCclusters->clusterIndex;
-  }
-  if (mTrkMask[GlobalTrackID::TPC]) {
-    const auto& tpcTracks = recoData.getTPCTracks<o2::tpc::TrackTPC>();
-    const auto& tpcClusRefs = recoData.getTPCTracksClusterRefs();
-    ptrs.outputTracksTPCO2 = tpcTracks.data();
-    ptrs.nOutputTracksTPCO2 = tpcTracks.size();
-    ptrs.outputClusRefsTPCO2 = tpcClusRefs.data();
-    ptrs.nOutputClusRefsTPCO2 = tpcClusRefs.size();
-  }
-  if (mClMask[GlobalTrackID::TRD]) {
-    o2::trd::getRecoInputContainer(pc, &ptrs, &recoData);
-  }
-  if (mUseMC) {
-    const auto& tpcTracksMC = recoData.getTPCTracksMCLabels();
-    ptrs.outputTracksTPCO2MC = tpcTracksMC.data();
-  }
+  auto tmpContainer = GPUWorkflowHelper::fillIOPtr(ptrs, recoData, mUseMC, &(mConfig->configCalib), mClMask, mTrkMask, mTrkMask);
 
   mDisplay->show(&ptrs);
 }
@@ -121,9 +110,14 @@ WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
 {
   WorkflowSpec specs;
 
-  bool useMC = cfgc.options().get<bool>("enable-mc");
+  o2::conf::ConfigurableParam::updateFromString(cfgc.options().get<std::string>("configKeyValues"));
+
+  bool useMC = cfgc.options().get<bool>("enable-mc") && !cfgc.options().get<bool>("disable-mc");
   GlobalTrackID::mask_t srcTrk = GlobalTrackID::getSourcesMask(cfgc.options().get<std::string>("display-tracks"));
   GlobalTrackID::mask_t srcCl = GlobalTrackID::getSourcesMask(cfgc.options().get<std::string>("display-clusters"));
+  if (!srcTrk.any() && !srcCl.any()) {
+    throw std::runtime_error("No input configured");
+  }
   std::shared_ptr<DataRequest> dataRequest = std::make_shared<DataRequest>();
   dataRequest->requestTracks(srcTrk, useMC);
   dataRequest->requestClusters(srcCl, useMC);
@@ -138,5 +132,5 @@ WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
     {},
     AlgorithmSpec{adaptFromTask<O2GPUDPLDisplaySpec>(useMC, srcTrk, srcCl, dataRequest)}});
 
-  return std::move(specs);
+  return specs;
 }

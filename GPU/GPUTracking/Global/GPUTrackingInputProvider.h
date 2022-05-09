@@ -38,6 +38,8 @@ namespace gpu
 {
 
 struct GPUTrackingInOutZS;
+class GPUTRDTrackletWord;
+class GPUTRDSpacePoint;
 
 class GPUTrackingInputProvider : public GPUProcessor
 {
@@ -51,6 +53,7 @@ class GPUTrackingInputProvider : public GPUProcessor
   void* SetPointersInputClusterNativeAccess(void* mem);
   void* SetPointersInputClusterNativeBuffer(void* mem);
   void* SetPointersInputClusterNativeOutput(void* mem);
+  void* SetPointersInputTRD(void* mem);
   void* SetPointersErrorCodes(void* mem);
 #endif
 
@@ -59,6 +62,7 @@ class GPUTrackingInputProvider : public GPUProcessor
   unsigned short mResourceClusterNativeBuffer = -1;
   unsigned short mResourceClusterNativeOutput = -1;
   unsigned short mResourceErrorCodes = -1;
+  unsigned short mResourceTRD = -1;
 
   bool mHoldTPCZS = false;
   bool mHoldTPCClusterNative = false;
@@ -68,6 +72,15 @@ class GPUTrackingInputProvider : public GPUProcessor
   GPUTrackingInOutZS* mPzsMeta = nullptr;
   unsigned int* mPzsSizes = nullptr;
   void** mPzsPtrs = nullptr;
+
+  unsigned int mNTRDTracklets = 0;
+  bool mDoSpacepoints = false;
+  unsigned int mNTRDTriggerRecords = 0;
+  GPUTRDTrackletWord* mTRDTracklets = nullptr;
+  GPUTRDSpacePoint* mTRDSpacePoints = nullptr;
+  float* mTRDTriggerTimes = nullptr;
+  int* mTRDTrackletIdxFirst = nullptr;
+  char* mTRDTrigRecMask = nullptr;
 
   o2::tpc::ClusterNativeAccess* mPclusterNativeAccess = nullptr;
   o2::tpc::ClusterNative* mPclusterNativeBuffer = nullptr;

@@ -1,12 +1,13 @@
-# Copyright CERN and copyright holders of ALICE O2. This software is distributed
-# under the terms of the GNU General Public License v3 (GPL Version 3), copied
-# verbatim in the file "COPYING".
+# Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+# See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+# All rights not expressly granted are reserved.
 #
-# See http://alice-o2.web.cern.ch/license for full licensing information.
+# This software is distributed under the terms of the GNU General Public
+# License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 #
 # In applying this license CERN does not waive the privileges and immunities
-# granted to it by virtue of its status as an Intergovernmental Organization or
-# submit itself to any jurisdiction.
+# granted to it by virtue of its status as an Intergovernmental Organization
+# or submit itself to any jurisdiction.
 
 set(MODULE GPUTrackingCUDA)
 
@@ -15,8 +16,8 @@ if(DEFINED CUDA_COMPUTETARGET)
 endif()
 message(STATUS "Building GPUTracking with CUDA support ${TMP_TARGET}")
 
-set(SRCS GPUReconstructionCUDA.cu)
-set(HDRS GPUReconstructionCUDA.h GPUReconstructionCUDAInternals.h GPUReconstructionCUDADef.h GPUReconstructionCUDAIncludes.h)
+set(SRCS GPUReconstructionCUDA.cu GPUReconstructionCUDAKernels.cu GPUReconstructionCUDAGenRTC.cu)
+set(HDRS GPUReconstructionCUDA.h GPUReconstructionCUDAInternals.h GPUReconstructionCUDADef.h GPUReconstructionCUDAIncludes.h CUDAThrustHelpers.h)
 
 # -------------------------------- Prepare RTC -------------------------------------------------------
 if(NOT ALIGPU_BUILD_TYPE STREQUAL "ALIROOT")
@@ -65,12 +66,7 @@ if(NOT ALIGPU_BUILD_TYPE STREQUAL "ALIROOT")
       IMPLICIT_DEPENDS CXX ${CURTC_SRC}
       COMMAND_EXPAND_LISTS
   )
-  
-  add_custom_command(
-      OUTPUT ${CURTC_BIN}.src.S
-      COMMAND cat ${GPUDIR}/utils/include.S | sed "s/FILENAMEMOD/_curtc_GPUReconstructionCUDArtc_cu_src/g" | sed "s,FILENAMENORMAL,${CURTC_BIN}.src,g" > ${CURTC_BIN}.src.S
-      MAIN_DEPENDENCY ${GPUDIR}/utils/include.S
-  )
+  create_binary_resource(${CURTC_BIN}.src ${CURTC_BIN}.src.o)
 
   add_custom_command(
       OUTPUT ${CURTC_BIN}.command
@@ -78,33 +74,9 @@ if(NOT ALIGPU_BUILD_TYPE STREQUAL "ALIROOT")
       COMMAND_EXPAND_LISTS
       VERBATIM
   )
+  create_binary_resource(${CURTC_BIN}.command ${CURTC_BIN}.command.o)
   
-  add_custom_command(
-      OUTPUT ${CURTC_BIN}.command.S
-      COMMAND cat ${GPUDIR}/utils/include.S | sed "s/FILENAMEMOD/_curtc_GPUReconstructionCUDArtc_cu_command/g" | sed "s,FILENAMENORMAL,${CURTC_BIN}.command,g" > ${CURTC_BIN}.command.S
-      MAIN_DEPENDENCY ${GPUDIR}/utils/include.S
-      DEPENDS ${CURTC_BIN}.command
-  )
-  # cmake-format: on
-  
-  # make cmake compile the assembler file, add proper dependency on included
-  # binary code
-  set_source_files_properties(
-    ${CURTC_BIN}.src.S
-    PROPERTIES
-    LANGUAGE
-    ASM
-    OBJECT_DEPENDS
-    "${CURTC_BIN}.src;${GPUDIR}/utils/include.S")
-    
-  set_source_files_properties(
-    ${CURTC_BIN}.command.S
-    PROPERTIES
-    LANGUAGE
-    ASM
-  )
-  
-  set(SRCS ${SRCS} ${CURTC_BIN}.src.S ${CURTC_BIN}.command.S)
+  set(SRCS ${SRCS} ${CURTC_BIN}.src.o ${CURTC_BIN}.command.o)
 endif()
 # -------------------------------- End RTC -------------------------------------------------------
 
@@ -116,7 +88,7 @@ if(ALIGPU_BUILD_TYPE STREQUAL "O2")
       ${CMAKE_SOURCE_DIR}/Detectors/Base/src
       ${CMAKE_SOURCE_DIR}/Detectors/TRD/base/src
       ${CMAKE_SOURCE_DIR}/DataFormats/Reconstruction/src
-    PUBLIC_LINK_LIBRARIES O2::GPUTracking O2::ITStrackingCUDA
+    PUBLIC_LINK_LIBRARIES O2::GPUTracking O2::ITStrackingCUDA O2::FrameworkFoundation3rdparty
     TARGETVARNAME targetName)
 
   target_compile_definitions(
@@ -169,4 +141,11 @@ elseif(CUDA_COMPUTETARGET AND CUDA_COMPUTETARGET STREQUAL "75")
 target_compile_definitions(${targetName} PUBLIC GPUCA_GPUTYPE_TURING)
 else()
 target_compile_definitions(${targetName} PUBLIC GPUCA_GPUTYPE_AMPERE)
+endif()
+
+if(OpenMP_CXX_FOUND)
+  # Must be private, depending libraries might be compiled by compiler not understanding -fopenmp
+  target_compile_definitions(${targetName} PRIVATE WITH_OPENMP)
+  target_link_libraries(${targetName} PRIVATE OpenMP::OpenMP_CXX)
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -fopenmp")
 endif()

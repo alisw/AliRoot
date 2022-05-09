@@ -20,8 +20,8 @@
 #ifndef GPURECONSTRUCTIONINCLDUESITS_H
 #define GPURECONSTRUCTIONINCLDUESITS_H
 
-#if defined(HAVE_O2HEADERS) && !defined(GPUCA_NO_ITS_TRAITS)
-#include "ITStracking/TrackerTraitsCPU.h"
+#if defined(GPUCA_HAVE_O2HEADERS) && !defined(GPUCA_NO_ITS_TRAITS)
+#include "ITStracking/TrackerTraits.h"
 #include "ITStracking/VertexerTraits.h"
 #else
 namespace o2
@@ -37,9 +37,12 @@ class TrackerTraitsCPU : public TrackerTraits
 class VertexerTraits
 {
 };
+class TimeFrame
+{
+};
 } // namespace its
 } // namespace o2
-#if defined(HAVE_O2HEADERS)
+#if defined(GPUCA_HAVE_O2HEADERS)
 #include "ITStracking/Road.h"
 #include "ITStracking/Cluster.h"
 #endif

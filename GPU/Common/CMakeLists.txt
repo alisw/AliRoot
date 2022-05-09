@@ -1,12 +1,13 @@
-# Copyright CERN and copyright holders of ALICE O2. This software is distributed
-# under the terms of the GNU General Public License v3 (GPL Version 3), copied
-# verbatim in the file "COPYING".
+# Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+# See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+# All rights not expressly granted are reserved.
 #
-# See http://alice-o2.web.cern.ch/license for full licensing information.
+# This software is distributed under the terms of the GNU General Public
+# License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 #
 # In applying this license CERN does not waive the privileges and immunities
-# granted to it by virtue of its status as an Intergovernmental Organization or
-# submit itself to any jurisdiction.
+# granted to it by virtue of its status as an Intergovernmental Organization
+# or submit itself to any jurisdiction.
 
 set(MODULE GPUCommon)
 
@@ -15,6 +16,7 @@ set(HDRS_INSTALL
     GPUCommonDef.h
     GPUCommonDefAPI.h
     GPUCommonDefSettings.h
+    GPUCommonConstants.h
     GPUCommonLogger.h
     GPUCommonMath.h
     GPUCommonRtypes.h
@@ -34,7 +36,7 @@ if(ALIGPU_BUILD_TYPE STREQUAL "O2")
                                     $<INSTALL_INTERFACE:include/GPU>)
 
   target_compile_definitions(${targetName} PRIVATE GPUCA_O2_LIB
-                             GPUCA_TPC_GEOMETRY_O2 HAVE_O2HEADERS)
+                             GPUCA_TPC_GEOMETRY_O2 GPUCA_HAVE_O2HEADERS)
   
   # cuda test, only compile if CUDA
   if(CUDA_ENABLED)

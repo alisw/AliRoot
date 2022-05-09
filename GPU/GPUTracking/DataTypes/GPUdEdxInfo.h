@@ -20,7 +20,7 @@
 #ifndef GPUDEDXINFO_H
 #define GPUDEDXINFO_H
 
-#ifdef HAVE_O2HEADERS
+#ifdef GPUCA_HAVE_O2HEADERS
 #include "DataFormatsTPC/dEdxInfo.h"
 #endif
 
@@ -28,7 +28,7 @@ namespace GPUCA_NAMESPACE
 {
 namespace gpu
 {
-#ifdef HAVE_O2HEADERS
+#ifdef GPUCA_HAVE_O2HEADERS
 using GPUdEdxInfo = o2::tpc::dEdxInfo;
 #else
 struct GPUdEdxInfo {

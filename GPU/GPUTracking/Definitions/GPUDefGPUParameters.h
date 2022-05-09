@@ -242,8 +242,11 @@
   #ifndef GPUCA_LB_GPUTPCGlobalTracking
     #define GPUCA_LB_GPUTPCGlobalTracking 256
   #endif
-  #ifndef GPUCA_LB_GPUTRDTrackerKernels
-    #define GPUCA_LB_GPUTRDTrackerKernels 512
+  #ifndef GPUCA_LB_GPUTRDTrackerKernels_gpuVersion
+    #define GPUCA_LB_GPUTRDTrackerKernels_gpuVersion 512
+  #endif
+  #ifndef GPUCA_LB_GPUTRDTrackerKernels_o2Version
+    #define GPUCA_LB_GPUTRDTrackerKernels_o2Version 512
   #endif
   #ifndef GPUCA_LB_GPUTPCConvertKernel
     #define GPUCA_LB_GPUTPCConvertKernel 256
@@ -416,6 +419,10 @@
 #define GPUCA_LB_GPUTPCCompressionGatherKernels_buffered64 GPUCA_LB_COMPRESSION_GATHER
 #define GPUCA_LB_GPUTPCCompressionGatherKernels_buffered128 GPUCA_LB_COMPRESSION_GATHER
 #define GPUCA_LB_GPUTPCCompressionGatherKernels_multiBlock GPUCA_LB_COMPRESSION_GATHER
+
+#if defined(__CUDACC__) || defined(__HIPCC__)
+#define GPUCA_SPECIALIZE_THRUST_SORTS
+#endif
 
 #ifndef GPUCA_NEIGHBORSFINDER_REGS
 #define GPUCA_NEIGHBORSFINDER_REGS NONE, 0

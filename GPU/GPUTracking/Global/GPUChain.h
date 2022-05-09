@@ -46,6 +46,7 @@ class GPUChain
   virtual ~GPUChain() = default;
   virtual void RegisterPermanentMemoryAndProcessors() = 0;
   virtual void RegisterGPUProcessors() = 0;
+  virtual int EarlyConfigure() { return 0; };
   virtual int Init() = 0;
   virtual int PrepareEvent() = 0;
   virtual int Finalize() = 0;
@@ -68,6 +69,7 @@ class GPUChain
   const GPUCalibObjectsConst& calib() const { return processors()->calibObjects; }
   GPUReconstruction* rec() { return mRec; }
   const GPUReconstruction* rec() const { return mRec; }
+  inline const GPUConstantMem* GetProcessors() { return mRec->processors(); }
 
   GPUReconstruction::RecoStepField GetRecoSteps() const { return mRec->GetRecoSteps(); }
   GPUReconstruction::RecoStepField GetRecoStepsGPU() const { return mRec->GetRecoStepsGPU(); }
@@ -89,10 +91,12 @@ class GPUChain
   inline GPUSettingsProcessing& ProcessingSettings() { return mRec->mProcessingSettings; }
   inline void SynchronizeStream(int stream) { mRec->SynchronizeStream(stream); }
   inline void SynchronizeEvents(deviceEvent* evList, int nEvents = 1) { mRec->SynchronizeEvents(evList, nEvents); }
-  inline void SynchronizeEventAndRelease(deviceEvent* ev)
+  inline void SynchronizeEventAndRelease(deviceEvent* ev, bool doGPU = true)
   {
-    SynchronizeEvents(ev);
-    ReleaseEvent(ev);
+    if (doGPU) {
+      SynchronizeEvents(ev);
+      ReleaseEvent(ev);
+    }
   }
   template <class T>
   inline void CondWaitEvent(T& cond, deviceEvent* ev)
@@ -106,7 +110,12 @@ class GPUChain
   inline void RecordMarker(deviceEvent* ev, int stream) { mRec->RecordMarker(ev, stream); }
   virtual inline std::unique_ptr<GPUReconstruction::GPUThreadContext> GetThreadContext() { return mRec->GetThreadContext(); }
   inline void SynchronizeGPU() { mRec->SynchronizeGPU(); }
-  inline void ReleaseEvent(deviceEvent* ev) { mRec->ReleaseEvent(ev); }
+  inline void ReleaseEvent(deviceEvent* ev, bool doGPU = true)
+  {
+    if (doGPU) {
+      mRec->ReleaseEvent(ev);
+    }
+  }
   inline void StreamWaitForEvents(int stream, deviceEvent* evList, int nEvents = 1) { mRec->StreamWaitForEvents(stream, evList, nEvents); }
   template <class T>
   void RunHelperThreads(T function, GPUReconstructionHelpers::helperDelegateBase* functionCls, int count);

@@ -15,7 +15,7 @@
 #include "GPUTRDGeometry.h"
 
 // O2 header
-#include "DetectorsCommonDataFormats/NameConf.h"
+#include "CommonUtils/NameConf.h"
 #include "CommonConstants/LHCConstants.h"
 #include "DetectorsBase/GeometryManager.h"
 #include "DetectorsBase/Propagator.h"
@@ -52,10 +52,10 @@ void run_trd_tracker(std::string path = "./",
   // different settings are defined in GPUSettingsList.h
   GPUSettingsGRP cfgGRP;                     // defaults should be ok
   GPUSettingsRec cfgRec;                     // settings concerning reconstruction
-  cfgRec.trdMinTrackPt = .5f;
-  cfgRec.trdMaxChi2 = 15.f;
-  cfgRec.trdPenaltyChi2 = 12.f;
-  cfgRec.trdStopTrkAfterNMissLy = 6;
+  cfgRec.trd.minTrackPt = .5f;
+  cfgRec.trd.maxChi2 = 15.f;
+  cfgRec.trd.penaltyChi2 = 12.f;
+  cfgRec.trd.stopTrkAfterNMissLy = 6;
   GPUSettingsProcessing cfgDeviceProcessing; // also keep defaults here, or adjust debug level
   cfgDeviceProcessing.debugLevel = 5;
   GPURecoStepConfiguration cfgRecoStep;
@@ -69,7 +69,7 @@ void run_trd_tracker(std::string path = "./",
 
   auto tracker = new GPUTRDTracker();
   tracker->SetNCandidates(1); // must be set before initialization
-  tracker->SetProcessPerTimeFrame();
+  tracker->SetProcessPerTimeFrame(true);
   tracker->SetGenerateSpacePoints(true);
 
   rec->RegisterGPUProcessor(tracker, false);
@@ -98,8 +98,8 @@ void run_trd_tracker(std::string path = "./",
   printf("Attached ITS-TPC tracks branch with %lli entries\n", (tracksItsTpc.GetBranch("TPCITS"))->GetEntries());
 
   tracksItsTpc.GetEntry(0);
-  int nTracks = tracksInArrayPtr->size();
-  printf("There are %i tracks in total\n", nTracks);
+  unsigned int nTracks = tracksInArrayPtr->size();
+  printf("There are %u tracks in total\n", nTracks);
 
   // and load input tracklets
   TChain trdTracklets("o2sim");
@@ -138,9 +138,14 @@ void run_trd_tracker(std::string path = "./",
 
   printf("Start loading input tracks into TRD tracker\n");
   // load everything into the tracker
-  for (const auto& trkITSTPC : *tracksInArrayPtr) {
-    GPUTRDTrack trkLoad(trkITSTPC, tpcVdrift);
-    tracker->LoadTrack(trkLoad);
+  for (unsigned int iTrk = 0; iTrk < nTracks; ++iTrk) {
+    const auto& trkITSTPC = tracksInArrayPtr->at(iTrk);
+    GPUTRDTracker::HelperTrackAttributes trkAttribs;
+    trkAttribs.mTime = trkITSTPC.getTimeMUS().getTimeStamp();
+    trkAttribs.mTimeAddMax = trkITSTPC.getTimeMUS().getTimeStampError();
+    trkAttribs.mTimeSubMax = trkITSTPC.getTimeMUS().getTimeStampError();
+    GPUTRDTrack trkLoad(trkITSTPC);
+    tracker->LoadTrack(trkLoad, iTrk, true, &trkAttribs);
   }
 
   tracker->DumpTracks();

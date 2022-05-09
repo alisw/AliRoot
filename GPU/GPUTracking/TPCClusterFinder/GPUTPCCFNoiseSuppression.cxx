@@ -213,7 +213,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
     2,
     16,
     q,
-    calibration.tpcCFnoiseSuppressionEpsilon,
+    calibration.tpc.cfNoiseSuppressionEpsilon,
     minimas,
     bigger);
 
@@ -235,7 +235,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       16,
       0,
       q,
-      calibration.tpcCFnoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilon,
       minimas,
       bigger);
   }
@@ -258,7 +258,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       16,
       18,
       q,
-      calibration.tpcCFnoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilon,
       minimas,
       bigger);
   }
@@ -282,7 +282,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       16,
       0,
       q,
-      calibration.tpcCFnoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilon,
       minimas,
       bigger);
   }
@@ -305,7 +305,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       16,
       18,
       q,
-      calibration.tpcCFnoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilon,
       minimas,
       bigger);
   }

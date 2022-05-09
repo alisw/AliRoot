@@ -51,6 +51,8 @@
 #include "GPUMemorySizeScalers.h"
 
 #include "utils/strtag.h"
+#include "utils/qlibload.h"
+
 #define GPUCA_LOGGING_PRINTF
 #include "GPULogging.h"
 
@@ -82,7 +84,6 @@ struct GPUReconstructionPipelineContext {
 
 using namespace GPUCA_NAMESPACE::gpu;
 
-constexpr const char* const GPUReconstruction::DEVICE_TYPE_NAMES[];
 constexpr const char* const GPUReconstruction::GEOMETRY_TYPE_NAMES[];
 constexpr const char* const GPUReconstruction::IOTYPENAMES[];
 constexpr GPUReconstruction::GeometryType GPUReconstruction::geometryType;
@@ -107,11 +108,13 @@ GPUReconstruction::GPUReconstruction(const GPUSettingsDeviceBackend& cfg) : mHos
   mMemoryScalers.reset(new GPUMemorySizeScalers);
   for (unsigned int i = 0; i < NSLICES; i++) {
     processors()->tpcTrackers[i].SetSlice(i); // TODO: Move to a better place
-#ifdef HAVE_O2HEADERS
+#ifdef GPUCA_HAVE_O2HEADERS
     processors()->tpcClusterer[i].mISlice = i;
 #endif
   }
+#ifndef GPUCA_NO_ROOT
   mROOTDump = GPUROOTDumpCore::getAndCreate();
+#endif
 }
 
 GPUReconstruction::~GPUReconstruction()
@@ -124,11 +127,16 @@ GPUReconstruction::~GPUReconstruction()
 void GPUReconstruction::GetITSTraits(std::unique_ptr<o2::its::TrackerTraits>* trackerTraits, std::unique_ptr<o2::its::VertexerTraits>* vertexerTraits)
 {
   if (trackerTraits) {
-    trackerTraits->reset(new o2::its::TrackerTraitsCPU);
+    trackerTraits->reset(new o2::its::TrackerTraits);
   }
   if (vertexerTraits) {
     vertexerTraits->reset(new o2::its::VertexerTraits);
   }
+}
+
+void GPUReconstruction::GetITSTimeframe(std::unique_ptr<o2::its::TimeFrame>* timeFrame)
+{
+  timeFrame->reset(new o2::its::TimeFrame);
 }
 
 int GPUReconstruction::SetNOMPThreads(int n)
@@ -209,7 +217,7 @@ int GPUReconstruction::Init()
 
 int GPUReconstruction::InitPhaseBeforeDevice()
 {
-#ifndef HAVE_O2HEADERS
+#ifndef GPUCA_HAVE_O2HEADERS
   mRecoSteps.setBits(RecoStep::ITSTracking, false);
   mRecoSteps.setBits(RecoStep::TRDTracking, false);
   mRecoSteps.setBits(RecoStep::TPCConversion, false);
@@ -273,19 +281,19 @@ int GPUReconstruction::InitPhaseBeforeDevice()
     mProcessingSettings.nTPCClustererLanes = 1;
   }
 
-  if (param().rec.NonConsecutiveIDs) {
-    param().rec.DisableRefitAttachment = 0xFF;
+  if (param().rec.nonConsecutiveIDs) {
+    param().rec.tpc.disableRefitAttachment = 0xFF;
   }
-  if (!(mRecoStepsGPU & RecoStep::TPCMerging) || !param().rec.mergerReadFromTrackerDirectly) {
+  if (!(mRecoStepsGPU & RecoStep::TPCMerging) || !param().rec.tpc.mergerReadFromTrackerDirectly) {
     mProcessingSettings.fullMergerOnGPU = false;
   }
   if (mProcessingSettings.debugLevel || !mProcessingSettings.fullMergerOnGPU) {
     mProcessingSettings.delayedOutput = false;
   }
   if (!mProcessingSettings.fullMergerOnGPU && GetRecoStepsGPU() & RecoStep::TPCMerging) {
-    param().rec.loopInterpolationInExtraPass = 0;
-    if (param().rec.retryRefit == 1) {
-      param().rec.retryRefit = 2;
+    param().rec.tpc.loopInterpolationInExtraPass = 0;
+    if (param().rec.tpc.retryRefit == 1) {
+      param().rec.tpc.retryRefit = 2;
     }
   }
 
@@ -294,12 +302,12 @@ int GPUReconstruction::InitPhaseBeforeDevice()
   if (!mProcessingSettings.trackletConstructorInPipeline) {
     mProcessingSettings.trackletSelectorInPipeline = false;
   }
-  if (!mProcessingSettings.enableRTC) {
-    mProcessingSettings.rtcConstexpr = false;
+  if (!mProcessingSettings.rtc.enable) {
+    mProcessingSettings.rtc.optConstexpr = false;
   }
 
   mMemoryScalers->factor = mProcessingSettings.memoryScalingFactor;
-  mMemoryScalers->returnMaxVal = mProcessingSettings.forceMaxMemScalers;
+  mMemoryScalers->returnMaxVal = mProcessingSettings.forceMaxMemScalers != 0;
   if (mProcessingSettings.forceMaxMemScalers > 1) {
     mMemoryScalers->rescaleMaxMem(mProcessingSettings.forceMaxMemScalers);
   }
@@ -331,6 +339,9 @@ int GPUReconstruction::InitPhaseBeforeDevice()
 
   mDeviceMemorySize = mHostMemorySize = 0;
   for (unsigned int i = 0; i < mChains.size(); i++) {
+    if (mChains[i]->EarlyConfigure()) {
+      return 1;
+    }
     mChains[i]->RegisterPermanentMemoryAndProcessors();
     size_t memPrimary, memPageLocked;
     mChains[i]->MemorySize(memPrimary, memPageLocked);
@@ -704,17 +715,19 @@ void GPUReconstruction::ResetRegisteredMemoryPointers(short ires)
 {
   GPUMemoryResource* res = &mMemoryResources[ires];
   if (!(res->mType & GPUMemoryResource::MEMORY_EXTERNAL) && (res->mType & GPUMemoryResource::MEMORY_HOST)) {
-    if (res->mReuse >= 0) {
-      res->SetPointers(mMemoryResources[res->mReuse].mPtr);
-    } else {
-      res->SetPointers(res->mPtr);
+    void* basePtr = res->mReuse >= 0 ? mMemoryResources[res->mReuse].mPtr : res->mPtr;
+    size_t size = (char*)res->SetPointers(basePtr) - (char*)basePtr;
+    if (basePtr && size > std::max(res->mSize, res->mOverrideSize)) {
+      std::cout << "Updated pointers exceed available memory size: " << size << " > " << std::max(res->mSize, res->mOverrideSize) << " - host - " << res->mName << "\n";
+      throw std::bad_alloc();
     }
   }
   if (IsGPU() && (res->mType & GPUMemoryResource::MEMORY_GPU)) {
-    if (res->mReuse >= 0) {
-      res->SetDevicePointers(mMemoryResources[res->mReuse].mPtrDevice);
-    } else {
-      res->SetDevicePointers(res->mPtrDevice);
+    void* basePtr = res->mReuse >= 0 ? mMemoryResources[res->mReuse].mPtrDevice : res->mPtrDevice;
+    size_t size = (char*)res->SetDevicePointers(basePtr) - (char*)basePtr;
+    if (basePtr && size > std::max(res->mSize, res->mOverrideSize)) {
+      std::cout << "Updated pointers exceed available memory size: " << size << " > " << std::max(res->mSize, res->mOverrideSize) << " - GPU - " << res->mName << "\n";
+      throw std::bad_alloc();
     }
   }
 }
@@ -1043,9 +1056,7 @@ void GPUReconstruction::SetSettings(float solenoidBz, const GPURecoStepConfigura
 #ifdef GPUCA_O2_LIB
   GPUO2InterfaceConfiguration config;
   config.ReadConfigurableParam_internal();
-  if (config.configGRP.solenoidBz <= -1e6f) {
-    config.configGRP.solenoidBz = solenoidBz;
-  }
+  config.configGRP.solenoidBz = solenoidBz;
   SetSettings(&config.configGRP, &config.configReconstruction, &config.configProcessing, workflow);
 #else
   GPUSettingsGRP grp;
@@ -1129,61 +1140,47 @@ GPUReconstruction* GPUReconstruction::CreateInstance(const GPUSettingsDeviceBack
 
   if (retVal == nullptr) {
     if (cfg.forceDeviceType) {
-      GPUError("Error: Could not load GPUReconstruction for specified device: %s (%u)", DEVICE_TYPE_NAMES[type], type);
-    } else {
-      GPUError("Could not load GPUReconstruction for device type %s (%u), falling back to CPU version", DEVICE_TYPE_NAMES[type], type);
+      GPUError("Error: Could not load GPUReconstruction for specified device: %s (%u)", GPUDataTypes::DEVICE_TYPE_NAMES[type], type);
+    } else if (type != DeviceType::CPU) {
+      GPUError("Could not load GPUReconstruction for device type %s (%u), falling back to CPU version", GPUDataTypes::DEVICE_TYPE_NAMES[type], type);
       GPUSettingsDeviceBackend cfg2 = cfg;
       cfg2.deviceType = DeviceType::CPU;
       retVal = CreateInstance(cfg2);
     }
   } else {
-    GPUInfo("Created GPUReconstruction instance for device type %s (%u) %s", DEVICE_TYPE_NAMES[type], type, cfg.master ? " (slave)" : "");
+    GPUInfo("Created GPUReconstruction instance for device type %s (%u) %s", GPUDataTypes::DEVICE_TYPE_NAMES[type], type, cfg.master ? " (slave)" : "");
   }
 
   return retVal;
 }
 
+bool GPUReconstruction::CheckInstanceAvailable(DeviceType type)
+{
+  if (type == DeviceType::CPU) {
+    return true;
+  } else if (type == DeviceType::CUDA) {
+    return sLibCUDA->LoadLibrary() == 0;
+  } else if (type == DeviceType::HIP) {
+    return sLibHIP->LoadLibrary() == 0;
+  } else if (type == DeviceType::OCL) {
+    return sLibOCL->LoadLibrary() == 0;
+  } else if (type == DeviceType::OCL2) {
+    return sLibOCL2->LoadLibrary() == 0;
+  } else {
+    GPUError("Error: Invalid device type %u", type);
+    return false;
+  }
+}
+
 GPUReconstruction* GPUReconstruction::CreateInstance(const char* type, bool forceType, GPUReconstruction* master)
 {
-  DeviceType t = GetDeviceType(type);
+  DeviceType t = GPUDataTypes::GetDeviceType(type);
   if (t == DeviceType::INVALID_DEVICE) {
     GPUError("Invalid device type: %s", type);
     return nullptr;
   }
   return CreateInstance(t, forceType, master);
 }
-
-GPUReconstruction::DeviceType GPUReconstruction::GetDeviceType(const char* type)
-{
-  for (unsigned int i = 1; i < sizeof(DEVICE_TYPE_NAMES) / sizeof(DEVICE_TYPE_NAMES[0]); i++) {
-    if (strcmp(DEVICE_TYPE_NAMES[i], type) == 0) {
-      return (DeviceType)i;
-    }
-  }
-  return DeviceType::INVALID_DEVICE;
-}
-
-#ifdef _WIN32
-#define LIBRARY_EXTENSION ".dll"
-#define LIBRARY_TYPE HMODULE
-#define LIBRARY_LOAD(name) LoadLibraryEx(name, nullptr, nullptr)
-#define LIBRARY_CLOSE FreeLibrary
-#define LIBRARY_FUNCTION GetProcAddress
-#else
-#define LIBRARY_EXTENSION ".so"
-#define LIBRARY_TYPE void*
-#define LIBRARY_LOAD(name) dlopen(name, RTLD_NOW)
-#define LIBRARY_CLOSE dlclose
-#define LIBRARY_FUNCTION dlsym
-#endif
-
-#if defined(GPUCA_ALIROOT_LIB)
-#define LIBRARY_PREFIX "Ali"
-#elif defined(GPUCA_O2_LIB)
-#define LIBRARY_PREFIX "O2"
-#else
-#define LIBRARY_PREFIX ""
-#endif
 
 std::shared_ptr<GPUReconstruction::LibraryLoader> GPUReconstruction::sLibCUDA(new GPUReconstruction::LibraryLoader("lib" LIBRARY_PREFIX "GPUTracking"
                                                                                                                    "CUDA" LIBRARY_EXTENSION,

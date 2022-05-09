@@ -25,21 +25,22 @@
 #include "GPUCommonMath.h"
 #include "GPUParam.h"
 #include "GPUdEdxInfo.h"
-#if defined(HAVE_O2HEADERS) && !defined(GPUCA_OPENCL1)
-#include "TPCdEdxCalibrationSplines.h"
+#if defined(GPUCA_HAVE_O2HEADERS) && !defined(GPUCA_OPENCL1)
+#include "DataFormatsTPC/Defs.h"
+#include "CalibdEdxContainer.h"
 #endif
 
 namespace GPUCA_NAMESPACE
 {
 namespace gpu
 {
-#if !defined(HAVE_O2HEADERS) || defined(GPUCA_OPENCL1)
+#if !defined(GPUCA_HAVE_O2HEADERS) || defined(GPUCA_OPENCL1)
 
 class GPUdEdx
 {
  public:
   GPUd() void clear() {}
-  GPUd() void fillCluster(float qtot, float qmax, int padRow, float trackSnp, float trackTgl, const GPUParam& param, const TPCdEdxCalibrationSplines* splines, float z) {}
+  GPUd() void fillCluster(float qtot, float qmax, int padRow, unsigned char slice, float trackSnp, float trackTgl, const GPUParam& param, const GPUCalibObjectsConst& calib, float z, float pad, float relTime) {}
   GPUd() void fillSubThreshold(int padRow, const GPUParam& param) {}
   GPUd() void computedEdx(GPUdEdxInfo& output, const GPUParam& param) {}
 };
@@ -51,7 +52,7 @@ class GPUdEdx
  public:
   // The driver must call clear(), fill clusters row by row outside-in, then run computedEdx() to get the result
   GPUd() void clear();
-  GPUd() void fillCluster(float qtot, float qmax, int padRow, float trackSnp, float trackTgl, const GPUParam& param, const TPCdEdxCalibrationSplines* splines, float z);
+  GPUd() void fillCluster(float qtot, float qmax, int padRow, unsigned char slice, float trackSnp, float trackTgl, const GPUParam& param, const GPUCalibObjectsConst& calib, float z, float pad, float relTime);
   GPUd() void fillSubThreshold(int padRow, const GPUParam& param);
   GPUd() void computedEdx(GPUdEdxInfo& output, const GPUParam& param);
 
@@ -111,38 +112,71 @@ GPUdi() void GPUdEdx::checkSubThresh(int roc)
   mLastROC = roc;
 }
 
-GPUdnii() void GPUdEdx::fillCluster(float qtot, float qmax, int padRow, float trackSnp, float trackTgl, const GPUParam& GPUrestrict() param, const TPCdEdxCalibrationSplines* splines, float z)
+GPUdnii() void GPUdEdx::fillCluster(float qtot, float qmax, int padRow, unsigned char slice, float trackSnp, float trackTgl, const GPUParam& GPUrestrict() param, const GPUCalibObjectsConst& calib, float z, float pad, float relTime)
 {
   if (mCount >= MAX_NCL) {
     return;
   }
+
+  // container containing all the dE/dx corrections
+  auto calibContainer = calib.dEdxCalibContainer;
+
   const int roc = param.tpcGeometry.GetROC(padRow);
   checkSubThresh(roc);
   float snp2 = trackSnp * trackSnp;
   if (snp2 > GPUCA_MAX_SIN_PHI_LOW) {
     snp2 = GPUCA_MAX_SIN_PHI_LOW;
   }
-  const float tgl2 = trackTgl * trackTgl;
-  float factor = CAMath::Sqrt((1 - snp2) / (1 + tgl2));
-  factor /= param.tpcGeometry.PadHeight(padRow);
-  qtot *= factor;
-  qmax *= factor;
 
-  const float sec2 = 1.f / (1.f - snp2);
-  // angleZ local dip angle: z angle - dz/dx (cm/cm)
-  float angleZ = CAMath::Sqrt(tgl2 * sec2);
-  if (angleZ > 3) {
-    angleZ = 3;
+  // setting maximum for snp for which the calibration object was created
+  const float maxSnp = calibContainer->getMaxSinPhiTopologyCorrection();
+  float snp = CAMath::Abs(trackSnp);
+  if (snp > maxSnp) {
+    snp = maxSnp;
   }
 
+  // tanTheta local dip angle: z angle - dz/dx (cm/cm)
+  const float sec2 = 1.f / (1.f - snp2);
+  const float tgl2 = trackTgl * trackTgl;
+  float tanTheta = CAMath::Sqrt(tgl2 * sec2);
+  const float maxTanTheta = calibContainer->getMaxTanThetaTopologyCorrection();
+  if (tanTheta > maxTanTheta) {
+    tanTheta = maxTanTheta;
+  }
+
+  // getting the topology correction
+  const int padPos = int(pad + 0.5f); // position of the pad is shifted half a pad ( pad=3 -> centre position of third pad)
+  const float absRelPad = CAMath::Abs(pad - padPos);
   const int region = param.tpcGeometry.GetRegion(padRow);
   z = CAMath::Abs(z);
+  const float threshold = calibContainer->getZeroSupressionThreshold(slice, padRow, padPos); // TODO: Use the mean zero supresion threshold of all pads in the cluster?
+  const bool useFullGainMap = calibContainer->isUsageOfFullGainMap();
+  float qTotIn = CAMath::Clamp(qtot, calibContainer->getMinqTot(), calibContainer->getMaxqTot());
+  const float fullGainMapGain = calibContainer->getGain(slice, padRow, padPos);
+  if (useFullGainMap) {
+    qmax /= fullGainMapGain;
+    qtot /= fullGainMapGain;
+  } else {
+    qTotIn *= fullGainMapGain;
+  }
 
-  // get the correction for qMax and qTot from the splines for given angle and drift length
-  const float qMaxCorr = splines->interpolateqMax(region, angleZ, z);
-  const float qTotCorr = splines->interpolateqTot(region, angleZ, z);
-  qmax /= qMaxCorr;
-  qtot /= qTotCorr;
+  const float qMaxTopologyCorr = calibContainer->getTopologyCorrection(region, o2::tpc::ChargeType::Max, tanTheta, snp, z, absRelPad, relTime, threshold, qTotIn);
+  const float qTotTopologyCorr = calibContainer->getTopologyCorrection(region, o2::tpc::ChargeType::Tot, tanTheta, snp, z, absRelPad, relTime, threshold, qTotIn);
+  qmax /= qMaxTopologyCorr;
+  qtot /= qTotTopologyCorr;
+
+  tpc::StackID stack{
+    slice,
+    static_cast<tpc::GEMstack>(roc)};
+
+  const float qMaxResidualCorr = calibContainer->getResidualCorrection(stack, tpc::ChargeType::Max, trackTgl, trackSnp);
+  const float qTotResidualCorr = calibContainer->getResidualCorrection(stack, tpc::ChargeType::Tot, trackTgl, trackSnp);
+  qmax /= qMaxResidualCorr;
+  qtot /= qTotResidualCorr;
+
+  const float residualGainMapGain = calibContainer->getResidualGain(slice, padRow, padPos);
+  qmax /= residualGainMapGain;
+  qtot /= residualGainMapGain;
 
   mChargeTot[mCount] = (GPUCA_DEDX_STORAGE_TYPE)(qtot * scalingFactor<GPUCA_DEDX_STORAGE_TYPE>::factor + scalingFactor<GPUCA_DEDX_STORAGE_TYPE>::round);
   mChargeMax[mCount++] = (GPUCA_DEDX_STORAGE_TYPE)(qmax * scalingFactor<GPUCA_DEDX_STORAGE_TYPE>::factor + scalingFactor<GPUCA_DEDX_STORAGE_TYPE>::round);
@@ -162,7 +196,7 @@ GPUdi() void GPUdEdx::fillSubThreshold(int padRow, const GPUParam& GPUrestrict()
   mNSubThresh++;
 }
 
-#endif // !HAVE_O2HEADERS || __OPENCL1__
+#endif // !GPUCA_HAVE_O2HEADERS || __OPENCL1__
 } // namespace gpu
 } // namespace GPUCA_NAMESPACE
 

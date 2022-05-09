@@ -17,17 +17,12 @@
 /// \file GPUReconstructionHIP.hip.cxx
 /// \author David Rohr
 
-#define __HIP_ENABLE_DEVICE_MALLOC__ 1 //Fix SWDEV-239120
+#define __HIP_ENABLE_DEVICE_MALLOC__ 1 // Fix SWDEV-239120
 #define GPUCA_GPUTYPE_VEGA
 #define GPUCA_UNROLL(CUDA, HIP) GPUCA_M_UNROLL_##HIP
 #define GPUdic(CUDA, HIP) GPUCA_GPUdic_select_##HIP()
 
-#include <hip/hip_runtime.h>
-#ifdef __CUDACC__
-#define hipExtLaunchKernelGGL(...)
-#else
-#include <hip/hip_ext.h>
-#endif
+#include "GPUReconstructionHIPIncludes.h"
 
 #include "GPUDef.h"
 
@@ -52,6 +47,7 @@
 
 #include "GPUReconstructionHIP.h"
 #include "GPUReconstructionHIPInternals.h"
+#include "HIPThrustHelpers.h"
 #include "GPUReconstructionIncludes.h"
 
 #ifdef GPUCA_HAS_GLOBAL_SYMBOL_CONSTANT_MEM
@@ -62,17 +58,26 @@ using namespace GPUCA_NAMESPACE::gpu;
 
 __global__ void dummyInitKernel(void*) {}
 
-#if defined(HAVE_O2HEADERS) && !defined(GPUCA_NO_ITS_TRAITS)
-#include "ITStrackingHIP/VertexerTraitsHIP.h"
+#if defined(GPUCA_HAVE_O2HEADERS) && !defined(GPUCA_NO_ITS_TRAITS)
+#include "ITStrackingGPU/VertexerTraitsGPU.h"
+#include "ITStrackingGPU/TrackerTraitsGPU.h"
 #else
 namespace o2::its
 {
-class VertexerTraitsHIP : public VertexerTraits
+class VertexerTraitsGPU : public VertexerTraits
 {
 };
-class TrackerTraitsHIP : public TrackerTraits
+template <int NLayers = 7>
+class TrackerTraitsGPU : public TrackerTraits
 {
 };
+namespace gpu
+{
+template <int NLayers = 7>
+class TimeFrameGPU : public TimeFrame
+{
+};
+} // namespace gpu
 } // namespace o2::its
 #endif
 
@@ -215,12 +220,17 @@ GPUReconstruction* GPUReconstruction_Create_HIP(const GPUSettingsDeviceBackend& 
 
 void GPUReconstructionHIPBackend::GetITSTraits(std::unique_ptr<o2::its::TrackerTraits>* trackerTraits, std::unique_ptr<o2::its::VertexerTraits>* vertexerTraits)
 {
-  // if (trackerTraits) {
-  //   trackerTraits->reset(new o2::its::TrackerTraitsNV);
-  // }
-  if (vertexerTraits) {
-    vertexerTraits->reset(new o2::its::VertexerTraitsHIP);
+  if (trackerTraits) {
+    trackerTraits->reset(new o2::its::TrackerTraitsGPU);
   }
+  if (vertexerTraits) {
+    vertexerTraits->reset(new o2::its::VertexerTraitsGPU);
+  }
+}
+
+void GPUReconstructionHIPBackend::GetITSTimeframe(std::unique_ptr<o2::its::TimeFrame>* timeFrame)
+{
+  timeFrame->reset(new o2::its::gpu::TimeFrameGPU);
 }
 
 void GPUReconstructionHIPBackend::UpdateSettings()
@@ -311,6 +321,9 @@ int GPUReconstructionHIPBackend::InitDevice_Runtime()
       GPUInfo("\tmemoryClockRate = %d", hipDeviceProp.memoryClockRate);
       GPUInfo("\tmultiProcessorCount = %d", hipDeviceProp.multiProcessorCount);
       GPUInfo(" ");
+    }
+    if (hipDeviceProp.warpSize != GPUCA_WARP_SIZE) {
+      throw std::runtime_error("Invalid warp size on GPU");
     }
     mBlockCount = hipDeviceProp.multiProcessorCount;
     mMaxThreads = std::max<int>(mMaxThreads, hipDeviceProp.maxThreadsPerBlock * mBlockCount);
@@ -572,12 +585,12 @@ int GPUReconstructionHIPBackend::GPUDebug(const char* state, int stream, bool fo
 
 int GPUReconstructionHIPBackend::registerMemoryForGPU(const void* ptr, size_t size)
 {
-  return GPUFailedMsgI(hipHostRegister((void*)ptr, size, hipHostRegisterDefault));
+  return mProcessingSettings.noGPUMemoryRegistration ? 0 : GPUFailedMsgI(hipHostRegister((void*)ptr, size, hipHostRegisterDefault));
 }
 
 int GPUReconstructionHIPBackend::unregisterMemoryForGPU(const void* ptr)
 {
-  return GPUFailedMsgI(hipHostUnregister((void*)ptr));
+  return mProcessingSettings.noGPUMemoryRegistration ? 0 : GPUFailedMsgI(hipHostUnregister((void*)ptr));
 }
 
 void* GPUReconstructionHIPBackend::getGPUPointer(void* ptr)

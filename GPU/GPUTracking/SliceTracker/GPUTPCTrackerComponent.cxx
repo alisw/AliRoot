@@ -49,7 +49,7 @@ const AliHLTComponentDataType GPUTPCDefinitions::fgkTrackletsDataType = AliHLTCo
 ClassImp(GPUTPCTrackerComponent);
 
 GPUTPCTrackerComponent::GPUTPCTrackerComponent()
-  : fSolenoidBz(0), fMinNTrackClusters(-1), fMinTrackPt(GPUCA_MIN_TRACK_PT_DEFAULT), fClusterZCut(500.), mNeighboursSearchArea(0), fClusterErrorCorrectionY(0), fClusterErrorCorrectionZ(0), fBenchmark("CATracker"), fAllowGPU(0), fGPUHelperThreads(-1), fCPUTrackers(0), fGlobalTracking(0), fGPUDeviceNum(-1), fGPUType("CPU"), fGPUStuckProtection(0), fAsync(0), fSearchWindowDZDR(0.), fRec(0), fChain(0), fAsyncProcessor()
+  : fSolenoidBz(0), fMinNTrackClusters(-1), fMinTrackPt(GPUCA_MIN_TRACK_PTB5_DEFAULT), fClusterZCut(500.), mNeighboursSearchArea(0), fClusterErrorCorrectionY(0), fClusterErrorCorrectionZ(0), fBenchmark("CATracker"), fAllowGPU(0), fGPUHelperThreads(-1), fCPUTrackers(0), fGlobalTracking(0), fGPUDeviceNum(-1), fGPUType("CPU"), fGPUStuckProtection(0), fAsync(0), fSearchWindowDZDR(0.), fRec(0), fChain(0), fAsyncProcessor()
 {
   // see header file for class documentation
   // or
@@ -59,7 +59,7 @@ GPUTPCTrackerComponent::GPUTPCTrackerComponent()
 }
 
 GPUTPCTrackerComponent::GPUTPCTrackerComponent(const GPUTPCTrackerComponent&)
-  : AliHLTProcessor(), fSolenoidBz(0), fMinNTrackClusters(-1), fMinTrackPt(GPUCA_MIN_TRACK_PT_DEFAULT), fClusterZCut(500.), mNeighboursSearchArea(0), fClusterErrorCorrectionY(0), fClusterErrorCorrectionZ(0), fBenchmark("CATracker"), fAllowGPU(0), fGPUHelperThreads(-1), fCPUTrackers(0), fGlobalTracking(0), fGPUDeviceNum(-1), fGPUType("CPU"), fGPUStuckProtection(0), fAsync(0), fSearchWindowDZDR(0.), fRec(0), fChain(0), fAsyncProcessor()
+  : AliHLTProcessor(), fSolenoidBz(0), fMinNTrackClusters(-1), fMinTrackPt(GPUCA_MIN_TRACK_PTB5_DEFAULT), fClusterZCut(500.), mNeighboursSearchArea(0), fClusterErrorCorrectionY(0), fClusterErrorCorrectionZ(0), fBenchmark("CATracker"), fAllowGPU(0), fGPUHelperThreads(-1), fCPUTrackers(0), fGlobalTracking(0), fGPUDeviceNum(-1), fGPUType("CPU"), fGPUStuckProtection(0), fAsync(0), fSearchWindowDZDR(0.), fRec(0), fChain(0), fAsyncProcessor()
 {
   // see header file for class documentation
   HLTFatal("copy constructor untested");
@@ -126,7 +126,7 @@ void GPUTPCTrackerComponent::SetDefaultConfiguration()
 
   fSolenoidBz = -5.00668;
   fMinNTrackClusters = -1;
-  fMinTrackPt = GPUCA_MIN_TRACK_PT_DEFAULT;
+  fMinTrackPt = GPUCA_MIN_TRACK_PTB5_DEFAULT;
   fClusterZCut = 500.;
   mNeighboursSearchArea = 0;
   fClusterErrorCorrectionY = 0;
@@ -381,22 +381,22 @@ int GPUTPCTrackerComponent::ConfigureSlices()
   grp.solenoidBz = fSolenoidBz;
   grp.continuousMaxTimeBin = 0; // triggered events
   if (mNeighboursSearchArea > 0) {
-    rec.NeighboursSearchArea = mNeighboursSearchArea;
+    rec.tpc.neighboursSearchArea = mNeighboursSearchArea;
   }
   if (fClusterErrorCorrectionY > 1.e-4) {
-    rec.ClusterError2CorrectionY = fClusterErrorCorrectionY * fClusterErrorCorrectionY;
+    rec.tpc.clusterError2CorrectionY = fClusterErrorCorrectionY * fClusterErrorCorrectionY;
   }
   if (fClusterErrorCorrectionZ > 1.e-4) {
-    rec.ClusterError2CorrectionZ = fClusterErrorCorrectionZ * fClusterErrorCorrectionZ;
+    rec.tpc.clusterError2CorrectionZ = fClusterErrorCorrectionZ * fClusterErrorCorrectionZ;
   }
-  rec.MinNTrackClusters = fMinNTrackClusters;
-  rec.SetMinTrackPt(fMinTrackPt);
-  rec.SearchWindowDZDR = fSearchWindowDZDR;
+  rec.tpc.minNTrackClusters = fMinNTrackClusters;
+  rec.SetMinTrackPtB5(fMinTrackPt * fabsf(fSolenoidBz / 5));
+  rec.tpc.searchWindowDZDR = fSearchWindowDZDR;
   devProc.nDeviceHelperThreads = fGPUHelperThreads;
-  rec.GlobalTracking = fGlobalTracking;
+  rec.tpc.globalTracking = fGlobalTracking;
   devProc.stuckProtection = fGPUStuckProtection;
-  rec.NonConsecutiveIDs = true;
-  rec.mergerReadFromTrackerDirectly = false;
+  rec.nonConsecutiveIDs = true;
+  rec.tpc.mergerReadFromTrackerDirectly = false;
   devProc.ompThreads = 1;
   devProc.ompKernels = false;
 

@@ -18,14 +18,15 @@
 /// \author Felix Weiglhofer
 
 #include "ClusterAccumulator.h"
+#include "GPUTPCGeometry.h"
 #include "CfUtils.h"
 
 using namespace GPUCA_NAMESPACE::gpu;
 using namespace GPUCA_NAMESPACE::gpu::tpccf;
 
-GPUd() void ClusterAccumulator::toNative(const ChargePos& pos, Charge q, int minSplitNum, tpc::ClusterNative& cn) const
+GPUd() void ClusterAccumulator::toNative(const ChargePos& pos, Charge q, int minSplitNum, tpc::ClusterNative& cn, const GPUTPCGeometry& geo) const
 {
-  bool isEdgeCluster = CfUtils::isAtEdge(pos);
+  bool isEdgeCluster = CfUtils::isAtEdge(pos, geo.NPads(pos.row()));
   bool wasSplitInTime = mSplitInTime >= minSplitNum;
   bool wasSplitInPad = mSplitInPad >= minSplitNum;
   bool isSingleCluster = (mPadSigma == 0) || (mTimeSigma == 0);
@@ -81,7 +82,7 @@ GPUd() Charge ClusterAccumulator::updateOuter(PackedCharge charge, Delta2 d)
   return q;
 }
 
-GPUd() void ClusterAccumulator::finalize(const ChargePos& pos, Charge q, TPCTime timeOffset)
+GPUd() void ClusterAccumulator::finalize(const ChargePos& pos, Charge q, TPCTime timeOffset, const GPUTPCGeometry& geo)
 {
   mQtot += q;
 
@@ -97,7 +98,7 @@ GPUd() void ClusterAccumulator::finalize(const ChargePos& pos, Charge q, TPCTime
   mPadMean += pad;
   mTimeMean += timeOffset + pos.time();
 
-  if (CfUtils::isAtEdge(pos)) {
+  if (CfUtils::isAtEdge(pos, geo.NPads(pos.row()))) {
     bool leftEdge = (pad < 2);
     bool correct = (leftEdge) ? (pad < mPadMean) : (pad > mPadMean);
     mPadMean = (correct) ? pad : mPadMean;

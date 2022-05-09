@@ -1,12 +1,13 @@
-# Copyright CERN and copyright holders of ALICE O2. This software is distributed
-# under the terms of the GNU General Public License v3 (GPL Version 3), copied
-# verbatim in the file "COPYING".
+# Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+# See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+# All rights not expressly granted are reserved.
 #
-# See http://alice-o2.web.cern.ch/license for full licensing information.
+# This software is distributed under the terms of the GNU General Public
+# License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 #
 # In applying this license CERN does not waive the privileges and immunities
-# granted to it by virtue of its status as an Intergovernmental Organization or
-# submit itself to any jurisdiction.
+# granted to it by virtue of its status as an Intergovernmental Organization
+# or submit itself to any jurisdiction.
 
 set(MODULE GPUTrackingOCL)
 enable_language(ASM)
@@ -65,26 +66,10 @@ add_custom_command(
   IMPLICIT_DEPENDS CXX ${CL_SRC}
   COMMAND_EXPAND_LISTS)
 
-# cmake-format: off
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.S
-    COMMAND cat ${GPUDIR}/utils/include.S | sed "s/FILENAMEMOD/_makefile_opencl_program_Base_opencl_common_GPUReconstructionOCL_cl/g" | sed "s,FILENAMENORMAL,${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCL1Code.bin,g" > ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.S
-    MAIN_DEPENDENCY ${GPUDIR}/utils/include.S
-)
-# cmake-format: on
-
-# make cmake compile the assembler file, add proper dependency on included
-# binary code
-set_source_files_properties(
-  ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.S
-  PROPERTIES
-  LANGUAGE
-  ASM
-  OBJECT_DEPENDS
-  "${CL_BIN};${GPUDIR}/utils/include.S")
+create_binary_resource(${CL_BIN} ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.o)
 
 set(SRCS GPUReconstructionOCL1.cxx
-         ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.S)
+    ${CMAKE_CURRENT_BINARY_DIR}/GPUReconstructionOCLCode.o)
 set(HDRS GPUReconstructionOCL1.h GPUReconstructionOCL1Internals.h)
 
 if(ALIGPU_BUILD_TYPE STREQUAL "O2")

@@ -1,8 +1,9 @@
-// Copyright CERN and copyright holders of ALICE O2. This software is
-// distributed under the terms of the GNU General Public License v3 (GPL
-// Version 3), copied verbatim in the file "COPYING".
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
 //
-// See http://alice-o2.web.cern.ch/license for full licensing information.
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 //
 // In applying this license CERN does not waive the privileges and immunities
 // granted to it by virtue of its status as an Intergovernmental Organization
@@ -23,7 +24,7 @@
 #include "GPUCommonRtypes.h"
 #include "Spline1D.h"
 #include "Spline2D.h"
-#include "Spline1DHelper.h"
+#include "Spline1DHelperOld.h"
 #include <functional>
 #include <string>
 
@@ -33,7 +34,7 @@ namespace gpu
 {
 
 ///
-/// The Spline2DHelper class is to initialize Spline* objects
+/// The Spline2DHelper class is a helper to initialize Spline* objects
 ///
 template <typename DataT>
 class Spline2DHelper
@@ -62,6 +63,19 @@ class Spline2DHelper
     std::function<void(double x1, double x2, double f[/*spline.getYdimensions()*/])> F,
     int nAuxiliaryDataPointsU1 = 4, int nAuxiliaryDataPointsU2 = 4);
 
+  // A wrapper around approximateDataPoints()
+  void approximateFunctionViaDataPoints(
+    Spline2DContainer<DataT>& spline,
+    double x1Min, double x1Max, double x2Min, double x2Max,
+    std::function<void(double x1, double x2, double f[/*spline.getYdimensions()*/])> F,
+    int nAuxiliaryDataPointsU1 = 4, int nAuxiliaryDataPointsU2 = 4);
+
+  /// Create best-fit spline parameters for a given set of data points
+  void approximateDataPoints(
+    Spline2DContainer<DataT>& spline, double x1Min, double x1Max, double x2Min, double x2Max,
+    const double dataPointX1[/*nDataPoints*/], const double dataPointX2[/*nDataPoints*/],
+    const double dataPointF[/*nDataPoints x spline.getYdimensions*/], int nDataPoints);
+
   /// _______________   Interface for a step-wise construction of the best-fit spline   ________________________
 
   /// precompute everything needed for the construction
@@ -88,8 +102,8 @@ class Spline2DHelper
 
   int getNumberOfDataPoints() const { return getNumberOfDataPointsU1() * getNumberOfDataPointsU2(); }
 
-  const Spline1DHelper<DataT>& getHelperU1() const { return mHelperU1; }
-  const Spline1DHelper<DataT>& getHelperU2() const { return mHelperU2; }
+  const Spline1DHelperOld<DataT>& getHelperU1() const { return mHelperU1; }
+  const Spline1DHelperOld<DataT>& getHelperU2() const { return mHelperU2; }
 
   /// _______________  Utilities   ________________________
 
@@ -102,13 +116,19 @@ class Spline2DHelper
 #endif
 
  private:
+  void setGrid(Spline2DContainer<DataT>& spline, double x1Min, double x1Max, double x2Min, double x2Max);
+  void getScoefficients(int iu, int iv, double u, double v,
+                        double c[16], int indices[16]);
+
   /// Stores an error message
   int storeError(int code, const char* msg);
 
   std::string mError = ""; ///< error string
   int mFdimensions;        ///< n of F dimensions
-  Spline1DHelper<DataT> mHelperU1;
-  Spline1DHelper<DataT> mHelperU2;
+  Spline1DHelperOld<DataT> mHelperU1;
+  Spline1DHelperOld<DataT> mHelperU2;
+  Spline1D<double, 0> fGridU;
+  Spline1D<double, 0> fGridV;
 
 #ifndef GPUCA_ALIROOT_LIB
   ClassDefNV(Spline2DHelper, 0);

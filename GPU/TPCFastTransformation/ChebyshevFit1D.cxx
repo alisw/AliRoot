@@ -1,8 +1,9 @@
-// Copyright CERN and copyright holders of ALICE O2. This software is
-// distributed under the terms of the GNU General Public License v3 (GPL
-// Version 3), copied verbatim in the file "COPYING".
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
 //
-// See http://alice-o2.web.cern.ch/license for full licensing information.
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
 //
 // In applying this license CERN does not waive the privileges and immunities
 // granted to it by virtue of its status as an Intergovernmental Organization
@@ -16,8 +17,8 @@
 #if !defined(GPUCA_GPUCODE) && !defined(GPUCA_STANDALONE) // code invisible on GPU and in the standalone compilation
 
 #include "ChebyshevFit1D.h"
+#include "GPUCommonLogger.h"
 #include <cmath>
-#include "Riostream.h"
 
 using namespace GPUCA_NAMESPACE::gpu;
 
@@ -53,13 +54,13 @@ void ChebyshevFit1D::reset()
 
 void ChebyshevFit1D::print()
 {
-  std::cout << std::endl;
+  LOG(info) << "";
   double* Ai = mA.data();
   for (int i = 0; i < mN; i++, Ai += mN) {
     for (int j = 0; j < mN; j++) {
-      std::cout << Ai[j] << " ";
+      LOG(info) << Ai[j] << " ";
     }
-    std::cout << " | " << mB[i] << std::endl;
+    LOG(info) << " | " << mB[i];
   }
 }
 
@@ -102,9 +103,9 @@ void ChebyshevFit1D::fit()
   }
   /*
   for (int i = 0; i < mN; i++) {
-    std::cout << mC[i] << " ";
+    LOG(info) << mC[i] << " ";
   }
-  std::cout << std::endl;
+  LOG(info) ;
   */
 }
 
