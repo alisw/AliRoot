@@ -20,17 +20,17 @@ set(SRCS
     Spline1DHelperOld.cxx
     Spline2DSpec.cxx
     Spline2D.cxx
+    Spline1DHelper.cxx
+    Spline2DHelper.cxx
     ChebyshevFit1D.cxx
     TPCFastTransformGeo.cxx
     TPCFastSpaceChargeCorrection.cxx
     TPCFastTransform.cxx
+    SymMatrixSolver.cxx
 )
 
 if(ALIGPU_BUILD_TYPE STREQUAL "O2")
   set(SRCS ${SRCS}
-      Spline1DHelper.cxx
-      Spline2DHelper.cxx
-      SymMatrixSolver.cxx
       BandMatrixSolver.cxx
       MultivariatePolynomial.cxx
       MultivariatePolynomialHelper.cxx
