@@ -1377,8 +1377,12 @@ void AliMC::Stepping()
   // Called at every step during transport
   //
   //verbose.Stepping();
-
-  Int_t id = DetFromMate(fMC->CurrentMedium());
+  Int_t curmed = fMC->CurrentMedium();
+  if (curmed<0||curmed>=fImedia->fN) {
+    AliError(Form("Index for medium would be out-of-bounds: %d\n", curmed));
+    return;
+  }
+  Int_t id = DetFromMate(curmed);
   if (id < 0) return;
 
 
