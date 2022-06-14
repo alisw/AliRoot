@@ -84,7 +84,7 @@ Bool_t AliMFTClusterQA::LoadNextEvent() {
   fRunLoader->GetEvent(fEv);
   fEv++;
 
-  if (!fMFTLoader->TreeR()->GetEvent()) return kTRUE;
+  if (!fMFTLoader->TreeR()->GetEvent(0)) return kTRUE;
 
   for (Int_t iPlane=0; iPlane<AliMFTConstants::kNDisks; iPlane++) {
     Int_t nClusters = fMFT->GetRecPointsList(iPlane)->GetEntries();

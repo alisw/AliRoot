@@ -343,7 +343,7 @@ Int_t  AliXRDPROOFtoolkit::CheckTreeInFile(const char*fileName,const char*treeNa
       Int_t entries = tree->GetEntries();
       for (Int_t i=0;i<entries; i++){
 	if (branch) branch->GetEntry(i);
-	else tree->GetEntry();
+	else tree->GetEntry(i);
       }
     }
   }catch ( ... ) {

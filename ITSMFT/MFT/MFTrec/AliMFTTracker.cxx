@@ -147,7 +147,7 @@ Int_t AliMFTTracker::LoadClusters(TTree *cTree) {
     cTree->SetBranchAddress(Form("Plane_%02d",iPlane), &fMFTClusterArray[iPlane]);
   }
  
-  if (!cTree->GetEvent()) return kFALSE;
+  if (!cTree->GetEvent(0)) return kFALSE;
   for (Int_t iPlane=0; iPlane<fNPlanesMFT; iPlane++) {
     AliInfo(Form("plane %02d: nClusters = %d", iPlane, fMFTClusterArray[iPlane]->GetEntries()));
   }
