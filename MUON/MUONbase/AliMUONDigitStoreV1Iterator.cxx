@@ -91,7 +91,7 @@ AliMUONDigitStoreV1Iterator::operator=(const AliMUONDigitStoreV1Iterator& rhs)
   /// assignement operator
   if ( this != &rhs ) 
   {
-    TIterator::operator=(rhs);
+    // TIterator::operator=(rhs);
     fArray = rhs.fArray;
     fFirstDetElemId = rhs.fFirstDetElemId;
     fLastDetElemId = rhs.fLastDetElemId;
