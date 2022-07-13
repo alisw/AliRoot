@@ -237,6 +237,81 @@ ClassImp(AliGenSTRANGElib)
     }
 }
 // End Lambda
+
+//============================================================================
+//    K  0  S pp 5 TeV (from data)
+ Double_t AliGenSTRANGElib::PtK0sPP5( const Double_t *px, const Double_t *)
+{
+//                k0S
+//                pt-distribution from data
+//____________________________________________________________
+  double ldNdy  = -1.24323e+07;
+  double lTemp = 0.0875416;
+  double lPower = 7.207;
+  double lMass  = -0.47187;
+  double lBigCoef = ((lPower-1)*(lPower-2)) / (lPower*lTemp*(lPower*lTemp+lMass*(lPower-2)));
+  double lInPower = 1 + (TMath::Sqrt(pt[0]*pt[0]+lMass*lMass)-lMass) / (lPower*lTemp);  
+  return ldNdy * px[0] * lBigCoef * TMath::Power(lInPower,(-1)*lPower);
+
+}
+
+ Double_t AliGenSTRANGElib::YK0sPP5( const Double_t *py, const Double_t *)
+{
+// y-distribution, valid only in the mid-rapidity region
+//____________________________________________________________
+
+  return 1;
+}
+
+ Int_t AliGenSTRANGElib::IpK0sPP5(TRandom *ran)
+{
+//                 particle composition
+//
+
+    return 310;
+
+}
+// End K0sPP5
+
+
+//============================================================================
+//    Xi pp 5 TeV (from data)
+ Double_t AliGenSTRANGElib::PtXiPP5( const Double_t *px, const Double_t *)
+{
+//                xi
+//                pt-distribution from data
+//____________________________________________________________
+  double ldNdy  = 1071.68;
+  double lTemp = 0.378898;
+  double lPower = 16.2357;
+  double lMass  = -0.408671;
+  double lBigCoef = ((lPower-1)*(lPower-2)) / (lPower*lTemp*(lPower*lTemp+lMass*(lPower-2)));
+  double lInPower = 1 + (TMath::Sqrt(pt[0]*pt[0]+lMass*lMass)-lMass) / (lPower*lTemp);  
+  return ldNdy * px[0] * lBigCoef * TMath::Power(lInPower,(-1)*lPower);
+
+}
+
+ Double_t AliGenSTRANGElib::YXiPP5( const Double_t *py, const Double_t *)
+{
+// y-distribution, valid only in the mid-rapidity region
+//____________________________________________________________
+
+  return 1;
+}
+
+ Int_t AliGenSTRANGElib::IpXiPP5(TRandom *ran)
+{
+//                 particle composition
+//
+    Float_t random = ran->Rndm();
+    if (random < 0.5) {       
+      return  3312;   //   Xi- 
+    } else {  
+      return -3312;   //   Xi+
+    }
+}
+// End K0sPP5
+
 //============================================================================
 //    XIminus
  Double_t AliGenSTRANGElib::PtXiMinus( const Double_t *px, const Double_t *)
@@ -375,6 +450,12 @@ typedef Double_t (*GenFunc) (const Double_t*,  const Double_t*);
     case kLambda:
         func=PtLambda;
         break;
+    case kK0sPP5:
+        func=PtK0sPP5;
+        break;
+    case kXiPP5:
+        func=PtXiPP5;
+        break;
     case kXiMinus:
         func=PtXiMinus;
         break;
@@ -406,6 +487,12 @@ typedef Double_t (*GenFunc) (const Double_t*,  const Double_t*);
     case kLambda:
         func=YLambda;
         break;
+    case kK0sPP5:
+        func=YK0sPP5;
+        break;
+    case kXiPP5:
+        func=YXiPP5;
+        break;
     case kXiMinus:
         func=YXiMinus;
         break;
@@ -436,6 +523,12 @@ typedef Int_t (*GenFuncIp) (TRandom *);
         break;
     case kLambda:
         func=IpLambda;
+        break;
+    case kK0sPP5:
+        func=IpK0sPP5;
+        break;
+    case kXiPP5:
+        func=IpXiPP5;
         break;
     case kXiMinus:
         func=IpXiMinus;
