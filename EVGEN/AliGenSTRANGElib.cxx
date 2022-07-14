@@ -245,12 +245,12 @@ ClassImp(AliGenSTRANGElib)
 //                k0S
 //                pt-distribution from data
 //____________________________________________________________
-  double ldNdy  = -1.24323e+07;
-  double lTemp = 0.0875416;
-  double lPower = 7.207;
-  double lMass  = -0.47187;
-  double lBigCoef = ((lPower-1)*(lPower-2)) / (lPower*lTemp*(lPower*lTemp+lMass*(lPower-2)));
-  double lInPower = 1 + (TMath::Sqrt(pt[0]*pt[0]+lMass*lMass)-lMass) / (lPower*lTemp);  
+  Double_t ldNdy  = -1.24323e+07;
+  Double_t lTemp = 0.0875416;
+  Double_t lPower = 7.207;
+  Double_t lMass  = -0.47187;
+  Double_t lBigCoef = ((lPower-1)*(lPower-2)) / (lPower*lTemp*(lPower*lTemp+lMass*(lPower-2)));
+  Double_t lInPower = 1 + (TMath::Sqrt(px[0]*px[0]+lMass*lMass)-lMass) / (lPower*lTemp);  
   return ldNdy * px[0] * lBigCoef * TMath::Power(lInPower,(-1)*lPower);
 
 }
@@ -281,12 +281,12 @@ ClassImp(AliGenSTRANGElib)
 //                xi
 //                pt-distribution from data
 //____________________________________________________________
-  double ldNdy  = 1071.68;
-  double lTemp = 0.378898;
-  double lPower = 16.2357;
-  double lMass  = -0.408671;
-  double lBigCoef = ((lPower-1)*(lPower-2)) / (lPower*lTemp*(lPower*lTemp+lMass*(lPower-2)));
-  double lInPower = 1 + (TMath::Sqrt(pt[0]*pt[0]+lMass*lMass)-lMass) / (lPower*lTemp);  
+  Double_t ldNdy  = 1071.68;
+  Double_t lTemp = 0.378898;
+  Double_t lPower = 16.2357;
+  Double_t lMass  = -0.408671;
+  Double_t lBigCoef = ((lPower-1)*(lPower-2)) / (lPower*lTemp*(lPower*lTemp+lMass*(lPower-2)));
+  Double_t lInPower = 1 + (TMath::Sqrt(px[0]*px[0]+lMass*lMass)-lMass) / (lPower*lTemp);  
   return ldNdy * px[0] * lBigCoef * TMath::Power(lInPower,(-1)*lPower);
 
 }
