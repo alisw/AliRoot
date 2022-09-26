@@ -55,7 +55,7 @@ class AliDecayerSLEvtGen : public AliDecayer
 };
 
 //converts from mm/c to s
-const Double_t kconv=0.001/2.999792458e8;
+//const Double_t kconv=0.001/2.999792458e8;
 
 #endif
 

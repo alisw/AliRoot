@@ -47,8 +47,8 @@ using namespace starlightConstants;
 nucleus::nucleus(const int    Z,
                  const int    A,
 		 const int    productionMode)
-	: _Z(Z),
-	  _A(A),
+	: xZ(Z),
+	  xA(A),
 	  _productionMode(productionMode)
 {
   init();	
@@ -57,7 +57,7 @@ nucleus::nucleus(const int    Z,
 void nucleus::init()
 {
   _woodSaxonSkinDepth=0.53;
-  switch (_Z) {
+  switch (xZ) {
 	case 82:
 		{
 		  _Radius = 6.624;
@@ -99,25 +99,25 @@ void nucleus::init()
 	case 1: 
 		{
 		  //is this a proton or deuteron
-		  if(_A==1){
+		  if(xA==1){
 		    _Radius = 0.7;
 		    _rho0 = -1.0; //Not relevant for protons
 		  }
 		  else {
 		    _Radius = 2.1;
-		    _rho0 = _A;
+		    _rho0 = xA;
 		  }
 		}
 		break;
 	default:
-		printWarn << "density not defined for projectile with Z = " << _Z << ". using defaults." << endl;
-                _Radius = 1.2*pow(_A, 1. / 3.);
+		printWarn << "density not defined for projectile with Z = " << xZ << ". using defaults." << endl;
+                _Radius = 1.2*pow(xA, 1. / 3.);
 		// _rho0 = 0.138;  This matches the radius above for a hard-sphere nucleus
 		// add empircal correction to match to the Woods-Saxon nucleus that STARlight uses   S. Klein 2/2018
-		_rho0=0.138/(1.13505-0.0004283*_A);
-		if( _Z < 7 ){
+		_rho0=0.138/(1.13505-0.0004283*xA);
+		if( xZ < 7 ){
 		  // This is for Gaussian form factors/densities 
-		  _rho0 = _A;
+		  _rho0 = xA;
 		}
 	}
 }
@@ -130,7 +130,7 @@ nucleus::~nucleus()
 double
 nucleus::rws(const double r) const
 {
-  if( _Z < 7 ){
+  if( xZ < 7 ){
     // Gaussian density distribution for light nuclei 
     double norm = (3./(2.*starlightConstants::pi))*sqrt( (3./(2.*starlightConstants::pi)) );
     norm = norm/(nuclearRadius()*nuclearRadius()*nuclearRadius());
@@ -149,12 +149,12 @@ double
 nucleus::formFactor(const double t) const
 {
 	// electromagnetic form factor of proton
-	if ((_Z == 1) && (_A == 1)) {
+	if ((xZ == 1) && (xA == 1)) {
 		const double rec = 1. / (1. + t / 0.71);
 		return rec * rec;
 	}
 
-        if( _Z < 7 ){
+        if( xZ < 7 ){
 	  // Gaussian form factor for light nuclei
           const double R_G    = nuclearRadius();
           return exp(-R_G*R_G*t/(6.*starlightConstants::hbarc*starlightConstants::hbarc));

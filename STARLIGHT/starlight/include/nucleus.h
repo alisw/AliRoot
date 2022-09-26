@@ -51,8 +51,8 @@ public:
 	
 	void init();
  
-	int    Z              () const { return _Z;                     }  ///< returns atomic number of nucleus
-	int    A              () const { return _A;                     }  ///< returns nucleon number of nucleus
+	int    Z              () const { return xZ;                     }  ///< returns atomic number of nucleus
+	int    A              () const { return xA;                     }  ///< returns nucleon number of nucleus
         int    productionMode () const { return _productionMode;        }
 
 	double formFactor(const double t) const;
@@ -73,8 +73,8 @@ private:
 
 	double rws(const double r) const;
 
-	int    _Z;                      ///< atomic number of nucleus
-	int    _A;                      ///< nucleon number of nucleus
+	int    xZ;                      ///< atomic number of nucleus
+	int    xA;                      ///< nucleon number of nucleus
         int    _productionMode;
 
 	double _r0;
