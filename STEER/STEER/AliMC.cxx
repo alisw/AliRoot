@@ -365,6 +365,11 @@ void  AliMC::AddParticles()
   TVirtualMC::GetMC()->DefineParticle(2010010030, "CTriton", kPTHadron, 4.162 , 1.0, 2.0e-13,"Ion", 0.0, 0, 1, 0, 0, 0, 0, 0, 2, kFALSE);
   //Anti-c-Hypertriton
   TVirtualMC::GetMC()->DefineParticle(-2010010030, "AntiCTriton", kPTHadron, 4.162 , 1.0, 2.0e-13,"Ion", 0.0, 0, 1, 0, 0, 0, 0, 0, 2, kFALSE);
+	
+  //4Xi(-)He
+  TVirtualMC::GetMC()->DefineParticle(1220010040, "4XiHe", kPTHadron, 4.128, 1.0, 1.639e-10,"Ion", 0.0, 0, 1, 0, 0, 0, 0, 0, 4, kFALSE);
+  //Anti-4Xi(-)He
+  TVirtualMC::GetMC()->DefineParticle(-1220010040, "Anti4XiHe", kPTHadron, 4.128, 1.0, 1.639e-10,"Ion", 0.0, 0, 1, 0, 0, 0, 0, 0, 4, kFALSE);
 
 
   //Resonances not in Generators
@@ -1100,6 +1105,38 @@ void  AliMC::AddParticles()
   acdmode[1][1] = 310; // K0s
 
   TVirtualMC::GetMC()->SetDecayMode(-2010010020,acdbratio,acdmode);
+	
+  // Define the decay for the 4Xi(-)He
+  Int_t mode4XiHe[6][3];
+  Float_t bratio4XiHe[6];
+    
+  for (Int_t kz = 0; kz < 6; kz++) {
+    bratio4XiHe[kz] = 0.;
+    mode4XiHe[kz][0] = 0;
+    mode4XiHe[kz][1] = 0;
+    mode4XiHe[kz][2] = 0;
+  }
+  bratio4XiHe[0] = 100.;
+  mode4XiHe[0][0] = 1010020040; // HyperHelium4
+  mode4XiHe[0][1] = -211; // negative pion
+    
+  TVirtualMC::GetMC()->SetDecayMode(1220010040,bratio4XiHe,mode4XiHe);    
+    
+  // Define the decay for the Anti-4Xi(-)He
+  Int_t amode4XiHe[6][3];
+  Float_t abratio4XiHe[6];
+    
+  for (Int_t kz = 0; kz < 6; kz++) {
+    abratio4XiHe[kz] = 0.;
+    amode4XiHe[kz][0] = 0;
+    amode4XiHe[kz][1] = 0;
+    amode4XiHe[kz][2] = 0;
+  }
+  abratio4XiHe[0] = 100.;
+  amode4XiHe[0][0] = -1010020040; // antiHyperHelium-4
+  amode4XiHe[0][1] = 211; // positive pion
+    
+  TVirtualMC::GetMC()->SetDecayMode(-1220010040,abratio4XiHe,amode4XiHe);
 
   ///////////////////////////////////////////////////////////////////
 
