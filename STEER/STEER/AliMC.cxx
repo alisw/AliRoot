@@ -1116,9 +1116,14 @@ void  AliMC::AddParticles()
     mode4XiHe[kz][1] = 0;
     mode4XiHe[kz][2] = 0;
   }
-  bratio4XiHe[0] = 100.;
+  bratio4XiHe[0] = 50.;
   mode4XiHe[0][0] = 1010020040; // HyperHelium4
   mode4XiHe[0][1] = -211; // negative pion
+
+  bratio4XiHe[1] = 50.;
+  mode4XiHe[1][0] = 1000020030; // Helium3
+  mode4XiHe[1][1] = 3122; // lambda
+  mode4XiHe[1][2] = -211; // negative pion
     
   TVirtualMC::GetMC()->SetDecayMode(1220010040,bratio4XiHe,mode4XiHe);    
     
@@ -1132,9 +1137,14 @@ void  AliMC::AddParticles()
     amode4XiHe[kz][1] = 0;
     amode4XiHe[kz][2] = 0;
   }
-  abratio4XiHe[0] = 100.;
+  abratio4XiHe[0] = 50.;
   amode4XiHe[0][0] = -1010020040; // antiHyperHelium-4
   amode4XiHe[0][1] = 211; // positive pion
+	
+  abratio4XiHe[1] = 50.;
+  amode4XiHe[1][0] = -1000020030; // Helium3
+  amode4XiHe[1][1] = -3122; // antilambda
+  amode4XiHe[1][2] = 211; // positive pion
     
   TVirtualMC::GetMC()->SetDecayMode(-1220010040,abratio4XiHe,amode4XiHe);
 
