@@ -250,13 +250,13 @@ void AliPDG::AddParticlesToPdgDataBase()
 
   ionCode = 1010020050;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hyperhelium5","Hyperhelium5", 4.8439961, kFALSE,
+    pdgDB->AddParticle("Hyperhelium5","Hyperhelium5", 4.839961, kFALSE,
                2.5e-15, 6, "Ion", ionCode);
   }
     
   ionCode = -1010020050;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperhelium5","AntiHyperhelium5", 4.8439961, kFALSE,
+    pdgDB->AddParticle("AntiHyperhelium5","AntiHyperhelium5", 4.839961, kFALSE,
                2.5e-15, 6, "Ion", ionCode);
   }
     
