@@ -189,74 +189,74 @@ void AliPDG::AddParticlesToPdgDataBase()
   //Hyper nuclei and exotica
   ionCode = 1010010030;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("HyperTriton","HyperTriton", 2.99131, kFALSE,
+    pdgDB->AddParticle("HyperTriton","HyperTriton", 2.991134, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
 
   ionCode = -1010010030;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperTriton","AntiHyperTriton", 2.99131, kFALSE,
+    pdgDB->AddParticle("AntiHyperTriton","AntiHyperTriton", 2.991134, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
 
   //hyper hydrogen 4 ground state
   ionCode = 1010010040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hyperhydrog4","Hyperhydrog4", 3.9226, kFALSE,
+    pdgDB->AddParticle("Hyperhydrog4","Hyperhydrog4", 3.922434, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
   //anti hyper hydrogen 4 ground state
   ionCode = -1010010040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperhydrog4","AntiHyperhydrog4", 3.9226, kFALSE,
+    pdgDB->AddParticle("AntiHyperhydrog4","AntiHyperhydrog4", 3.922434, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
   //hyper hydrogen 4 excited state
   ionCode = 1010010041;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hyperhydrog4*","Hyperhydrog4*", 3.9237, kFALSE,
+    pdgDB->AddParticle("Hyperhydrog4*","Hyperhydrog4*", 3.923522, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
   //anti hyper hydrogen 4 excited state
   ionCode = -1010010041;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperhydrog4*","AntiHyperhydrog4*", 3.9237, kFALSE,
+    pdgDB->AddParticle("AntiHyperhydrog4*","AntiHyperhydrog4*", 3.923522, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
   //hyper helium 4 ground state
   ionCode = 1010020040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hyperhelium4","Hyperhelium4", 3.9217, kFALSE,
+    pdgDB->AddParticle("Hyperhelium4","Hyperhelium4", 3.921728, kFALSE,
 		       2.5e-15, 6, "Ion", ionCode);
   }
   //anti hyper helium 4 ground state
   ionCode = -1010020040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperhelium4","AntiHyperhelium4", 3.9217, kFALSE,
+    pdgDB->AddParticle("AntiHyperhelium4","AntiHyperhelium4", 3.921728, kFALSE,
 		       2.5e-15, 6, "Ion", ionCode);
   }
   //hyper helium 4 excited state
   ionCode = 1010020041;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hyperhelium4*","Hyperhelium4*", 3.9231, kFALSE,
+    pdgDB->AddParticle("Hyperhelium4*","Hyperhelium4*", 3.923133, kFALSE,
 		       2.5e-15, 6, "Ion", ionCode);
   }
   //anti hyper helium 4 excited state
   ionCode = -1010020041;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperhelium4*","AntiHyperhelium4*", 3.9231, kFALSE,
+    pdgDB->AddParticle("AntiHyperhelium4*","AntiHyperhelium4*", 3.923133, kFALSE,
 		       2.5e-15, 6, "Ion", ionCode);
   }
 
   ionCode = 1010020050;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hyperhelium5","Hyperhelium5", 4.841, kFALSE,
+    pdgDB->AddParticle("Hyperhelium5","Hyperhelium5", 4.839961, kFALSE,
                2.5e-15, 6, "Ion", ionCode);
   }
     
   ionCode = -1010020050;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperhelium5","AntiHyperhelium5", 4.841, kFALSE,
+    pdgDB->AddParticle("AntiHyperhelium5","AntiHyperhelium5", 4.839961, kFALSE,
                2.5e-15, 6, "Ion", ionCode);
   }
     
@@ -392,6 +392,13 @@ void AliPDG::AddParticlesToPdgDataBase()
     pdgDB->AddParticle("CDeuteron","CDeuteron", 3.226, kFALSE,
 		       3.3e-12, 3, "Ion", ionCode);
     pdgDB->AddAntiParticle("AntiCDeuteron", - ionCode);
+  }
+
+  ionCode = 1220010040;
+  if(!pdgDB->GetParticle(ionCode)){
+    pdgDB->AddParticle("4XiHe","4XiHe", 4.128, kFALSE,
+		       4.04e-15, 3, "Ion", ionCode);
+    pdgDB->AddAntiParticle("Anti4XiHe", - ionCode);
   }
 
   // Special resonances
