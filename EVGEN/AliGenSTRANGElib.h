@@ -21,7 +21,7 @@ class AliGenSTRANGElib :
 public AliGenLib
 {
  public:
-    enum constants{kKaon, kPhi, kLambda, kK0sPP5, kXiPP5, kLambda1520=3124, kOmegaMinus = 3334, kXiMinus = 3312};
+    enum constants{kKaon, kPhi, kLambda, kK0sPP5, kLambdaPP5, kXiPP5, kOmegaPP5, kLambda1520=3124, kOmegaMinus = 3334, kXiMinus = 3312};
     GenFunc   GetPt(Int_t param, const char* tname=0) const;
     GenFunc   GetY (Int_t param, const char* tname=0) const;
     GenFuncIp GetIp(Int_t param, const char* tname=0) const;    
@@ -45,10 +45,18 @@ public AliGenLib
     static Double_t PtK0sPP5(const Double_t *px, const Double_t *dummy);
     static Double_t YK0sPP5( const Double_t *py, const Double_t *dummy);
     static Int_t    IpK0sPP5(TRandom *ran);
+// Lampp5
+    static Double_t PtLambdaPP5(const Double_t *px, const Double_t *dummy);
+    static Double_t YLambdaPP5( const Double_t *py, const Double_t *dummy);
+    static Int_t    IpLambdaPP5(TRandom *ran);
 // Xipp5
     static Double_t PtXiPP5(const Double_t *px, const Double_t *dummy);
     static Double_t YXiPP5( const Double_t *py, const Double_t *dummy);
     static Int_t    IpXiPP5(TRandom *ran);
+// Ompp5
+    static Double_t PtOmegaPP5(const Double_t *px, const Double_t *dummy);
+    static Double_t YOmegaPP5( const Double_t *py, const Double_t *dummy);
+    static Int_t    IpOmegaPP5(TRandom *ran);
 // Ximinus
     static Double_t PtXiMinus(const Double_t *px, const Double_t *dummy);
     static Double_t YXiMinus( const Double_t *py, const Double_t *dummy);
