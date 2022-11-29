@@ -273,6 +273,45 @@ ClassImp(AliGenSTRANGElib)
 }
 // End K0sPP5
 
+//============================================================================
+//    Lambda pp 5 TeV (from data)
+ Double_t AliGenSTRANGElib::PtLambdaPP5( const Double_t *px, const Double_t *)
+{
+//                lambda
+//                pt-distribution from data
+//____________________________________________________________
+  Double_t ldNdy  = 50880.7;
+  Double_t lTemp = 0.235313;
+  Double_t lPower = 7.43403;
+  Double_t lMass  = 1.48223;
+  Double_t lBigCoef = ((lPower-1)*(lPower-2)) / (lPower*lTemp*(lPower*lTemp+lMass*(lPower-2)));
+  Double_t lInPower = 1 + (TMath::Sqrt(px[0]*px[0]+lMass*lMass)-lMass) / (lPower*lTemp);
+  return ldNdy * px[0] * lBigCoef * TMath::Power(lInPower,(-1)*lPower);
+
+}
+
+ Double_t AliGenSTRANGElib::YLambdaPP5( const Double_t *py, const Double_t *)
+{
+// y-distribution, valid only in the mid-rapidity region
+//____________________________________________________________
+
+  return 1;
+}
+
+ Int_t AliGenSTRANGElib::IpLambdaPP5(TRandom *ran)
+{
+//                 particle composition
+//
+
+    Float_t random = ran->Rndm();
+    if (random < 0.5) {
+      return  3122;   //   Lambda
+    } else {
+      return -3122;   //   AntiLambda
+    }
+}
+// End LambdaPP5
+
 
 //============================================================================
 //    Xi pp 5 TeV (from data)
@@ -310,7 +349,45 @@ ClassImp(AliGenSTRANGElib)
       return -3312;   //   Xi+
     }
 }
-// End K0sPP5
+// End XiPP5
+
+//============================================================================
+//    Omega pp 5 TeV (from data)
+ Double_t AliGenSTRANGElib::PtOmegaPP5( const Double_t *px, const Double_t *)
+{
+//                omega
+//                pt-distribution from data
+//____________________________________________________________
+  Double_t ldNdy  = 27.4922;
+  Double_t lTemp = 0.176409;
+  Double_t lPower = 5.39206;
+  Double_t lMass  = 4.55809;
+  Double_t lBigCoef = ((lPower-1)*(lPower-2)) / (lPower*lTemp*(lPower*lTemp+lMass*(lPower-2)));
+  Double_t lInPower = 1 + (TMath::Sqrt(px[0]*px[0]+lMass*lMass)-lMass) / (lPower*lTemp);
+  return ldNdy * px[0] * lBigCoef * TMath::Power(lInPower,(-1)*lPower);
+
+}
+
+ Double_t AliGenSTRANGElib::YOmegaPP5( const Double_t *py, const Double_t *)
+{
+// y-distribution, valid only in the mid-rapidity region
+//____________________________________________________________
+
+  return 1;
+}
+
+ Int_t AliGenSTRANGElib::IpOmegaPP5(TRandom *ran)
+{
+//                 particle composition
+//
+    Float_t random = ran->Rndm();
+    if (random < 0.5) {
+      return  3334;   //   Omega-
+    } else {
+      return -3334;   //   Omega+
+    }
+}
+// End OmegaPP5
 
 //============================================================================
 //    XIminus
@@ -453,8 +530,14 @@ typedef Double_t (*GenFunc) (const Double_t*,  const Double_t*);
     case kK0sPP5:
         func=PtK0sPP5;
         break;
+    case kLambdaPP5:
+        func=PtLambdaPP5;
+        break;
     case kXiPP5:
         func=PtXiPP5;
+        break;
+    case kOmegaPP5:
+        func=PtOmegaPP5;
         break;
     case kXiMinus:
         func=PtXiMinus;
@@ -490,8 +573,14 @@ typedef Double_t (*GenFunc) (const Double_t*,  const Double_t*);
     case kK0sPP5:
         func=YK0sPP5;
         break;
+    case kLambdaPP5:
+        func=YLambdaPP5;
+        break;
     case kXiPP5:
         func=YXiPP5;
+        break;
+    case kOmegaPP5:
+        func=YOmegaPP5;
         break;
     case kXiMinus:
         func=YXiMinus;
@@ -527,8 +616,14 @@ typedef Int_t (*GenFuncIp) (TRandom *);
     case kK0sPP5:
         func=IpK0sPP5;
         break;
+    case kLambdaPP5:
+        func=IpLambdaPP5;
+        break;
     case kXiPP5:
         func=IpXiPP5;
+        break;
+    case kOmegaPP5:
+        func=IpOmegaPP5;
         break;
     case kXiMinus:
         func=IpXiMinus;
