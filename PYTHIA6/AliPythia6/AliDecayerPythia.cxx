@@ -596,19 +596,19 @@ void AliDecayerPythia::ForceDecay()
         break;
      case kLcLpi:
         ForceHadronicD(0,0,5);
-     case kEtaPrime:
-	if(gRandom->Rndm()<0.5) {
-		products1[0]=211;
-		products1[1]=-211;
-		products1[2]=221;
+     case kEtaPrime: // forced decay etaprime->pi+pi-(eta->gammagamma) 
+		products1[0]=211;  //pi+
+		products1[1]=-211; //pi-
+		products1[2]=221;  //eta
 		mult1[0]=1;
 		mult1[1]=1;
 		mult1[2]=1;
-        	ForceParticleDecay(331,products1,mult1,1);
-	} else {
-		ForceParticleDecay(331,22,2);
-	}
-	break;
+        ForceParticleDecay(331,products1,mult1,1); // etaprime->pi+ pi- eta
+        ForceParticleDecay(  221,	22, 2);        // eta->gammagama
+        break;
+    case kEtaPrimeGammaGamma:
+        ForceParticleDecay(331,22,2);              // etaprime->gammagamma
+        break;
     }
 }
 
