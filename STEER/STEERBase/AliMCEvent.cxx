@@ -919,7 +919,18 @@ const AliVVertex * AliMCEvent::GetPrimaryVertex() const
 {
     // Create a MCVertex object from the MCHeader information
     TArrayF v;
-    GenEventHeader()->PrimaryVertex(v) ;
+    AliGenEventHeader* gh =  GenEventHeader();
+    gh->PrimaryVertex(v) ;
+    
+    // Special treatment for AODs from productions with pileup generation
+    TString gname=gh->GetName();
+    gname.ToLower();
+    if(fAODMCHeader && gname.Contains("pileup") && gh->InheritsFrom(AliGenCocktailEventHeader::Class())){
+      v[0]=fAODMCHeader->GetVtxX();
+      v[1]=fAODMCHeader->GetVtxY();
+      v[2]=fAODMCHeader->GetVtxZ();
+    }
+    
     if (!fVertex) {
 	fVertex = new AliMCVertex(v[0], v[1], v[2]);
     } else {

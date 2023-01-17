@@ -29,6 +29,11 @@ class AliVHeader : public TNamed {
   virtual ULong64_t GetTriggerMaskNext50()  const = 0;
   virtual UChar_t   GetTriggerCluster()     const = 0;
   virtual UInt_t    GetEventType()          const = 0;
+  
+  virtual Double_t GetVtxX() const {return 0;}
+  virtual Double_t GetVtxY() const {return 0;}
+  virtual Double_t GetVtxZ() const {return 0;}
+
   virtual TList*    GetCocktailHeaders()    {return 0;}
   ULong64_t GetEventIdAsLong() const;
   virtual Bool_t    IsTriggerInputFired(const char* /*name*/) const {return kFALSE;}
