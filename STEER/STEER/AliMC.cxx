@@ -299,10 +299,10 @@ void  AliMC::AddParticles()
   TVirtualMC::GetMC()->DefineParticle(-1010000020, "AntiLambdaNeutron", kPTNeutron, 2.054 , 0.0, 2.632e-10,"Hadron", 0.0, 0, 1, 0, 0, 0, 0, 0, 2, kFALSE);
 
   //H-Dibaryon
-  TVirtualMC::GetMC()->DefineParticle(1020000020, "Hdibaryon", kPTNeutron, 2.23, 0.0, 2.632e-10,"Hadron", 0.0, 0, 1, 0, 0, 0, 0, 0, 2, kFALSE);
+  TVirtualMC::GetMC()->DefineParticle(1020000020, "Hdibaryon", kPTNeutron, 2.26, 0.0, 3.29e-22,"Hadron", 0.0, 0, 1, 0, 0, 0, 0, 0, 2, kFALSE);
 
   //Anti-H-Dibaryon
-  TVirtualMC::GetMC()->DefineParticle(-1020000020, "AntiHdibaryon", kPTNeutron, 2.23, 0.0, 2.632e-10,"Hadron", 0.0, 0, 1, 0, 0, 0, 0, 0, 2, kFALSE);
+  TVirtualMC::GetMC()->DefineParticle(-1020000020, "AntiHdibaryon", kPTNeutron, 2.26, 0.0, 3.29e-22,"Hadron", 0.0, 0, 1, 0, 0, 0, 0, 0, 2, kFALSE);
 
   //Xi-Proton
   TVirtualMC::GetMC()->DefineParticle(1020010020, "Xi0Proton", kPTHadron, 2.248 , 1.0, 1.333e-10,"Ion", 0.0, 0, 1, 0, 0, 0, 0, 0, 2, kFALSE);
@@ -317,10 +317,10 @@ void  AliMC::AddParticles()
   TVirtualMC::GetMC()->DefineParticle(-1010000030, "AntiLambdaNeutronNeutron", kPTNeutron, 2.99 , 0.0, 2.632e-10,"Hadron", 0.0, 0, 1, 0, 0, 0, 0, 0, 3, kFALSE);
 
 	//Omega-Proton
-  TVirtualMC::GetMC()->DefineParticle(1030000020, "OmegaProton", kPTNeutron, 2.592, 0.0, 2.632e-10,"Hadron", 0.0, 2, 1, 0, 0, 0, 0, 0, 2, kFALSE);
+  TVirtualMC::GetMC()->DefineParticle(1030000020, "OmegaProton", kPTNeutron, 2.606, 0.0, 0.821e-10,"Hadron", 0.0, 2, 1, 0, 0, 0, 0, 0, 2, kFALSE);
 
 	//Anti-Omega-Proton
-  TVirtualMC::GetMC()->DefineParticle(-1030000020, "AntiOmegaProton", kPTNeutron, 2.592, 0.0, 2.632e-10,"Hadron", 0.0, 2, 1, 0, 0, 0, 0, 0, 2, kFALSE);
+  TVirtualMC::GetMC()->DefineParticle(-1030000020, "AntiOmegaProton", kPTNeutron, 2.606, 0.0, 0.821e-10,"Hadron", 0.0, 2, 1, 0, 0, 0, 0, 0, 2, kFALSE);
 
 	//Omega-Neutron
   TVirtualMC::GetMC()->DefineParticle(1030010020, "OmegaNeutron", kPTHadron, 2.472, 1.0, 2.190e-22,"Hadron", 0.0, 2, 1, 0, 0, 0, 0, 0, 2, kFALSE);
@@ -735,10 +735,14 @@ void  AliMC::AddParticles()
      mode2[kz][1] = 0;
      mode2[kz][2] = 0;
   }
-  bratio2[0] = 100.;
+  bratio2[0] = 50.;
   mode2[0][0] = 3122; // Lambda
-  mode2[0][1] = 2212; // proton
-  mode2[0][2] = -211; // negative pion
+  mode2[0][1] = 3122; // Lambda
+  bratio2[1] = 50.;
+  mode2[1][0] = 3312; // Xi-
+  mode2[1][1] = 2212; // proton
+  //mode2[0][1] = 2212; // proton
+  //mode2[0][2] = -211; // negative pion
 
   TVirtualMC::GetMC()->SetDecayMode(1020000020,bratio2,mode2);
 
@@ -752,10 +756,14 @@ void  AliMC::AddParticles()
      amode2[kz][1] = 0;
      amode2[kz][2] = 0;
   }
-  abratio2[0] = 100.;
-  amode2[0][0] = -3122; // anti-deuteron
-  amode2[0][1] = -2212; // anti-proton
-  amode2[0][2] = 211; // positive pion
+  abratio2[0] = 50.;
+  amode2[0][0] = -3122; // anti-lambda
+  amode2[0][1] = -3122; // anti-lambda
+  abratio2[1] = 50.;
+  amode2[1][0] = -3312; // Xi+
+  amode2[1][1] = -2212; // anti-proton
+  //amode2[0][1] = -2212; // anti-proton
+  //amode2[0][2] = 211; // positive pion
 
   TVirtualMC::GetMC()->SetDecayMode(-1020000020,abratio2,amode2);
 
