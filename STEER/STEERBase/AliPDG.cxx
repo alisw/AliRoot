@@ -263,14 +263,14 @@ void AliPDG::AddParticlesToPdgDataBase()
 
   ionCode = 1020000020;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hdibaryon","Hdibaryon", 2.23, kFALSE,
-		       2.5e-15, 0, "Special", ionCode);
+    pdgDB->AddParticle("Hdibaryon","Hdibaryon", 2.26, kFALSE,
+		       0.002, 0, "Special", ionCode);
   }
 
   ionCode = -1020000020;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHdibaryon","AntiHdibaryon", 2.23, kFALSE,
-		       2.5e-15, 0, "Special", ionCode);
+    pdgDB->AddParticle("AntiHdibaryon","AntiHdibaryon", 2.26, kFALSE,
+		       0.002, 0, "Special", ionCode);
   }
 
   ionCode = 1010000030;
@@ -299,14 +299,14 @@ void AliPDG::AddParticlesToPdgDataBase()
 
   ionCode = 1030000020;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("OmegaProton","OmegaProton", 2.592, kFALSE,
-		       2.5e-15, 0, "Special", ionCode);
+    pdgDB->AddParticle("OmegaProton","OmegaProton", 2.606, kFALSE,
+		       8.02e-15, 0, "Special", ionCode);
   }
 
   ionCode = -1030000020;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiOmegaProton","AntiOmegaProton", 2.592, kFALSE,
-		       2.5e-15, 0, "Special", ionCode);
+    pdgDB->AddParticle("AntiOmegaProton","AntiOmegaProton", 2.606, kFALSE,
+		       8.02e-15, 0, "Special", ionCode);
   }
 
   ionCode = 1030010020;
