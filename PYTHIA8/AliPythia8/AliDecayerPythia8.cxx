@@ -765,7 +765,7 @@ void AliDecayerPythia8::ForceHadronicD(Int_t optUse4Bodies, Int_t optUseDtoV0, I
 	  fPythia8->ReadString("4332:onIfMatch = 3334 211");
 	}
 	else if (optForceOmegacChannel == 1) { // semileptonic decay
-	  Pythia8->ReadString("4332:onIfMatch = 3334 -11 12");
+	  fPythia8->ReadString("4332:onIfMatch = 3334 -11 12");
 	}
 	else if (optForceOmegacChannel == 2) { // Omegac0 -> Xi Pi
 	  fPythia8->ReadString("4332:onIfMatch = 3312 211");
