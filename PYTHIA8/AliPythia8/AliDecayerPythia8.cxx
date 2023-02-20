@@ -761,15 +761,21 @@ void AliDecayerPythia8::ForceHadronicD(Int_t optUse4Bodies, Int_t optUseDtoV0, I
 
 
     fPythia8->ReadString("4332:onMode = off");
-    if(optForceOmegacChannel == 0 ){ // hadronic decay
-        fPythia8->ReadString("4332:onIfMatch = 3334 211");
-    }
-    else if (optForceOmegacChannel == 1){ // semileptonic decay
-        fPythia8->ReadString("4332:onIfMatch = 3334 -11 12");
-    }
-    else if (optForceOmegacChannel == 2){ //Omegac0 -> Xi Pi
-	fPythia8->ReadString("4332:onIfMatch = 3312 211");
-    }
+	if(optForceOmegacChannel == 0) { // hadronic decay
+	  fPythia8->ReadString("4332:onIfMatch = 3334 211");
+	}
+	else if (optForceOmegacChannel == 1) { // semileptonic decay
+	  fPythia8->ReadString("4332:onIfMatch = 3334 -11 12");
+	}
+	else if (optForceOmegacChannel == 2) { // Omegac0 -> Xi Pi
+	  fPythia8->ReadString("4332:onIfMatch = 3312 211");
+	  // for Xi- -> Lambda pi-
+	  fPythia8->ReadString("3312:onMode = off");
+	  fPythia8->ReadString("3312:onIfAll = 3122 211");
+	  // for Lambda -> p+ pi-
+	  fPythia8->ReadString("3122:onMode = off");
+	  fPythia8->ReadString("3122:onIfAll = 2212 211");
+	}
 
     fPythia8->ReadString("411:onMode = off");
     fPythia8->ReadString("421:onMode = off");
