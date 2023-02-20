@@ -731,9 +731,11 @@ void AliDecayerPythia8::ForceHadronicD(Int_t optUse4Bodies, Int_t optUseDtoV0, I
     fPythia8->ReadString("4232:addChannel = 1 0.2 0 2212 321 211");
     fPythia8->ReadString("4232:addChannel = 1 0.2 0 3324 211");
     fPythia8->ReadString("4232:addChannel = 1 0.2 0 3312 211 211");
+    fPythia8->ReadString("4232:addChannel = 1 0.2 0 3324 -11 12");
     //add Xic0 decays absent in PYTHIA8 decay table
     fPythia8->ReadString("4132:addChannel = 1 0.2 0 3312 211");
     fPythia8->ReadString("4132:addChannel = 1 0.2 0 3312 -11 12");
+    fPythia8->ReadString("4132:addChannel = 1 0.2 0 3314 -11 12");
     //add Omegac decays absent in PYTHIA8 decay table
     fPythia8->ReadString("4332:addChannel = 1 0.2 0 3334 211");
     fPythia8->ReadString("4332:addChannel = 1 0.2 0 3334 -11 12"); // Semileptonic
@@ -858,6 +860,13 @@ void AliDecayerPythia8::ForceHadronicD(Int_t optUse4Bodies, Int_t optUseDtoV0, I
     }       
     else if (optForceXicChannel == 1) { // semileptonic decay
         fPythia8->ReadString("4132:onIfMatch = 3312 11 12");
+        fPythia8->ReadString("4132:onIfMatch = 3314 11 12");
+        fPythia8->ReadString("4232:onMode = off");
+        fPythia8->ReadString("4232:onIfMatch = 3324 11 12");
+        fPythia8->ReadString("3314:onMode = off");
+        fPythia8->ReadString("3324:onMode = off");
+        fPythia8->ReadString("3314:onIfMatch = 3312 111");
+        fPythia8->ReadString("3324:onIfMatch = 3312 211");
     }       
     
 }
