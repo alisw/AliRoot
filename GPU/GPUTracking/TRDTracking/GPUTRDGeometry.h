@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTRDGeometry.h
 /// \author David Rohr
@@ -45,6 +40,7 @@ class GPUTRDGeometry : public AliTRDgeometry
   double GetPadPlaneRowPos(int layer, int stack, int row) const { return GetPadPlane(layer, stack)->GetRowPos(row); }
   double GetPadPlaneRowSize(int layer, int stack, int row) const { return GetPadPlane(layer, stack)->GetRowSize(row); }
   int GetGeomManagerVolUID(int det, int modId) const { return AliGeomManager::LayerToVolUID(AliGeomManager::ELayerID(AliGeomManager::kTRD1 + GetLayer(det)), modId); }
+  float GetCdrHght() const { return CdrHght(); }
 };
 } // namespace gpu
 } // namespace GPUCA_NAMESPACE
@@ -77,6 +73,7 @@ class GPUTRDpadPlane : private o2::trd::PadPlane
   GPUd() float GetColPos(int col) const { return getColPos(col); }
   GPUd() float GetNrows() const { return getNrows(); }
   GPUd() float GetNcols() const { return getNcols(); }
+  GPUd() int GetPadRowNumber(double z) const { return getPadRowNumber(z); }
 };
 
 class GPUTRDGeometry : private o2::trd::GeometryFlat
@@ -93,6 +90,7 @@ class GPUTRDGeometry : private o2::trd::GeometryFlat
   // Base functionality of Geometry
   GPUd() float GetTime0(int layer) const { return getTime0(layer); }
   GPUd() float GetCol0(int layer) const { return getCol0(layer); }
+  GPUd() float GetCdrHght() const { return cdrHght(); }
   GPUd() int GetLayer(int det) const { return getLayer(det); }
   GPUd() bool CreateClusterMatrixArray() const { return false; }
   GPUd() float AnodePos() const { return anodePos(); }
@@ -143,6 +141,7 @@ class GPUTRDpadPlane
   GPUd() float GetColEnd() const { return 0; }
   GPUd() float GetColPos(int col) const { return 0; }
   GPUd() float GetNrows() const { return 0; }
+  GPUd() int GetPadRowNumber(double z) const { return 0; }
 };
 
 class GPUTRDGeometry
@@ -160,6 +159,7 @@ class GPUTRDGeometry
   // Base functionality of Geometry
   GPUd() float GetTime0(int layer) const { return 0; }
   GPUd() float GetCol0(int layer) const { return 0; }
+  GPUd() float GetCdrHght() const { return 0; }
   GPUd() int GetLayer(int det) const { return 0; }
   GPUd() bool CreateClusterMatrixArray() const { return false; }
   GPUd() float AnodePos() const { return 0; }
@@ -175,7 +175,7 @@ class GPUTRDGeometry
   GPUd() int GetRowMax(int layer, int stack, int /* sector */) const { return 0; }
   GPUd() bool ChamberInGeometry(int det) const { return false; }
 
-  static CONSTEXPR int kNstack = 0;
+  static CONSTEXPR const int kNstack = 0;
 };
 } // namespace gpu
 } // namespace GPUCA_NAMESPACE

@@ -83,8 +83,9 @@ set(SRCS_O2_DATATYPES
     ${SRCS_DATATYPES}
     Interface/GPUO2InterfaceConfigurableParam.cxx)
 set(HDRS_CINT_O2 Merger/GPUTPCGMMergedTrack.h)
-set(HDRS_CINT_O2_DATATYPES DataTypes/GPUDataTypes.h Interface/GPUO2InterfaceConfigurableParam.h)
-set(HDRS_CINT_O2_ADDITIONAL DataTypes/GPUSettings.h Definitions/GPUSettingsList.h DataTypes/GPUDataTypes.h DataTypes/GPUTRDTrack.h) # Manual dependencies for ROOT dictionary generation
+set(HDRS_CINT_O2_DATATYPES DataTypes/GPUDataTypes.h DataTypes/GPUTPCGMMergedTrackHit.h)
+set(HDRS_CIND_O2_CONFIGURABLEPARAM Interface/GPUO2InterfaceConfigurableParam.h)
+set(HDRS_CINT_O2_ADDITIONAL DataTypes/GPUSettings.h Definitions/GPUSettingsList.h DataTypes/GPUDataTypes.h DataTypes/GPUTRDTrack.h DataTypes/CalibdEdxTrackTopologyPol.h DataTypes/CalibdEdxTrackTopologySpline.h) # Manual dependencies for ROOT dictionary generation
 
 set(SRCS_NO_CINT
     DataTypes/GPUMemorySizeScalers.cxx
@@ -155,8 +156,11 @@ set(HDRS_INSTALL
     DataTypes/GPUO2DataTypes.h
     DataTypes/GPUHostDataTypes.h
     DataTypes/GPUdEdxInfo.h
+    DataTypes/GPUNewCalibValues.h
     DataTypes/GPUTRDInterfaceO2Track.h
     Base/GPUParam.inc
+    DataCompression/TPCClusterDecompressor.inc
+    DataCompression/GPUTPCCompressionKernels.inc
     Merger/GPUTPCGMMergerTypes.h
     Global/GPUErrorCodes.h
     Global/GPUChainTrackingDefs.h
@@ -205,7 +209,10 @@ if(ALIGPU_BUILD_TYPE STREQUAL "O2" OR CONFIG_O2_EXTENSIONS)
         TPCClusterFinder/GPUTPCCFDecodeZS.cxx
         TPCClusterFinder/GPUTPCCFGather.cxx
         DataTypes/TPCPadGainCalib.cxx
+        DataTypes/TPCZSLinkMapping.cxx
         DataTypes/CalibdEdxContainer.cxx
+        DataTypes/CalibdEdxTrackTopologyPol.cxx
+        DataTypes/CalibdEdxTrackTopologySpline.cxx
         Refit/GPUTrackingRefit.cxx
         Refit/GPUTrackingRefitKernel.cxx
         Merger/GPUTPCGMO2Output.cxx)
@@ -273,6 +280,7 @@ if(ALIGPU_BUILD_TYPE STREQUAL "O2")
                                             DataTypes
                  PUBLIC_LINK_LIBRARIES O2::GPUCommon
                                        O2::ReconstructionDataFormats
+                                       O2::TPCFastTransformation
                  PRIVATE_LINK_LIBRARIES O2::DataFormatsTPC
                  SOURCES ${SRCS_O2_DATATYPE_HEADERS})
   target_compile_definitions(${targetName} PRIVATE GPUCA_O2_LIB GPUCA_TPC_GEOMETRY_O2 GPUCA_HAVE_O2HEADERS)
@@ -284,7 +292,7 @@ if(ALIGPU_BUILD_TYPE STREQUAL "O2")
                  SOURCES ${SRCS_O2_DATATYPES})
   target_compile_definitions(${targetName} PRIVATE GPUCA_O2_LIB GPUCA_TPC_GEOMETRY_O2 GPUCA_HAVE_O2HEADERS)
   o2_target_root_dictionary(GPUDataTypes
-                            HEADERS ${HDRS_CINT_O2_DATATYPES} ${HDRS_CINT_O2_ADDITIONAL}
+                            HEADERS ${HDRS_CINT_O2_DATATYPES} ${HDRS_CIND_O2_CONFIGURABLEPARAM} ${HDRS_CINT_O2_ADDITIONAL}
                             LINKDEF GPUTrackingLinkDef_O2_DataTypes.h)
 
   o2_add_library(${MODULE}
@@ -451,6 +459,15 @@ if(ALIGPU_BUILD_TYPE STREQUAL "Standalone")
   set(targetName ${MODULE})
   add_library(O2::${MODULE} ALIAS ${MODULE})
   install(TARGETS ${MODULE})
+
+  if(CONFIG_ROOT)
+    ROOT_GENERATE_DICTIONARY(G__${MODULE} ${HDRS_CINT_O2} ${HDRS_CINT_O2_DATATYPES} ${HDRS_CINT_O2_ADDITIONAL} GPUTrackingLinkDef_Standalone.h)
+    target_sources(${MODULE} PRIVATE G__${MODULE})
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/lib${MODULE}_rdict.pcm
+      ${CMAKE_CURRENT_BINARY_DIR}/lib${MODULE}.rootmap
+    DESTINATION .)
+  endif()
 endif()
 
 # Add compile definitions and libraries depending on available optional dependencies

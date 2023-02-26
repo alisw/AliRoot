@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUO2Interface.cxx
 /// \author David Rohr
@@ -56,6 +51,9 @@ int GPUO2Interface::Initialize(const GPUO2InterfaceConfiguration& config)
   mChain->mConfigQA = &mConfig->configQA;
   if (mConfig->configWorkflow.inputs.isSet(GPUDataTypes::InOutType::TPCRaw)) {
     mConfig->configGRP.needsClusterer = 1;
+  }
+  if (mConfig->configWorkflow.inputs.isSet(GPUDataTypes::InOutType::TPCCompressedClusters)) {
+    mConfig->configGRP.doCompClusterDecode = 1;
   }
   mRec->SetSettings(&mConfig->configGRP, &mConfig->configReconstruction, &mConfig->configProcessing, &mConfig->configWorkflow);
   mChain->SetCalibObjects(mConfig->configCalib);
@@ -103,14 +101,14 @@ int GPUO2Interface::RunTracking(GPUTrackingInOutPointers* data, GPUInterfaceOutp
     mChain->mIOPtrs = *data;
 
     char fname[1024];
-    sprintf(fname, "event.%d.dump", nEvent);
+    snprintf(fname, 1024, "event.%d.dump", nEvent);
     mChain->DumpData(fname);
     if (nEvent == 0) {
       mRec->DumpSettings();
 #ifdef GPUCA_BUILD_QA
       if (mConfig->configProcessing.runMC) {
         mChain->ForceInitQA();
-        sprintf(fname, "mc.%d.dump", nEvent);
+        snprintf(fname, 1024, "mc.%d.dump", nEvent);
         mChain->GetQA()->DumpO2MCData(fname);
       }
 #endif
@@ -142,10 +140,11 @@ int GPUO2Interface::RunTracking(GPUTrackingInOutPointers* data, GPUInterfaceOutp
     mRec->ClearAllocatedMemory();
     return retVal;
   }
-  if (mConfig->configQA.shipToQC) {
+  if (mConfig->configQA.shipToQC && mChain->QARanForTF()) {
     outputs->qa.hist1 = &mChain->GetQA()->getHistograms1D();
     outputs->qa.hist2 = &mChain->GetQA()->getHistograms2D();
     outputs->qa.hist3 = &mChain->GetQA()->getHistograms1Dd();
+    outputs->qa.newQAHistsCreated = true;
   }
   *data = mChain->mIOPtrs;
 
@@ -185,8 +184,8 @@ std::unique_ptr<o2::tpc::CalibdEdxContainer> GPUO2Interface::getCalibdEdxContain
   return std::make_unique<o2::tpc::CalibdEdxContainer>();
 }
 
-int GPUO2Interface::UpdateCalibration(const GPUCalibObjectsConst& newCalib)
+int GPUO2Interface::UpdateCalibration(const GPUCalibObjectsConst& newCalib, const GPUNewCalibValues& newVals)
 {
-  mChain->SetUpdateCalibObjects(newCalib);
+  mChain->SetUpdateCalibObjects(newCalib, newVals);
   return 0;
 }

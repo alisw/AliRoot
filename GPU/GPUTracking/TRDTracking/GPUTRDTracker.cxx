@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTRDTracker.cxx
 /// \author Ole Schmidt
@@ -107,7 +102,7 @@ void* GPUTRDTracker_t<TRDTRK, PROP>::SetPointersTracks(void* base)
 }
 
 template <class TRDTRK, class PROP>
-GPUTRDTracker_t<TRDTRK, PROP>::GPUTRDTracker_t() : mR(nullptr), mIsInitialized(false), mGenerateSpacePoints(false), mProcessPerTimeFrame(false), mNAngleHistogramBins(25), mAngleHistogramRange(50), mMemoryPermanent(-1), mMemoryTracklets(-1), mMemoryTracks(-1), mNMaxCollisions(0), mNMaxTracks(0), mNMaxSpacePoints(0), mTracks(nullptr), mTrackAttribs(nullptr), mNCandidates(1), mNTracks(0), mNEvents(0), mMaxThreads(100), mTrackletIndexArray(nullptr), mHypothesis(nullptr), mCandidates(nullptr), mSpacePoints(nullptr), mGeo(nullptr), mRPhiA2(0), mRPhiB(0), mRPhiC2(0), mDyA2(0), mDyB(0), mDyC2(0), mAngleToDyA(0), mAngleToDyB(0), mAngleToDyC(0), mDebugOutput(false), mMaxEta(0.84f), mRoadZ(18.f), mZCorrCoefNRC(1.4f), mTPCVdrift(2.58f), mDebug(new GPUTRDTrackerDebug<TRDTRK>())
+GPUTRDTracker_t<TRDTRK, PROP>::GPUTRDTracker_t() : mR(nullptr), mIsInitialized(false), mGenerateSpacePoints(false), mProcessPerTimeFrame(false), mNAngleHistogramBins(25), mAngleHistogramRange(50), mMemoryPermanent(-1), mMemoryTracklets(-1), mMemoryTracks(-1), mNMaxCollisions(0), mNMaxTracks(0), mNMaxSpacePoints(0), mTracks(nullptr), mTrackAttribs(nullptr), mNCandidates(1), mNTracks(0), mNEvents(0), mMaxThreads(100), mTrackletIndexArray(nullptr), mHypothesis(nullptr), mCandidates(nullptr), mSpacePoints(nullptr), mGeo(nullptr), mRPhiA2(0), mRPhiB(0), mRPhiC2(0), mDyA2(0), mDyB(0), mDyC2(0), mAngleToDyA(0), mAngleToDyB(0), mAngleToDyC(0), mDebugOutput(false), mMaxEta(0.84f), mRoadZ(18.f), mZCorrCoefNRC(1.4f), mTPCVdrift(2.58f), mTPCTDriftOffset(0.f), mDebug(new GPUTRDTrackerDebug<TRDTRK>())
 {
   //--------------------------------------------------------------------
   // Default constructor
@@ -134,18 +129,19 @@ void GPUTRDTracker_t<TRDTRK, PROP>::InitializeProcessor()
     GPUError("TRD geometry must be provided externally");
   }
 
-  float Bz = Param().par.bzkG;
+  float Bz = Param().bzkG;
+  float resRPhiIdeal2 = Param().rec.trd.trkltResRPhiIdeal * Param().rec.trd.trkltResRPhiIdeal;
   GPUInfo("Initializing with B-field: %f kG", Bz);
   if (CAMath::Abs(CAMath::Abs(Bz) - 2) < 0.1) {
     // magnetic field +-0.2 T
     if (Bz > 0) {
       GPUInfo("Loading error parameterization for Bz = +2 kG");
-      mRPhiA2 = 1.6e-3f, mRPhiB = -1.43e-2f, mRPhiC2 = 4.55e-2f;
+      mRPhiA2 = resRPhiIdeal2, mRPhiB = -1.43e-2f, mRPhiC2 = 4.55e-2f;
       mDyA2 = 1.225e-3f, mDyB = -9.8e-3f, mDyC2 = 3.88e-2f;
       mAngleToDyA = -0.1f, mAngleToDyB = 1.89f, mAngleToDyC = -0.4f;
     } else {
       GPUInfo("Loading error parameterization for Bz = -2 kG");
-      mRPhiA2 = 1.6e-3f, mRPhiB = 1.43e-2f, mRPhiC2 = 4.55e-2f;
+      mRPhiA2 = resRPhiIdeal2, mRPhiB = 1.43e-2f, mRPhiC2 = 4.55e-2f;
       mDyA2 = 1.225e-3f, mDyB = 9.8e-3f, mDyC2 = 3.88e-2f;
       mAngleToDyA = 0.1f, mAngleToDyB = 1.89f, mAngleToDyC = 0.4f;
     }
@@ -153,18 +149,20 @@ void GPUTRDTracker_t<TRDTRK, PROP>::InitializeProcessor()
     // magnetic field +-0.5 T
     if (Bz > 0) {
       GPUInfo("Loading error parameterization for Bz = +5 kG");
-      mRPhiA2 = 1.6e-3f, mRPhiB = 0.125f, mRPhiC2 = 0.0961f;
+      mRPhiA2 = resRPhiIdeal2, mRPhiB = 0.125f, mRPhiC2 = 0.0961f;
       mDyA2 = 1.681e-3f, mDyB = 0.15f, mDyC2 = 0.1849f;
       mAngleToDyA = 0.13f, mAngleToDyB = 2.43f, mAngleToDyC = -0.58f;
     } else {
       GPUInfo("Loading error parameterization for Bz = -5 kG");
-      mRPhiA2 = 1.6e-3f, mRPhiB = -0.14f, mRPhiC2 = 0.1156f;
+      mRPhiA2 = resRPhiIdeal2, mRPhiB = -0.14f, mRPhiC2 = 0.1156f;
       mDyA2 = 2.209e-3f, mDyB = -0.15f, mDyC2 = 0.2025f;
       mAngleToDyA = -0.15f, mAngleToDyB = 2.34f, mAngleToDyC = 0.56f;
     }
   } else {
     // magnetic field 0 T or another value which is not covered by the error parameterizations
-    GPUError("No error parameterization available for Bz = %.2f kG", Bz);
+    // using default values instead
+    GPUWarning("No error parameterization available for Bz = %.2f kG. Keeping default value (sigma_y = const. = 1cm)", Bz);
+    mRPhiA2 = 1.f;
   }
 
 #ifdef GPUCA_ALIROOT_LIB
@@ -304,12 +302,13 @@ GPUdi() const typename PROP::propagatorParam* GPUTRDTracker_t<TRDTRK, PROP>::get
 #elif defined GPUCA_ALIROOT_LIB
   return nullptr;
 #else
+#ifdef GPUCA_HAVE_O2HEADERS
   if (externalDefaultO2Propagator) {
     return o2::base::Propagator::Instance();
-  } else {
-    return GetConstantMem()->calibObjects.o2Propagator;
   }
 #endif
+#endif
+  return GetConstantMem()->calibObjects.o2Propagator;
 }
 
 template <class TRDTRK, class PROP>
@@ -825,6 +824,35 @@ GPUd() bool GPUTRDTracker_t<TRDTRK, PROP>::FollowProlongation(PROP* prop, TRDTRK
       if (iUpdate == 0 && mNCandidates > 1) {
         *t = mCandidates[2 * iUpdate + nextIdx];
       }
+      // check if track crosses padrows
+      float projZEntry, projYEntry;
+      // Get Z for Entry of Track
+      prop->getPropagatedYZ(trkWork->getX() - mGeo->GetCdrHght(), projYEntry, projZEntry);
+      // Get Padrow number for Exit&Entry and compare. If is not equal mark
+      // as padrow crossing. While simple, this comes with the cost of not
+      // properly handling Tracklets that hit a different Pad but still get
+      // attached to the Track. It is estimated that the probability for
+      // this is low.
+      const auto padrowEntry = pad->GetPadRowNumber(projZEntry);
+      const auto padrowExit = pad->GetPadRowNumber(trkWork->getZ());
+      if (padrowEntry != padrowExit) {
+        trkWork->setIsCrossingNeighbor(iLayer);
+        trkWork->setHasPadrowCrossing();
+      }
+      const auto currDet = tracklets[mHypothesis[iUpdate + hypothesisIdxOffset].mTrackletId].GetDetector();
+      // Mark tracklets as Padrow crossing if they have a neighboring tracklet.
+      for (int trkltIdx = glbTrkltIdxOffset + mTrackletIndexArray[trkltIdxOffset + currDet]; trkltIdx < glbTrkltIdxOffset + mTrackletIndexArray[trkltIdxOffset + currDet + 1]; ++trkltIdx) {
+        // skip orig tracklet
+        if (mHypothesis[iUpdate + hypothesisIdxOffset].mTrackletId == trkltIdx) {
+          continue;
+        }
+        if (GPUCommonMath::Abs(tracklets[mHypothesis[iUpdate + hypothesisIdxOffset].mTrackletId].GetZbin() - tracklets[trkltIdx].GetZbin()) == 1 &&
+            GPUCommonMath::Abs(tracklets[mHypothesis[iUpdate + hypothesisIdxOffset].mTrackletId].GetY() - tracklets[trkltIdx].GetY()) < 1) {
+          trkWork->setIsCrossingNeighbor(iLayer);
+          trkWork->setHasNeighbor();
+          break;
+        }
+      }
     } // end update loop
 
     if (!isOK) {
@@ -1139,7 +1167,9 @@ namespace GPUCA_NAMESPACE
 namespace gpu
 {
 // instantiate version for AliExternalTrackParam / o2::TrackParCov data types
+#if defined(GPUCA_ALIROOT_LIB) || defined(GPUCA_HAVE_O2HEADERS)
 template class GPUTRDTracker_t<GPUTRDTrack, GPUTRDPropagator>;
+#endif
 // always instantiate version for GPU Track Model
 template class GPUTRDTracker_t<GPUTRDTrackGPU, GPUTRDPropagatorGPU>;
 } // namespace gpu

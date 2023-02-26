@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUReconstruction.cxx
 /// \author David Rohr
@@ -267,7 +262,7 @@ int GPUReconstruction::InitPhaseBeforeDevice()
       mProcessingSettings.trackletSelectorSlices = 1;
     }
   }
-  if (mProcessingSettings.createO2Output > 1 && mProcessingSettings.runQA) {
+  if (mProcessingSettings.createO2Output > 1 && mProcessingSettings.runQA && mProcessingSettings.qcRunFraction == 100.f) {
     mProcessingSettings.createO2Output = 1;
   }
   if (!mProcessingSettings.createO2Output || !IsGPU()) {
@@ -278,7 +273,6 @@ int GPUReconstruction::InitPhaseBeforeDevice()
   }
   if (!IsGPU()) {
     mProcessingSettings.nDeviceHelperThreads = 0;
-    mProcessingSettings.nTPCClustererLanes = 1;
   }
 
   if (param().rec.nonConsecutiveIDs) {
@@ -307,6 +301,7 @@ int GPUReconstruction::InitPhaseBeforeDevice()
   }
 
   mMemoryScalers->factor = mProcessingSettings.memoryScalingFactor;
+  mMemoryScalers->conservative = mProcessingSettings.conservativeMemoryEstimate;
   mMemoryScalers->returnMaxVal = mProcessingSettings.forceMaxMemScalers != 0;
   if (mProcessingSettings.forceMaxMemScalers > 1) {
     mMemoryScalers->rescaleMaxMem(mProcessingSettings.forceMaxMemScalers);
@@ -319,6 +314,11 @@ int GPUReconstruction::InitPhaseBeforeDevice()
     mProcessingSettings.ompAutoNThreads = false;
     omp_set_num_threads(mProcessingSettings.ompThreads);
   }
+  if (mProcessingSettings.ompKernels) {
+    if (omp_get_max_active_levels() < 2) {
+      omp_set_max_active_levels(2);
+    }
+  }
 #else
   mProcessingSettings.ompThreads = 1;
 #endif
@@ -327,6 +327,15 @@ int GPUReconstruction::InitPhaseBeforeDevice()
   if (IsGPU()) {
     mNStreams = std::max<int>(mProcessingSettings.nStreams, 3);
   }
+
+#ifdef GPUCA_HAVE_O2HEADERS
+  if (mProcessingSettings.nTPCClustererLanes == -1) {
+    mProcessingSettings.nTPCClustererLanes = (GetRecoStepsGPU() & RecoStep::TPCClusterFinding) ? 3 : std::max<int>(1, std::min<int>(GPUCA_NSLICES, mProcessingSettings.ompKernels ? (mProcessingSettings.ompThreads >= 4 ? std::min<int>(mProcessingSettings.ompThreads / 2, mProcessingSettings.ompThreads >= 32 ? GPUCA_NSLICES : 4) : 1) : mProcessingSettings.ompThreads));
+  }
+  if (mProcessingSettings.overrideClusterizerFragmentLen == -1) {
+    mProcessingSettings.overrideClusterizerFragmentLen = ((GetRecoStepsGPU() & RecoStep::TPCClusterFinding) || (mProcessingSettings.ompThreads / mProcessingSettings.nTPCClustererLanes >= 3)) ? TPC_MAX_FRAGMENT_LEN_GPU : TPC_MAX_FRAGMENT_LEN_HOST;
+  }
+#endif
 
   if (mProcessingSettings.doublePipeline && (mChains.size() != 1 || mChains[0]->SupportsDoublePipeline() == false || !IsGPU() || mProcessingSettings.memoryAllocationStrategy != GPUMemoryResource::ALLOCATION_GLOBAL)) {
     GPUError("Must use double pipeline mode only with exactly one chain that must support it");
@@ -549,7 +558,7 @@ size_t GPUReconstruction::AllocateRegisteredMemoryHelper(GPUMemoryResource* res,
     memorypool = (void*)((char*)memorypool + GPUProcessor::getAlignment<GPUCA_MEMALIGN>(memorypool));
   }
   if (memorypoolend ? (memorypool > memorypoolend) : ((size_t)((char*)memorypool - (char*)memorybase) > memorysize)) {
-    std::cout << "Memory pool size exceeded (" << device << ") (" << res->mName << ": " << (memorypoolend ? (memorysize + ((char*)memorypool - (char*)memorypoolend)) : (char*)memorypool - (char*)memorybase) << " < " << memorysize << "\n";
+    std::cerr << "Memory pool size exceeded (" << device << ") (" << res->mName << ": " << (memorypoolend ? (memorysize + ((char*)memorypool - (char*)memorypoolend)) : (char*)memorypool - (char*)memorybase) << " < " << memorysize << "\n";
     throw std::bad_alloc();
   }
   if (mProcessingSettings.allocDebugLevel >= 2) {
@@ -718,7 +727,7 @@ void GPUReconstruction::ResetRegisteredMemoryPointers(short ires)
     void* basePtr = res->mReuse >= 0 ? mMemoryResources[res->mReuse].mPtr : res->mPtr;
     size_t size = (char*)res->SetPointers(basePtr) - (char*)basePtr;
     if (basePtr && size > std::max(res->mSize, res->mOverrideSize)) {
-      std::cout << "Updated pointers exceed available memory size: " << size << " > " << std::max(res->mSize, res->mOverrideSize) << " - host - " << res->mName << "\n";
+      std::cerr << "Updated pointers exceed available memory size: " << size << " > " << std::max(res->mSize, res->mOverrideSize) << " - host - " << res->mName << "\n";
       throw std::bad_alloc();
     }
   }
@@ -726,7 +735,7 @@ void GPUReconstruction::ResetRegisteredMemoryPointers(short ires)
     void* basePtr = res->mReuse >= 0 ? mMemoryResources[res->mReuse].mPtrDevice : res->mPtrDevice;
     size_t size = (char*)res->SetDevicePointers(basePtr) - (char*)basePtr;
     if (basePtr && size > std::max(res->mSize, res->mOverrideSize)) {
-      std::cout << "Updated pointers exceed available memory size: " << size << " > " << std::max(res->mSize, res->mOverrideSize) << " - GPU - " << res->mName << "\n";
+      std::cerr << "Updated pointers exceed available memory size: " << size << " > " << std::max(res->mSize, res->mOverrideSize) << " - GPU - " << res->mName << "\n";
       throw std::bad_alloc();
     }
   }
@@ -1005,11 +1014,11 @@ void GPUReconstruction::PrepareEvent() // TODO: Clean this up, this should not b
   AllocateRegisteredMemory(nullptr);
 }
 
-int GPUReconstruction::CheckErrorCodes(bool cpuOnly)
+int GPUReconstruction::CheckErrorCodes(bool cpuOnly, bool forceShowErrors)
 {
   int retVal = 0;
   for (unsigned int i = 0; i < mChains.size(); i++) {
-    if (mChains[i]->CheckErrorCodes(cpuOnly)) {
+    if (mChains[i]->CheckErrorCodes(cpuOnly, forceShowErrors)) {
       retVal++;
     }
   }
@@ -1029,7 +1038,8 @@ void GPUReconstruction::DumpSettings(const char* dir)
 
 void GPUReconstruction::UpdateGRPSettings(const GPUSettingsGRP* g, const GPUSettingsProcessing* p)
 {
-  param().UpdateGRPSettings(g, p);
+  mGRPSettings = *g;
+  param().UpdateSettings(g, p);
   if (mInitialized) {
     WriteConstantParams();
   }
@@ -1044,7 +1054,7 @@ int GPUReconstruction::ReadSettings(const char* dir)
   if (ReadStructFromFile(f.c_str(), &mGRPSettings)) {
     return 1;
   }
-  param().UpdateGRPSettings(&mGRPSettings);
+  param().UpdateSettings(&mGRPSettings);
   for (unsigned int i = 0; i < mChains.size(); i++) {
     mChains[i]->ReadSettings(dir);
   }
@@ -1115,6 +1125,12 @@ GPUReconstruction* GPUReconstruction::CreateInstance(const GPUSettingsDeviceBack
 {
   GPUReconstruction* retVal = nullptr;
   unsigned int type = cfg.deviceType;
+#ifdef DEBUG_STREAMER
+  if (type != DeviceType::CPU) {
+    GPUError("Cannot create GPUReconstruction for a non-CPU device if DEBUG_STREAMER are enabled");
+    return nullptr;
+  }
+#endif
   if (type == DeviceType::CPU) {
     retVal = GPUReconstruction_Create_CPU(cfg);
   } else if (type == DeviceType::CUDA) {

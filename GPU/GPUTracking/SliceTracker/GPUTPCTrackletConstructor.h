@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTPCTrackletConstructor.h
 /// \author Sergey Gorbunov, David Rohr
@@ -62,8 +57,8 @@ class GPUTPCTrackletConstructor
     int mISH;         // track index
     int mFirstRow;    // first row index
     int mLastRow;     // last row index
-    int mStartRow;    // first row index
-    int mEndRow;      // first row index
+    int mStartRow;    // row index of first hit in seed
+    int mEndRow;      // row index of last hit in seed
     calink mCurrIH;   // indef of the current hit
     char mGo;         // do fit/searching flag
     int mStage;       // reco stage
@@ -91,7 +86,7 @@ class GPUTPCTrackletConstructor
   GPUd() static void InitTracklet(MEM_LG2(GPUTPCTrackParam) & tParam);
 
   MEM_CLASS_PRE2_TEMPLATE(class T)
-  GPUd() static void UpdateTracklet(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() T& s, GPUTPCThreadMemory& r, GPUconstantref() MEM_GLOBAL(GPUTPCTracker) & tracker, MEM_LG2(GPUTPCTrackParam) & tParam, int iRow, calink& rowHit);
+  GPUd() static void UpdateTracklet(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() T& s, GPUTPCThreadMemory& r, GPUconstantref() MEM_GLOBAL(GPUTPCTracker) & tracker, MEM_LG2(GPUTPCTrackParam) & tParam, int iRow, calink& rowHit, calink* rowHits);
 
   MEM_CLASS_PRE23()
   GPUd() static void StoreTracklet(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() MEM_LOCAL(GPUSharedMemory) & s, GPUTPCThreadMemory& r, GPUconstantref() MEM_LG2(GPUTPCTracker) & tracker, MEM_LG3(GPUTPCTrackParam) & tParam, calink* rowHits);
@@ -111,7 +106,7 @@ class GPUTPCTrackletConstructor
 #endif
 
   typedef GPUconstantref() MEM_GLOBAL(GPUTPCTracker) processorType;
-  GPUhdi() CONSTEXPRRET static GPUDataTypes::RecoStep GetRecoStep() { return GPUCA_RECO_STEP::TPCSliceTracking; }
+  GPUhdi() CONSTEXPR static GPUDataTypes::RecoStep GetRecoStep() { return GPUCA_RECO_STEP::TPCSliceTracking; }
   MEM_TEMPLATE()
   GPUhdi() static processorType* Processor(MEM_TYPE(GPUConstantMem) & processors)
   {

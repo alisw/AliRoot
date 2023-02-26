@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTPCGMO2Output.cxx
 /// \author David Rohr
@@ -23,6 +18,7 @@
 #include "DataFormatsTPC/TrackTPC.h"
 #include "DataFormatsTPC/Constants.h"
 #include "TPCFastTransform.h"
+#include "CorrectionMapsHelper.h"
 
 #ifndef GPUCA_GPUCODE
 #include "SimulationDataFormat/ConstMCTruthContainer.h"
@@ -51,14 +47,18 @@ GPUdii() void GPUTPCGMO2Output::Thread<GPUTPCGMO2Output::prepare>(int nBlocks, i
   for (unsigned int i = get_global_id(0); i < nTracks; i += get_global_size(0)) {
     unsigned int nCl = 0;
     for (unsigned int j = 0; j < tracks[i].NClusters(); j++) {
-      if (!((trackClusters[tracks[i].FirstClusterRef() + j].state & flagsReject) || (merger.ClusterAttachment()[trackClusters[tracks[i].FirstClusterRef() + j].num] & flagsRequired) != flagsRequired)) {
-        nCl++;
+      if ((trackClusters[tracks[i].FirstClusterRef() + j].state & flagsReject) || (merger.ClusterAttachment()[trackClusters[tracks[i].FirstClusterRef() + j].num] & flagsRequired) != flagsRequired) {
+        continue;
       }
+      if (merger.Param().rec.tpc.dropSecondaryLegsInOutput && trackClusters[tracks[i].FirstClusterRef() + j].leg != trackClusters[tracks[i].FirstClusterRef() + tracks[i].NClusters() - 1].leg) {
+        continue;
+      }
+      nCl++;
     }
     if (nCl == 0) {
       continue;
     }
-    if (merger.Param().rec.tpc.dropSecondaryLegsInOutput && nCl + 2 < GPUCA_TRACKLET_SELECTOR_MIN_HITS_B5(tracks[i].GetParam().GetQPt() * merger.Param().par.qptB5Scaler)) { // Give 2 hits tolerance in the primary leg, compared to the full fit of the looper
+    if (merger.Param().rec.tpc.dropSecondaryLegsInOutput && nCl + 2 < GPUCA_TRACKLET_SELECTOR_MIN_HITS_B5(tracks[i].GetParam().GetQPt() * merger.Param().qptB5Scaler)) { // Give 2 hits tolerance in the primary leg, compared to the full fit of the looper
       continue;
     }
     unsigned int myId = CAMath::AtomicAdd(&merger.Memory()->nO2Tracks, 1u);
@@ -152,6 +152,9 @@ GPUdii() void GPUTPCGMO2Output::Thread<GPUTPCGMO2Output::output>(int nBlocks, in
       if ((trackClusters[tracks[i].FirstClusterRef() + j].state & flagsReject) || (merger.ClusterAttachment()[trackClusters[tracks[i].FirstClusterRef() + j].num] & flagsRequired) != flagsRequired) {
         continue;
       }
+      if (merger.Param().rec.tpc.dropSecondaryLegsInOutput && trackClusters[tracks[i].FirstClusterRef() + j].leg != trackClusters[tracks[i].FirstClusterRef() + tracks[i].NClusters() - 1].leg) {
+        continue;
+      }
       int clusterIdGlobal = trackClusters[tracks[i].FirstClusterRef() + j].num;
       int sector = trackClusters[tracks[i].FirstClusterRef() + j].slice;
       int globalRow = trackClusters[tracks[i].FirstClusterRef() + j].row;
@@ -163,8 +166,7 @@ GPUdii() void GPUTPCGMO2Output::Thread<GPUTPCGMO2Output::output>(int nBlocks, in
         t1 = clusters->clustersLinear[clusterIdGlobal].getTime();
         sector1 = sector;
       }
-      nOutCl2++;
-      if (nOutCl2 == nOutCl) {
+      if (++nOutCl2 == nOutCl) {
         t2 = clusters->clustersLinear[clusterIdGlobal].getTime();
         sector2 = sector;
       }
@@ -193,11 +195,27 @@ GPUdii() void GPUTPCGMO2Output::Thread<GPUTPCGMO2Output::output>(int nBlocks, in
         tFwd = tBwd = delta;
       } else {
         // estimate max/min time increments which still keep track in the physical limits of the TPC
-        float tmin = CAMath::Min(t1, t2);
-        float tmax = CAMath::Max(t1, t2);
+        const float tmin = CAMath::Min(t1, t2);
+        const float maxDriftTime = merger.GetConstantMem()->calibObjects.fastTransformHelper->getCorrMap()->getMaxDriftTime(t1 > t2 ? sector1 : sector2);
+        const float tmax = CAMath::Min(tmin + maxDriftTime, CAMath::Max(t1, t2));
+        float delta = 0.f;
+        if (time0 + maxDriftTime < tmax) {
+          delta = tmax - time0 - maxDriftTime;
+        }
+        if (tmin < time0 + delta) {
+          delta = tmin - time0;
+        }
+        if (delta != 0.f) {
+          time0 += delta;
+          const float deltaZ = merger.GetConstantMem()->calibObjects.fastTransformHelper->getCorrMap()->convDeltaTimeToDeltaZinTimeFrame(sector2, delta);
+          oTrack.setZ(oTrack.getZ() + deltaZ);
+        }
         tFwd = tmin - time0;
-        tBwd = time0 - tmax + merger.GetConstantMem()->calibObjects.fastTransform->getMaxDriftTime(t1 > t2 ? sector1 : sector2);
+        tBwd = time0 - tmax + maxDriftTime;
       }
+    }
+    if (tBwd < 0.f) {
+      tBwd = 0.f;
     }
     oTrack.setTime0(time0);
     oTrack.setDeltaTBwd(tBwd);

@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTRDTrack.h
 /// \author Ole Schmidt
@@ -89,8 +84,24 @@ class GPUTRDTrack_t : public T
   // This method is only defined in TrackTRD.h and is intended to be used only with that TRD track type
   GPUd() o2::dataformats::GlobalTrackID getRefGlobalTrackId() const;
   GPUd() short getCollisionId() const { return mCollisionId; }
-  GPUd() int getNtracklets() const;
+  GPUd() int getNtracklets() const
+  {
+    // returns number of tracklets attached to this track
+    int retVal = 0;
+    for (int iLy = 0; iLy < kNLayers; ++iLy) {
+      if (mAttachedTracklets[iLy] >= 0) {
+        ++retVal;
+      }
+    }
+    return retVal;
+  }
+
   GPUd() float getChi2() const { return mChi2; }
+  GPUd() float getSignal() const { return mSignal; }
+  GPUd() unsigned char getIsCrossingNeighbor() const { return mIsCrossingNeighbor; }
+  GPUd() bool getIsCrossingNeighbor(int iLayer) const { return mIsCrossingNeighbor & (1 << iLayer); }
+  GPUd() bool getHasNeighbor() const { return mIsCrossingNeighbor & (1 << 6); }
+  GPUd() bool getHasPadrowCrossing() const { return mIsCrossingNeighbor & (1 << 7); }
   GPUd() float getReducedChi2() const { return getNlayersFindable() == 0 ? mChi2 : mChi2 / getNlayersFindable(); }
   GPUd() bool getIsStopped() const { return (mFlags >> kStopFlag) & 0x1; }
   GPUd() bool getIsAmbiguous() const { return (mFlags >> kAmbiguousFlag) & 0x1; }
@@ -111,22 +122,28 @@ class GPUTRDTrack_t : public T
   GPUd() void setIsStopped() { mFlags |= (1U << kStopFlag); }
   GPUd() void setIsAmbiguous() { mFlags |= (1U << kAmbiguousFlag); }
   GPUd() void setChi2(float chi2) { mChi2 = chi2; }
+  GPUd() void setSignal(float signal) { mSignal = signal; }
+  GPUd() void setIsCrossingNeighbor(int iLayer) { mIsCrossingNeighbor |= (1U << iLayer); }
+  GPUd() void setHasNeighbor() { mIsCrossingNeighbor |= (1U << 6); }
+  GPUd() void setHasPadrowCrossing() { mIsCrossingNeighbor |= (1U << 7); }
 
   // conversion to / from HLT track structure (only for AliRoot)
   GPUd() void ConvertTo(GPUTRDTrackDataRecord& t) const;
   GPUd() void ConvertFrom(const GPUTRDTrackDataRecord& t);
 
  protected:
-  float mChi2;                      // total chi2.
-  unsigned int mRefGlobalTrackId;   // raw GlobalTrackID of the seeding track (either ITS-TPC or TPC)
-  int mAttachedTracklets[kNLayers]; // indices of the tracklets attached to this track; -1 means no tracklet in that layer
-  short mCollisionId;               // the collision ID of the tracklets attached to this track; is used to retrieve the BC information for this track after the tracking is done
-  unsigned char mFlags;             // bits 0 to 5 indicate whether track is findable in layer 0 to 5, bit 6 indicates an ambiguous track and bit 7 flags if the track is stopped in the TRD
+  float mChi2;                       // total chi2.
+  float mSignal{-1.f};               // electron Likelihood for track
+  unsigned int mRefGlobalTrackId;    // raw GlobalTrackID of the seeding track (either ITS-TPC or TPC)
+  int mAttachedTracklets[kNLayers];  // indices of the tracklets attached to this track; -1 means no tracklet in that layer
+  short mCollisionId;                // the collision ID of the tracklets attached to this track; is used to retrieve the BC information for this track after the tracking is done
+  unsigned char mFlags;              // bits 0 to 5 indicate whether track is findable in layer 0 to 5, bit 6 indicates an ambiguous track and bit 7 flags if the track is stopped in the TRD
+  unsigned char mIsCrossingNeighbor; // bits 0 to 5 indicate if a tracklet was either a neighboring tracklet (e.g. a potential split tracklet) or crossed a padrow, bit 6 indicates that a neighbor in any layer has been found and bit 7 if a padrow was crossed
 
  private:
   GPUd() void initialize();
 #if !defined(GPUCA_STANDALONE) && !defined(GPUCA_ALIROOT_LIB)
-  ClassDefNV(GPUTRDTrack_t, 2);
+  ClassDefNV(GPUTRDTrack_t, 4);
 #endif
 };
 

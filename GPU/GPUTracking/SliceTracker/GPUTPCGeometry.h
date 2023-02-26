@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTPCGeometry.h
 /// \author David Rohr, Jens Wiechula, Sergey Gorbunov
@@ -28,7 +23,7 @@ namespace gpu
 {
 // Copy of TPC constants from AliRoot:TPCGeometry / O2:TPC/Base/Mapper
 // Should be unified, but cannot take the contants from the official headers for now, since we want it to be constexpr
-class GPUTPCGeometry
+class GPUTPCGeometry // TODO: Make values constexpr
 {
 #if defined(__OPENCL__) && !defined(__OPENCLCPP__)
   GPUTPCGeometry(); // Fake constructor declaration for OpenCL due to static members, does not exist!
@@ -52,17 +47,24 @@ class GPUTPCGeometry
   const unsigned char mRegionRows[10] GPUCA_CPP11_INIT(= {17, 15, 16, 15, 18, 16, 16, 14, 13, 12});
   const unsigned char mRegionStart[10] GPUCA_CPP11_INIT(= {0, 17, 32, 48, 63, 81, 97, 113, 127, 140});
 
+  const unsigned char mSampaMapping[10] GPUCA_CPP11_INIT(= {0, 0, 1, 1, 2, 3, 3, 4, 4, 2});
+  const unsigned char mChannelOffset[10] GPUCA_CPP11_INIT(= {0, 16, 0, 16, 0, 0, 16, 0, 16, 16});
+  const unsigned char mSectorFECOffset[5] GPUCA_CPP11_INIT(= {0, 15, 15 + 18, 15 + 18 + 18, 15 + 18 + 18 + 20});
+
   const float mPadHeight[10] GPUCA_CPP11_INIT(= {.75f, .75f, .75f, .75f, 1.f, 1.f, 1.2f, 1.2f, 1.5f, 1.5f});
   const float mPadWidth[10] GPUCA_CPP11_INIT(= {.416f, .420f, .420f, .436f, .6f, .6f, .608f, .588f, .604f, .607f});
 
 #if !defined(__OPENCL__) || defined(__OPENCLCPP__)
-  static CONSTEXPR float FACTOR_T2Z GPUCA_CPP11_INIT(= 250.f / 512.f);
+  static CONSTEXPR float FACTOR_T2Z GPUCA_CPP11_INIT(= 250.f / 512.f); // Used in compression, must remain constant at 250cm, 512 time bins!
 #endif
 
  public:
   GPUd() int GetRegion(int row) const { return mRegion[row]; }
   GPUd() int GetRegionRows(int region) const { return mRegionRows[region]; }
   GPUd() int GetRegionStart(int region) const { return mRegionStart[region]; }
+  GPUd() int GetSampaMapping(int region) const { return mSampaMapping[region]; }
+  GPUd() int GetChannelOffset(int region) const { return mChannelOffset[region]; }
+  GPUd() int GetSectorFECOffset(int partition) const { return mSectorFECOffset[partition]; }
   GPUd() int GetROC(int row) const { return row < 97 ? (row < 63 ? 0 : 1) : (row < 127 ? 2 : 3); }
   GPUd() int EndIROC() const { return 63; }
   GPUd() int EndOROC1() const { return 97; }
@@ -85,7 +87,7 @@ class GPUTPCGeometry
   const float mPadWidth[3] GPUCA_CPP11_INIT(= {.4f, .6f, .6f});
 
 #if !defined(__OPENCL__) || defined(__OPENCLCPP__)
-  static CONSTEXPR float FACTOR_T2Z GPUCA_CPP11_INIT(= 250.f / 1024.f);
+  static CONSTEXPR float FACTOR_T2Z GPUCA_CPP11_INIT(= 250.f / 1024.f); // Used in compression, must remain constant at 250cm, 1024 time bins!
 #endif
 
  public:
@@ -102,6 +104,7 @@ class GPUTPCGeometry
   static CONSTEXPR float FACTOR_Z2T GPUCA_CPP11_INIT(= 1.f / FACTOR_T2Z);
 #endif
  public:
+  GPUd() static CONSTEXPR float TPCLength() { return 250.f - 0.275f; }
   GPUd() float Row2X(int row) const { return (mX[row]); }
   GPUd() float PadHeight(int row) const { return (mPadHeight[GetRegion(row)]); }
   GPUd() float PadWidth(int row) const { return (mPadWidth[GetRegion(row)]); }
@@ -116,7 +119,7 @@ class GPUTPCGeometry
 
   GPUd() static float LinearTime2Z(int slice, float time)
   {
-    const float v = 250.f - time * FACTOR_T2Z;
+    const float v = 250.f - time * FACTOR_T2Z; // Used in compression, must remain constant at 250cm!
     return (slice >= GPUCA_NSLICES / 2) ? -v : v;
   }
 
@@ -129,7 +132,7 @@ class GPUTPCGeometry
   GPUd() static float LinearZ2Time(int slice, float z)
   {
     const float v = (slice >= GPUCA_NSLICES / 2) ? -z : z;
-    return (250.f - v) * FACTOR_Z2T;
+    return (250.f - v) * FACTOR_Z2T; // Used in compression, must remain constant at 250cm
   }
 #endif
 };

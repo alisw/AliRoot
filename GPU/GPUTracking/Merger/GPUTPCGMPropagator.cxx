@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTPCGMPropagator.cxx
 /// \author Sergey Gorbunov, David Rohr
@@ -571,15 +566,17 @@ GPUd() int GPUTPCGMPropagator::GetPropagatedYZ(float x, float& GPUrestrict() pro
   float bz = GetBz(mT->X(), mT->Y(), mT->Z());
   float k = mT0.QPt() * bz;
   float dx = x - mT->X();
-  float kdx = k * dx;
   float ex = mT0.CosPhi();
   float ey = mT0.SinPhi();
-  float ey1 = kdx + ey;
+  float ey1 = ey - k * dx;
   if (CAMath::Abs(ey1) > GPUCA_MAX_SIN_PHI) {
     return 1;
   }
   float ss = ey + ey1;
   float ex1 = CAMath::Sqrt(1.f - ey1 * ey1);
+  if (ex < 0) {
+    ex1 = -ex1;
+  }
   float cc = ex + ex1;
   float dxcci = dx / cc;
   float dy = dxcci * ss;

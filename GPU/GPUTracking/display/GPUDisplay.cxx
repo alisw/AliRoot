@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUDisplay.cxx
 /// \author David Rohr
@@ -54,13 +49,13 @@
 #include "GPUTPCClusterData.h"
 #include "GPUTRDTrackletWord.h"
 #include "GPUTRDGeometry.h"
-#include "GPUTrackParamConvert.h"
 #include "GPUO2DataTypes.h"
 #include "GPUParam.inc"
 #include "GPUTPCConvertImpl.h"
 #include "utils/qconfig.h"
 
 #ifdef GPUCA_HAVE_O2HEADERS
+#include "GPUTrackParamConvert.h"
 #include "DataFormatsITSMFT/ROFRecord.h"
 #include "DataFormatsITS/TrackITS.h"
 #include "DataFormatsTPC/TrackTPC.h"
@@ -754,12 +749,14 @@ GPUDisplay::vboList GPUDisplay::DrawTracks(const GPUTPCTracker& tracker, int glo
 
 void GPUDisplay::DrawTrackITS(int trackId, int iSlice)
 {
+#ifdef GPUCA_HAVE_O2HEADERS
   const auto& trk = mIOPtrs->itsTracks[trackId];
   for (int k = 0; k < trk.getNClusters(); k++) {
     int cid = mIOPtrs->itsTrackClusIdx[trk.getFirstClusterEntry() + k];
     mVertexBuffer[iSlice].emplace_back(mGlobalPosITS[cid].x, mGlobalPosITS[cid].y * mYFactor, mCfgH.projectXY ? 0 : mGlobalPosITS[cid].z);
     mGlobalPosITS[cid].w = tITSATTACHED;
   }
+#endif
 }
 
 GPUDisplay::vboList GPUDisplay::DrawFinalITS()
@@ -849,7 +846,13 @@ void GPUDisplay::DrawFinal(int iSlice, int /*iCol*/, GPUTPCGMPropagator* prop, s
       };
       if (std::is_same_v<T, GPUTPCGMMergedTrack> || (!mIOPtrs->tpcLinkTRD && mIOPtrs->trdTracksO2)) {
         if (mChain && ((int)mConfig.showTPCTracksFromO2Format == (int)mChain->GetProcessingSettings().trdTrackModelO2) && mTRDTrackIds[i] != -1 && mIOPtrs->nTRDTracklets) {
-          mIOPtrs->trdTracksO2 ? tmpDoTRDTracklets(mIOPtrs->trdTracksO2[mTRDTrackIds[i]]) : tmpDoTRDTracklets(mIOPtrs->trdTracks[mTRDTrackIds[i]]);
+          if (mIOPtrs->trdTracksO2) {
+#ifdef GPUCA_HAVE_O2HEADERS
+            tmpDoTRDTracklets(mIOPtrs->trdTracksO2[mTRDTrackIds[i]]);
+#endif
+          } else {
+            tmpDoTRDTracklets(mIOPtrs->trdTracks[mTRDTrackIds[i]]);
+          }
         }
       } else if constexpr (std::is_same_v<T, o2::tpc::TrackTPC>) {
         if (mIOPtrs->tpcLinkTRD && mIOPtrs->tpcLinkTRD[i] != -1 && mIOPtrs->nTRDTracklets) {
@@ -964,12 +967,12 @@ void GPUDisplay::DrawFinal(int iSlice, int /*iCol*/, GPUTPCGMPropagator* prop, s
               auto cl = mIOPtrs->mergedTrackHits[track->FirstClusterRef() + lastCluster];
               const auto& cln = mIOPtrs->clustersNative->clustersLinear[cl.num];
               GPUTPCConvertImpl::convert(*mCalib->fastTransform, *mParam, cl.slice, cl.row, cln.getPad(), cln.getTime(), x, y, z);
-              ZOffset = mCalib->fastTransform->convVertexTimeToZOffset(iSlice, track->GetParam().GetTZOffset(), mParam->par.continuousMaxTimeBin);
+              ZOffset = mCalib->fastTransformHelper->getCorrMap()->convVertexTimeToZOffset(iSlice, track->GetParam().GetTZOffset(), mParam->par.continuousMaxTimeBin);
             } else {
               uint8_t sector, row;
               auto cln = track->getCluster(mIOPtrs->outputClusRefsTPCO2, lastCluster, *mIOPtrs->clustersNative, sector, row);
               GPUTPCConvertImpl::convert(*mCalib->fastTransform, *mParam, sector, row, cln.getPad(), cln.getTime(), x, y, z);
-              ZOffset = mCalib->fastTransform->convVertexTimeToZOffset(sector, track->getTime0(), mParam->par.continuousMaxTimeBin);
+              ZOffset = mCalib->fastTransformHelper->getCorrMap()->convVertexTimeToZOffset(sector, track->getTime0(), mParam->par.continuousMaxTimeBin);
             }
           }
         } else {
@@ -999,11 +1002,11 @@ void GPUDisplay::DrawFinal(int iSlice, int /*iCol*/, GPUTPCGMPropagator* prop, s
 #ifdef GPUCA_TPC_GEOMETRY_O2
           trkParam.Set(mclocal[0], mclocal[1], mc.z, mclocal[2], mclocal[3], mc.pZ, charge);
           if (mParam->par.continuousTracking) {
-            ZOffset = fabsf(mCalib->fastTransform->convVertexTimeToZOffset(0, mc.t0, mParam->par.continuousMaxTimeBin)) * (mc.z < 0 ? -1 : 1);
+            ZOffset = fabsf(mCalib->fastTransformHelper->getCorrMap()->convVertexTimeToZOffset(0, mc.t0, mParam->par.continuousMaxTimeBin)) * (mc.z < 0 ? -1 : 1);
           }
 #else
-          if (fabsf(mc.z) > 250) {
-            ZOffset = mc.z > 0 ? (mc.z - 250) : (mc.z + 250);
+          if (fabsf(mc.z) > GPUTPCGeometry::TPCLength()) {
+            ZOffset = mc.z > 0 ? (mc.z - GPUTPCGeometry::TPCLength()) : (mc.z + GPUTPCGeometry::TPCLength());
           }
           trkParam.Set(mclocal[0], mclocal[1], mc.z - ZOffset, mclocal[2], mclocal[3], mc.pZ, charge);
 #endif
@@ -1031,7 +1034,7 @@ void GPUDisplay::DrawFinal(int iSlice, int /*iCol*/, GPUTPCGMPropagator* prop, s
           if (fabsf(trkParam.Z() + ZOffset) > mMaxClusterZ + (iMC ? 0 : 0)) {
             break;
           }
-          if (fabsf(trkParam.Z() - z0) > (iMC ? 250 : 250)) {
+          if (fabsf(trkParam.Z() - z0) > (iMC ? GPUTPCGeometry::TPCLength() : GPUTPCGeometry::TPCLength())) {
             break;
           }
           if (inFlyDirection) {
@@ -1279,7 +1282,13 @@ void GPUDisplay::DrawGLScene_updateEventData()
       }
     }
   };
-  mIOPtrs->trdTracksO2 ? tmpDoTRDTracklets(mIOPtrs->trdTracksO2) : tmpDoTRDTracklets(mIOPtrs->trdTracks);
+  if (mIOPtrs->trdTracksO2) {
+#ifdef GPUCA_HAVE_O2HEADERS
+    tmpDoTRDTracklets(mIOPtrs->trdTracksO2);
+#endif
+  } else {
+    tmpDoTRDTracklets(mIOPtrs->trdTracks);
+  }
   if (mIOPtrs->nItsTracks) {
     std::fill(mITSStandaloneTracks.begin(), mITSStandaloneTracks.end(), true);
     if (mIOPtrs->tpcLinkITS) {
@@ -1361,8 +1370,10 @@ void GPUDisplay::DrawGLScene_updateEventData()
   for (int i = 0; i < mCurrentSpacePointsTRD; i++) {
     while (mParam->par.continuousTracking && trdTriggerRecord < (int)mIOPtrs->nTRDTriggerRecords - 1 && mIOPtrs->trdTrackletIdxFirst[trdTriggerRecord + 1] <= i) {
       trdTriggerRecord++;
+#ifdef GPUCA_HAVE_O2HEADERS
       float trdTime = mIOPtrs->trdTriggerTimes[trdTriggerRecord] * 1e3 / o2::constants::lhc::LHCBunchSpacingNS / o2::tpc::constants::LHCBCPERTIMEBIN;
-      trdZoffset = fabsf(mCalib->fastTransform->convVertexTimeToZOffset(0, trdTime, mParam->par.continuousMaxTimeBin));
+      trdZoffset = fabsf(mCalib->fastTransformHelper->getCorrMap()->convVertexTimeToZOffset(0, trdTime, mParam->par.continuousMaxTimeBin));
+#endif
     }
     const auto& sp = mIOPtrs->trdSpacePoints[i];
     int iSec = trdGeometry()->GetSector(mIOPtrs->trdTracklets[i].GetDetector());
@@ -1396,7 +1407,7 @@ void GPUDisplay::DrawGLScene_updateEventData()
     float ZOffset = 0;
     if (mParam->par.continuousTracking) {
       float tofTime = mIOPtrs->tofClusters[i].getTime() * 1e-3 / o2::constants::lhc::LHCBunchSpacingNS / o2::tpc::constants::LHCBCPERTIMEBIN;
-      ZOffset = fabsf(mCalib->fastTransform->convVertexTimeToZOffset(0, tofTime, mParam->par.continuousMaxTimeBin));
+      ZOffset = fabsf(mCalib->fastTransformHelper->getCorrMap()->convVertexTimeToZOffset(0, tofTime, mParam->par.continuousMaxTimeBin));
       ptr->z += ptr->z > 0 ? ZOffset : -ZOffset;
     }
     if (fabsf(ptr->z) > mMaxClusterZ) {
@@ -1424,7 +1435,7 @@ void GPUDisplay::DrawGLScene_updateEventData()
       if (mParam->par.continuousTracking) {
         o2::InteractionRecord startIR = o2::InteractionRecord(0, mIOPtrs->settingsTF && mIOPtrs->settingsTF->hasTfStartOrbit ? mIOPtrs->settingsTF->tfStartOrbit : 0);
         float itsROFtime = mIOPtrs->itsClusterROF[j].getBCData().differenceInBC(startIR) / (float)o2::tpc::constants::LHCBCPERTIMEBIN;
-        ZOffset = fabsf(mCalib->fastTransform->convVertexTimeToZOffset(0, itsROFtime + itsROFhalfLen, mParam->par.continuousMaxTimeBin));
+        ZOffset = fabsf(mCalib->fastTransformHelper->getCorrMap()->convVertexTimeToZOffset(0, itsROFtime + itsROFhalfLen, mParam->par.continuousMaxTimeBin));
       }
       if (i != mIOPtrs->itsClusterROF[j].getFirstEntry()) {
         throw std::runtime_error("Inconsistent ITS data, number of clusters does not match ROF content");
@@ -1795,6 +1806,7 @@ size_t GPUDisplay::DrawGLScene_updateVertexList()
       }
     }
     if (mConfig.showTPCTracksFromO2Format) {
+#ifdef GPUCA_HAVE_O2HEADERS
       unsigned int col = 0;
       GPUCA_OPENMP(for)
       for (unsigned int i = 0; i < mIOPtrs->nOutputTracksTPCO2; i++) {
@@ -1806,6 +1818,7 @@ size_t GPUDisplay::DrawGLScene_updateVertexList()
         }
         mThreadTracks[numThread][col][sector][0].emplace_back(i);
       }
+#endif
     } else {
       GPUCA_OPENMP(for)
       for (unsigned int i = 0; i < mIOPtrs->nMergedTracks; i++) {
@@ -2190,6 +2203,10 @@ void GPUDisplay::DrawGLScene_internal(float animateTime, bool renderToMixBuffer)
   if (mUpdateDrawCommands || mBackend->backendNeedRedraw()) {
     mNDrawCalls = 0;
     DrawGLScene_drawCommands();
+  }
+
+  if (mCfgL.drawField) {
+    mBackend->drawField();
   }
 
   mUpdateDrawCommands = mUpdateRenderPipeline = 0;

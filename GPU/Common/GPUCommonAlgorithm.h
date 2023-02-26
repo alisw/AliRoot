@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUCommonAlgorithm.h
 /// \author David Rohr
@@ -226,7 +221,7 @@ typedef GPUCommonAlgorithm CAAlgo;
 } // namespace gpu
 } // namespace GPUCA_NAMESPACE
 
-#if ((defined(__CUDACC__) && !defined(__clang__)) || defined(__HIPCC__))
+#if (((defined(__CUDACC__) && !defined(__clang__)) || defined(__HIPCC__))) && !defined(GPUCA_GPUCODE_GENRTC) && !defined(GPUCA_GPUCODE_HOSTONLY)
 
 #include "GPUCommonAlgorithmThrust.h"
 
@@ -345,6 +340,10 @@ GPUdi() void GPUCommonAlgorithm::swap(T& a, T& b)
 
 #ifdef __OPENCL__
 // Nothing to do, work_group functions available
+#pragma OPENCL EXTENSION cl_khr_subgroups : enable
+
+#define warp_scan_inclusive_add(v) sub_group_scan_inclusive_add(v)
+#define warp_broadcast(v, i) sub_group_broadcast(v, i)
 
 #elif (defined(__CUDACC__) || defined(__HIPCC__))
 // CUDA and HIP work the same way using cub, need just different header
@@ -397,6 +396,17 @@ GPUdi() T warp_scan_inclusive_add_FUNC(T v, S& smem)
   return v;
 }
 
+#define warp_broadcast(v, i) warp_broadcast_FUNC(v, i)
+template <class T>
+GPUdi() T warp_broadcast_FUNC(T v, int i)
+{
+#ifdef __CUDACC__
+  return __shfl_sync(0xFFFFFFFF, v, i);
+#else // HIP
+  return __shfl(v, i);
+#endif
+}
+
 #else
 // Trivial implementation for the CPU
 
@@ -420,6 +430,12 @@ GPUdi() T work_group_broadcast(T v, int i)
 
 template <class T>
 GPUdi() T warp_scan_inclusive_add(T v)
+{
+  return v;
+}
+
+template <class T>
+GPUdi() T warp_broadcast(T v, int i)
 {
   return v;
 }

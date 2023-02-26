@@ -61,8 +61,13 @@
 #pragma link C++ class o2::gpu::TPCFastTransformGeo::SliceInfo + ;
 #pragma link C++ class o2::gpu::TPCFastTransformGeo::RowInfo + ;
 #pragma link C++ class o2::gpu::TPCFastTransform + ;
+#pragma link C++ class o2::gpu::TPCFastSpaceChargeCorrectionMap + ;
+#pragma link C++ class o2::gpu::TPCFastSpaceChargeCorrectionMap::CorrectionPoint + ;
 #pragma link C++ class o2::gpu::TPCFastSpaceChargeCorrection::SliceInfo + ;
 #pragma link C++ class o2::gpu::TPCFastSpaceChargeCorrection + ;
+#pragma link C++ class o2::gpu::CorrectionMapsHelper + ;
 #pragma link C++ struct o2::gpu::MultivariatePolynomialContainer + ;
+#pragma link C++ struct o2::gpu::NDPiecewisePolynomialContainer + ;
+#pragma link C++ struct o2::gpu::TPCSlowSpaceChargeCorrection + ;
 
 #endif

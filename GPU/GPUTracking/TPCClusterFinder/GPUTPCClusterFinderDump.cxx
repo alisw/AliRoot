@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTPCClusterFinderDump.cxx
 /// \author David Rohr
@@ -28,18 +23,22 @@ using namespace GPUCA_NAMESPACE::gpu::tpccf;
 void GPUTPCClusterFinder::DumpDigits(std::ostream& out)
 {
   out << "\nClusterer - Digits - Slice " << mISlice << " - Fragment " << mPmemory->fragment.index << ": " << mPmemory->counters.nPositions << "\n";
+
+  out << std::hex;
   for (size_t i = 0; i < mPmemory->counters.nPositions; i++) {
-    out << i << ": " << mPpositions[i].time() << ", " << (int)mPpositions[i].pad() << ", " << (int)mPpositions[i].row() << "\n";
+    out << mPpositions[i].time() << " " << mPpositions[i].gpad << '\n';
   }
+  out << std::dec;
 }
 
-void GPUTPCClusterFinder::DumpChargeMap(std::ostream& out, std::string_view title)
+void GPUTPCClusterFinder::DumpChargeMap(std::ostream& out, std::string_view title, bool doGPU)
 {
   out << "\nClusterer - " << title << " - Slice " << mISlice << " - Fragment " << mPmemory->fragment.index << "\n";
   Array2D<ushort> map(mPchargeMap);
 
-  for (TPCFragmentTime i = 0; i < TPC_MAX_FRAGMENT_LEN_PADDED; i++) {
-    out << "Line " << i;
+  out << std::hex;
+
+  for (TPCFragmentTime i = 0; i < TPC_MAX_FRAGMENT_LEN_PADDED(mRec->GetProcessingSettings().overrideClusterizerFragmentLen); i++) {
     int zeros = 0;
     for (GlobalPad j = 0; j < TPC_NUM_OF_PADS; j++) {
       ushort q = map[{j, i}];
@@ -56,8 +55,10 @@ void GPUTPCClusterFinder::DumpChargeMap(std::ostream& out, std::string_view titl
     if (zeros > 0) {
       out << " z" << zeros;
     }
-    out << "\n";
+    out << '\n';
   }
+
+  out << std::dec;
 }
 
 void GPUTPCClusterFinder::DumpPeaks(std::ostream& out)
@@ -69,28 +70,25 @@ void GPUTPCClusterFinder::DumpPeaks(std::ostream& out)
       out << "\n";
     }
   }
-  out << "\n";
 }
 
 void GPUTPCClusterFinder::DumpPeaksCompacted(std::ostream& out)
 {
   out << "\nClusterer - Compacted Peaks - Slice " << mISlice << " - Fragment " << mPmemory->fragment.index << ": " << mPmemory->counters.nPeaks << "\n";
   for (size_t i = 0; i < mPmemory->counters.nPeaks; i++) {
-    out << i << ": " << mPpeakPositions[i].time() << ", " << (int)mPpeakPositions[i].pad() << ", " << (int)mPpeakPositions[i].row() << "\n";
+    out << mPpeakPositions[i].time() << ", " << (int)mPpeakPositions[i].pad() << ", " << (int)mPpeakPositions[i].row() << "\n";
   }
 }
 
 void GPUTPCClusterFinder::DumpSuppressedPeaks(std::ostream& out)
 {
-  out << "\nClusterer - NoiseSuppression - Slice "
-      << " - Fragment " << mPmemory->fragment.index << mISlice << "\n";
+  out << "\nClusterer - NoiseSuppression - Slice " << mISlice << " - Fragment " << mPmemory->fragment.index << mISlice << "\n";
   for (unsigned int i = 0; i < mPmemory->counters.nPeaks; i++) {
     out << (int)mPisPeak[i] << " ";
     if ((i + 1) % 100 == 0) {
       out << "\n";
     }
   }
-  out << "\n";
 }
 
 void GPUTPCClusterFinder::DumpSuppressedPeaksCompacted(std::ostream& out)

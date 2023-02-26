@@ -1,24 +1,18 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUReconstructionHIP.hip.cxx
 /// \author David Rohr
 
 #define __HIP_ENABLE_DEVICE_MALLOC__ 1 // Fix SWDEV-239120
-#define GPUCA_GPUTYPE_VEGA
 #define GPUCA_UNROLL(CUDA, HIP) GPUCA_M_UNROLL_##HIP
 #define GPUdic(CUDA, HIP) GPUCA_GPUdic_select_##HIP()
 
@@ -84,11 +78,11 @@ class TimeFrameGPU : public TimeFrame
 class GPUDebugTiming
 {
  public:
-  GPUDebugTiming(bool d, void** t, hipStream_t* s, GPUReconstruction::krnlSetup& x, GPUReconstructionHIPBackend* r = nullptr) : mDeviceTimers(t), mStreams(s), mXYZ(x), mRec(r), mDo(d)
+  GPUDebugTiming(bool d, void** t, hipStream_t* s, GPUReconstruction::krnlSetup& x, GPUReconstructionHIPBackend* r) : mDeviceTimers(t), mStreams(s), mXYZ(x), mRec(r), mDo(d)
   {
     if (mDo) {
       if (mDeviceTimers) {
-        GPUFailedMsg(hipEventRecord((hipEvent_t)mDeviceTimers[0], mStreams[mXYZ.x.stream]));
+        mRec->GPUFailedMsg(hipEventRecord((hipEvent_t)mDeviceTimers[0], mStreams[mXYZ.x.stream]));
       } else {
         mTimer.ResetStart();
       }
@@ -98,13 +92,13 @@ class GPUDebugTiming
   {
     if (mDo) {
       if (mDeviceTimers) {
-        GPUFailedMsg(hipEventRecord((hipEvent_t)mDeviceTimers[1], mStreams[mXYZ.x.stream]));
-        GPUFailedMsg(hipEventSynchronize((hipEvent_t)mDeviceTimers[1]));
+        mRec->GPUFailedMsg(hipEventRecord((hipEvent_t)mDeviceTimers[1], mStreams[mXYZ.x.stream]));
+        mRec->GPUFailedMsg(hipEventSynchronize((hipEvent_t)mDeviceTimers[1]));
         float v;
-        GPUFailedMsg(hipEventElapsedTime(&v, (hipEvent_t)mDeviceTimers[0], (hipEvent_t)mDeviceTimers[1]));
+        mRec->GPUFailedMsg(hipEventElapsedTime(&v, (hipEvent_t)mDeviceTimers[0], (hipEvent_t)mDeviceTimers[1]));
         mXYZ.t = v * 1.e-3;
       } else {
-        GPUFailedMsg(hipStreamSynchronize(mStreams[mXYZ.x.stream]));
+        mRec->GPUFailedMsg(hipStreamSynchronize(mStreams[mXYZ.x.stream]));
         mXYZ.t = mTimer.GetCurrentElapsedTime();
       }
     }
@@ -213,6 +207,28 @@ GPUReconstructionHIPBackend::~GPUReconstructionHIPBackend()
   Exit(); // Make sure we destroy everything (in particular the ITS tracker) before we exit
   if (mMaster == nullptr) {
     delete mInternals;
+  }
+}
+
+int GPUReconstructionHIPBackend::GPUFailedMsgAI(const long long int error, const char* file, int line)
+{
+  // Check for HIP Error and in the case of an error display the corresponding error string
+  if (error == hipSuccess) {
+    return (0);
+  }
+  GPUError("HIP Error: %lld / %s (%s:%d)", error, hipGetErrorString((hipError_t)error), file, line);
+  return 1;
+}
+
+void GPUReconstructionHIPBackend::GPUFailedMsgA(const long long int error, const char* file, int line)
+{
+  if (GPUFailedMsgAI(error, file, line)) {
+    static bool runningCallbacks = false;
+    if (IsInitialized() && runningCallbacks == false) {
+      runningCallbacks = true;
+      CheckErrorCodes(false, true);
+    }
+    throw std::runtime_error("HIP Failure");
   }
 }
 
@@ -602,7 +618,7 @@ void* GPUReconstructionHIPBackend::getGPUPointer(void* ptr)
 
 void GPUReconstructionHIPBackend::PrintKernelOccupancies()
 {
-  int maxBlocks, threads, suggestedBlocks;
+  int maxBlocks = 0, threads = 0, suggestedBlocks = 0;
 #define GPUCA_KRNL(x_class, x_attributes, x_arguments, x_forward) GPUCA_KRNL_WRAP(GPUCA_KRNL_LOAD_, x_class, x_attributes, x_arguments, x_forward)
 #define GPUCA_KRNL_LOAD_single(x_class, x_attributes, x_arguments, x_forward)                                                         \
   GPUFailedMsg(hipOccupancyMaxPotentialBlockSize(&suggestedBlocks, &threads, GPUCA_M_CAT(krnl_, GPUCA_M_KRNL_NAME(x_class)), 0, 0));  \

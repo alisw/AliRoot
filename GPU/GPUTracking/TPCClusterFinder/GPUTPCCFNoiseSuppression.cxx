@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTPCCFNoiseSuppression.cxx
 /// \author Felix Weiglhofer
@@ -100,8 +95,9 @@ GPUd() void GPUTPCCFNoiseSuppression::updatePeaksImpl(int nBlocks, int nThreads,
 }
 
 GPUdi() void GPUTPCCFNoiseSuppression::checkForMinima(
-  float q,
-  float epsilon,
+  const float q,
+  const float epsilon,
+  const float epsilonRelative,
   PackedCharge other,
   int pos,
   ulong* minimas,
@@ -109,7 +105,7 @@ GPUdi() void GPUTPCCFNoiseSuppression::checkForMinima(
 {
   float r = other.unpack();
 
-  ulong isMinima = (q - r > epsilon);
+  ulong isMinima = (q - r > epsilon) && (float)CAMath::Abs(q - r) / (float)CAMath::Max(q, r) > epsilonRelative; // TODO: Can we assume q > r and get rid of Max/Abs?
   *minimas |= (isMinima << pos);
 
   ulong lq = (r > q);
@@ -123,6 +119,7 @@ GPUdi() void GPUTPCCFNoiseSuppression::findMinima(
   int pos,
   const float q,
   const float epsilon,
+  const float epsilonRelative,
   ulong* minimas,
   ulong* bigger)
 {
@@ -130,7 +127,7 @@ GPUdi() void GPUTPCCFNoiseSuppression::findMinima(
   for (int i = 0; i < N; i++, pos++) {
     PackedCharge other = buf[N * ll + i];
 
-    checkForMinima(q, epsilon, other, pos, minimas, bigger);
+    checkForMinima(q, epsilon, epsilonRelative, other, pos, minimas, bigger);
   }
 }
 
@@ -214,6 +211,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
     16,
     q,
     calibration.tpc.cfNoiseSuppressionEpsilon,
+    calibration.tpc.cfNoiseSuppressionEpsilonRelative / 255.,
     minimas,
     bigger);
 
@@ -236,6 +234,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       0,
       q,
       calibration.tpc.cfNoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilonRelative / 255.,
       minimas,
       bigger);
   }
@@ -259,6 +258,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       18,
       q,
       calibration.tpc.cfNoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilonRelative / 255.,
       minimas,
       bigger);
   }
@@ -283,6 +283,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       0,
       q,
       calibration.tpc.cfNoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilonRelative / 255.,
       minimas,
       bigger);
   }
@@ -306,6 +307,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       18,
       q,
       calibration.tpc.cfNoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilonRelative / 255.,
       minimas,
       bigger);
   }

@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTPCTrackletSelector.cxx
 /// \author Sergey Gorbunov, Ivan Kisel, David Rohr
@@ -63,7 +58,7 @@ GPUdii() void GPUTPCTrackletSelector::Thread<0>(int nBlocks, int nThreads, int i
     int gap = 0;
     int nShared = 0;
     int nHits = 0;
-    const int minHits = tracker.Param().rec.tpc.minNTrackClusters == -1 ? GPUCA_TRACKLET_SELECTOR_MIN_HITS_B5(tracklet.Param().QPt() * tracker.Param().par.qptB5Scaler) : tracker.Param().rec.tpc.minNTrackClusters;
+    const int minHits = tracker.Param().rec.tpc.minNTrackClusters == -1 ? GPUCA_TRACKLET_SELECTOR_MIN_HITS_B5(tracklet.Param().QPt() * tracker.Param().qptB5Scaler) : tracker.Param().rec.tpc.minNTrackClusters;
 
     GPUCA_UNROLL(, U(1))
     for (irow = firstRow; irow <= lastRow && lastRow - irow + nHits >= minHits; irow++) {
@@ -92,18 +87,16 @@ GPUdii() void GPUTPCTrackletSelector::Thread<0>(int nBlocks, int nThreads, int i
 
       if (gap > kMaxRowGap || irow == lastRow) { // store
         if (nHits >= minHits) {
-          unsigned int itrout = CAMath::AtomicAdd(tracker.NTracks(), 1u);
           unsigned int nFirstTrackHit = CAMath::AtomicAdd(tracker.NTrackHits(), (unsigned int)nHits);
-          if (itrout >= tracker.NMaxTracks() || nFirstTrackHit + nHits > tracker.NMaxTrackHits()) {
-            if (itrout >= tracker.NMaxTracks()) {
-              tracker.raiseError(GPUErrors::ERROR_TRACK_OVERFLOW, tracker.ISlice(), itrout, tracker.NMaxTracks());
-            } else {
-              tracker.raiseError(GPUErrors::ERROR_TRACK_HIT_OVERFLOW, tracker.ISlice(), nFirstTrackHit + nHits, tracker.NMaxTrackHits());
-            }
-            CAMath::AtomicExch(tracker.NTracks(), 0u);
-            if (nFirstTrackHit + nHits > tracker.NMaxTrackHits()) {
-              CAMath::AtomicExch(tracker.NTrackHits(), tracker.NMaxTrackHits());
-            }
+          if (nFirstTrackHit + nHits > tracker.NMaxTrackHits()) {
+            tracker.raiseError(GPUErrors::ERROR_TRACK_HIT_OVERFLOW, tracker.ISlice(), nFirstTrackHit + nHits, tracker.NMaxTrackHits());
+            CAMath::AtomicExch(tracker.NTrackHits(), tracker.NMaxTrackHits());
+            return;
+          }
+          unsigned int itrout = CAMath::AtomicAdd(tracker.NTracks(), 1u);
+          if (itrout >= tracker.NMaxTracks()) {
+            tracker.raiseError(GPUErrors::ERROR_TRACK_OVERFLOW, tracker.ISlice(), itrout, tracker.NMaxTracks());
+            CAMath::AtomicExch(tracker.NTracks(), tracker.NMaxTracks());
             return;
           }
           tracker.Tracks()[itrout].SetLocalTrackId(itrout);

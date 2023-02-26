@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file CalibdEdxContainer.h
 /// \brief Definition of container class for dE/dx corrections
@@ -25,8 +20,8 @@
 #include "GPUCommonDef.h"
 #include "GPUCommonMath.h"
 #include "DataFormatsTPC/CalibdEdxCorrection.h"
-#include "DataFormatsTPC/CalibdEdxTrackTopologyPol.h"
-#include "DataFormatsTPC/CalibdEdxTrackTopologySpline.h"
+#include "CalibdEdxTrackTopologyPol.h"
+#include "CalibdEdxTrackTopologySpline.h"
 #include "FlatObject.h"
 #include "TPCPadGainCalib.h"
 
@@ -94,7 +89,7 @@ class CalibdEdxContainer : public o2::gpu::FlatObject
   /// \param region region of the TPC
   /// \param chargeT type of the charge (qMax or qTot)
   /// \param x coordinates where the correction is evaluated
-  GPUd() float getTopologyCorrection(const int region, const ChargeType chargeT, const float x[]) const
+  GPUd() float getTopologyCorrection(const int region, const ChargeType chargeT, float x[]) const
   {
     return mCalibTrackTopologyPol ? mCalibTrackTopologyPol->getCorrection(region, chargeT, x) : (mCalibTrackTopologySpline ? mCalibTrackTopologySpline->getCorrection(region, chargeT, x) : getDefaultTopologyCorrection(x[0], x[1]));
   }
@@ -102,18 +97,6 @@ class CalibdEdxContainer : public o2::gpu::FlatObject
   /// \return returns analytical default correction
   /// Correction corresponds to: "sqrt((dz/dx)^2 + (dy/dx)^2 + (dx/dx)^2) / padlength" simple track length correction (ToDo add division by pad length)
   GPUd() float getDefaultTopologyCorrection(const float tanTheta, const float sinPhi) const { return gpu::CAMath::Sqrt(tanTheta * tanTheta + 1 / (1 - sinPhi * sinPhi)); }
-
-  /// \return returns maximum tanTheta for which the topology correction is valid
-  GPUd() float getMaxTanThetaTopologyCorrection() const { return mCalibTrackTopologyPol ? mCalibTrackTopologyPol->getMaxTanTheta() : (mCalibTrackTopologySpline ? mCalibTrackTopologySpline->getMaxTanTheta() : 2); }
-
-  /// \return returns maximum sinPhi for which the topology correction is valid
-  GPUd() float getMaxSinPhiTopologyCorrection() const { return mCalibTrackTopologyPol ? mCalibTrackTopologyPol->getMaxSinPhi() : (mCalibTrackTopologySpline ? mCalibTrackTopologySpline->getMaxSinPhi() : 1); }
-
-  /// \return returns the the minimum qTot for which the polynomials are valid
-  GPUd() float getMinqTot() const { return mCalibTrackTopologyPol ? mCalibTrackTopologyPol->getMinqTot() : 0; };
-
-  /// \return returns the the maximum qTot for which the polynomials are valid
-  GPUd() float getMaxqTot() const { return mCalibTrackTopologyPol ? mCalibTrackTopologyPol->getMaxqTot() : 10000; };
 
 #if !defined(GPUCA_GPUCODE)
   /// \returns the minimum zero supression threshold for which the track topology correction is valid

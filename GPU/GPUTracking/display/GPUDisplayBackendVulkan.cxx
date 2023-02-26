@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUDisplayBackendVulkan.cxx
 /// \author David Rohr
@@ -299,7 +294,7 @@ double GPUDisplayBackendVulkan::checkDevice(vk::PhysicalDevice device, const std
     break;
   }
   if (!found) {
-    GPUInfo("%s ignored due to missing queue properties", deviceProperties.deviceName.data());
+    GPUInfo("%s ignored due to missing queue properties", &deviceProperties.deviceName[0]);
     return (-1);
   }
 
@@ -314,13 +309,13 @@ double GPUDisplayBackendVulkan::checkDevice(vk::PhysicalDevice device, const std
     }
   }
   if (extensionsFound < reqDeviceExtensions.size()) {
-    GPUInfo("%s ignored due to missing extensions", deviceProperties.deviceName.data());
+    GPUInfo("%s ignored due to missing extensions", &deviceProperties.deviceName[0]);
     return (-1);
   }
 
   updateSwapChainDetails(device);
   if (mSwapChainDetails.formats.empty() || mSwapChainDetails.presentModes.empty()) {
-    GPUInfo("%s ignored due to incompatible swap chain", deviceProperties.deviceName.data());
+    GPUInfo("%s ignored due to incompatible swap chain", &deviceProperties.deviceName[0]);
     return (-1);
   }
 
@@ -434,7 +429,7 @@ void GPUDisplayBackendVulkan::createDevice()
     double score = checkDevice(devices[i], reqDeviceExtensions);
     if (mDisplay->param()->par.debugLevel >= 2) {
       vk::PhysicalDeviceProperties deviceProperties = devices[i].getProperties();
-      GPUInfo("Available Vulkan device %d: %s - Score %f", i, deviceProperties.deviceName.data(), score);
+      GPUInfo("Available Vulkan device %d: %s - Score %f", i, &deviceProperties.deviceName[0], score);
     }
     if (score > bestScore && score > 0) {
       mPhysicalDevice = devices[i];
@@ -452,7 +447,7 @@ void GPUDisplayBackendVulkan::createDevice()
   vk::FormatProperties depth32FormatProperties = mPhysicalDevice.getFormatProperties(vk::Format::eD32Sfloat);
   vk::FormatProperties depth64FormatProperties = mPhysicalDevice.getFormatProperties(vk::Format::eD32SfloatS8Uint);
   vk::FormatProperties formatProperties = mPhysicalDevice.getFormatProperties(mSurfaceFormat.format);
-  GPUInfo("Using physicak Vulkan device %s", deviceProperties.deviceName.data());
+  GPUInfo("Using physical Vulkan device %s", &deviceProperties.deviceName[0]);
   mMaxMSAAsupported = getMaxUsableSampleCount(deviceProperties);
   mZSupported = (bool)(depth32FormatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment);
   mStencilSupported = (bool)(depth64FormatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment);
@@ -1489,7 +1484,7 @@ void GPUDisplayBackendVulkan::prepareDraw(const hmm_mat4& proj, const hmm_mat4& 
       vk::Fence fen = VkFence(VK_NULL_HANDLE);
       vk::Semaphore sem = VkSemaphore(VK_NULL_HANDLE);
       if (mCommandBufferPerImage) {
-        fen = VkFence(mInFlightFence[mCurrentFrame]);
+        fen = mInFlightFence[mCurrentFrame];
         CHKERR(mDevice.resetFences(1, &fen));
       } else {
         sem = mImageAvailableSemaphore[mCurrentFrame];

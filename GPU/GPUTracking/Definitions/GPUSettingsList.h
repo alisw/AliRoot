@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUSettingsList.h
 /// \author David Rohr
@@ -42,24 +37,29 @@ BeginNamespace(gpu)
 // There must be no bool in here, use char, as sizeof(bool) is compiler dependent and fails on GPUs!!!!!!
 BeginSubConfig(GPUSettingsRecTPC, tpc, configStandalone.rec, "RECTPC", 0, "Reconstruction settings", rec_tpc)
 AddOptionRTC(rejectQPtB5, float, 1.f / GPUCA_MIN_TRACK_PTB5_REJECT, "", 0, "QPt threshold to reject clusters of TPC tracks (Inverse Pt, scaled to B=0.5T!!!)")
-AddOptionRTC(hitPickUpFactor, float, 2., "", 0, "multiplier for the chi2 window for hit pick up procedure")
-AddOptionRTC(neighboursSearchArea, float, 3., "", 0, "area in cm for the search of neighbours")
-AddOptionRTC(clusterError2CorrectionY, float, 1., "", 0, "correction for the squared cluster error during tracking")
-AddOptionRTC(clusterError2CorrectionZ, float, 1., "", 0, "correction for the squared cluster error during tracking")
+AddOptionRTC(hitPickUpFactor, float, 1.f, "", 0, "multiplier for the chi2 window for hit pick up procedure")
+AddOptionRTC(hitSearchArea2, float, 2.f, "", 0, "square of maximum search road of hits during seeding")
+AddOptionRTC(neighboursSearchArea, float, 3.f, "", 0, "area in cm for the search of neighbours")
+AddOptionRTC(clusterError2CorrectionY, float, 1.f, "", 0, "correction for the squared cluster error during tracking")
+AddOptionRTC(clusterError2CorrectionZ, float, 1.f, "", 0, "correction for the squared cluster error during tracking")
 AddOptionRTC(minNTrackClusters, int, -1, "", 0, "required min number of clusters on the track")
 AddOptionRTC(searchWindowDZDR, float, 2.5, "", 0, "Use DZDR window for seeding instead of vertex window")
 AddOptionRTC(trackReferenceX, float, 1000.f, "", 0, "Transport all tracks to this X after tracking (disabled if > 500, auto = 1000)")
 AddOptionRTC(zsThreshold, float, 2.0f, "", 0, "Zero-Suppression threshold")
 AddOptionRTC(tubeChi2, float, 5.f * 5.f, "", 0, "Max chi2 to mark cluster adjacent to track")
 AddOptionRTC(tubeMaxSize2, float, 2.5f * 2.5f, "", 0, "Square of max tube size (normally derrived from tpcTubeChi2)")
-AddOptionRTC(noisyPadsQuickCheck, unsigned char, 1, "", 0, "Only check first fragment for noisy pads instead of all fragments (when test is enabled).")
+AddOptionRTC(clustersShiftTimebins, float, 0, "", 0, "Shift of TPC clusters (applied during CTF cluster decoding)")
+AddOptionRTC(defaultZOffsetOverR, float, 0.5210953f, "", 0, "Shift of TPC clusters (applied during CTF cluster decoding)")
 AddOptionRTC(maxTimeBinAboveThresholdIn1000Bin, unsigned short, 500, "", 0, "Except pad from cluster finding if total number of charges in a fragment is above this baseline (disable = 0)")
 AddOptionRTC(maxConsecTimeBinAboveThreshold, unsigned short, 200, "", 0, "Except pad from cluster finding if number of consecutive charges in a fragment is above this baseline (disable = 0)")
+AddOptionRTC(noisyPadSaturationThreshold, unsigned short, 700, "", 0, "Threshold where a timebin is considered saturated, disabling the noisy pad check for that pad")
+AddOptionRTC(noisyPadsQuickCheck, unsigned char, 1, "", 0, "Only check first fragment for noisy pads instead of all fragments (when test is enabled).")
 AddOptionRTC(cfQMaxCutoff, unsigned char, 3, "", 0, "Cluster Finder rejects cluster with qmax below this threshold")
 AddOptionRTC(cfQTotCutoff, unsigned char, 5, "", 0, "Cluster Finder rejects cluster with qtot below this threshold")
 AddOptionRTC(cfInnerThreshold, unsigned char, 0, "", 0, "Cluster Finder extends cluster if inner charge above this threshold")
 AddOptionRTC(cfMinSplitNum, unsigned char, 1, "", 0, "Minimum number of split charges in a cluster for the cluster to be marked as split")
 AddOptionRTC(cfNoiseSuppressionEpsilon, unsigned char, 10, "", 0, "Cluster Finder: Difference between peak and charge for the charge to count as a minima during noise suppression")
+AddOptionRTC(cfNoiseSuppressionEpsilonRelative, unsigned char, 76, "", 0, "Cluster Finder: Difference between peak and charge for the charge to count as a minima during noise suppression, relative as fraction of 255")
 AddOptionRTC(nWays, char, 3, "", 0, "Do N fit passes in final fit of merger")
 AddOptionRTC(nWaysOuter, char, 0, "", 0, "Store outer param")
 AddOptionRTC(trackFitRejectMode, char, 5, "", 0, "0: no limit on rejection or missed hits, >0: break after n rejected hits, <0: reject at max -n hits")
@@ -75,7 +75,7 @@ AddOptionRTC(sigBitsCharge, unsigned char, 4, "", 0, "Number of significant bits
 AddOptionRTC(sigBitsWidth, unsigned char, 3, "", 0, "Number of significant bits for TPC cluster width in compression mode 1")
 AddOptionRTC(forceEarlyTransform, char, -1, "", 0, "Force early TPC transformation also for continuous data (-1 = auto)")
 AddOptionRTC(dropLoopers, unsigned char, 0, "", 0, "Drop looping tracks starting from second loop")
-AddOptionRTC(mergerCovSource, unsigned char, 2, "", 0, "Method to obtain covariance in track merger: 0 = simple filterErrors method, 1 = use cov from track following, 2 = refit")
+AddOptionRTC(mergerCovSource, unsigned char, 2, "", 0, "Method to obtain covariance in track merger: 0 = simple filterErrors method, 1 = use cov from track following, 2 = refit (default)")
 AddOptionRTC(mergerInterpolateErrors, unsigned char, 1, "", 0, "Use interpolation instead of extrapolation for chi2 based cluster rejection")
 AddOptionRTC(mergeCE, unsigned char, 1, "", 0, "Merge tracks accross the central electrode")
 AddOptionRTC(retryRefit, char, 1, "", 0, "Retry refit when fit fails")
@@ -87,16 +87,23 @@ EndConfig()
 
 BeginSubConfig(GPUSettingsRecTRD, trd, configStandalone.rec, "RECTRD", 0, "Reconstruction settings", rec_trd)
 AddOptionRTC(minTrackPt, float, .5f, "", 0, "Min Pt for tracks to be propagated through the TRD")
-AddOptionRTC(maxChi2, float, 15.f, "", 0, "Max chi2 for TRD tracklets to be matched to a track")
-AddOptionRTC(penaltyChi2, float, 13.f, "", 0, "Chi2 penalty for no available TRD tracklet (effective chi2 cut value)")
+AddOptionRTC(maxChi2, float, 20.f, "", 0, "Max chi2 for TRD tracklets to be matched to a track")
+AddOptionRTC(penaltyChi2, float, 12.f, "", 0, "Chi2 penalty for no available TRD tracklet (effective chi2 cut value)")
 AddOptionRTC(chi2StrictCut, float, 10.f, "", 0, "Chi2 cut for strict matching mode")
 AddOptionRTC(chi2SeparationCut, float, 2.5f, "", 0, "Minimum difference between chi2 of winner match and chi2 of second best match")
 AddOptionRTC(nSigmaTerrITSTPC, float, 4.f, "", 0, "Number of sigmas for ITS-TPC track time error estimate")
-AddOptionRTC(extraRoadY, float, 2.f, "", 0, "Addition to search road around track prolongation along Y in cm")
-AddOptionRTC(extraRoadZ, float, 0.f, "", 0, "Addition to search road around track prolongation along Z in cm")
+AddOptionRTC(addTimeRoadITSTPC, float, 2.5f, "", 0, "Increase time search road by X us for ITS-TPC tracks")
+AddOptionRTC(extraRoadY, float, 5.f, "", 0, "Addition to search road around track prolongation along Y in cm")
+AddOptionRTC(extraRoadZ, float, 10.f, "", 0, "Addition to search road around track prolongation along Z in cm")
+AddOptionRTC(trkltResRPhiIdeal, float, 1.f, "", 0, "Optimal tracklet rphi resolution in cm (in case phi of track = lorentz angle)")
+AddOptionRTC(maxChi2Red, float, 99.f, "", 0, "maximum chi2 per attached tracklet for TRD tracks TODO: currently effectively disabled, requires tuning")
 AddOptionRTC(applyDeflectionCut, unsigned char, 0, "", 0, "Set to 1 to enable tracklet selection based on deflection")
 AddOptionRTC(stopTrkAfterNMissLy, unsigned char, 6, "", 0, "Abandon track following after N layers without a TRD match")
+AddOptionRTC(nTrackletsMin, unsigned char, 3, "", 0, "Tracks with less attached tracklets are discarded after the tracking")
 AddOptionRTC(useExternalO2DefaultPropagator, unsigned char, 0, "", 0, "Use the default instance of the o2::Propagator, instead of the GPU Reconstruciton one with GPU B field")
+AddOptionRTC(matCorrType, unsigned char, 2, "", 0, "Material correction to use: 0 - none, 1 - TGeo, 2 - matLUT")
+AddOptionRTC(pileupFwdNBC, unsigned char, 60, "", 0, "Post-trigger Pile-up integration time in BCs")
+AddOptionRTC(pileupBwdNBC, unsigned char, 80, "", 0, "Pre-trigger Pile-up integration time in BCs")
 AddHelp("help", 'h')
 EndConfig()
 
@@ -148,6 +155,8 @@ AddOption(memoryAllocationStrategy, char, 0, "", 0, "Memory Allocation Stragegy 
 AddOption(forceMemoryPoolSize, unsigned long, 1, "memSize", 0, "Force size of allocated GPU / page locked host memory", min(0ul))
 AddOption(forceHostMemoryPoolSize, unsigned long, 0, "hostMemSize", 0, "Force size of allocated host page locked host memory (overriding memSize)", min(0ul))
 AddOption(memoryScalingFactor, float, 1.f, "", 0, "Factor to apply to all memory scalers")
+AddOption(conservativeMemoryEstimate, bool, false, "", 0, "Use some more conservative defaults for larger buffers during TPC processing")
+AddOption(tpcInputWithClusterRejection, unsigned char, 0, "", 0, "Indicate whether the TPC input is CTF data with cluster rejection, to tune buffer estimations")
 AddOption(forceMaxMemScalers, unsigned long, 0, "", 0, "Force using the maximum values for all buffers, Set a value n > 1 to rescale all maximums to a memory size of n")
 AddOption(registerStandaloneInputMemory, bool, false, "registerInputMemory", 0, "Automatically register input memory buffers for the GPU")
 AddOption(ompThreads, int, -1, "omp", 't', "Number of OMP threads to run (-1: all)", min(-1), message("Using %s OMP threads"))
@@ -155,7 +164,8 @@ AddOption(ompKernels, unsigned char, 2, "", 0, "Parallelize with OMP inside kern
 AddOption(ompAutoNThreads, bool, true, "", 0, "Auto-adjust number of OMP threads, decreasing the number for small input data")
 AddOption(nDeviceHelperThreads, int, 1, "", 0, "Number of CPU helper threads for CPU processing")
 AddOption(nStreams, char, 8, "", 0, "Number of GPU streams / command queues")
-AddOption(nTPCClustererLanes, char, 3, "", 0, "Number of TPC clusterers that can run in parallel")
+AddOption(nTPCClustererLanes, char, -1, "", 0, "Number of TPC clusterers that can run in parallel (-1 = autoset)")
+AddOption(overrideClusterizerFragmentLen, int, -1, "", 0, "Force the cluster max fragment len to a certain value (-1 = autodetect)")
 AddOption(trackletSelectorSlices, char, -1, "", 0, "Number of slices to processes in parallel at max")
 AddOption(trackletConstructorInPipeline, char, -1, "", 0, "Run tracklet constructor in the pipeline")
 AddOption(trackletSelectorInPipeline, char, -1, "", 0, "Run tracklet selector in the pipeline")
@@ -171,6 +181,7 @@ AddOption(doublePipelineClusterizer, bool, true, "", 0, "Include the input data 
 AddOption(prefetchTPCpageScan, char, 0, "", 0, "Prefetch Data for TPC page scan in CPU cache")
 AddOption(runMC, bool, false, "", 0, "Process MC labels")
 AddOption(runQA, int, 0, "qa", 'q', "Enable tracking QA (negative number to provide bitmask for QA tasks)", message("Running QA: %s"), def(1))
+AddOption(qcRunFraction, float, 100.f, "", 0, "Percentage of events to process with QC")
 AddOption(outputSharedClusterMap, bool, false, "", 0, "Ship optional shared cluster map as output for further use")
 AddOption(disableTPCNoisyPadFilter, bool, false, "", 0, "Disables all TPC noisy pad filters (Not the normal noise filter!)")
 AddOption(createO2Output, char, 2, "", 0, "Create Track output in O2 format (2 = skip non-O2 output in GPU track format (reverts to =1 if QA is requested))")
@@ -178,9 +189,11 @@ AddOption(clearO2OutputFromGPU, bool, false, "", 0, "Free the GPU memory used fo
 AddOption(ignoreNonFatalGPUErrors, bool, false, "", 0, "Continue running after having received non fatal GPU errors, e.g. abort due to overflow")
 AddOption(tpcIncreasedMinClustersPerRow, unsigned int, 0, "", 0, "Impose a minimum buffer size for the clustersPerRow during TPC clusterization")
 AddOption(noGPUMemoryRegistration, bool, false, "", 0, "Do not register input / output memory for GPU dma transfer")
-AddOption(calibObjectsExtraMemorySize, unsigned long, 10ul * 1024 * 1024, "", 0, "Extra spare memory added for calibration object buffer, to allow fow updates with larger objects")
 AddOption(useInternalO2Propagator, bool, false, "", 0, "Uses an internal (in GPUChainTracking) version of o2::Propagator, which internal b-field, matlut, etc.")
 AddOption(internalO2PropagatorGPUField, bool, true, "", 0, "Makes the internal O2 propagator use the fast GPU polynomial b field approximation")
+AddOption(calibObjectsExtraMemorySize, unsigned int, 10u * 1024 * 1024, "", 0, "Extra spare memory added for calibration object buffer, to allow fow updates with larger objects")
+AddOption(lateO2PropagatorProvisioning, bool, false, "", 0, "The user will provide the o2 propagator at runtime before processing the first event, it will not be available at init")
+AddOption(lateO2MatLutProvisioningSize, unsigned int, 0u, "", 0, "Memory size to reserve for late provisioning of matlut table")
 AddOption(throttleAlarms, bool, false, "", 0, "Throttle rate at which alarms are sent to the InfoLogger in online runs")
 AddVariable(eventDisplay, GPUCA_NAMESPACE::gpu::GPUDisplayFrontendInterface*, nullptr)
 AddSubConfig(GPUSettingsProcessingRTC, rtc)
@@ -216,6 +229,10 @@ AddOption(drawTPC, bool, true, "", 0, "Enable drawing TPC data")
 AddOption(drawTRD, bool, true, "", 0, "Enabale drawing TRD data")
 AddOption(drawTOF, bool, true, "", 0, "Enabale drawing TOF data")
 AddOption(drawITS, bool, true, "", 0, "Enabale drawing ITS data")
+AddOption(drawField, bool, true, "", 0, "Enable drawing magnetic field")
+AddOption(bFieldStepSize, float, 5.0f, "", 0, "Set field line step size")
+AddOption(bFieldStepCount, int, 100, "", 0, "Set field line step count")
+AddOption(bFieldLinesCount, int, 2000, "", 0, "Set field lines count")
 AddOption(invertColors, bool, false, "", 0, "Invert colors")
 AddHelp("help", 'h')
 EndConfig()
@@ -303,7 +320,7 @@ AddOption(filterCharge, int, 0, "", 0, "Filter for positive (+1) or negative (-1
 AddOption(filterPID, int, -1, "", 0, "Filter for Particle Type (0 Electron, 1 Muon, 2 Pion, 3 Kaon, 4 Proton)")
 AddOption(nativeFitResolutions, bool, false, "", 0, "Create resolution histograms in the native fit units (sin(phi), tan(lambda), Q/Pt)")
 AddOption(enableLocalOutput, bool, true, "", 0, "Enable normal output to local PDF files / console")
-AddOption(csvDump, bool, false, "", 0, "Dump all clusters and Pt information into csv file")
+AddOption(dumpToROOT, int, 0, "", 0, "Dump all clusters and tracks to a ROOT file, 1 = combined TNTUple dump, 2 = also individual cluster / track branch dump")
 AddOption(writeMCLabels, bool, false, "", 0, "Store mc labels to file for later matching")
 AddOption(writeRootFiles, bool, false, "", 0, "Create ROOT canvas files")
 AddOptionVec(matchMCLabels, std::string, "", 0, "Read labels from files and match them, only process tracks where labels differ")
@@ -360,6 +377,7 @@ AddOption(runs, int, 1, "runs", 'r', "Number of iterations to perform (repeat ea
 AddOption(runs2, int, 1, "runsExternal", 0, "Number of iterations to perform (repeat full processing)", min(1))
 AddOption(runsInit, int, 1, "", 0, "Number of initial iterations excluded from average", min(0))
 AddOption(eventsDir, const char*, "pp", "events", 'e', "Directory with events to process", message("Reading events from Directory events/%s"))
+AddOption(noEvents, bool, false, "", 0, "Run without data (e.g. for field visualization)")
 AddOption(eventDisplay, int, 0, "display", 'd', "Show standalone event display (1 = Windows/X11, 2 = GLUT, 3 = GLFW, 4 = Wayland)", def(1))
 AddOption(eventGenerator, bool, false, "", 0, "Run event generator")
 AddOption(cont, bool, false, "", 0, "Process continuous timeframe data")
@@ -374,7 +392,7 @@ AddOption(constBz, bool, false, "", 0, "Force constand Bz")
 AddOption(overrideMaxTimebin, bool, false, "", 0, "Override max time bin setting for continuous data with max time bin in time frame")
 AddOption(encodeZS, int, -1, "", 0, "Zero-Suppress TPC data", def(1))
 AddOption(zsFilter, int, -1, "", 0, "Apply Zero-Suppression when loading digits and remove those below threshold", def(1))
-AddOption(zsVersion, int, 2, "", 0, "ZS Version: 1 = 10-bit ADC row based, 2 = 12-bit ADC row based, 3 = improved link based")
+AddOption(zsVersion, int, 2, "", 0, "ZS Version: 1 = 10-bit ADC row based, 2 = 12-bit ADC row based, 3 = improved link based, 4 = dense link based")
 AddOption(dumpEvents, bool, false, "", 0, "Dump events (after transformation such as encodeZS")
 AddOption(stripDumpedEvents, bool, false, "", 0, "Remove redundant inputs (e.g. digits and ZS) before dumping")
 AddOption(printSettings, int, 0, "", 0, "Print all settings", def(1))
@@ -425,6 +443,7 @@ AddOption(dEdxDisableResidualGainMap, bool, false, "", 0, "Disable loading of re
 AddOption(dEdxDisableResidualGain, bool, false, "", 0, "Disable loading of residual dE/dx gain correction from CCDB")
 AddOption(dEdxUseFullGainMap, bool, false, "", 0, "Enable using the full gain map for correcting the cluster charge during calculation of the dE/dx")
 AddOption(transformationFile, std::string, "", "", 0, "File name of TPC fast transformation map")
+AddOption(transformationSCFile, std::string, "", "", 0, "File name of TPC space charge correction file (for testing/CPU only)")
 AddOption(matLUTFile, std::string, "", "", 0, "File name of material LUT file")
 AddOption(gainCalibFile, std::string, "", "", 0, "File name of TPC pad gain calibration")
 AddOption(gainCalibDisableCCDB, bool, false, "", 0, "Disabling loading the TPC pad gain calibration from the CCDB")
@@ -437,6 +456,9 @@ AddOption(gpuDisplayfilterMacro, std::string, "", "", 0, "File name of ROOT macr
 AddOption(benchmarkMemoryRegistration, bool, false, "", 0, "Time-benchmark for memory registration")
 AddOption(registerSelectedSegmentIds, int, -1, "", 0, "Register only a specific managed shm segment id (-1 = all)")
 AddOption(disableCalibUpdates, bool, false, "", 0, "Disable all calibration updates")
+AddOption(partialOutputForNonFatalErrors, bool, false, "", 0, "In case of a non-fatal error that is ignored (ignoreNonFatalGPUErrors=true), forward the partial output that was created instead of shipping an empty TF")
+AddOption(tpcTriggeredMode, bool, false, "", 0, "In case we have triggered TPC data, this must be set to true")
+AddOption(zsOnTheFlyDigitsFilter, bool, false, "", 0, "Run on the fly digits filter during zs encoding")
 EndConfig()
 #endif // GPUCA_O2_LIB
 #endif // !GPUCA_GPUCODE_DEVICE
@@ -444,8 +466,6 @@ EndConfig()
 // Derrived parameters used in GPUParam
 BeginHiddenConfig(GPUSettingsParam, param)
 AddVariableRTC(dAlpha, float, 0.f)           // angular size
-AddVariableRTC(bzkG, float, 0.f)             // constant magnetic field value in kG
-AddVariableRTC(constBz, float, 0.f)          // constant magnetic field value in kG*clight
 AddVariableRTC(assumeConstantBz, char, 0)    // Assume a constant magnetic field
 AddVariableRTC(toyMCEventsFlag, char, 0)     // events were build with home-made event generator
 AddVariableRTC(continuousTracking, char, 0)  // Continuous tracking, estimate bz and errors for abs(z) = 125cm during seeding
@@ -454,7 +474,6 @@ AddVariableRTC(dodEdx, char, 0)              // Do dEdx computation
 AddVariableRTC(earlyTpcTransform, char, 0)   // do Early TPC transformation
 AddVariableRTC(debugLevel, char, 0)          // Debug level
 AddVariableRTC(continuousMaxTimeBin, int, 0) // Max time bin for continuous tracking
-AddVariableRTC(qptB5Scaler, float, 1.f)      // Scaling factor for QPt to B=0.5T
 EndConfig()
 
 EndNamespace() // gpu

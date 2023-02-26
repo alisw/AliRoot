@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTRDTrack.cxx
 /// \author Ole Schmidt, Sergey Gorbunov
@@ -36,9 +31,11 @@ GPUd() void GPUTRDTrack_t<T>::initialize()
 {
   // set all members to their default values (needed since in-class initialization not possible with AliRoot)
   mChi2 = 0.f;
+  mSignal = -1.f;
   mRefGlobalTrackId = 0;
   mCollisionId = -1;
   mFlags = 0;
+  mIsCrossingNeighbor = 0;
   for (int i = 0; i < kNLayers; ++i) {
     mAttachedTracklets[i] = -1;
   }
@@ -85,7 +82,9 @@ GPUd() void GPUTRDTrack_t<T>::ConvertFrom(const GPUTRDTrackDataRecord& t)
   T::set(t.fX, t.mAlpha, &(t.fY), t.fC);
   setRefGlobalTrackIdRaw(t.fTPCTrackID);
   mChi2 = 0.f;
+  mSignal = -1.f;
   mFlags = 0;
+  mIsCrossingNeighbor = 0;
   mCollisionId = -1;
   for (int iLayer = 0; iLayer < kNLayers; iLayer++) {
     mAttachedTracklets[iLayer] = t.fAttachedTracklets[iLayer];
@@ -114,7 +113,7 @@ GPUd() GPUTRDTrack_t<T>::GPUTRDTrack_t(const o2::tpc::TrackTPC& t) : T(t)
 
 template <typename T>
 GPUd() GPUTRDTrack_t<T>::GPUTRDTrack_t(const GPUTRDTrack_t<T>& t)
-  : T(t), mChi2(t.mChi2), mRefGlobalTrackId(t.mRefGlobalTrackId), mCollisionId(t.mCollisionId), mFlags(t.mFlags)
+  : T(t), mChi2(t.mChi2), mSignal(t.mSignal), mRefGlobalTrackId(t.mRefGlobalTrackId), mCollisionId(t.mCollisionId), mFlags(t.mFlags), mIsCrossingNeighbor(t.mIsCrossingNeighbor)
 {
   // copy constructor
   for (int i = 0; i < kNLayers; ++i) {
@@ -138,9 +137,11 @@ GPUd() GPUTRDTrack_t<T>& GPUTRDTrack_t<T>::operator=(const GPUTRDTrack_t<T>& t)
   }
   *(T*)this = t;
   mChi2 = t.mChi2;
+  mSignal = t.mSignal;
   mRefGlobalTrackId = t.mRefGlobalTrackId;
   mCollisionId = t.mCollisionId;
   mFlags = t.mFlags;
+  mIsCrossingNeighbor = t.mIsCrossingNeighbor;
   for (int i = 0; i < kNLayers; ++i) {
     mAttachedTracklets[i] = t.mAttachedTracklets[i];
   }
@@ -154,19 +155,6 @@ GPUd() int GPUTRDTrack_t<T>::getNlayersFindable() const
   int retVal = 0;
   for (int iLy = 0; iLy < kNLayers; iLy++) {
     if ((mFlags >> iLy) & 0x1) {
-      ++retVal;
-    }
-  }
-  return retVal;
-}
-
-template <typename T>
-GPUd() int GPUTRDTrack_t<T>::getNtracklets() const
-{
-  // returns number of tracklets attached to this track
-  int retVal = 0;
-  for (int iLy = 0; iLy < kNLayers; ++iLy) {
-    if (mAttachedTracklets[iLy] >= 0) {
       ++retVal;
     }
   }

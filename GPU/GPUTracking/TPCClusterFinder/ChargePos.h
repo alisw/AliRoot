@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file ChargePos.h
 /// \author Felix Weiglhofer
@@ -27,7 +22,7 @@ namespace GPUCA_NAMESPACE
 namespace gpu
 {
 
-#define INVALID_TIME_BIN (-PADDING_TIME - 1)
+#define INVALID_TIME_BIN (-GPUCF_PADDING_TIME - 1)
 
 struct ChargePos {
   tpccf::GlobalPad gpad;
@@ -35,10 +30,9 @@ struct ChargePos {
 
   GPUdDefault() ChargePos() CON_DEFAULT;
 
-  GPUdi() ChargePos(tpccf::Row row, tpccf::Pad pad, tpccf::TPCFragmentTime t)
+  constexpr GPUhdi() ChargePos(tpccf::Row row, tpccf::Pad pad, tpccf::TPCFragmentTime t)
+    : gpad(tpcGlobalPadIdx(row, pad)), timePadded(t + GPUCF_PADDING_TIME)
   {
-    gpad = tpcGlobalPadIdx(row, pad);
-    timePadded = t + PADDING_TIME;
   }
 
   GPUdi() ChargePos(const tpccf::GlobalPad& p, const tpccf::TPCFragmentTime& t) : gpad(p), timePadded(t) {}
@@ -51,23 +45,19 @@ struct ChargePos {
   GPUdi() bool valid() const { return timePadded >= 0; }
 
   GPUdi() tpccf::Row row() const { return gpad / TPC_PADS_PER_ROW_PADDED; }
-  GPUdi() tpccf::Pad pad() const { return gpad % TPC_PADS_PER_ROW_PADDED - PADDING_PAD; }
-  GPUdi() tpccf::TPCFragmentTime time() const { return timePadded - PADDING_TIME; }
-
-  GPUdi() bool isPadding() const
-  {
-    tpccf::Pad pad = gpad % TPC_PADS_PER_ROW_PADDED;
-    return timePadded < PADDING_TIME || timePadded >= TPC_MAX_FRAGMENT_LEN || pad < PADDING_PAD;
-  }
+  GPUdi() tpccf::Pad pad() const { return gpad % TPC_PADS_PER_ROW_PADDED - GPUCF_PADDING_PAD; }
+  GPUdi() tpccf::TPCFragmentTime time() const { return timePadded - GPUCF_PADDING_TIME; }
 
  private:
   // Maps the position of a pad given as row and index in that row to a unique
   // index between 0 and TPC_NUM_OF_PADS.
-  static GPUdi() tpccf::GlobalPad tpcGlobalPadIdx(tpccf::Row row, tpccf::Pad pad)
+  static constexpr GPUdi() tpccf::GlobalPad tpcGlobalPadIdx(tpccf::Row row, tpccf::Pad pad)
   {
-    return TPC_PADS_PER_ROW_PADDED * row + pad + PADDING_PAD;
+    return TPC_PADS_PER_ROW_PADDED * row + pad + GPUCF_PADDING_PAD;
   }
 };
+
+inline constexpr ChargePos INVALID_CHARGE_POS{255, 255, INVALID_TIME_BIN};
 
 } // namespace gpu
 } // namespace GPUCA_NAMESPACE
