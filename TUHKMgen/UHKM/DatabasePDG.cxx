@@ -30,6 +30,7 @@ using std::strcmp;
 using std::strcpy;
 using std::ifstream;
 using std::ios;
+using std::string;
 
 DatabasePDG::DatabasePDG():
   fNParticles(0),
@@ -78,7 +79,7 @@ Bool_t DatabasePDG::LoadParticles() {
     return kFALSE;
   }
   
-  Char_t name[9];
+  std::string partName;
   Double_t mass, width, spin, isospin, isospinZ, q, s, aq, as, c, ac;
   Int_t pdg;
   Int_t goodStatusParticles = 0;
@@ -88,17 +89,11 @@ Bool_t DatabasePDG::LoadParticles() {
        << "       Mass range                                         : (" << fMinimumMass << "; " << fMaximumMass << ")" << endl
        << "       Width range                                        : (" << fMinimumWidth << "; " << fMaximumWidth << ")" << endl;
   
-  particleFile.exceptions(ios::failbit);
   while(!particleFile.eof()) {
-    try {
-      particleFile >> name >> mass >> width >> spin >> isospin >> isospinZ >> q >> s >> aq >> as >> c >> ac >> pdg;
-    }
-    catch (ios::failure const &problem) {
-      cout << problem.what() << endl;
-      break;
-    }
-        
-    fParticles[fNParticles]->SetName(name);
+    particleFile >> partName;
+    particleFile >> mass >> width >> spin >> isospin >> isospinZ >> q >> s >> aq >> as >> c >> ac >> pdg;        
+
+    fParticles[fNParticles]->SetName(partName.c_str());
     fParticles[fNParticles]->SetPDG(pdg);
     fParticles[fNParticles]->SetMass(mass);
     fParticles[fNParticles]->SetWidth(width);
@@ -227,14 +222,9 @@ ParticlePDG* DatabasePDG::GetPDGParticle(Int_t pdg) const {
   }
   if(nFindings == 1) return fParticles[firstTimeIndex];
   if(nFindings == 0) {
-    //cout << "Warning in DatabasePDG::GetPDGParticle(Int_t): The particle required with PDG = " << pdg
-    //     << " was not found in the database!!" << endl;
     return 0x0;
   }
   if(nFindings >= 2) {
-    cout << "Warning in DatabasePDG::GetPDGParticle(Int_t): The particle required with PDG = " << pdg
-         << " was found with " << nFindings << " entries in the database. Check it out !!" << endl
-	 << "Returning the first instance found" << endl;
     return fParticles[firstTimeIndex];
   }
   return 0x0;

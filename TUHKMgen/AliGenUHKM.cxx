@@ -436,20 +436,21 @@ void AliGenUHKM::Generate()
       Int_t imo = -1;
       
       if(hasMother) {
-	imo = iparticle->GetFirstMother();
+	      imo = iparticle->GetFirstMother();
       } // if has mother
       
       Bool_t trackFlag = kFALSE;  // tFlag = kFALSE --> do not track this one, its for femtoscopy
-      PushTrack(trackFlag, (imo>=0 ? idsOnStack[imo] : imo), kf,
-		p[0], p[1], p[2], energy,
-		v[0], v[1], v[2], (iparticle->T())*coeffT,    // freeze-out time is negative if the particle comes from jet
-		polar[0], polar[1], polar[2],
-		hasMother ? kPDecay:kPNoProcess, nt);
+      /*PushTrack(trackFlag, (imo>=0 ? idsOnStack[imo] : imo), kf,
+		    p[0], p[1], p[2], energy,
+		    v[0], v[1], v[2], (iparticle->T())*coeffT,    // freeze-out time is negative if the particle comes from jet
+		    polar[0], polar[1], polar[2],
+		    hasMother ? kPDecay:kPNoProcess, nt);
       
       idsOnStack[i] = nt;
       fNprimaries++;
       KeepTrack(nt);
-      
+      */
+
       origin[0] = origin0[0]+v[0];
       origin[1] = origin0[1]+v[1];
       origin[2] = origin0[2]+v[2];
