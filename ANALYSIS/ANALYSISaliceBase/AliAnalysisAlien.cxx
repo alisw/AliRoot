@@ -1257,7 +1257,7 @@ Bool_t AliAnalysisAlien::CreateDataset(const char *pattern)
    delimiter.Strip();
    if (delimiter.Contains(" ")) delimiter = "";
    else delimiter = " ";
-   TString options = " ";
+   TString options = "-f ";
    if (TestBit(AliAnalysisGrid::kTest)) options += Form("-l %d ", fNtestFiles);
    else options += Form("-l %d ", gMaxEntries);  // Protection for the find command
    TString conditions = "";
@@ -2816,7 +2816,7 @@ Bool_t AliAnalysisAlien::CheckMergedFiles(const char *filename, const char *alie
    //TGridResult *res = gGrid->Command(Form("find -x Stage_%d %s %s", stage, aliendir, pattern.Data()));
    //if (res) delete res;
    // Write standard output to file
-   TGridCollection *tmp = gGrid->OpenCollectionQuery(gGrid->Command(Form("find %s %s", aliendir, pattern.Data())),kTRUE);
+   TGridCollection *tmp = gGrid->OpenCollectionQuery(gGrid->Command(Form("find -f %s %s", aliendir, pattern.Data())),kTRUE);
   tmp->ExportXML(Form("file://Stage_%d.xml",stage),kFALSE,kFALSE,Form("Stage_%d",stage));
    //gROOT->ProcessLine(Form("gGrid->Stdout(); > %s", Form("Stage_%d.xml",stage)));
    // Count the number of files inside
