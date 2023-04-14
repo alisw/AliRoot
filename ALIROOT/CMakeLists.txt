@@ -18,11 +18,15 @@
 # Module include folder
 include_directories(${AliRoot_SOURCE_DIR}/ALIROOT)
 
+find_package(LibXml2 REQUIRED)
+message("LIBXML2_INCLUDE_DIR ->  ${LIBXML2_INCLUDE_DIR}")
+
 # Additional include folders in alphabetical order
 include_directories(
                     ${AliRoot_BINARY_DIR}/version
                     ${AliRoot_SOURCE_DIR}/STEER/STEER
                     ${AliRoot_SOURCE_DIR}/STEER/STEERBase
+		    ${LIBXML2_INCLUDE_DIR}
                    )
 
 # aliroot executable
