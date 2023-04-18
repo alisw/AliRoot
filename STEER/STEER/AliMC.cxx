@@ -369,6 +369,9 @@ void  AliMC::AddParticles()
   // f2(1270) (PDG: width = 185 MeV)
   TVirtualMC::GetMC()->DefineParticle(225, "f2_1270", kPTNeutron, 1.275 , 0.0, 3.558e-24,"Hadron", 0.185, 4, 1, 1, 0, 0, 1, 0, 0, kTRUE);
 
+  // f0(1500) (PDG: width = 109 MeV)
+  TVirtualMC::GetMC()->DefineParticle(9030221, "f0_1500", kPTNeutron, 1.505 , 0.0, 1.0e-23,"Hadron", 0.109, 0, 1, 1, 0, 0, 1, 0, 0, kTRUE);
+
   // Xi_0(1820)
   TVirtualMC::GetMC()->DefineParticle( 123324,"Xi_0_1820",    kPTNeutron,1.8234,0.0,2.742550e-23,"Hadron",0.024, 3, -1, 0, 1,  1, 0, 0,  1, kTRUE);
   TVirtualMC::GetMC()->DefineParticle(-123324,"Xi_0_Bar_1820",kPTNeutron,1.8234,0.0,2.742550e-23,"Hadron",0.024, 3, -1, 0, 1, -1, 0, 0, -1, kTRUE);
