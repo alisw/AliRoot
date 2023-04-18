@@ -386,6 +386,12 @@ void AliPDG::AddParticlesToPdgDataBase()
 		       0.07, 0, "Resonance", ionCode);
   }
 
+  ionCode = 9030221;
+  if(!pdgDB->GetParticle(ionCode)){
+    pdgDB->AddParticle("f0_1500","f0_1500", 1.505, kFALSE,
+		       0.109, 0, "Resonance", ionCode);
+  }
+
   ionCode = 225;
   if(!pdgDB->GetParticle(ionCode)){
     pdgDB->AddParticle("f2_1270","f2_1270", 1.275, kFALSE,
