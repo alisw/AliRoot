@@ -188,49 +188,51 @@ void AliPDG::AddParticlesToPdgDataBase()
   //Hyper nuclei and exotica
   ionCode = 1010010030;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("HyperTriton","HyperTriton", 2.99131, kFALSE,
+    pdgDB->AddParticle("HyperTriton","HyperTriton", 2.991134, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
 
   ionCode = -1010010030;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperTriton","AntiHyperTriton", 2.99131, kFALSE,
+    pdgDB->AddParticle("AntiHyperTriton","AntiHyperTriton", 2.991134, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
 
+  //hyper hydrogen 4 
   ionCode = 1010010040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hyperhydrog4","Hyperhydrog4", 3.931, kFALSE,
+    pdgDB->AddParticle("Hyperhydrog4","Hyperhydrog4", 3.922434, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
-
+  //anti hyper hydrogen 4 
   ionCode = -1010010040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperhydrog4","AntiHyperhydrog4", 3.931, kFALSE,
+    pdgDB->AddParticle("AntiHyperhydrog4","AntiHyperhydrog4", 3.922434, kFALSE,
 		       2.5e-15, 3, "Ion", ionCode);
   }
-
+ 
+  //hyper helium 4 
   ionCode = 1010020040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hyperhelium4","Hyperhelium4", 3.929, kFALSE,
+    pdgDB->AddParticle("Hyperhelium4","Hyperhelium4", 3.921728, kFALSE,
 		       2.5e-15, 6, "Ion", ionCode);
   }
-
+  //anti hyper helium 4 
   ionCode = -1010020040;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperhelium4","AntiHyperhelium4", 3.929, kFALSE,
+    pdgDB->AddParticle("AntiHyperhelium4","AntiHyperhelium4", 3.921728, kFALSE,
 		       2.5e-15, 6, "Ion", ionCode);
   }
 
   ionCode = 1010020050;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hyperhelium5","Hyperhelium5", 4.841, kFALSE,
+    pdgDB->AddParticle("Hyperhelium5","Hyperhelium5", 4.839961, kFALSE,
                2.5e-15, 6, "Ion", ionCode);
   }
     
   ionCode = -1010020050;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHyperhelium5","AntiHyperhelium5", 4.841, kFALSE,
+    pdgDB->AddParticle("AntiHyperhelium5","AntiHyperhelium5", 4.839961, kFALSE,
                2.5e-15, 6, "Ion", ionCode);
   }
     
@@ -260,14 +262,14 @@ void AliPDG::AddParticlesToPdgDataBase()
 
   ionCode = 1020000020;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Hdibaryon","Hdibaryon", 2.23, kFALSE,
-		       2.5e-15, 0, "Special", ionCode);
+    pdgDB->AddParticle("Hdibaryon","Hdibaryon", 2.26, kFALSE,
+		       0.002, 0, "Special", ionCode);
   }
 
   ionCode = -1020000020;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiHdibaryon","AntiHdibaryon", 2.23, kFALSE,
-		       2.5e-15, 0, "Special", ionCode);
+    pdgDB->AddParticle("AntiHdibaryon","AntiHdibaryon", 2.26, kFALSE,
+		       0.002, 0, "Special", ionCode);
   }
 
   ionCode = 1010000030;
@@ -296,14 +298,14 @@ void AliPDG::AddParticlesToPdgDataBase()
 
   ionCode = 1030000020;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("OmegaProton","OmegaProton", 2.592, kFALSE,
-		       2.5e-15, 0, "Special", ionCode);
+    pdgDB->AddParticle("OmegaProton","OmegaProton", 2.606, kFALSE,
+		       8.02e-15, 0, "Special", ionCode);
   }
 
   ionCode = -1030000020;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiOmegaProton","AntiOmegaProton", 2.592, kFALSE,
-		       2.5e-15, 0, "Special", ionCode);
+    pdgDB->AddParticle("AntiOmegaProton","AntiOmegaProton", 2.606, kFALSE,
+		       8.02e-15, 0, "Special", ionCode);
   }
 
   ionCode = 1030010020;
@@ -366,6 +368,13 @@ void AliPDG::AddParticlesToPdgDataBase()
     pdgDB->AddParticle("CDeuteron","CDeuteron", 3.226, kFALSE,
 		       3.3e-12, 3, "Ion", ionCode);
     pdgDB->AddAntiParticle("AntiCDeuteron", - ionCode);
+  }
+
+  ionCode = 1220010040;
+  if(!pdgDB->GetParticle(ionCode)){
+    pdgDB->AddParticle("4XiHe","4XiHe", 4.128, kFALSE,
+		       4.04e-15, 3, "Ion", ionCode);
+    pdgDB->AddAntiParticle("Anti4XiHe", - ionCode);
   }
 
   // Special resonances
