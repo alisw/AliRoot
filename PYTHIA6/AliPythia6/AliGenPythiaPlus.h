@@ -154,7 +154,7 @@ class AliGenPythiaPlus : public AliGenMC
     Bool_t IsInPHOS  (Float_t phi, Float_t eta, Int_t iparticle) ;
     Bool_t IsInBarrel(Float_t eta) const;
     Bool_t IsInBarrelCalorimeters(Float_t phi,Float_t eta) ;
-    Bool_t IsFromHeavyFlavor(Int_t ipart);
+    Int_t IsFromHeavyFlavor(Int_t ipart);
 
     
     virtual void  SetCheckPHOS         (Bool_t b) {fCheckPHOS    = b;}
@@ -170,8 +170,10 @@ class AliGenPythiaPlus : public AliGenMC
     virtual void  SetEMCALAcceptance (Float_t phimin, Float_t phimax, Float_t deta) {fEMCALMinPhi = phimin ; fEMCALMaxPhi = phimax ; fEMCALEta = deta ; }
     virtual void  SetPHOSAcceptance  (Float_t phimin, Float_t phimax, Float_t deta) {fPHOSMinPhi  = phimin ; fPHOSMaxPhi  = phimax ; fPHOSEta  = deta ; }
     virtual void  SetRotateParticleInPHOSeta(Bool_t b) {fCheckPHOSeta = b;}
-    
+
     virtual void  SetTriggerParticleMinPt(Float_t pt) {fTriggerParticleMinPt = pt;}
+
+    virtual void  SetReplaceD(Int_t oldpdg, Int_t newpdg) {fReplaceDwithDreso = kTRUE; fPDGtoReplace = oldpdg; fPDGReplaceNew = newpdg;}
   
     // Trigger and rotate event, PHOS 
     void RotatePhi(Bool_t& okdd);
@@ -379,6 +381,9 @@ class AliGenPythiaPlus : public AliGenMC
     Bool_t fCheckEMCAL;       // Option to ask for FragPhoton or Pi0 or Eta or gamma decays in calorimeters EMCAL acceptance
     Bool_t fCheckPHOS;        // Option to ask for FragPhoton or Pi0 or Eta or gamma decays in calorimeters PHOS acceptance
     Bool_t fCheckPHOSeta;     // Option to ask for rotate event particles in phi to have in PHOS acceptance a requested particle that previously had the good eta
+    Bool_t fReplaceDwithDreso; // Option to replace D mesons with D resonances
+    Int_t fPDGtoReplace;      // PDG code of the particle to be replaced
+    Int_t fPDGReplaceNew;  // PDG code of the particle to be replaced with
     Int_t  fPHOSRotateCandidate;   // Internal member to select the particle candidate to trigger the event phi rotation, to put it in PHOS phi acceptance
     Float_t fTriggerParticleMinPt; // Minimum momentum of Fragmentation Photon or Pi0 or other hadron
     Float_t fPhotonMinPt;          // Minimum momentum of Photon  (not in use)
