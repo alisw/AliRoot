@@ -128,6 +128,9 @@ AliGenPythiaPlus::AliGenPythiaPlus():
     fCheckEMCAL(kFALSE),
     fCheckPHOS(kFALSE),
     fCheckPHOSeta(kFALSE),
+    fReplaceDwithDreso(kFALSE),
+    fPDGtoReplace(0),
+    fPDGReplaceNew(0),
     fPHOSRotateCandidate(-1),
     fTriggerParticleMinPt(0), 
     fPhotonMinPt(0), // not in use
@@ -246,6 +249,9 @@ AliGenPythiaPlus::AliGenPythiaPlus(AliPythiaBase* pythia)
      fCheckEMCAL(kFALSE),
      fCheckPHOS(kFALSE),
      fCheckPHOSeta(kFALSE),
+     fReplaceDwithDreso(kFALSE),
+     fPDGtoReplace(0),
+     fPDGReplaceNew(0),
      fPHOSRotateCandidate(-1),
      fTriggerParticleMinPt(0), 
      fPhotonMinPt(0), // not in use
@@ -1060,6 +1066,7 @@ Int_t  AliGenPythiaPlus::GenerateMB()
 	}
     }
 	
+    // START HERE
 
     // Check if there is a ccbar or bbbar pair with at least one of the two
     // in fYMin < y < fYMax
@@ -1128,18 +1135,20 @@ Int_t  AliGenPythiaPlus::GenerateMB()
       }
     }
   
-
+    std::vector<Int_t> IdDmesons;
     for (i = 0; i < np; i++) {
 	Int_t trackIt = 0;
 	TParticle *  iparticle = (TParticle *) fParticles.At(i);
 	kf = CheckPDGCode(iparticle->GetPdgCode());
+
 	Int_t ks = iparticle->GetStatusCode();
 	Int_t km = iparticle->GetFirstMother();
+  Int_t fromHF = IsFromHeavyFlavor(i);
 	if ((ks == 1  && kf!=0 && KinematicSelection(iparticle, 0)) ||
 	    (ks != 1) ||
 	    ((fProcess == kPyJets || fProcess == kPyJetsPWHG) && ks == 21 && km == 0 && i>1)) {
 
-	    if(fStackFillOpt == kHeavyFlavor && !IsFromHeavyFlavor(i)) continue;
+	    if(fStackFillOpt == kHeavyFlavor && !fromHF) continue;
 	    nc++;
 	    if (ks == 1) trackIt = 1;
 
@@ -1161,6 +1170,110 @@ Int_t  AliGenPythiaPlus::GenerateMB()
 	    
 	    Float_t tof = fTime + fEventTime + kconv * iparticle->T();
 
+      // Replace D with D-reso
+      printf("%d Original particle: %d \n", i, iparticle->GetPdgCode());
+      if ( fReplaceDwithDreso && (fromHF != 5)) {
+        // only replace prompt D mesons
+
+        if (TMath::Abs(iparticle->GetPdgCode()) == fPDGtoReplace) {
+          printf("%d SWAPPING Original particle: %d <-- %d \n", i, iparticle->GetPdgCode(), iparticle->GetFirstMother());
+          //printf("Original mother: %d % d\n", iparticle->GetFirstMother(), iparent);
+
+          // skip D meson if it is a decay product of another D meson
+          int imap = iparticle->GetFirstMother();
+          if (imap > 0 && imap < np) {
+            TParticle* mother = (TParticle*)fParticles.At(imap);
+            if (TMath::Abs(mother->GetPdgCode()) == 413) {
+              printf("Skip D meson\n");
+              continue;
+            }
+          }
+
+          // replace D meson with D-reso
+          //printf("COLLECTING D MESON --> %d\n", i);
+          IdDmesons.push_back(i); // store index of D meson
+          //TLorentzVector* p4 = new TLorentzVector();
+          //float mass = TDatabasePDG::Instance()->GetParticle(fPDGReplaceNew)->Mass();
+          //float en = TMath::Sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2] + mass*mass);
+          //p4->SetPxPyPzE(p[0], p[1], p[2], en);
+          //if (iparticle->GetPdgCode() > 0) {
+          //  fDecayer->Decay(fPDGReplaceNew, p4);
+          //} else {
+          //  fDecayer->Decay(-fPDGReplaceNew, p4);
+          //}
+
+          // get decay products of D-reso and D-reso itself
+          //TClonesArray* decayProducts = new TClonesArray("TParticle", 100);
+          //fDecayer->ImportParticles(decayProducts);
+          //Int_t ireso = -1;
+          //for (int iProd = 0; iProd < decayProducts->GetEntriesFast(); iProd++) {
+          //  TParticle* p = (TParticle*) decayProducts->At(iProd);
+          //  printf("%d Decay product %d: %d %d\n", i, iProd, p->GetPdgCode(),  p->GetFirstMother());
+          //  tof = fTime + fEventTime + kconv * p->T();
+          //  Int_t originDauX, originDauY, originDauZ = 0;
+          //  originDauX += p->Vx()/10; // [cm]
+          //  originDauY += p->Vy()/10; // [cm]
+          //  originDauZ += p->Vz()/10; // [cm]
+          //  tof = fTime + fEventTime + kconv * p->T();
+          //  Int_t iparent_reso = np;
+          //  if (TMath::Abs(p->GetPdgCode()) != fPDGReplaceNew) {
+          //    iparent_reso = ntr_reso - 1; // shift by 1 to account for D-reso
+          //    printf("\tSetting parent to %d\n", iparent_reso);
+          //  } else {
+          //    iparent_reso = imap; // set parent to original D meson parent
+          //    printf("\tSetting parent to %d\n", iparent_reso);
+          //  }
+          //  printf("\tParent: %d\n", iparent_reso);
+          //  printf("\tIDtracks: %d\n", nt);
+          //  if (TMath::Abs(p->GetPdgCode()) == 310 || TMath::Abs(p->GetPdgCode()) == 130) trackIt = 1; // K0s and K0l are stable in pythia
+          //  ks = p->GetStatusCode();
+          //  ntr_reso++;
+          //  PushTrack(fTrackIt*trackIt, iparent_reso, CheckPDGCode(p->GetPdgCode()), 
+          //            p->Px(), p->Py(), p->Pz(), p->Energy(), 
+          //            originDauX, originDauY, originDauZ, tof, 
+          //            polar[0], polar[1], polar[2],
+          //            kPPrimary, ntr_reso, 1., ks);
+          //            // 1 = primary
+                      // ntr++ is done in PushTrack
+          //}
+
+          //delete p4;
+          continue;
+        }
+
+        // Check mothers
+        bool toSkip = false;
+        Int_t imo = (fPythia->Version() == 6) ? (iparticle->GetFirstMother()-1) : (iparticle->GetFirstMother());
+        while (imo > 0) {
+          TParticle* mother = (TParticle*) fParticles.At(imo);
+          if (TMath::Abs(mother->GetPdgCode()) == fPDGtoReplace) {
+            toSkip = true;
+            break;
+          }
+          imo = (fPythia->Version() == 6) ? (mother->GetFirstMother()-1) : (mother->GetFirstMother());
+        }
+        if (toSkip) printf("%d SKIP Original Dau particle: %d <--- %d \n", i, iparticle->GetPdgCode(), iparticle->GetFirstMother());
+        if (toSkip) continue;
+        // Check daughters
+        Int_t ifirstdau = (fPythia->Version() == 6) ? (iparticle->GetFirstDaughter()-1) : (iparticle->GetFirstDaughter());
+        Int_t ilastdau = (fPythia->Version() == 6) ? (iparticle->GetLastDaughter()-1) : (iparticle->GetLastDaughter());
+        printf("%d LOOKING INTO DAUGHTERS: %d %d\n", i, ifirstdau, ilastdau);
+        if (ifirstdau > 0 && ilastdau > 0) {
+          for (Int_t idau = ifirstdau; idau <= ilastdau; idau++) {
+            printf("Daughter %d: %d\n", idau, ((TParticle*) fParticles.At(idau))->GetPdgCode());
+            TParticle* daughter = (TParticle*) fParticles.At(idau);
+            printf("\tmother index%d: %d vs %d\n", idau, daughter->GetFirstMother(), i);
+            if (TMath::Abs(daughter->GetPdgCode()) == fPDGtoReplace && daughter->GetFirstMother() != i) {
+              toSkip = true;
+            }
+            if(toSkip)  break;
+          }
+        }
+        if (toSkip) printf("%d SKIP Original Mot particle: %d <-- %d \n", i, iparticle->GetPdgCode(), iparticle->GetFirstMother());
+        if (toSkip) continue;
+      }
+
+      // Save particle
 	    PushTrack(fTrackIt*trackIt, iparent, kf, 
 		      p[0], p[1], p[2], p[3], 
 		      origin[0], origin[1], origin[2], tof, 
@@ -1190,6 +1303,72 @@ Int_t  AliGenPythiaPlus::GenerateMB()
 	    
 	} // select particle
     } // particle loop 
+
+    // Substitute the D meson with resonances
+    if (fReplaceDwithDreso) {
+
+      // Loop over D mesons to be replaced
+      Int_t iparent = nt+1;
+      Int_t nD = IdDmesons.size();
+      for (int i = 0; i < nD; i++) {
+        // D meson info
+        Int_t iD = IdDmesons[i];
+        TParticle *  iparticle = (TParticle *) fParticles.At(iD);
+        Int_t pX = iparticle->Px();
+	      Int_t pY = iparticle->Py();
+	      Int_t pZ = iparticle->Pz();
+	      Int_t vtxX = fVertex[0]+iparticle->Vx()/10; // [cm]
+	      Int_t vtxY = fVertex[1]+iparticle->Vy()/10; // [cm]
+	      Int_t vtxZ = fVertex[2]+iparticle->Vz()/10; // [cm]
+	      Float_t tof = fTime + fEventTime + kconv * iparticle->T();
+  
+        // Resonance info
+        TLorentzVector* p4 = new TLorentzVector();
+        float mass = TDatabasePDG::Instance()->GetParticle(fPDGReplaceNew)->Mass();
+        float en = TMath::Sqrt(pX*pX + pY*pY + pZ*pZ + mass*mass);
+        p4->SetPxPyPzE(pX, pY, pZ, en);
+        if (iparticle->GetPdgCode() > 0) {
+          fDecayer->Decay(fPDGReplaceNew, p4);
+        } else {
+          fDecayer->Decay(-fPDGReplaceNew, p4);
+        }
+  
+        // Save daughters (resonance included)
+        TClonesArray* decayProducts = new TClonesArray("TParticle", 100);
+        fDecayer->ImportParticles(decayProducts);
+        for (int iProd = 0; iProd < decayProducts->GetEntriesFast(); iProd++) {
+          printf("NT %d\n", nt);
+          TParticle* p = (TParticle*) decayProducts->At(iProd);
+          printf("%d Decay product %d: %d %d\n", i, iProd, p->GetPdgCode(),  p->GetFirstMother());
+          Int_t originDauX, originDauY, originDauZ = 0;
+          originDauX += p->Vx()/10; // [cm]
+          originDauY += p->Vy()/10; // [cm]
+          originDauZ += p->Vz()/10; // [cm]
+          tof = fTime + fEventTime + kconv * p->T();
+          Int_t iparent_reso = -1;
+          if (TMath::Abs(p->GetPdgCode()) == fPDGReplaceNew) {
+            iparent_reso = iparticle->GetFirstMother(); // set parent to original D meson parent
+          } else {
+            iparent_reso = iparent + p->GetFirstMother(); // set parent
+          }
+          printf("\tSetting parent to %d\n", iparent_reso);
+          Int_t trackIt = 0;
+          if (TMath::Abs(p->GetPdgCode()) == 310 || TMath::Abs(p->GetPdgCode()) == 130) trackIt = 1; // K0s and K0l are stable in pythia
+          Int_t ks = p->GetStatusCode();
+          PushTrack(fTrackIt*trackIt, iparent_reso, CheckPDGCode(p->GetPdgCode()), 
+                    p->Px(), p->Py(), p->Pz(), p->Energy(), 
+                    originDauX, originDauY, originDauZ, tof, 
+                    polar[0], polar[1], polar[2],
+                    kPPrimary, nt, 1., ks);
+                    // 1 = primary
+                    // ntr++ is done in PushTrack
+          fNprimaries++;
+          KeepTrack(nt);
+          SetHighWaterMark(nt);
+        }
+      }
+    }
+
 
     delete[] pParent;
     
@@ -1690,12 +1869,12 @@ void AliGenPythiaPlus::RotatePhi(Bool_t& okdd)
 }
 
 /// Check if this is a heavy flavor decay product
-Bool_t AliGenPythiaPlus::IsFromHeavyFlavor(Int_t ipart)
+Int_t AliGenPythiaPlus::IsFromHeavyFlavor(Int_t ipart)
 {
   TParticle *  part = (TParticle *) fParticles.At(ipart);
   Int_t mpdg = TMath::Abs(part->GetPdgCode());
   Int_t mfl  = Int_t (mpdg / TMath::Power(10, Int_t(TMath::Log10(mpdg))));
-  if (mfl >= 4 && mfl < 6) return kTRUE; // HF hadron
+  if (mfl >= 4 && mfl < 6) return mfl; // HF hadron
   
   // seach if originates from HF haron decay
   Int_t imo = (fPythia->Version() == 6) ? (part->GetFirstMother()-1) : (part->GetFirstMother());
@@ -1704,10 +1883,10 @@ Bool_t AliGenPythiaPlus::IsFromHeavyFlavor(Int_t ipart)
     pm  =  (TParticle*)fParticles.At(imo);
     mpdg = TMath::Abs(pm->GetPdgCode());
     mfl  = Int_t (mpdg / TMath::Power(10, Int_t(TMath::Log10(mpdg))));
-    if ((mfl > 3) && (mfl <6) && mpdg > 400) return kTRUE;
+    if ((mfl > 3) && (mfl <6) && mpdg > 400) return mfl;
     imo = (fPythia->Version() == 6) ? (pm->GetFirstMother()-1) : (pm->GetFirstMother());
   }
-  return kFALSE;
+  return 0;
 }
 
 ///
