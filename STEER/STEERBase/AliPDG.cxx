@@ -335,13 +335,13 @@ void AliPDG::AddParticlesToPdgDataBase()
 
   ionCode = 1010010021;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("Lambda1405Proton","Lambda1405Proton", 2.295, kFALSE,
+    pdgDB->AddParticle("Lambda1405Proton","Lambda1405Proton", 2.37, kFALSE,
 		       0.05, 3, "Special", ionCode);
   }
 
   ionCode = -1010010021;
   if(!pdgDB->GetParticle(ionCode)){
-    pdgDB->AddParticle("AntiLambda1405Proton","AntiLambda1405Proton", 2.295, kFALSE,
+    pdgDB->AddParticle("AntiLambda1405Proton","AntiLambda1405Proton", 2.37, kFALSE,
 		       0.05, 3, "Special", ionCode);
   }
 
