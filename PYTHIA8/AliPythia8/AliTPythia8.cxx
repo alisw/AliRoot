@@ -545,4 +545,6 @@ void AliTPythia8::UpdateParticleProperties() const
   ReadString("5122:tau0 = 4.41000e-01");
   // Omega_c from PDG 2020: tau0 = 0.08 mm/c
   ReadString("4332:tau0 = 8.0e-02");
+  // Xi_c0 from PDG 2022: tau0 = 0.0455 mm/c
+  ReadString("4132:tau0 = 4.550e-02");	
 }
