@@ -24,6 +24,7 @@ class AliDecayerPythia8 : public TVirtualMCDecayer {
   virtual Int_t   ImportParticles(TClonesArray *particles);
   virtual void    SetForceDecay(Decay_t decay) {fDecay=decay;}
   virtual void    SetForceDecay(Int_t decay)   {SetForceDecay((Decay_t) decay);}
+  virtual void    SetLongLivedDecay(bool val = true) { fEnableLongLivedDecay = val; }
   virtual void    ForceDecay();
   virtual Float_t GetPartialBranchingRatio(Int_t ipart);
   virtual void    HeavyFlavourOff() {fHeavyFlavour = kFALSE;}
@@ -41,13 +42,14 @@ class AliDecayerPythia8 : public TVirtualMCDecayer {
   void     SwitchOffHeavyFlavour();
   void     ForceHadronicD(Int_t optUser4Bodies = 1,Int_t optUseDtoV0 =1, Int_t optForceLcChannel = 0, Int_t optForceXicChannel = 0, Int_t optForceDsChannel = 0, Int_t optForceOmegacChannel = 0, Int_t optForceDsResonances=0);
   void  ForceBeautyUpgrade();
-  AliTPythia8*  fPythia8;          // Pointer to pythia8
-  Int_t         fDebug;            // Debug level
+  AliTPythia8*  fPythia8;               // Pointer to pythia8
+  Int_t         fDebug;                 // Debug level
  
-  Decay_t       fDecay;            //  Forced decay mode
-  Bool_t        fHeavyFlavour;     //! Flag for heavy flavors
-  static Bool_t fgInit;            //! initialization flag 
-  ClassDef(AliDecayerPythia8, 2) // Particle Decayer using Pythia8
+  Decay_t       fDecay;                 //  Forced decay mode
+  bool          fEnableLongLivedDecay;  // To enable long lived particle decay
+  Bool_t        fHeavyFlavour;          //! Flag for heavy flavors
+  static Bool_t fgInit;                 //! initialization flag 
+  ClassDef(AliDecayerPythia8, 3)        // Particle Decayer using Pythia8
 };
 #endif
 

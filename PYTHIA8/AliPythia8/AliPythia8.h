@@ -77,7 +77,7 @@ class AliPythia8 :public AliTPythia8, public AliPythiaBase
      *
      * @param doDecay If true the particles listed here are decayed
      */
-    void SetDecayLonglived(Bool_t doDecay = kTRUE) { fDecayLonglived = doDecay; }
+    void SetDecayLonglived(Bool_t doDecay = kTRUE) { fDecayLonglived = doDecay; ((AliDecayerPythia8*) Decayer())->SetLongLivedDecay(doDecay); }
 
     //
     // Common Getters
