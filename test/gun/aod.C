@@ -1,5 +1,6 @@
 #ifdef __CLING__
 R__LOAD_LIBRARY(libzmq)
+R__LOAD_LIBRARY(libboost_unit_test_framework)
 #endif
 void aod(){
 
