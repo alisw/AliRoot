@@ -504,6 +504,12 @@ void AliDecayerPythia::ForceDecay()
     case kLambda:
 	ForceLambda();
 	break;
+    case kF0F1K0s:
+        ForceF0F1();
+        break;
+    case kF1K0sK:
+        ForceF1K0sK();
+        break;
     case kAll:
 	break;
     case kNoDecay:
@@ -682,6 +688,35 @@ void  AliDecayerPythia::Lu1Ent(Int_t flag, Int_t idpart,
   
 }
 
+void AliDecayerPythia::ForceF0F1()
+{
+    // force decay mode of f0(1500) to K0s K0s
+    const Int_t prod[2]={310,-310};
+    Int_t mult[2]={1,1};
+    ForceParticleDecay(9030221,prod,mult,2,1);
+    // force decay of f2(1525) to K0s K0s
+    ForceParticleDecay(335,prod,mult,2,1);
+    // force decay of f2(1270) to K0s K0s
+    ForceParticleDecay(225,prod,mult,2,1);
+    // force decay of f0(1370) to K0s K0s
+    ForceParticleDecay(10221,prod,mult,2,1);
+    // force decay of f1(1285) to K0s, anti-K, pi+
+    const Int_t prod2[3]={310,-321,211};
+    Int_t mult2[3]={1,1,1};
+    ForceParticleDecay(20223,prod2,mult2,3,1);
+    // force decay of f1(1420) to K0s, anti-K, pi+
+    ForceParticleDecay(20333,prod2,mult2,3,1);
+}
+
+void AliDecayerPythia::ForceF1K0sK()
+{
+    // force decay of f1(1285) to K0s, K, pi-
+    const Int_t prod[3]={310,321,-211};
+    Int_t mult[3]={1,1,1};
+    ForceParticleDecay(20223,prod,mult,3,1);
+    // force decay of f1(1420) to K0s, K, pi-
+    ForceParticleDecay(20333,prod,mult,3,1);
+}
 
 
 Int_t AliDecayerPythia::CountProducts(Int_t channel, Int_t particle)
