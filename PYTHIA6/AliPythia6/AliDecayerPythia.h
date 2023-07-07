@@ -52,6 +52,8 @@ public AliDecayer
     void     SwitchOffHeavyFlavour();
     void     ForceBeautyUpgrade();
     void     ForceHFYellowReport();
+    void     ForceF0F1();
+    void     ForceF1K0sK();
     Float_t  GetBraPart(Int_t kf);
     void     Copy(TObject &decayer) const;
 
