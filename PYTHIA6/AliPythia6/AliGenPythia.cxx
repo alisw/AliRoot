@@ -1163,7 +1163,7 @@ Int_t  AliGenPythia::GenerateMB()
     // Check if there is a ccbar or bbbar pair with at least one of the two
     // in fYMin < y < fYMax
 
-    if (fProcess == kPyCharmppMNRwmi || fProcess == kPyBeautyppMNRwmi || fProcess == kPyHeavyFlavppMNRwmi || fProcess == kPyBeautyJets) {
+    if (fProcess == kPyCharmppMNRwmi || fProcess == kPyBeautyppMNRwmi || fProcess == kPyHeavyFlavppMNRwmi || fProcess == kPyBeautyJets || fProcess==kPyCharmPWHG || fProcess==kPyBeautyPWHG) {
       TParticle *partCheck;
       TParticle *mother;
       Bool_t  theQ=kFALSE,theQbar=kFALSE,inYcut=kFALSE;
