@@ -215,7 +215,7 @@ void AliPHOSvImpacts::StepManager(void)
 
   AliPHOSv1::StepManager();
 
-  Float_t xyzm[3], xyzd[3], pm[3], pd[3];
+  Float_t xyzm[3], xyzd[3] = {0.}, pm[3], pd[3] = {0.};
   TLorentzVector pmom     ;           // Lorentz momentum of the particle initiated hit
   TLorentzVector pos      ;           // Lorentz vector of the track current position
   Int_t          copy     ;

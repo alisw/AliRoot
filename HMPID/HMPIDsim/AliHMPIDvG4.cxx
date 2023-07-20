@@ -54,7 +54,7 @@ void AliHMPIDvG4::GenFee(Float_t qtot)
   AliDebug(1,Form("N photons=%i",iNphotons));
   if (iNphotons > fMaxFeed) return;
   Int_t j;
-  Float_t cthf, phif, enfp = 0, sthf, e1[3], e2[3], e3[3], vmod, uswop,dir[3], phi,pol[3], mom[4];
+  Float_t cthf, phif, enfp = 0, sthf, e1[3], e2[3], e3[3], vmod, uswop,dir[3], phi,pol[3], mom[4] = {0.};
 //Generate photons
   for(Int_t i=0;i<iNphotons;i++){//feedbacks loop
     Double_t ranf[2];
