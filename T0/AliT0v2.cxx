@@ -294,7 +294,7 @@ void AliT0v2::StepManager()
   Int_t 			id;
   Int_t				copy;
 //  Int_t				copy1;
-  Float_t			xyz[3];
+  Float_t			xyz[3] = {0.};
   Float_t			XYZ[3];
   Float_t			hitPhoton[6];
   static Float_t 		hits[7];

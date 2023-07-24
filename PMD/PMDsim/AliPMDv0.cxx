@@ -854,7 +854,7 @@ void AliPMDv0::StepManager()
   // Called at each step in the PMD
   //
   Int_t   copy;
-  Float_t hits[5], destep;
+  Float_t hits[5] = {0.}, destep;
   Float_t center[3] = {0,0,0};
   Int_t   vol[6];
   //char *namep;

@@ -433,7 +433,7 @@ void AliITSupgrade::StepHistory()
   AliInfo(Form("\n Step %i: %s (%i) %s %s m=%.6f GeV q=%.1f dEdX=%.4f Etot=%.4f",iStepN,sParticle,TVirtualMC::GetMC()->TrackPid(),flag.Data(),path.Data(),TVirtualMC::GetMC()->TrackMass(),TVirtualMC::GetMC()->TrackCharge(),TVirtualMC::GetMC()->Edep()*1e9,TVirtualMC::GetMC()->Etot()));
 
   Double_t gMcTrackPos[3]; TVirtualMC::GetMC()->TrackPosition(gMcTrackPos[0],gMcTrackPos[1],gMcTrackPos[2]);
-  Double_t  gMcTrackPosLoc[3]; TVirtualMC::GetMC()->Gmtod(gMcTrackPos,gMcTrackPosLoc,1);
+  Double_t  gMcTrackPosLoc[3] = {0.}; TVirtualMC::GetMC()->Gmtod(gMcTrackPos,gMcTrackPosLoc,1);
   TString v(volumeName.Data());
   v.ReplaceAll("LayerSilicon","");
   Int_t ilayer = v.Atoi();

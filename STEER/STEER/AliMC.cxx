@@ -1470,8 +1470,16 @@ void AliMC::Stepping()
     // write tracke reference for track which is dissapearing - MI
 
     if (fMC->IsTrackDisappeared() && !(fMC->IsTrackAlive())) {
-    if (fMC->Etot() > 0.05) AddTrackReference(GetCurrentTrackNumber(),
-						AliTrackReference::kDisappeared);
+    //if (fMC->Etot() > 0.05) AddTrackReference(GetCurrentTrackNumber(),
+    //						AliTrackReference::kDisappeared);
+    if (fMC->Etot() > 0.05) {
+        Int_t currentTrackNumber = GetCurrentTrackNumber();
+        if (currentTrackNumber < 0) {
+          std::cerr << !!! "Cannot add track reference, currentTrackNumber < 0: " << currentTrackNumber << std::endl;
+        } else {
+          AddTrackReference(currentTrackNumber, AliTrackReference::kDisappeared);
+        }
+    }
 
 
     }
