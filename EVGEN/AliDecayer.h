@@ -24,7 +24,7 @@ typedef enum
     kHadronicDWithV0,kHadronicDWithout4BodiesWithV0,kAllEM,
     kLcpKpi, kLcpK0S, kHFYellowReport, kHadronicDPionicD0, kHadronicDWithV0PionicD0, kHadronicDWithout4BodiesPionicD0, 
     kHadronicDWithout4BodiesWithV0PionicD0,kHadronicDPionicD0pure,kHadronicDPionicD0K,kHadronicDPionicD0pi, kLcpK0SBDTsig, kEtaPrime,kEtaPrimeGammaGamma,
-    kXic0Semileptonic,kHadronicDWithout4BodiesDsPhiPi, kLcLpi, kOmegac0Semileptonic, kOmegac0ToXiPi, kF0F1K0s, kF1K0sK
+    kXic0Semileptonic,kHadronicDWithout4BodiesDsPhiPi, kLcLpi, kOmegac0Semileptonic, kOmegac0ToXiPi, kF0F1K0s, kF1K0sK, kDsResonances
 } Decay_t;
 #endif
 
