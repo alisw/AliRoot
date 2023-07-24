@@ -528,7 +528,7 @@ void AliHMPIDv2::GenFee(Float_t qtot)
   Int_t iNphotons=TVirtualMC::GetMC()->GetRandom()->Poisson(0.02*qtot);  //# of feedback photons is proportional to the charge of hit
   AliDebug(1,Form("N photons=%i",iNphotons));
   Int_t j;
-  Float_t cthf, phif, enfp = 0, sthf, e1[3], e2[3], e3[3], vmod, uswop,dir[3], phi,pol[3], mom[4];
+  Float_t cthf, phif, enfp = 0, sthf, e1[3], e2[3], e3[3], vmod, uswop,dir[3], phi,pol[3], mom[4] = {0.};
 //Generate photons
   for(Int_t i=0;i<iNphotons;i++){//feedbacks loop
     Double_t ranf[2];
@@ -778,7 +778,7 @@ void AliHMPIDv2::StepHistory()
   Printf("Step %i: %s (%i) %s %s m=%.6f GeV q=%.1f dEdX=%.4f Etot=%.4f",iStepN,sParticle,TVirtualMC::GetMC()->TrackPid(),flag.Data(),path.Data(),TVirtualMC::GetMC()->TrackMass(),TVirtualMC::GetMC()->TrackCharge(),TVirtualMC::GetMC()->Edep()*1e9,TVirtualMC::GetMC()->Etot());
   
   Double_t gMcTrackPos[3]; TVirtualMC::GetMC()->TrackPosition(gMcTrackPos[0],gMcTrackPos[1],gMcTrackPos[2]);
-  Double_t  gMcTrackPosLoc[3]; TVirtualMC::GetMC()->Gmtod(gMcTrackPos,gMcTrackPosLoc,1);
+  Double_t  gMcTrackPosLoc[3] = {0.}; TVirtualMC::GetMC()->Gmtod(gMcTrackPos,gMcTrackPosLoc,1);
   Printf("TVirtualMC::GetMC() Track Position (MARS) x: %5.3lf, y: %5.3lf, z: %5.3lf (r: %5.3lf) ---> (LOC) x: %5.3f, y: %5.3f, z: %5.3f",gMcTrackPos[0],gMcTrackPos[1],gMcTrackPos[2],TMath::Sqrt(gMcTrackPos[0]*gMcTrackPos[0]+gMcTrackPos[1]*gMcTrackPos[1]+gMcTrackPos[2]*gMcTrackPos[2]),gMcTrackPosLoc[0],gMcTrackPosLoc[1],gMcTrackPosLoc[2]);
   
 

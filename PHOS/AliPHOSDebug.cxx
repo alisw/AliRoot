@@ -515,7 +515,7 @@ void AliPHOSv1::StepManager(void)
 
     // Current position of the hit in the local ref. system
       TVirtualMC::GetMC() -> TrackPosition(pos);
-      Float_t xyzm[3], xyzd[3] ;
+      Float_t xyzm[3], xyzd[3] = {0.};
       Int_t i;
       for (i=0; i<3; i++) xyzm[i] = pos[i];
       TVirtualMC::GetMC() -> Gmtod (xyzm, xyzd, 1);    // transform coordinate from master to daughter system
@@ -526,7 +526,7 @@ void AliPHOSv1::StepManager(void)
       
       // Current momentum of the hit's track in the local ref. system
       TVirtualMC::GetMC() -> TrackMomentum(pmom);
-      Float_t pm[3], pd[3];
+      Float_t pm[3], pd[3] = {0.};
       for (i=0; i<3; i++) pm[i]   = pmom[i];
       TVirtualMC::GetMC() -> Gmtod (pm, pd, 2);        // transform 3-momentum from master to daughter system
       pmom[0] = pd[0];

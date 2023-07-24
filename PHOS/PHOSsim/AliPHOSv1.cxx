@@ -196,7 +196,7 @@ void AliPHOSv1::StepManager(void)
     
     fMC -> TrackPosition(pos);
 
-    Float_t xyzm[3], xyzd[3] ;
+    Float_t xyzm[3], xyzd[3] = {0.};
     Int_t i;
     for (i=0; i<3; i++) xyzm[i] = pos[i];
     fMC -> Gmtod (xyzm, xyzd, 1);    // transform coordinate from master to daughter system
@@ -210,7 +210,7 @@ void AliPHOSv1::StepManager(void)
     // Current momentum of the hit's track in the local ref. system
     TLorentzVector pmom     ;        //momentum of the particle initiated hit
     fMC -> TrackMomentum(pmom);
-    Float_t pm[3], pd[3];
+    Float_t pm[3], pd[3] = {0.};
     for (i=0; i<3; i++)  
       pm[i]   = pmom[i];
     
@@ -296,12 +296,12 @@ void AliPHOSv1::StepManager(void)
     
     //Put in the TreeK particle entering PHOS and all its parents
     if ( fMC->IsTrackEntering() ){
-      Float_t xyzd[3] ;
+      Float_t xyzd[3] = {0.};
       fMC -> Gmtod (xyzte, xyzd, 1);    // transform coordinate from master to daughter system
       if (xyzd[1] < -GetGeometry()->GetCrystalSize(1)/2.+0.1){   //Entered close to forward surface  
 	Int_t parent = gAlice->GetMCApp()->GetCurrentTrackNumber() ; 
 	TParticle * part = gAlice->GetMCApp()->Particle(parent) ; 
-	Float_t vert[3],vertd[3] ;
+	Float_t vert[3], vertd[3] = {0.};
 	vert[0]=part->Vx() ;
 	vert[1]=part->Vy() ;
 	vert[2]=part->Vz() ;
