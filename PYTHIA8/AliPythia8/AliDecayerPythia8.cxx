@@ -604,6 +604,9 @@ void AliDecayerPythia8::ForceDecay()
     case kOmegac0ToXiPi:
       ForceHadronicD(0,0,0,0,0,2); //Omegac0 -> Xi Pi
     break;
+	case kDsResonances:
+      ForceHadronicD(0,0,0,0,0,0,1); //Ds -> Resonances
+	break;
     case kPhiKK:
 	// Phi-> K+ K-
 	fPythia8->ReadString("333:onMode = off");
@@ -711,7 +714,7 @@ void AliDecayerPythia8::ForceBeautyUpgrade(){
 }
 
 
-void AliDecayerPythia8::ForceHadronicD(Int_t optUse4Bodies, Int_t optUseDtoV0, Int_t optForceLcChannel, Int_t optForceXicChannel, Int_t optForceDsChannel, Int_t optForceOmegacChannel)
+void AliDecayerPythia8::ForceHadronicD(Int_t optUse4Bodies, Int_t optUseDtoV0, Int_t optForceLcChannel, Int_t optForceXicChannel, Int_t optForceDsChannel, Int_t optForceOmegacChannel, Int_t optForceDsResonances)
 {
 //
 // Force golden D decay modes
@@ -867,7 +870,19 @@ void AliDecayerPythia8::ForceHadronicD(Int_t optUse4Bodies, Int_t optUseDtoV0, I
         fPythia8->ReadString("3324:onMode = off");
         fPythia8->ReadString("3314:onIfMatch = 3312 111");
         fPythia8->ReadString("3324:onIfMatch = 3312 211");
-    }       
+    }
+
+	if (optForceDsResonances == 1){
+		// for K0 -> K0s
+        fPythia8->ReadString("311:onMode = off");
+        fPythia8->ReadString("311:onIfAll = 310");
+		// for Ds1+ -> D*+ K0s
+		fPythia8->ReadString("10433:onMode = off");
+		fPythia8->ReadString("10433:onIfAll = 413 311");
+		// for Ds2+ -> D+ K0s
+		fPythia8->ReadString("435:onMode = off");
+		fPythia8->ReadString("435:onIfAll = 411 311");
+	}
     
 }
 

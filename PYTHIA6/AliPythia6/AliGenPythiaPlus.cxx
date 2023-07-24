@@ -1277,8 +1277,12 @@ Int_t  AliGenPythiaPlus::GenerateMB()
             iparent_reso = iparent + p->GetFirstMother(); // set parent
           }
           Int_t trackIt = 0;
-          if (TMath::Abs(p->GetPdgCode()) == 310 || TMath::Abs(p->GetPdgCode()) == 130) trackIt = 1; // K0s and K0l are stable in pythia
           Int_t ks = p->GetStatusCode();
+          kf = CheckPDGCode(p->GetPdgCode());
+          if ((ks == 1) || fDecayer->GetLifetime(kf) > fMaxLifeTime) {
+            trackIt = 1;
+          }
+
           PushTrack(fTrackIt*trackIt, iparent_reso, CheckPDGCode(p->GetPdgCode()), 
                     p->Px(), p->Py(), p->Pz(), p->Energy(), 
                     originDauX, originDauY, originDauZ, tof, 
