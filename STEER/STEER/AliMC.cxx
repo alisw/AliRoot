@@ -1183,8 +1183,8 @@ void  AliMC::AddParticles()
     mode[kz][2] = 0;
   }
   bratio[0] = 100.;
-  mode[0][0] = 310; // pion
-  mode[0][1] = -310; // pion
+  mode[0][0] = 310; // K0s
+  mode[0][1] = -310; // K0s
 
   TVirtualMC::GetMC()->SetDecayMode(9030221,bratio,mode); // f0(1500)
   TVirtualMC::GetMC()->SetDecayMode(335,bratio,mode); // f2(1525)
@@ -1199,14 +1199,14 @@ void  AliMC::AddParticles()
   }
 
   bratio2[0] = 50.;
-  mode[0][0] = 310;
-  mode[0][1] = -321;
-  mode[0][2] = 211;
+  mode[0][0] = 310; // K0s
+  mode[0][1] = -321; // anti-K
+  mode[0][2] = 211; // pion+
 
   bratio2[1] = 50.;
-  mode[1][0] = 310;
-  mode[1][1] = 321;
-  mode[1][2] = -211;
+  mode[1][0] = 310; // K0s
+  mode[1][1] = 321; // K
+  mode[1][2] = -211; // pion-
 
   TVirtualMC::GetMC()->SetDecayMode(20223,bratio2,mode); // f1(1285)
   TVirtualMC::GetMC()->SetDecayMode(20333,bratio2,mode); // f1(1420)
