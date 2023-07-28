@@ -1175,7 +1175,7 @@ void  AliMC::AddParticles()
 
   TVirtualMC::GetMC()->SetDecayMode(225,bratio,mode);
 
-  // Define the 2-body phase space decay for the resonances: f0(1500), f2(1525)
+  // Define the 2-body phase space decay for the resonances: f0(1500), f2(1525), f0(1710
   for (Int_t kz = 0; kz < 6; kz++) {
     bratio[kz] = 0.;
     mode[kz][0] = 0;
@@ -1188,6 +1188,7 @@ void  AliMC::AddParticles()
 
   TVirtualMC::GetMC()->SetDecayMode(9030221,bratio,mode); // f0(1500)
   TVirtualMC::GetMC()->SetDecayMode(335,bratio,mode); // f2(1525)
+  TVirtualMC::GetMC()->SetDecayMode(10331,bratio,mode); // f0(1710)
   // TVirtualMC::GetMC()->SetDecayMode(10221,bratio,mode); // f0(1370)
 
   // Define the 2-body phase space decay for the resonances: f1(1285), f1(1420)
