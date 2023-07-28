@@ -1175,6 +1175,42 @@ void  AliMC::AddParticles()
 
   TVirtualMC::GetMC()->SetDecayMode(225,bratio,mode);
 
+  // Define the 2-body phase space decay for the resonances: f0(1500), f2(1525), f0(1370)
+  for (Int_t kz = 0; kz < 6; kz++) {
+    bratio[kz] = 0.;
+    mode[kz][0] = 0;
+    mode[kz][1] = 0;
+    mode[kz][2] = 0;
+  }
+  bratio[0] = 100.;
+  mode[0][0] = 310; // pion
+  mode[0][1] = -310; // pion
+
+  TVirtualMC::GetMC()->SetDecayMode(9030221,bratio,mode); // f0(1500)
+  TVirtualMC::GetMC()->SetDecayMode(335,bratio,mode); // f2(1525)
+  TVirtualMC::GetMC()->SetDecayMode(10221,bratio,mode); // f0(1370)
+
+  // Define the 2-body phase space decay for the resonances: f1(1285), f1(1420)
+  for (Int_t kz = 0; kz < 6; kz++) {
+    bratio[kz] = 0.;
+    mode[kz][0] = 0;
+    mode[kz][1] = 0;
+    mode[kz][2] = 0;
+  }
+
+  bratio2[0] = 50.;
+  mode[0][0] = 310;
+  mode[0][1] = -321;
+  mode[0][2] = 211;
+
+  bratio2[1] = 50.;
+  mode[1][0] = 310;
+  mode[1][1] = 321;
+  mode[1][2] = -211;
+
+  TVirtualMC::GetMC()->SetDecayMode(20223,bratio2,mode); // f1(1285)
+  TVirtualMC::GetMC()->SetDecayMode(20333,bratio2,mode); // f1(1420)
+  
   // Lambda1520/Lambda1520bar
 
   TVirtualMC::GetMC()->DefineParticle(3124, "Lambda1520", kPTNeutron, 1.5195 , 0.0, 4.22e-23,"Hadron", 0.0156, 3, -1, 0, 0, 0, 0, 0, 1, kTRUE);
