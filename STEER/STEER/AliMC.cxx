@@ -1184,7 +1184,7 @@ void  AliMC::AddParticles()
   }
   bratio[0] = 100.;
   mode[0][0] = 310; // K0s
-  mode[0][1] = -310; // K0s
+  mode[0][1] = 310; // K0s
 
   TVirtualMC::GetMC()->SetDecayMode(9030221,bratio,mode); // f0(1500)
   TVirtualMC::GetMC()->SetDecayMode(335,bratio,mode); // f2(1525)
