@@ -1244,9 +1244,6 @@ Int_t  AliGenPythiaPlus::GenerateMB()
         Double_t pX = iparticle->Px();
 	      Double_t pY = iparticle->Py();
 	      Double_t pZ = iparticle->Pz();
-	      Double_t vtxX = fVertex[0]+iparticle->Vx()/10; // [cm]
-	      Double_t vtxY = fVertex[1]+iparticle->Vy()/10; // [cm]
-	      Double_t vtxZ = fVertex[2]+iparticle->Vz()/10; // [cm]
 	      Float_t tof = fTime + fEventTime + kconv * iparticle->T();
   
         // Resonance info
@@ -1265,10 +1262,9 @@ Int_t  AliGenPythiaPlus::GenerateMB()
         fDecayer->ImportParticles(decayProducts);
         for (int iProd = 0; iProd < decayProducts->GetEntriesFast(); iProd++) {
           TParticle* p = (TParticle*) decayProducts->At(iProd);
-          Double_t originDauX = 0., originDauY = 0., originDauZ = 0.;
-          originDauX += p->Vx()/10; // [cm]
-          originDauY += p->Vy()/10; // [cm]
-          originDauZ += p->Vz()/10; // [cm]
+          Double_t originDauX = fVertex[0] + p->Vx()/10; // [cm]
+          Double_t originDauY = fVertex[1] + p->Vy()/10; // [cm]
+          Double_t originDauZ = fVertex[2] + p->Vz()/10; // [cm]
           tof = fTime + fEventTime + kconv * p->T();
           Int_t iparent_reso = -1;
           if (TMath::Abs(p->GetPdgCode()) == fPDGReplaceNew) {
