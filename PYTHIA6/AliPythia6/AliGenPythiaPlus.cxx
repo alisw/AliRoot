@@ -1262,9 +1262,9 @@ Int_t  AliGenPythiaPlus::GenerateMB()
         fDecayer->ImportParticles(decayProducts);
         for (int iProd = 0; iProd < decayProducts->GetEntriesFast(); iProd++) {
           TParticle* p = (TParticle*) decayProducts->At(iProd);
-          Double_t originDauX = fVertex[0] + p->Vx()/10; // [cm]
-          Double_t originDauY = fVertex[1] + p->Vy()/10; // [cm]
-          Double_t originDauZ = fVertex[2] + p->Vz()/10; // [cm]
+          Double_t originDauX = fVertex[0] + p->Vx(); // no division by 10 since it is already done in ImportParticles 
+          Double_t originDauY = fVertex[1] + p->Vy(); // no division by 10 since it is already done in ImportParticles 
+          Double_t originDauZ = fVertex[2] + p->Vz(); // no division by 10 since it is already done in ImportParticles 
           tof = fTime + fEventTime + kconv * p->T();
           Int_t iparent_reso = -1;
           if (TMath::Abs(p->GetPdgCode()) == fPDGReplaceNew) {
