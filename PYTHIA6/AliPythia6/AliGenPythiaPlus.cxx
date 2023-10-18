@@ -1179,7 +1179,8 @@ Int_t  AliGenPythiaPlus::GenerateMB()
           int imap = iparticle->GetFirstMother();
           if (imap > 0 && imap < np) {
             TParticle* mother = (TParticle*)fParticles.At(imap);
-            if (TMath::Abs(mother->GetPdgCode()) < 400 || TMath::Abs(mother->GetPdgCode()) > 499) {
+            int pdgCodeMother = TMath::Abs(mother->GetPdgCode());
+            if (pdgCodeMother < 400 || pdgCodeMother > 499) {
               IdDmesons.push_back(i); // store index of D meson
             }
           }
@@ -1191,7 +1192,8 @@ Int_t  AliGenPythiaPlus::GenerateMB()
         Int_t imo = (fPythia->Version() == 6) ? (iparticle->GetFirstMother()-1) : (iparticle->GetFirstMother());
         while (imo > 0) {
           TParticle* mother = (TParticle*) fParticles.At(imo);
-          if (TMath::Abs(mother->GetPdgCode()) == fPDGtoReplace && std::find(IdDmesons.begin(), IdDmesons.end(), imo) != IdDmesons.end()) {
+          int pdgCodeMother = TMath::Abs(mother->GetPdgCode());
+          if (pdgCodeMother == fPDGtoReplace && std::find(IdDmesons.begin(), IdDmesons.end(), imo) != IdDmesons.end()) {
             toSkip = true;
             break;
           }
@@ -1248,7 +1250,13 @@ Int_t  AliGenPythiaPlus::GenerateMB()
   
         // Resonance info
         TLorentzVector* p4 = new TLorentzVector();
-        float mass = TDatabasePDG::Instance()->GetParticle(fPDGReplaceNew)->Mass();
+        float width = 0.f;
+        if (fPDGReplaceNew == 435) {
+          width = 0.01690; // from PDG2023 https://pdg.lbl.gov/2023/tables/contents_tables_mesons.html
+        } else if (fPDGReplaceNew == 10433) {
+          width = 0.00092; // from PDG2023 https://pdg.lbl.gov/2023/tables/contents_tables_mesons.html
+        }
+        float mass = gRandom->BreitWigner(TDatabasePDG::Instance()->GetParticle(fPDGReplaceNew)->Mass(), width);
         float en = TMath::Sqrt(pX*pX + pY*pY + pZ*pZ + mass*mass);
         p4->SetPxPyPzE(pX, pY, pZ, en);
         if (iparticle->GetPdgCode() > 0) {
@@ -1259,34 +1267,36 @@ Int_t  AliGenPythiaPlus::GenerateMB()
   
         // Save daughters (resonance included)
         TClonesArray* decayProducts = new TClonesArray("TParticle", 100);
-        fDecayer->ImportParticles(decayProducts);
-        for (int iProd = 0; iProd < decayProducts->GetEntriesFast(); iProd++) {
-          TParticle* p = (TParticle*) decayProducts->At(iProd);
-          Double_t originDauX = fVertex[0] + p->Vx(); // no division by 10 since it is already done in ImportParticles 
-          Double_t originDauY = fVertex[1] + p->Vy(); // no division by 10 since it is already done in ImportParticles 
-          Double_t originDauZ = fVertex[2] + p->Vz(); // no division by 10 since it is already done in ImportParticles 
-          tof = fTime + fEventTime + kconv * p->T();
-          Int_t iparent_reso = -1;
-          if (TMath::Abs(p->GetPdgCode()) == fPDGReplaceNew) {
-            iparent_reso = iparticle->GetFirstMother(); // set parent to original D meson parent
-          } else {
-            iparent_reso = iparent + p->GetFirstMother(); // set parent
-          }
-          Int_t trackIt = 0;
-          Int_t ks = p->GetStatusCode();
-          kf = CheckPDGCode(p->GetPdgCode());
-          if ((ks == 1) || fDecayer->GetLifetime(kf) > fMaxLifeTime) {
-            trackIt = 1;
-          }
+        int nDecayProd = fDecayer->ImportParticles(decayProducts);
+        if (nDecayProd > 1) { // if 1 or less, failed decay
+          for (int iProd = 0; iProd < decayProducts->GetEntriesFast(); iProd++) {
+            TParticle* p = (TParticle*) decayProducts->At(iProd);
+            Double_t originDauX = fVertex[0] + p->Vx(); // no division by 10 since it is already done in ImportParticles 
+            Double_t originDauY = fVertex[1] + p->Vy(); // no division by 10 since it is already done in ImportParticles 
+            Double_t originDauZ = fVertex[2] + p->Vz(); // no division by 10 since it is already done in ImportParticles 
+            tof = fTime + fEventTime + kconv * p->T();
+            Int_t iparent_reso = -1;
+            if (TMath::Abs(p->GetPdgCode()) == fPDGReplaceNew) {
+              iparent_reso = iparticle->GetFirstMother(); // set parent to original D meson parent
+            } else {
+              iparent_reso = iparent + p->GetFirstMother(); // set parent
+            }
+            Int_t trackIt = 0;
+            Int_t ks = p->GetStatusCode();
+            kf = CheckPDGCode(p->GetPdgCode());
+            if ((ks == 1) || fDecayer->GetLifetime(kf) > fMaxLifeTime) {
+              trackIt = 1;
+            }
 
-          PushTrack(fTrackIt*trackIt, iparent_reso, CheckPDGCode(p->GetPdgCode()), 
-                    p->Px(), p->Py(), p->Pz(), p->Energy(), 
-                    originDauX, originDauY, originDauZ, tof, 
-                    polar[0], polar[1], polar[2],
-                    kPPrimary, nt, 1., ks);
-          fNprimaries++;
-          KeepTrack(nt);
-          SetHighWaterMark(nt);
+            PushTrack(fTrackIt*trackIt, iparent_reso, CheckPDGCode(p->GetPdgCode()), 
+                      p->Px(), p->Py(), p->Pz(), p->Energy(), 
+                      originDauX, originDauY, originDauZ, tof, 
+                      polar[0], polar[1], polar[2],
+                      kPPrimary, nt, 1., ks);
+            fNprimaries++;
+            KeepTrack(nt);
+            SetHighWaterMark(nt);
+          }
         }
         delete decayProducts;
         delete p4;
