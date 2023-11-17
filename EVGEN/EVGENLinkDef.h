@@ -78,5 +78,6 @@
 #pragma link C++ class  AliGenReadersEMD+;
 #pragma link C++ class  AliGenToy+;
 #pragma link C++ class  AliGenReaderLHE+;
+#pragma link C++ class  AliGenSexaquarkReaction+;
 
 #endif

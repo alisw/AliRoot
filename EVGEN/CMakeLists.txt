@@ -100,6 +100,7 @@ set(SRCS
     AliGenReadersEMD.cxx
     AliGenToy.cxx
     AliGenReaderLHE.cxx
+    AliGenSexaquarkReaction.cxx
 )
 
 # Headers from sources
