@@ -98,7 +98,7 @@ void AliDecayerPythia8::Init()
 
     // implement ALICE primary particle definition 
     fPythia8->ReadString("ParticleDecays:limitTau0 = on"); // set long-lived particle stable ...
-    fPythia8->ReadString("ParticleDecays:tau0Max = 10"); // set long-lived particle stable ...
+    fPythia8->ReadString("ParticleDecays:tau0Max = 10"); // ... if c*tau0 > 10 mm/c
 
     // .. Force decay channels
     ForceDecay();
