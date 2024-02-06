@@ -729,14 +729,10 @@ FJCORE_BEGIN_NAMESPACE      // defined in fastjet/internal/base.hh
 class ClosestPair2D : public ClosestPair2DBase {
 public:
   ClosestPair2D(const std::vector<Coord2D> & positions, 
-		const Coord2D & left_corner, const Coord2D & right_corner) {
-    _initialize(positions, left_corner, right_corner, positions.size());
-  };
+		const Coord2D & left_corner, const Coord2D & right_corner); 
   ClosestPair2D(const std::vector<Coord2D> & positions, 
 		const Coord2D & left_corner, const Coord2D & right_corner,
-		const unsigned int max_size) {
-    _initialize(positions, left_corner, right_corner, max_size);
-  };
+		const unsigned int max_size);
   void closest_pair(unsigned int & ID1, unsigned int & ID2, 
 		    double & distance2) const;
   void remove(unsigned int ID);
@@ -746,11 +742,7 @@ public:
   virtual void replace_many(const std::vector<unsigned int> & IDs_to_remove,
 			    const std::vector<Coord2D> & new_positions,
 			    std::vector<unsigned int> & new_IDs);
-  inline void print_tree_depths(std::ostream & outdev) const {
-    outdev    << _trees[0]->max_depth() << " "
-	      << _trees[1]->max_depth() << " "
-	      << _trees[2]->max_depth() << "\n";
-  };
+  void print_tree_depths(std::ostream & outdev) const;
   unsigned int size();
 private:
   void _initialize(const std::vector<Coord2D> & positions, 
@@ -811,12 +803,29 @@ inline bool floor_ln2_less(unsigned x, unsigned y) {
   if (x>y) return false;
   return (x < (x^y)); // beware of operator precedence...
 }
+// C++20: Functions must be defined after the definition of Point,
+// otherwise this leads to function calls of std::vector with an
+// incomplete class.
+ClosestPair2D::ClosestPair2D(const std::vector<Coord2D> & positions, 
+		const Coord2D & left_corner, const Coord2D & right_corner) {
+  _initialize(positions, left_corner, right_corner, positions.size());
+};
+ClosestPair2D::ClosestPair2D(const std::vector<Coord2D> & positions, 
+		const Coord2D & left_corner, const Coord2D & right_corner,
+		const unsigned int max_size) {
+  _initialize(positions, left_corner, right_corner, max_size);
+};
 inline int ClosestPair2D::_ID(const Point * point) const {
   return point - &(_points[0]);
 }
 inline unsigned int ClosestPair2D::size() {
   return _points.size() - _available_points.size();
 }
+inline void ClosestPair2D::print_tree_depths(std::ostream & outdev) const {
+    outdev    << _trees[0]->max_depth() << " "
+	      << _trees[1]->max_depth() << " "
+	      << _trees[2]->max_depth() << "\n";
+  };
 FJCORE_END_NAMESPACE
 #endif // __FJCORE_CLOSESTPAIR2D__HH__
 #ifndef __FJCORE_LAZYTILING9ALT_HH__
