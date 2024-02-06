@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file CfUtils.h
 /// \author Felix Weiglhofer
@@ -52,16 +47,126 @@ class CfUtils
 
   static GPUdi() bool isAboveThreshold(uchar peak) { return peak >> 1; }
 
+  static GPUdi() int warpPredicateScan(int pred, int* sum)
+  {
+#ifdef __HIPCC__
+    int iLane = hipThreadIdx_x % warpSize;
+    uint64_t waveMask = __ballot(pred);
+    uint64_t lowerWarpMask = (1ull << iLane) - 1ull;
+    int myOffset = __popcll(waveMask & lowerWarpMask);
+    *sum = __popcll(waveMask);
+    return myOffset;
+#elif defined(__CUDACC__)
+    int iLane = threadIdx.x % warpSize;
+    uint32_t waveMask = __ballot_sync(0xFFFFFFFF, pred);
+    uint32_t lowerWarpMask = (1u << iLane) - 1u;
+    int myOffset = __popc(waveMask & lowerWarpMask);
+    *sum = __popc(waveMask);
+    return myOffset;
+#else // CPU / OpenCL fallback
+    int myOffset = warp_scan_inclusive_add(pred ? 1 : 0);
+    *sum = warp_broadcast(myOffset, GPUCA_WARP_SIZE - 1);
+    myOffset--;
+    return myOffset;
+#endif
+  }
+
+  template <size_t BlockSize, typename SharedMemory>
+  static GPUdi() int blockPredicateScan(SharedMemory& smem, int pred, int* sum = nullptr)
+  {
+#if defined(__HIPCC__) || defined(__CUDACC__)
+    int iThread =
+#ifdef __HIPCC__
+      hipThreadIdx_x;
+#else
+      threadIdx.x;
+#endif
+
+    int iWarp = iThread / warpSize;
+    int nWarps = BlockSize / warpSize;
+
+    int warpSum;
+    int laneOffset = warpPredicateScan(pred, &warpSum);
+
+    if (iThread % warpSize == 0) {
+      smem.warpPredicateSum[iWarp] = warpSum;
+    }
+    __syncthreads();
+
+    int warpOffset = 0;
+
+    if (sum == nullptr) {
+      for (int w = 0; w < iWarp; w++) {
+        int s = smem.warpPredicateSum[w];
+        warpOffset += s;
+      }
+    } else {
+      *sum = 0;
+      for (int w = 0; w < nWarps; w++) {
+        int s = smem.warpPredicateSum[w];
+        if (w < iWarp) {
+          warpOffset += s;
+        }
+        *sum += s;
+      }
+    }
+
+    return warpOffset + laneOffset;
+#else // CPU / OpenCL fallback
+    int lpos = work_group_scan_inclusive_add(pred ? 1 : 0);
+    if (sum != nullptr) {
+      *sum = work_group_broadcast(lpos, BlockSize - 1);
+    }
+    lpos--;
+    return lpos;
+#endif
+  }
+
+  template <size_t BlockSize, typename SharedMemory>
+  static GPUdi() int blockPredicateSum(SharedMemory& smem, int pred)
+  {
+#if defined(__HIPCC__) || defined(__CUDACC__)
+    int iThread =
+#ifdef __HIPCC__
+      hipThreadIdx_x;
+#else
+      threadIdx.x;
+#endif
+
+    int iWarp = iThread / warpSize;
+    int nWarps = BlockSize / warpSize;
+
+    int warpSum =
+#ifdef __HIPCC__
+      __popcll(__ballot(pred));
+#else
+      __popc(__ballot_sync(0xFFFFFFFF, pred));
+#endif
+
+    if (iThread % warpSize == 0) {
+      smem.warpPredicateSum[iWarp] = warpSum;
+    }
+    __syncthreads();
+
+    int sum = 0;
+    for (int w = 0; w < nWarps; w++) {
+      sum += smem.warpPredicateSum[w];
+    }
+
+    return sum;
+#else // CPU / OpenCL fallback
+    return work_group_reduce_add(pred ? 1 : 0);
+#endif
+  }
+
   template <size_t SCRATCH_PAD_WORK_GROUP_SIZE, typename SharedMemory>
   static GPUdi() ushort partition(SharedMemory& smem, ushort ll, bool pred, ushort partSize, ushort* newPartSize)
   {
     bool participates = ll < partSize;
 
-    ushort lpos = work_group_scan_inclusive_add(short(!pred && participates));
+    int part;
+    int lpos = blockPredicateScan<SCRATCH_PAD_WORK_GROUP_SIZE>(smem, int(!pred && participates), &part);
 
-    ushort part = work_group_broadcast(lpos, SCRATCH_PAD_WORK_GROUP_SIZE - 1);
-
-    lpos -= 1;
     ushort pos = (participates && !pred) ? lpos : part;
 
     *newPartSize = part;

@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUdEdx.h
 /// \author David Rohr
@@ -28,6 +23,7 @@
 #if defined(GPUCA_HAVE_O2HEADERS) && !defined(GPUCA_OPENCL1)
 #include "DataFormatsTPC/Defs.h"
 #include "CalibdEdxContainer.h"
+#include "GPUDebugStreamer.h"
 #endif
 
 namespace GPUCA_NAMESPACE
@@ -91,6 +87,7 @@ class GPUdEdx
   unsigned char mCount = 0;
   unsigned char mLastROC = 255;
   char mNSubThresh = 0;
+  o2::utils::DebugStreamer mStreamer;
 };
 
 GPUdi() void GPUdEdx::checkSubThresh(int roc)
@@ -129,20 +126,12 @@ GPUdnii() void GPUdEdx::fillCluster(float qtot, float qmax, int padRow, unsigned
   }
 
   // setting maximum for snp for which the calibration object was created
-  const float maxSnp = calibContainer->getMaxSinPhiTopologyCorrection();
-  float snp = CAMath::Abs(trackSnp);
-  if (snp > maxSnp) {
-    snp = maxSnp;
-  }
+  const float snp = CAMath::Abs(trackSnp);
 
   // tanTheta local dip angle: z angle - dz/dx (cm/cm)
   const float sec2 = 1.f / (1.f - snp2);
   const float tgl2 = trackTgl * trackTgl;
-  float tanTheta = CAMath::Sqrt(tgl2 * sec2);
-  const float maxTanTheta = calibContainer->getMaxTanThetaTopologyCorrection();
-  if (tanTheta > maxTanTheta) {
-    tanTheta = maxTanTheta;
-  }
+  const float tanTheta = CAMath::Sqrt(tgl2 * sec2);
 
   // getting the topology correction
   const int padPos = int(pad + 0.5f); // position of the pad is shifted half a pad ( pad=3 -> centre position of third pad)
@@ -151,7 +140,7 @@ GPUdnii() void GPUdEdx::fillCluster(float qtot, float qmax, int padRow, unsigned
   z = CAMath::Abs(z);
   const float threshold = calibContainer->getZeroSupressionThreshold(slice, padRow, padPos); // TODO: Use the mean zero supresion threshold of all pads in the cluster?
   const bool useFullGainMap = calibContainer->isUsageOfFullGainMap();
-  float qTotIn = CAMath::Clamp(qtot, calibContainer->getMinqTot(), calibContainer->getMaxqTot());
+  float qTotIn = qtot;
   const float fullGainMapGain = calibContainer->getGain(slice, padRow, padPos);
   if (useFullGainMap) {
     qmax /= fullGainMapGain;
@@ -186,6 +175,47 @@ GPUdnii() void GPUdEdx::fillCluster(float qtot, float qmax, int padRow, unsigned
   }
   if (qmax < mSubThreshMinMax) {
     mSubThreshMinMax = qmax;
+  }
+
+  using Streamer = o2::utils::DebugStreamer;
+  if (Streamer::checkStream(o2::utils::StreamFlags::streamdEdx)) {
+    mStreamer.setStreamer("debug_dedx", "UPDATE");
+    int regionTmp = region;
+    float absRelPadTmp = absRelPad;
+    float thresholdTmp = threshold;
+    float qMaxTopologyCorrTmp = qMaxTopologyCorr;
+    float qTotTopologyCorrTmp = qTotTopologyCorr;
+    float qMaxResidualCorrTmp = qMaxResidualCorr;
+    float qTotResidualCorrTmp = qTotResidualCorr;
+    float residualGainMapGainTmp = residualGainMapGain;
+    float fullGainMapGainTmp = fullGainMapGain;
+    float tanThetaTmp = tanTheta;
+    float padlx = param.tpcGeometry.Row2X(padRow);
+    float padly = param.tpcGeometry.LinearPad2Y(slice, padRow, padPos);
+
+    mStreamer.getStreamer() << mStreamer.getUniqueTreeName("tree").data()
+                            << "qTot=" << mChargeTot[mCount - 1]
+                            << "qMax=" << mChargeMax[mCount - 1]
+                            << "region=" << regionTmp
+                            << "padRow=" << padRow
+                            << "sector=" << slice
+                            << "lx=" << padlx
+                            << "ly=" << padly
+                            << "tanTheta=" << tanThetaTmp
+                            << "trackTgl=" << trackTgl
+                            << "sinPhi=" << trackSnp
+                            << "z=" << z
+                            << "absRelPad=" << absRelPadTmp
+                            << "relTime=" << relTime
+                            << "threshold=" << thresholdTmp
+                            << "qTotIn=" << qTotIn
+                            << "qMaxTopologyCorr=" << qMaxTopologyCorrTmp
+                            << "qTotTopologyCorr=" << qTotTopologyCorrTmp
+                            << "qMaxResidualCorr=" << qMaxResidualCorrTmp
+                            << "qTotResidualCorr=" << qTotResidualCorrTmp
+                            << "residualGainMapGain=" << residualGainMapGainTmp
+                            << "fullGainMapGain=" << fullGainMapGainTmp
+                            << "\n";
   }
 }
 

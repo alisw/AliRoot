@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTPCConvertImpl.h
 /// \author David Rohr
@@ -23,6 +18,7 @@
 #include "GPUCommonDef.h"
 #include "GPUConstantMem.h"
 #include "TPCFastTransform.h"
+#include "CorrectionMapsHelper.h"
 
 namespace GPUCA_NAMESPACE
 {
@@ -35,9 +31,9 @@ class GPUTPCConvertImpl
   GPUd() static void convert(const GPUConstantMem& GPUrestrict() cm, int slice, int row, float pad, float time, float& GPUrestrict() x, float& GPUrestrict() y, float& GPUrestrict() z)
   {
     if (cm.param.par.continuousTracking) {
-      cm.calibObjects.fastTransform->TransformInTimeFrame(slice, row, pad, time, x, y, z, cm.param.par.continuousMaxTimeBin);
+      cm.calibObjects.fastTransformHelper->getCorrMap()->TransformInTimeFrame(slice, row, pad, time, x, y, z, cm.param.par.continuousMaxTimeBin);
     } else {
-      cm.calibObjects.fastTransform->Transform(slice, row, pad, time, x, y, z);
+      cm.calibObjects.fastTransformHelper->Transform(slice, row, pad, time, x, y, z);
     }
   }
   GPUd() static void convert(const TPCFastTransform& GPUrestrict() transform, const GPUParam& GPUrestrict() param, int slice, int row, float pad, float time, float& GPUrestrict() x, float& GPUrestrict() y, float& GPUrestrict() z)

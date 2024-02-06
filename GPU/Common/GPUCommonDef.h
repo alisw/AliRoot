@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUCommonDef.h
 /// \author David Rohr
@@ -59,19 +54,15 @@
 #ifdef GPUCA_NOCOMPAT
   #define CON_DELETE = delete
   #define CON_DEFAULT = default
-  #define CONSTEXPR constexpr
-  #define CONSTEXPRRET CONSTEXPR
   #if defined(__cplusplus) && __cplusplus >= 201703L
-    #define CONSTEXPR17 constexpr
+    #define CONSTEXPR constexpr
   #else
-    #define CONSTEXPR17
+    #define CONSTEXPR
   #endif
 #else
   #define CON_DELETE
   #define CON_DEFAULT
-  #define CONSTEXPR const
-  #define CONSTEXPR17
-  #define CONSTEXPRRET
+  #define CONSTEXPR
 #endif
 #if defined(__ROOT__) && !defined(GPUCA_NOCOMPAT)
   #define VOLATILE // ROOT5 has a problem with volatile in CINT
@@ -99,6 +90,9 @@
   #ifdef GPUCA_NO_CONSTANT_MEMORY
     #error Invalid settings
   #endif
+#endif
+#if !defined(GPUCA_HAVE_O2HEADERS) && (defined(GPUCA_O2_LIB) || (!defined(GPUCA_ALIROOT_LIB) && !defined(GPUCA_STANDALONE)))
+  #define GPUCA_HAVE_O2HEADERS
 #endif
 
 //API Definitions for GPU Compilation

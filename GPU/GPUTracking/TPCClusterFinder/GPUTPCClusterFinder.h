@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUTPCClusterFinder.h
 /// \author David Rohr
@@ -24,7 +19,6 @@
 #include "GPUProcessor.h"
 #include "GPUDataTypes.h"
 #include "CfFragment.h"
-#include "TPCPadGainCalib.h"
 
 namespace o2
 {
@@ -49,7 +43,7 @@ class Digit;
 
 namespace GPUCA_NAMESPACE::gpu
 {
-struct GPUTPCClusterMCInterim;
+struct GPUTPCClusterMCInterimArray;
 struct TPCPadGainCalib;
 
 struct ChargePos;
@@ -96,7 +90,7 @@ class GPUTPCClusterFinder : public GPUProcessor
   void* SetPointersZSOffset(void* mem);
 
   unsigned int getNSteps(size_t items) const;
-  void SetNMaxDigits(size_t nDigits, size_t nPages, size_t nDigitsFragment);
+  void SetNMaxDigits(size_t nDigits, size_t nPages, size_t nDigitsFragment, size_t nDigitsEndpointMax);
 
   void PrepareMC();
   void clearMCMemory();
@@ -110,30 +104,31 @@ class GPUTPCClusterFinder : public GPUProcessor
   ChargePos* mPpeakPositions = nullptr;
   ChargePos* mPfilteredPeakPositions = nullptr;
   unsigned char* mPisPeak = nullptr;
-  uint* mPclusterPosInRow = nullptr; // store the index where the corresponding cluster is stored in a bucket.
-                                     // Required when MC are enabled to write the mc data to the correct position.
-                                     // Set to >= mNMaxClusterPerRow if cluster was discarded.
-  ushort* mPchargeMap = nullptr;
+  unsigned int* mPclusterPosInRow = nullptr; // store the index where the corresponding cluster is stored in a bucket.
+                                             // Required when MC are enabled to write the mc data to the correct position.
+                                             // Set to >= mNMaxClusterPerRow if cluster was discarded.
+  unsigned short* mPchargeMap = nullptr;
   unsigned char* mPpeakMap = nullptr;
-  uint* mPindexMap = nullptr;
-  uint* mPclusterInRow = nullptr;
+  unsigned int* mPindexMap = nullptr;
+  unsigned int* mPclusterInRow = nullptr;
   tpc::ClusterNative* mPclusterByRow = nullptr;
-  GPUTPCClusterMCInterim* mPlabelsByRow = nullptr;
+  GPUTPCClusterMCInterimArray* mPlabelsByRow = nullptr;
   int* mPbuf = nullptr;
   Memory* mPmemory = nullptr;
 
   o2::dataformats::ConstMCTruthContainerView<o2::MCCompLabel> const* mPinputLabels = nullptr;
-  uint* mPlabelsInRow = nullptr;
-  uint mPlabelsHeaderGlobalOffset = 0;
-  uint mPlabelsDataGlobalOffset = 0;
+  unsigned int* mPlabelsInRow = nullptr;
+  unsigned int mPlabelsHeaderGlobalOffset = 0;
+  unsigned int mPlabelsDataGlobalOffset = 0;
 
   int mISlice = 0;
   constexpr static int mScanWorkGroupSize = GPUCA_THREAD_COUNT_SCAN;
   unsigned int mNMaxClusterPerRow = 0;
   unsigned int mNMaxClusters = 0;
-  size_t mNMaxPages = 0;
+  unsigned int mNMaxPages = 0;
   size_t mNMaxDigits = 0;
   size_t mNMaxDigitsFragment = 0;
+  size_t mNMaxDigitsEndpoint = 0;
   size_t mNMaxPeaks = 0;
   size_t mBufSize = 0;
   unsigned int mNBufs = 0;
@@ -144,11 +139,9 @@ class GPUTPCClusterFinder : public GPUProcessor
   short mZSOffsetId = -1;
   short mOutputId = -1;
 
-  GPUdi() const GPUTPCGeometry* getGeometry() const;
-
 #ifndef GPUCA_GPUCODE
   void DumpDigits(std::ostream& out);
-  void DumpChargeMap(std::ostream& out, std::string_view);
+  void DumpChargeMap(std::ostream& out, std::string_view, bool doGPU);
   void DumpPeaks(std::ostream& out);
   void DumpPeaksCompacted(std::ostream& out);
   void DumpSuppressedPeaks(std::ostream& out);

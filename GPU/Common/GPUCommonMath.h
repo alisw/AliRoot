@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUCommonMath.h
 /// \author David Rohr, Sergey Gorbunov
@@ -65,7 +60,7 @@ class GPUCommonMath
   GPUd() static float ASin(float x);
   GPUd() static float ACos(float x);
   GPUd() static float ATan(float x);
-  GPUd() static float ATan2(float y, float x);
+  GPUhd() static float ATan2(float y, float x);
   GPUd() static float Sin(float x);
   GPUd() static float Cos(float x);
   GPUhdni() static void SinCos(float x, float& s, float& c);
@@ -156,7 +151,7 @@ class GPUCommonMath
   GPUd() static float FMulRZ(float a, float b);
 
   template <int I, class T>
-  GPUd() CONSTEXPR17 static T nextMultipleOf(T val);
+  GPUd() CONSTEXPR static T nextMultipleOf(T val);
 
 #ifdef GPUCA_NOCOMPAT
   GPUdi() static float Sum2() // Needed for legacy C++, For >=17 the below if constexpr handles the case
@@ -167,7 +162,7 @@ class GPUCommonMath
   template <typename... Args>
   GPUdi() static float Sum2(float w, Args... args)
   {
-    if CONSTEXPR17 (sizeof...(Args) == 0) {
+    if CONSTEXPR (sizeof...(Args) == 0) {
       return w * w;
     } else {
       return w * w + Sum2(args...);
@@ -201,9 +196,9 @@ typedef GPUCommonMath CAMath;
 #endif // clang-format on
 
 template <int I, class T>
-GPUdi() CONSTEXPR17 T GPUCommonMath::nextMultipleOf(T val)
+GPUdi() CONSTEXPR T GPUCommonMath::nextMultipleOf(T val)
 {
-  if CONSTEXPR17 (I & (I - 1)) {
+  if CONSTEXPR (I & (I - 1)) {
     T tmp = val % I;
     if (tmp) {
       val += I - tmp;
@@ -248,7 +243,7 @@ GPUdi() bool GPUCommonMath::Finite(float x) { return CHOICE(std::isfinite(x), tr
 
 GPUdi() float GPUCommonMath::ATan(float x) { return CHOICE(atanf(x), atanf(x), atan(x)); }
 
-GPUdi() float GPUCommonMath::ATan2(float y, float x) { return CHOICE(atan2f(y, x), atan2f(y, x), atan2(y, x)); }
+GPUhdi() float GPUCommonMath::ATan2(float y, float x) { return CHOICE(atan2f(y, x), atan2f(y, x), atan2(y, x)); }
 
 GPUdi() float GPUCommonMath::Sin(float x) { return CHOICE(sinf(x), sinf(x), sin(x)); }
 

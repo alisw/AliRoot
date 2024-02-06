@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file clusterFinderDefs.h
 /// \author David Rohr
@@ -45,16 +40,18 @@ using ulong = unsigned long;
 
 // Padding of 2 and 3 respectively would be enough. But this ensures that
 // rows are always aligned along cache lines. Likewise for TPC_PADS_PER_ROW.
-#define PADDING_PAD 8
-#define PADDING_TIME 4
+#define GPUCF_PADDING_PAD 8
+#define GPUCF_PADDING_TIME 4
 #define TPC_PADS_PER_ROW 144
 
 #define TPC_ROWS_PER_CRU 18
-#define TPC_PADS_PER_ROW_PADDED (TPC_PADS_PER_ROW + PADDING_PAD)
-#define TPC_NUM_OF_PADS (GPUCA_ROW_COUNT * TPC_PADS_PER_ROW_PADDED + PADDING_PAD)
+#define TPC_PADS_PER_ROW_PADDED (TPC_PADS_PER_ROW + GPUCF_PADDING_PAD)
+#define TPC_NUM_OF_PADS (GPUCA_ROW_COUNT * TPC_PADS_PER_ROW_PADDED + GPUCF_PADDING_PAD)
 #define TPC_PADS_IN_SECTOR 14560
-#define TPC_MAX_FRAGMENT_LEN 4000
-#define TPC_MAX_FRAGMENT_LEN_PADDED (TPC_MAX_FRAGMENT_LEN + 2 * PADDING_TIME)
+#define TPC_FEC_IDS_IN_SECTOR 23296
+#define TPC_MAX_FRAGMENT_LEN_GPU 4000
+#define TPC_MAX_FRAGMENT_LEN_HOST 1000
+#define TPC_MAX_FRAGMENT_LEN_PADDED(size) ((size) + 2 * GPUCF_PADDING_TIME)
 #define TPC_MAX_TIME_BIN_TRIGGERED 600
 
 #if 0

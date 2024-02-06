@@ -1,18 +1,13 @@
-//**************************************************************************\
-//* This file is property of and copyright by the ALICE Project            *\
-//* ALICE Experiment at CERN, All rights reserved.                         *\
-//*                                                                        *\
-//* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *\
-//*                  for The ALICE HLT Project.                            *\
-//*                                                                        *\
-//* Permission to use, copy, modify and distribute this software and its   *\
-//* documentation strictly for non-commercial purposes is hereby granted   *\
-//* without fee, provided that the above copyright notice appears in all   *\
-//* copies and that both the copyright notice and this permission notice   *\
-//* appear in the supporting documentation. The authors make no claims     *\
-//* about the suitability of this software for any purpose. It is          *\
-//* provided "as is" without express or implied warranty.                  *\
-//**************************************************************************
+// Copyright 2019-2020 CERN and copyright holders of ALICE O2.
+// See https://alice-o2.web.cern.ch/copyright for details of the copyright holders.
+// All rights not expressly granted are reserved.
+//
+// This software is distributed under the terms of the GNU General Public
+// License v3 (GPL Version 3), copied verbatim in the file "COPYING".
+//
+// In applying this license CERN does not waive the privileges and immunities
+// granted to it by virtue of its status as an Intergovernmental Organization
+// or submit itself to any jurisdiction.
 
 /// \file GPUDisplayFrontendWayland.cxx
 /// \author David Rohr
@@ -232,7 +227,10 @@ int GPUDisplayFrontendWayland::FrontendMain()
       ((GPUDisplayFrontendWayland*)data)->mMouseWheel += wl_fixed_to_double(value) * (-100.f / 15.f);
     }
   };
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
   const wl_pointer_listener pointer_listener = {.enter = pointer_enter, .leave = pointer_leave, .motion = pointer_motion, .button = pointer_button, .axis = pointer_axis, .frame = nullptr, .axis_source = nullptr, .axis_stop = nullptr, .axis_discrete = nullptr};
+#pragma GCC diagnostic pop
 
   auto keyboard_keymap = [](void* data, wl_keyboard* wl_keyboard, uint format, int fd, uint size) {
     GPUDisplayFrontendWayland* me = (GPUDisplayFrontendWayland*)data;
@@ -365,6 +363,8 @@ int GPUDisplayFrontendWayland::FrontendMain()
     ((GPUDisplayFrontendWayland*)data)->mDisplayControl = 2;
   };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
   const xdg_surface_listener xdg_surface_listener = {
     .configure = xdg_surface_handle_configure,
   };
@@ -373,6 +373,7 @@ int GPUDisplayFrontendWayland::FrontendMain()
     .configure = xdg_toplevel_handle_configure,
     .close = xdg_toplevel_handle_close,
     .configure_bounds = nullptr};
+#pragma GCC diagnostic pop
 
   xdg_surface_add_listener(mXdgSurface, &xdg_surface_listener, this);
   xdg_toplevel_add_listener(mXdgToplevel, &xdg_toplevel_listener, this);
