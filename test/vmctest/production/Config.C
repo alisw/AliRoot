@@ -406,6 +406,7 @@ void Config()
 				    Form("%s+optical",physicsListName[iList-kListMax/2]), 
 				    "specialCuts+stackPopper+stepLimiter",
 				    true, false);
+	  runConfiguration->SetSpecialCutsOld();  // GEANT4_VMC >+ v6.5
 	}
       }
     }

@@ -43,6 +43,7 @@ void Config()
                                 "FTFP_BERT_EMV+optical", 
                                 "specialCuts+stackPopper+stepLimiter",
                                  true, false);
+    runConfiguration->SetSpecialCutsOld();  // GEANT4_VMC >+ v6.5
 //      = new TG4RunConfiguration("geomRootToGeant4",
 //                                "FTFP_BERT_EMV+optical", 
 //                                "specialCuts+specialControls+stackPopper+stepLimiter",

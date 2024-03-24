@@ -8,6 +8,7 @@ void sim(Int_t nev=1) {
 			       Form("local://%s",gSystem->pwd()));
 
   simulator.SetRunHLT("default"); // In case we do not have ancored production
+  simulator.SetRunQA(":");
 
   TStopwatch timer;
   timer.Start();

@@ -16,7 +16,8 @@ void Config()
 			      "FTFP_BERT_EMV+optical", 
 			      "specialCuts+stackPopper+stepLimiter",
 			      true, false);
-  
+  runConfiguration->SetSpecialCutsOld();  // GEANT$_VMC >= v6.5
+
   TGeant4 * geant4 = new TGeant4("TGeant4", 
 				 "The Geant4 Monte Carlo : FTFP_BERT_EMV-EMCAL", 
 				 runConfiguration);
