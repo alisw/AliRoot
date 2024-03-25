@@ -145,7 +145,7 @@ void AliGenSexaquarkReaction::SetDefaultValues() {
 void AliGenSexaquarkReaction::SetDefaultRanges() {
     // anti-sexaquark
     SetPtRange(0., 5.);                // GeV/c
-    SetPhiRange(0., 2 * TMath::Pi());  // radians
+    SetPhiRange(0., 360.);  // degrees (get converted into radians here)
     SetYRange(-0.8, 0.8);
     // interaction vertex
     SetRadiusRange(5., 180.);  // cm
@@ -412,7 +412,7 @@ void AliGenSexaquarkReaction::GetFermiMomentum(Float_t& Px, Float_t& Py, Float_t
     Float_t random_N[2];
     Rndm(random_N, 2);
     Float_t Phi_N = 2 * TMath::Pi() * random_N[0];  // azimuthal angle (uniform distribution) (in radians)
-    Float_t Theta_N = TMath::Pi() * random_N[1];    // polar angle (uniform distribution) (in radians)
+    Float_t Theta_N = TMath::ACos(1 - 2 * random_N[1]);  // polar angle (based on inverse CDF) (in radians)
     // then, assign px,py,pz
     Px = P_N * TMath::Cos(Phi_N) * TMath::Sin(Theta_N);
     Py = P_N * TMath::Sin(Phi_N) * TMath::Sin(Theta_N);
