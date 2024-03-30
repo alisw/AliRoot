@@ -1221,16 +1221,30 @@ TGraph * TStatToolkit::MakeGraphSparse(TTree * tree, const char * expr, const ch
     graphNew->GetXaxis()->SetBinLabel(i+1,xName);
     graphNew->GetX()[i]+=offset;
   }
-  if (tree->GetVar(1)->IsInteger() && strlen(tree->GetHistogram()->GetXaxis()->GetBinLabel(1))>0){    
-    for(Int_t i=0;i<count;i++){
-      graphNew->GetXaxis()->SetBinLabel(i+1,tree->GetHistogram()->GetXaxis()->GetBinLabel(i+1));
+  if (tree->GetV3()==NULL) {
+    if (tree->GetVar(1)->IsInteger() && strlen(tree->GetHistogram()->GetXaxis()->GetBinLabel(1)) > 0) {
+      for (Int_t i = 0; i < count; i++) {
+        graphNew->GetXaxis()->SetBinLabel(i + 1, tree->GetHistogram()->GetXaxis()->GetBinLabel(i + 1));
+      }
+    }
+    if (tree->GetVar(0)->IsInteger() && strlen(tree->GetHistogram()->GetYaxis()->GetBinLabel(1)) > 0) {
+      for (Int_t i = 0; i < count; i++) {
+        graphNew->GetYaxis()->SetBinLabel(i + 1, tree->GetHistogram()->GetYaxis()->GetBinLabel(i + 1));
+      }
+    }
+  }else{
+    if (tree->GetVar(1)->IsInteger() && strlen(tree->GetHistogram()->GetYaxis()->GetBinLabel(1)) > 0) {
+      for (Int_t i = 0; i < count; i++) {
+        graphNew->GetXaxis()->SetBinLabel(i + 1, tree->GetHistogram()->GetYaxis()->GetBinLabel(i + 1));
+      }
+    }
+    if (tree->GetVar(0)->IsInteger() && strlen(tree->GetHistogram()->GetZaxis()->GetBinLabel(1)) > 0) {
+      for (Int_t i = 0; i < count; i++) {
+        graphNew->GetYaxis()->SetBinLabel(i + 1, tree->GetHistogram()->GetZaxis()->GetBinLabel(i + 1));
+      }
     }
   }
-  if (tree->GetVar(0)->IsInteger() &&  strlen(tree->GetHistogram()->GetXaxis()->GetBinLabel(1))>0 ){
-    for(Int_t i=0;i<count;i++){
-      graphNew->GetYaxis()->SetBinLabel(i+1,tree->GetHistogram()->GetYaxis()->GetBinLabel(i+1));
-    }
-  }
+
 
   graphNew->GetHistogram()->SetTitle("");
   graphNew->SetMarkerStyle(mstyle);

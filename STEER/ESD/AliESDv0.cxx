@@ -986,15 +986,23 @@ Double_t AliESDv0::GetKFInfoScale(UInt_t p1, UInt_t p2, Int_t type, Double_t d1p
   // calculate delta of energy loss
   Double_t bg1=paramP.P()  /TDatabasePDG::Instance()->GetParticle(spdg[p1])->Mass();
   Double_t bg2=paramN.P()  /TDatabasePDG::Instance()->GetParticle(spdg[p2])->Mass();
-  Double_t dP1=AliExternalTrackParam::BetheBlochGeant(bg1)/AliExternalTrackParam::BetheBlochGeant(3.); ///relative energu loss
-  Double_t dP2=AliExternalTrackParam::BetheBlochGeant(bg2)/AliExternalTrackParam::BetheBlochGeant(3.);
-
+  Double_t dE1=AliExternalTrackParam::BetheBlochGeant(bg1)/AliExternalTrackParam::BetheBlochGeant(3.); ///relative energu loss
+  Double_t dE2=AliExternalTrackParam::BetheBlochGeant(bg2)/AliExternalTrackParam::BetheBlochGeant(3.);
+  dE1*=TMath::Sqrt(1+(paramP.GetTgl()*paramP.GetTgl()));
+  dE2*=TMath::Sqrt(1+(paramN.GetTgl()*paramN.GetTgl()));
+  Double_t mass1=AliPID::ParticleMass(p1);
+  Double_t mass2=AliPID::ParticleMass(p2);
+  Double_t E1 = TMath::Sqrt(paramP.P()*paramP.P()+mass1*mass1)+eLoss*dE1;
+  Double_t E2 = TMath::Sqrt(paramN.P()*paramN.P()+mass2*mass2)+eLoss*dE2;
+  Double_t dP1=TMath::Sqrt(TMath::Max(E1*E1-mass1*mass1,0.0))-paramP.P();
+  Double_t dP2=TMath::Sqrt(TMath::Max(E2*E2-mass2*mass2,0.0))-paramN.P();
+  //printf("%f\t%f\t%f\t%f\t%f\t%f\t%f\n",dE1,dE2, E1,E2, dP1,dP2,eLoss);
   Double_t *pparam1 = (Double_t*)paramP.GetParameter();
   Double_t *pparam2 = (Double_t*)paramN.GetParameter();
   if (flag&0x1) pparam1[4]+=d1pt;
   if (flag&0x2) pparam2[4]+=d1pt;
-  if (flag&0x1) pparam1[4]*=(1+s1pt)*(1.+eLoss*dP1/paramP.P());   /// TODO   - use relative energy loss
-  if (flag&0x2) pparam2[4]*=(1+s1pt)*(1.+eLoss*dP2/paramN.P());   ///
+  if (flag&0x1) pparam1[4]*=(1+s1pt)*(1.+dP1/paramP.P());   /// TODO   - use relative energy loss
+  if (flag&0x2) pparam2[4]*=(1+s1pt)*(1.+dP2/paramN.P());   ///
 
   //
   AliKFParticle kfp1( paramP, spdg[p1] *TMath::Sign(1,p1) );
