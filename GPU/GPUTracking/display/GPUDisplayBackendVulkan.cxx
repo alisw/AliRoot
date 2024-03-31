@@ -55,7 +55,7 @@ GPUDisplayBackendVulkan::~GPUDisplayBackendVulkan() = default;
 
 // ---------------------------- VULKAN HELPERS ----------------------------
 
-static int checkValidationLayerSupport(const std::vector<const char*>& validationLayers)
+static int checkVulkanLayersSupported(const std::vector<const char*>& validationLayers)
 {
   std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();
   for (const char* layerName : validationLayers) {
@@ -299,7 +299,7 @@ double GPUDisplayBackendVulkan::checkDevice(vk::PhysicalDevice device, const std
     break;
   }
   if (!found) {
-    GPUInfo("%s ignored due to missing queue properties", deviceProperties.deviceName.data());
+    GPUInfo("%s ignored due to missing queue properties", &deviceProperties.deviceName[0]);
     return (-1);
   }
 
@@ -314,13 +314,13 @@ double GPUDisplayBackendVulkan::checkDevice(vk::PhysicalDevice device, const std
     }
   }
   if (extensionsFound < reqDeviceExtensions.size()) {
-    GPUInfo("%s ignored due to missing extensions", deviceProperties.deviceName.data());
+    GPUInfo("%s ignored due to missing extensions", &deviceProperties.deviceName[0]);
     return (-1);
   }
 
   updateSwapChainDetails(device);
   if (mSwapChainDetails.formats.empty() || mSwapChainDetails.presentModes.empty()) {
-    GPUInfo("%s ignored due to incompatible swap chain", deviceProperties.deviceName.data());
+    GPUInfo("%s ignored due to incompatible swap chain", &deviceProperties.deviceName[0]);
     return (-1);
   }
 
@@ -360,9 +360,12 @@ void GPUDisplayBackendVulkan::createDevice()
     "VK_LAYER_KHRONOS_validation"};
   auto debugCallback = [](VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) -> VkBool32 {
     static bool throwOnError = getenv("GPUCA_VULKAN_VALIDATION_THROW") && atoi(getenv("GPUCA_VULKAN_VALIDATION_THROW"));
+    static bool showVulkanValidationInfo = getenv("GPUCA_VULKAN_VALIDATION_INFO") && atoi(getenv("GPUCA_VULKAN_VALIDATION_INFO"));
     switch (messageSeverity) {
       case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-        // GPUInfo("%s", pCallbackData->pMessage);
+        if (showVulkanValidationInfo) {
+          GPUInfo("%s", pCallbackData->pMessage);
+        }
         break;
       case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
         GPUWarning("%s", pCallbackData->pMessage);
@@ -383,14 +386,20 @@ void GPUDisplayBackendVulkan::createDevice()
     }
     return false;
   };
+  vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
   if (mEnableValidationLayers) {
-    if (checkValidationLayerSupport(reqValidationLayers)) {
+    if (checkVulkanLayersSupported(reqValidationLayers)) {
       throw std::runtime_error("Requested validation layer support not available");
     }
     reqInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(reqValidationLayers.size());
     instanceCreateInfo.ppEnabledLayerNames = reqValidationLayers.data();
+    instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 
+    debugCreateInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+    debugCreateInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
+    debugCreateInfo.pfnUserCallback = debugCallback;
+    debugCreateInfo.pUserData = nullptr;
   } else {
     instanceCreateInfo.enabledLayerCount = 0;
   }
@@ -402,12 +411,7 @@ void GPUDisplayBackendVulkan::createDevice()
   mDLD = {mInstance, mDL.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr")};
 
   if (mEnableValidationLayers) {
-    vk::DebugUtilsMessengerCreateInfoEXT createInfo{};
-    createInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-    createInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
-    createInfo.pfnUserCallback = debugCallback;
-    createInfo.pUserData = nullptr;
-    mDebugMessenger = mInstance.createDebugUtilsMessengerEXT(createInfo, nullptr, mDLD);
+    mDebugMessenger = mInstance.createDebugUtilsMessengerEXT(debugCreateInfo, nullptr, mDLD);
   }
   std::vector<vk::ExtensionProperties> extensions = vk::enumerateInstanceExtensionProperties(nullptr);
   if (mDisplay->param()->par.debugLevel >= 3) {
@@ -434,7 +438,7 @@ void GPUDisplayBackendVulkan::createDevice()
     double score = checkDevice(devices[i], reqDeviceExtensions);
     if (mDisplay->param()->par.debugLevel >= 2) {
       vk::PhysicalDeviceProperties deviceProperties = devices[i].getProperties();
-      GPUInfo("Available Vulkan device %d: %s - Score %f", i, deviceProperties.deviceName.data(), score);
+      GPUInfo("Available Vulkan device %d: %s - Score %f", i, &deviceProperties.deviceName[0], score);
     }
     if (score > bestScore && score > 0) {
       mPhysicalDevice = devices[i];
@@ -452,7 +456,7 @@ void GPUDisplayBackendVulkan::createDevice()
   vk::FormatProperties depth32FormatProperties = mPhysicalDevice.getFormatProperties(vk::Format::eD32Sfloat);
   vk::FormatProperties depth64FormatProperties = mPhysicalDevice.getFormatProperties(vk::Format::eD32SfloatS8Uint);
   vk::FormatProperties formatProperties = mPhysicalDevice.getFormatProperties(mSurfaceFormat.format);
-  GPUInfo("Using physicak Vulkan device %s", deviceProperties.deviceName.data());
+  GPUInfo("Using physical Vulkan device %s", &deviceProperties.deviceName[0]);
   mMaxMSAAsupported = getMaxUsableSampleCount(deviceProperties);
   mZSupported = (bool)(depth32FormatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment);
   mStencilSupported = (bool)(depth64FormatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment);
@@ -862,28 +866,6 @@ void GPUDisplayBackendVulkan::createOffscreenBuffers(bool forScreenshot, bool fo
   renderPassInfo.pDependencies = &dependency;
   mRenderPass = mDevice.createRenderPass(renderPassInfo, nullptr);
 
-  // Text overlay goes as extra rendering path
-  renderPassInfo.attachmentCount = 1; // Remove depth and MSAA attachments
-  renderPassInfo.pAttachments = &colorAttachment;
-  subpass.pDepthStencilAttachment = nullptr;
-  subpass.pResolveAttachments = nullptr;
-  dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput; // Remove depth/stencil dependencies
-  dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-  dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-  colorAttachment.loadOp = vk::AttachmentLoadOp::eLoad;            // Don't clear the frame buffer
-  colorAttachment.initialLayout = vk::ImageLayout::ePresentSrcKHR; // Initial layout is not undefined after 1st pass
-  colorAttachment.samples = vk::SampleCountFlagBits::e1;           // No MSAA for Text
-  colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;   // Might have been overwritten above for 1st pass in case of MSAA
-  mRenderPassText = mDevice.createRenderPass(renderPassInfo, nullptr);
-
-  if (mMixingSupported) {
-    if (mDownsampleFSAA) {
-      colorAttachment.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
-      colorAttachment.finalLayout = mDownsampleFSAA ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::ePresentSrcKHR;
-    }
-    mRenderPassTexture = mDevice.createRenderPass(renderPassInfo, nullptr);
-  }
-
   const unsigned int imageCountWithMixImages = mImageCount * (mMixingSupported ? 2 : 1);
   mRenderTargetView.resize(imageCountWithMixImages);
   mFramebuffers.resize(imageCountWithMixImages);
@@ -907,6 +889,36 @@ void GPUDisplayBackendVulkan::createOffscreenBuffers(bool forScreenshot, bool fo
       mMixImages.resize(mImageCount);
     }
   }
+
+  // Text overlay goes as extra rendering path
+  renderPassInfo.attachmentCount = 1; // Remove depth and MSAA attachments
+  renderPassInfo.pAttachments = &colorAttachment;
+  subpass.pDepthStencilAttachment = nullptr;
+  subpass.pResolveAttachments = nullptr;
+  if (mFramebuffersText.size()) {
+    dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput; // Remove early fragment test
+    dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite; // Remove depth/stencil dependencies
+  }
+  colorAttachment.loadOp = vk::AttachmentLoadOp::eLoad;            // Don't clear the frame buffer
+  colorAttachment.initialLayout = vk::ImageLayout::ePresentSrcKHR; // Initial layout is not undefined after 1st pass
+  colorAttachment.samples = vk::SampleCountFlagBits::e1;           // No MSAA for Text
+  colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;   // Might have been overwritten above for 1st pass in case of MSAA
+  mRenderPassText = mDevice.createRenderPass(renderPassInfo, nullptr);
+
+  if (mMixingSupported) {
+    if (mDownsampleFSAA) {
+      colorAttachment.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+      colorAttachment.finalLayout = mDownsampleFSAA ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::ePresentSrcKHR;
+    }
+    if (mFramebuffersTexture.size()) {
+      dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput; // Remove early fragment test
+      dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+      dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite; // Remove depth/stencil dependencies
+    }
+    mRenderPassTexture = mDevice.createRenderPass(renderPassInfo, nullptr);
+  }
+
   for (unsigned int i = 0; i < imageCountWithMixImages; i++) {
     if (i < mImageCount) { // Main render chain
       // primary buffer mSwapChainImageViews[i] created as part of createSwapChain, not here
@@ -1489,7 +1501,7 @@ void GPUDisplayBackendVulkan::prepareDraw(const hmm_mat4& proj, const hmm_mat4& 
       vk::Fence fen = VkFence(VK_NULL_HANDLE);
       vk::Semaphore sem = VkSemaphore(VK_NULL_HANDLE);
       if (mCommandBufferPerImage) {
-        fen = VkFence(mInFlightFence[mCurrentFrame]);
+        fen = mInFlightFence[mCurrentFrame];
         CHKERR(mDevice.resetFences(1, &fen));
       } else {
         sem = mImageAvailableSemaphore[mCurrentFrame];

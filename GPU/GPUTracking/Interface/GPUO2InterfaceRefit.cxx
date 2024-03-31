@@ -23,13 +23,14 @@
 #include "GPUParam.h"
 #include "GPUTPCGMMergedTrackHit.h"
 #include "GPUTrackingRefit.h"
+#include "CorrectionMapsHelper.h"
 
 using namespace o2::gpu;
 using namespace o2::tpc;
 
 void GPUO2InterfaceRefit::fillSharedClustersMap(const ClusterNativeAccess* cl, const gsl::span<const TrackTPC> trks, const TPCClRefElem* trackRef, unsigned char* shmap)
 {
-  if (!cl || !shmap) {
+  if (!cl || (!shmap && cl->nClustersTotal > 0)) {
     throw std::runtime_error("Must provide clusters access and preallocated recepient for shared map");
   }
   memset(shmap, 0, sizeof(char) * cl->nClustersTotal);
@@ -44,7 +45,7 @@ void GPUO2InterfaceRefit::fillSharedClustersMap(const ClusterNativeAccess* cl, c
   }
 }
 
-GPUO2InterfaceRefit::GPUO2InterfaceRefit(const ClusterNativeAccess* cl, const TPCFastTransform* trans, float bz, const TPCClRefElem* trackRef, const unsigned char* sharedmap, const std::vector<TrackTPC>* trks, o2::base::Propagator* p) : mParam(new GPUParam)
+GPUO2InterfaceRefit::GPUO2InterfaceRefit(const ClusterNativeAccess* cl, const CorrectionMapsHelper* trans, float bzNominalGPU, const TPCClRefElem* trackRef, const unsigned char* sharedmap, const std::vector<TrackTPC>* trks, o2::base::Propagator* p) : mParam(new GPUParam)
 {
   if (cl->nClustersTotal) {
     if (sharedmap == nullptr && trks == nullptr) {
@@ -57,13 +58,20 @@ GPUO2InterfaceRefit::GPUO2InterfaceRefit(const ClusterNativeAccess* cl, const TP
     }
   }
   mRefit = std::make_unique<GPUTrackingRefit>();
-  mParam->SetDefaults(bz);
+  mParam->SetDefaults(bzNominalGPU);
   mRefit->SetGPUParam(mParam.get());
   mRefit->SetClusterStateArray(sharedmap);
   mRefit->SetPropagator(p);
   mRefit->SetClusterNative(cl);
   mRefit->SetTrackHitReferences(trackRef);
-  mRefit->SetFastTransform(trans);
+  mRefit->SetFastTransformHelper(trans);
+}
+
+void GPUO2InterfaceRefit::updateCalib(const CorrectionMapsHelper* trans, float bzNominalGPU)
+{
+  mParam->SetDefaults(bzNominalGPU);
+  mRefit->SetGPUParam(mParam.get());
+  mRefit->SetFastTransformHelper(trans);
 }
 
 int GPUO2InterfaceRefit::RefitTrackAsGPU(o2::tpc::TrackTPC& trk, bool outward, bool resetCov) { return mRefit->RefitTrackAsGPU(trk, outward, resetCov); }

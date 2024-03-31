@@ -31,6 +31,7 @@ using namespace o2::gpu;
 #define AddOptionSet(name, type, value, optname, optnameshort, help, ...)
 #define AddOptionVec(name, type, optname, optnameshort, help, ...)
 #define AddOptionArray(name, type, count, default, optname, optnameshort, help, ...)
+#define AddOptionArrayRTC(...) AddOptionArray(__VA_ARGS__)
 #define AddSubConfig(name, instance)
 #define BeginSubConfig(name, instance, parent, preoptname, preoptnameshort, descr, o2prefix) O2ParamImpl(GPUCA_M_CAT(GPUConfigurableParam, name))
 #define BeginHiddenConfig(...)
@@ -48,6 +49,7 @@ using namespace o2::gpu;
 #undef AddOptionSet
 #undef AddOptionVec
 #undef AddOptionArray
+#undef AddOptionArrayRTC
 #undef AddSubConfig
 #undef BeginSubConfig
 #undef BeginHiddenConfig
@@ -56,7 +58,7 @@ using namespace o2::gpu;
 #undef AddHelp
 #undef AddShortcut
 
-GPUSettingsO2 GPUO2InterfaceConfiguration::ReadConfigurableParam_internal()
+GPUSettingsO2 GPUO2InterfaceConfiguration::ReadConfigurableParam(GPUO2InterfaceConfiguration& obj)
 {
 #define BeginNamespace(name)
 #define EndNamespace()
@@ -70,6 +72,7 @@ GPUSettingsO2 GPUO2InterfaceConfiguration::ReadConfigurableParam_internal()
   for (int i = 0; i < count; i++) {                                                  \
     dst.name[i] = src.name[i];                                                       \
   }
+#define AddOptionArrayRTC(...) AddOptionArray(__VA_ARGS__)
 #define AddSubConfig(name, instance) dst.instance = instance;
 #define BeginSubConfig(name, instance, parent, preoptname, preoptnameshort, descr, o2prefix) \
   name instance;                                                                             \
@@ -91,6 +94,7 @@ GPUSettingsO2 GPUO2InterfaceConfiguration::ReadConfigurableParam_internal()
 #undef AddOptionSet
 #undef AddOptionVec
 #undef AddOptionArray
+#undef AddOptionArrayRTC
 #undef AddSubConfig
 #undef BeginSubConfig
 #undef BeginHiddenConfig
@@ -99,27 +103,29 @@ GPUSettingsO2 GPUO2InterfaceConfiguration::ReadConfigurableParam_internal()
 #undef AddHelp
 #undef AddShortcut
 
-  configProcessing = proc;
-  configReconstruction = rec;
-  configDisplay = display;
-  configQA = QA;
+  obj.configProcessing = proc;
+  obj.configReconstruction = rec;
+  obj.configDisplay = display;
+  obj.configQA = QA;
   if (global.continuousMaxTimeBin) {
-    configGRP.continuousMaxTimeBin = global.continuousMaxTimeBin;
+    obj.configGRP.continuousMaxTimeBin = global.continuousMaxTimeBin;
+  } else {
+    obj.configGRP.continuousMaxTimeBin = global.tpcTriggeredMode ? 0 : -1;
   }
-  if (global.solenoidBz > -1e6f) {
-    configGRP.solenoidBz = global.solenoidBz;
+  if (global.solenoidBzNominalGPU > -1e6f) {
+    obj.configGRP.solenoidBzNominalGPU = global.solenoidBzNominalGPU;
   }
   if (global.constBz) {
-    configGRP.constBz = global.constBz;
+    obj.configGRP.constBz = global.constBz;
   }
   if (global.gpuDisplayfilterMacro != "") {
-    configDisplay.filterMacros.emplace_back(global.gpuDisplayfilterMacro);
+    obj.configDisplay.filterMacros.emplace_back(global.gpuDisplayfilterMacro);
   }
-  if (configReconstruction.tpc.trackReferenceX == 1000.f) {
-    configReconstruction.tpc.trackReferenceX = 83.f;
+  if (obj.configReconstruction.tpc.trackReferenceX == 1000.f) {
+    obj.configReconstruction.tpc.trackReferenceX = 83.f;
   }
-  configDeviceBackend.deviceType = GPUDataTypes::GetDeviceType(global.deviceType.c_str());
-  configDeviceBackend.forceDeviceType = global.forceDeviceType;
+  obj.configDeviceBackend.deviceType = GPUDataTypes::GetDeviceType(global.deviceType.c_str());
+  obj.configDeviceBackend.forceDeviceType = global.forceDeviceType;
   return global;
 }
 

@@ -100,8 +100,9 @@ GPUd() void GPUTPCCFNoiseSuppression::updatePeaksImpl(int nBlocks, int nThreads,
 }
 
 GPUdi() void GPUTPCCFNoiseSuppression::checkForMinima(
-  float q,
-  float epsilon,
+  const float q,
+  const float epsilon,
+  const float epsilonRelative,
   PackedCharge other,
   int pos,
   ulong* minimas,
@@ -109,7 +110,7 @@ GPUdi() void GPUTPCCFNoiseSuppression::checkForMinima(
 {
   float r = other.unpack();
 
-  ulong isMinima = (q - r > epsilon);
+  ulong isMinima = (q - r > epsilon) && (float)CAMath::Abs(q - r) / (float)CAMath::Max(q, r) > epsilonRelative; // TODO: Can we assume q > r and get rid of Max/Abs?
   *minimas |= (isMinima << pos);
 
   ulong lq = (r > q);
@@ -123,6 +124,7 @@ GPUdi() void GPUTPCCFNoiseSuppression::findMinima(
   int pos,
   const float q,
   const float epsilon,
+  const float epsilonRelative,
   ulong* minimas,
   ulong* bigger)
 {
@@ -130,7 +132,7 @@ GPUdi() void GPUTPCCFNoiseSuppression::findMinima(
   for (int i = 0; i < N; i++, pos++) {
     PackedCharge other = buf[N * ll + i];
 
-    checkForMinima(q, epsilon, other, pos, minimas, bigger);
+    checkForMinima(q, epsilon, epsilonRelative, other, pos, minimas, bigger);
   }
 }
 
@@ -214,6 +216,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
     16,
     q,
     calibration.tpc.cfNoiseSuppressionEpsilon,
+    calibration.tpc.cfNoiseSuppressionEpsilonRelative / 255.f,
     minimas,
     bigger);
 
@@ -236,6 +239,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       0,
       q,
       calibration.tpc.cfNoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilonRelative / 255.f,
       minimas,
       bigger);
   }
@@ -259,6 +263,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       18,
       q,
       calibration.tpc.cfNoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilonRelative / 255.f,
       minimas,
       bigger);
   }
@@ -283,6 +288,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       0,
       q,
       calibration.tpc.cfNoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilonRelative / 255.f,
       minimas,
       bigger);
   }
@@ -306,6 +312,7 @@ GPUd() void GPUTPCCFNoiseSuppression::findMinimaAndPeaks(
       18,
       q,
       calibration.tpc.cfNoiseSuppressionEpsilon,
+      calibration.tpc.cfNoiseSuppressionEpsilonRelative / 255.f,
       minimas,
       bigger);
   }

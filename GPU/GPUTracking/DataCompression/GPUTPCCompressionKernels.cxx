@@ -25,6 +25,7 @@
 #include "GPUTPCCompressionTrackModel.h"
 #include "GPUTPCGeometry.h"
 #include "GPUTPCClusterRejection.h"
+#include "GPUTPCCompressionKernels.inc"
 
 using namespace GPUCA_NAMESPACE::gpu;
 using namespace o2::tpc;
@@ -45,10 +46,10 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step0at
     if (!trk.OK()) {
       continue;
     }
-    bool rejectTrk = CAMath::Abs(trk.GetParam().GetQPt() * processors.param.par.qptB5Scaler) > processors.param.rec.tpc.rejectQPtB5 || trk.MergedLooper();
+    bool rejectTrk = CAMath::Abs(trk.GetParam().GetQPt() * processors.param.qptB5Scaler) > processors.param.rec.tpc.rejectQPtB5 || trk.MergedLooper();
     unsigned int nClustersStored = 0;
     CompressedClustersPtrs& GPUrestrict() c = compressor.mPtrs;
-    unsigned int lastRow = 0, lastSlice = 0; // BUG: These should be unsigned char, but then CUDA breaks
+    unsigned char lastRow = 0, lastSlice = 0;
     GPUTPCCompressionTrackModel track;
     float zOffset = 0;
     for (int k = trk.NClusters() - 1; k >= 0; k--) {
@@ -62,7 +63,7 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step0at
       if ((attach & gputpcgmmergertypes::attachTrackMask) != i) {
         continue; // Main attachment to different track
       }
-      bool rejectCluster = processors.param.rec.tpc.trackFitRejectMode && (rejectTrk || GPUTPCClusterRejection::GetIsRejected(attach));
+      bool rejectCluster = processors.param.rec.tpc.rejectionStrategy >= GPUSettings::RejectionStrategyA && (rejectTrk || GPUTPCClusterRejection::GetIsRejected(attach));
       if (rejectCluster) {
         compressor.mClusterStatus[hitId] = 1; // Cluster rejected, do not store
         continue;
@@ -190,11 +191,11 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step1un
   GPUParam& GPUrestrict() param = processors.param;
   unsigned int* sortBuffer = smem.sortBuffer;
   for (int iSliceRow = iBlock; iSliceRow < GPUCA_NSLICES * GPUCA_ROW_COUNT; iSliceRow += nBlocks) {
-    const int iSlice = iSliceRow / GPUCA_ROW_COUNT;
-    const int iRow = iSliceRow % GPUCA_ROW_COUNT;
-    const int idOffset = clusters->clusterOffset[iSlice][iRow];
-    const int idOffsetOut = clusters->clusterOffset[iSlice][iRow] * compressor.mMaxClusterFactorBase1024 / 1024;
-    const int idOffsetOutMax = ((const unsigned int*)clusters->clusterOffset[iSlice])[iRow + 1] * compressor.mMaxClusterFactorBase1024 / 1024; // Array out of bounds access is ok, since it goes to the correct nClustersTotal
+    const unsigned int iSlice = iSliceRow / GPUCA_ROW_COUNT;
+    const unsigned int iRow = iSliceRow % GPUCA_ROW_COUNT;
+    const unsigned int idOffset = clusters->clusterOffset[iSlice][iRow];
+    const unsigned int idOffsetOut = clusters->clusterOffset[iSlice][iRow] * compressor.mMaxClusterFactorBase1024 / 1024;
+    const unsigned int idOffsetOutMax = ((const unsigned int*)clusters->clusterOffset[iSlice])[iRow + 1] * compressor.mMaxClusterFactorBase1024 / 1024; // Array out of bounds access is ok, since it goes to the correct nClustersTotal
     if (iThread == nThreads - 1) {
       smem.nCount = 0;
     }
@@ -227,7 +228,7 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step1un
           }
           int id = attach & gputpcgmmergertypes::attachTrackMask;
           auto& trk = ioPtrs.mergedTracks[id];
-          if (CAMath::Abs(trk.GetParam().GetQPt() * processors.param.par.qptB5Scaler) > processors.param.rec.tpc.rejectQPtB5 || trk.MergedLooper()) {
+          if (CAMath::Abs(trk.GetParam().GetQPt() * processors.param.qptB5Scaler) > processors.param.rec.tpc.rejectQPtB5 || trk.MergedLooper()) {
             break;
           }
         }
@@ -255,6 +256,12 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step1un
       }
 
       unsigned int count = CAMath::Min(smem.nCount, (unsigned int)GPUCA_TPC_COMP_CHUNK_SIZE);
+      if (idOffsetOut + totalCount + count > idOffsetOutMax) {
+        if (iThread == nThreads - 1) {
+          compressor.raiseError(GPUErrors::ERROR_COMPRESSION_ROW_HIT_OVERFLOW, iSlice * 1000 + iRow, idOffsetOut + totalCount + count, idOffsetOutMax);
+        }
+        break;
+      }
       if (param.rec.tpc.compressionTypeMask & GPUSettings::CompressionDifferences) {
         if (param.rec.tpc.compressionSortOrder == GPUSettings::SortZPadTime) {
           CAAlgo::sortInBlock(sortBuffer, sortBuffer + count, GPUTPCCompressionKernels_Compare<GPUSettings::SortZPadTime>(clusters->clusters[iSlice][iRow]));
@@ -270,31 +277,10 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step1un
 
       for (unsigned int j = get_local_id(0); j < count; j += get_local_size(0)) {
         int outidx = idOffsetOut + totalCount + j;
-        if (outidx >= idOffsetOutMax) {
-          compressor.raiseError(GPUErrors::ERROR_COMPRESSION_ROW_HIT_OVERFLOW, iSlice * 1000 + iRow, outidx, idOffsetOutMax);
-          count = 0;
-          break;
-        }
         const ClusterNative& GPUrestrict() orgCl = clusters->clusters[iSlice][iRow][sortBuffer[j]];
-        unsigned int lastTime = 0;
-        unsigned int lastPad = 0;
-        if (param.rec.tpc.compressionTypeMask & GPUSettings::CompressionDifferences) {
-          if (j != 0) {
-            const ClusterNative& GPUrestrict() orgClPre = clusters->clusters[iSlice][iRow][sortBuffer[j - 1]];
-            lastPad = orgClPre.padPacked;
-            lastTime = orgClPre.getTimePacked();
-          } else if (totalCount != 0) {
-            const ClusterNative& GPUrestrict() orgClPre = clusters->clusters[iSlice][iRow][smem.lastIndex];
-            lastPad = orgClPre.padPacked;
-            lastTime = orgClPre.getTimePacked();
-          }
 
-          c.padDiffU[outidx] = orgCl.padPacked - lastPad;
-          c.timeDiffU[outidx] = (orgCl.getTimePacked() - lastTime) & 0xFFFFFF;
-        } else {
-          c.padDiffU[outidx] = orgCl.padPacked;
-          c.timeDiffU[outidx] = orgCl.getTimePacked();
-        }
+        int preId = j != 0 ? (int)sortBuffer[j - 1] : (totalCount != 0 ? (int)smem.lastIndex : -1);
+        GPUTPCCompression_EncodeUnattached(param.rec.tpc.compressionTypeMask, orgCl, c.timeDiffU[outidx], c.padDiffU[outidx], preId == -1 ? nullptr : &clusters->clusters[iSlice][iRow][preId]);
 
         unsigned short qtot = orgCl.qTot, qmax = orgCl.qMax;
         unsigned char sigmapad = orgCl.sigmaPadPacked, sigmatime = orgCl.sigmaTimePacked;
@@ -312,7 +298,7 @@ GPUdii() void GPUTPCCompressionKernels::Thread<GPUTPCCompressionKernels::step1un
       }
 
       GPUbarrier();
-      if (storeLater > 0) {
+      if (storeLater >= 0) {
         sortBuffer[storeLater] = i;
       }
       totalCount += count;
@@ -351,22 +337,21 @@ GPUdi() GPUTPCCompressionGatherKernels::Vec128* GPUTPCCompressionGatherKernels::
 template <typename T, typename S>
 GPUdi() bool GPUTPCCompressionGatherKernels::isAlignedTo(const S* ptr)
 {
-  if CONSTEXPR17 (alignof(S) >= alignof(T)) {
+  if CONSTEXPR (alignof(S) >= alignof(T)) {
     static_cast<void>(ptr);
     return true;
   } else {
     return reinterpret_cast<size_t>(ptr) % alignof(T) == 0;
   }
-  return false; // BUG: Cuda complains about missing return value with constexpr if
 }
 
 template <>
 GPUdi() void GPUTPCCompressionGatherKernels::compressorMemcpy<unsigned char>(unsigned char* GPUrestrict() dst, const unsigned char* GPUrestrict() src, unsigned int size, int nThreads, int iThread)
 {
-  CONSTEXPR int vec128Elems = CpyVector<unsigned char, Vec128>::Size;
-  CONSTEXPR int vec64Elems = CpyVector<unsigned char, Vec64>::Size;
-  CONSTEXPR int vec32Elems = CpyVector<unsigned char, Vec32>::Size;
-  CONSTEXPR int vec16Elems = CpyVector<unsigned char, Vec16>::Size;
+  CONSTEXPR const int vec128Elems = CpyVector<unsigned char, Vec128>::Size;
+  CONSTEXPR const int vec64Elems = CpyVector<unsigned char, Vec64>::Size;
+  CONSTEXPR const int vec32Elems = CpyVector<unsigned char, Vec32>::Size;
+  CONSTEXPR const int vec16Elems = CpyVector<unsigned char, Vec16>::Size;
 
   if (size >= uint(nThreads * vec128Elems)) {
     compressorMemcpyVectorised<unsigned char, Vec128>(dst, src, size, nThreads, iThread);
@@ -384,9 +369,9 @@ GPUdi() void GPUTPCCompressionGatherKernels::compressorMemcpy<unsigned char>(uns
 template <>
 GPUdi() void GPUTPCCompressionGatherKernels::compressorMemcpy<unsigned short>(unsigned short* GPUrestrict() dst, const unsigned short* GPUrestrict() src, unsigned int size, int nThreads, int iThread)
 {
-  CONSTEXPR int vec128Elems = CpyVector<unsigned short, Vec128>::Size;
-  CONSTEXPR int vec64Elems = CpyVector<unsigned short, Vec64>::Size;
-  CONSTEXPR int vec32Elems = CpyVector<unsigned short, Vec32>::Size;
+  CONSTEXPR const int vec128Elems = CpyVector<unsigned short, Vec128>::Size;
+  CONSTEXPR const int vec64Elems = CpyVector<unsigned short, Vec64>::Size;
+  CONSTEXPR const int vec32Elems = CpyVector<unsigned short, Vec32>::Size;
 
   if (size >= uint(nThreads * vec128Elems)) {
     compressorMemcpyVectorised<unsigned short, Vec128>(dst, src, size, nThreads, iThread);
@@ -402,8 +387,8 @@ GPUdi() void GPUTPCCompressionGatherKernels::compressorMemcpy<unsigned short>(un
 template <>
 GPUdi() void GPUTPCCompressionGatherKernels::compressorMemcpy<unsigned int>(unsigned int* GPUrestrict() dst, const unsigned int* GPUrestrict() src, unsigned int size, int nThreads, int iThread)
 {
-  CONSTEXPR int vec128Elems = CpyVector<unsigned int, Vec128>::Size;
-  CONSTEXPR int vec64Elems = CpyVector<unsigned int, Vec64>::Size;
+  CONSTEXPR const int vec128Elems = CpyVector<unsigned int, Vec128>::Size;
+  CONSTEXPR const int vec64Elems = CpyVector<unsigned int, Vec64>::Size;
 
   if (size >= uint(nThreads * vec128Elems)) {
     compressorMemcpyVectorised<unsigned int, Vec128>(dst, src, size, nThreads, iThread);
@@ -466,8 +451,8 @@ GPUdi() void GPUTPCCompressionGatherKernels::compressorMemcpyBuffered(V* buf, T*
   V* GPUrestrict() dstAligned = nullptr;
 
   T* bufT = reinterpret_cast<T*>(buf);
-  CONSTEXPR int bufSize = GPUCA_WARP_SIZE;
-  CONSTEXPR int bufTSize = bufSize * sizeof(V) / sizeof(T);
+  CONSTEXPR const int bufSize = GPUCA_WARP_SIZE;
+  CONSTEXPR const int bufTSize = bufSize * sizeof(V) / sizeof(T);
 
   for (unsigned int i = 0; i < nEntries; i++) {
     unsigned int srcPos = 0;

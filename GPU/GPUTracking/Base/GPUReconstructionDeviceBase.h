@@ -24,6 +24,7 @@
 #include <pthread.h>
 #include "GPUReconstructionHelpers.h"
 #include "GPUChain.h"
+#include <vector>
 
 namespace GPUCA_NAMESPACE
 {
@@ -39,6 +40,12 @@ class GPUReconstructionDeviceBase : public GPUReconstructionCPU
   ~GPUReconstructionDeviceBase() override;
 
   const GPUParam* DeviceParam() const { return &mDeviceConstantMem->param; }
+  struct deviceConstantMemRegistration {
+    deviceConstantMemRegistration(void* (*reg)())
+    {
+      GPUReconstructionDeviceBase::getDeviceConstantMemRegistratorsVector().emplace_back(reg);
+    }
+  };
 
  protected:
   GPUReconstructionDeviceBase(const GPUSettingsDeviceBackend& cfg, size_t sizeCheck);
@@ -47,8 +54,9 @@ class GPUReconstructionDeviceBase : public GPUReconstructionCPU
   virtual int InitDevice_Runtime() = 0;
   int ExitDevice() override;
   virtual int ExitDevice_Runtime() = 0;
-  int registerMemoryForGPU(const void* ptr, size_t size) override;
-  int unregisterMemoryForGPU(const void* ptr) override;
+  int registerMemoryForGPU_internal(const void* ptr, size_t size) override;
+  int unregisterMemoryForGPU_internal(const void* ptr) override;
+  void unregisterRemainingRegisteredMemory();
 
   virtual const GPUTPCTracker* CPUTracker(int iSlice) { return &processors()->tpcTrackers[iSlice]; }
 
@@ -78,9 +86,17 @@ class GPUReconstructionDeviceBase : public GPUReconstructionCPU
   int mNSlaveThreads = 0;                                         // Number of slave threads currently active
 
   struct DebugEvents {
-    void *DebugStart, *DebugStop; // Debug timer events
+    deviceEvent DebugStart, DebugStop; // Debug timer events
   };
   DebugEvents* mDebugEvents = nullptr;
+
+  std::vector<void*> mDeviceConstantMemList;
+  static std::vector<void* (*)()>& getDeviceConstantMemRegistratorsVector()
+  {
+    static std::vector<void* (*)()> deviceConstantMemRegistrators{};
+    return deviceConstantMemRegistrators;
+  }
+  void runConstantRegistrators();
 };
 
 inline size_t GPUReconstructionDeviceBase::GPUMemCpyAlways(bool onGpu, void* dst, const void* src, size_t size, int stream, int toGPU, deviceEvent* ev, deviceEvent* evList, int nEvents)

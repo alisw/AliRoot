@@ -41,6 +41,7 @@ struct GPUTPCOuterParam;
 #include "DataFormatsTPC/TrackTPC.h"
 #include "ReconstructionDataFormats/GlobalTrackID.h"
 #include "ReconstructionDataFormats/TrackLTIntegral.h"
+#include "CommonConstants/LHCConstants.h"
 
 namespace GPUCA_NAMESPACE
 {
@@ -51,10 +52,10 @@ template <>
 class trackInterface<o2::track::TrackParCov> : public o2::track::TrackParCov
 {
  public:
-  GPUdDefault() trackInterface<o2::track::TrackParCov>() = default;
-  trackInterface<o2::track::TrackParCov>(const o2::track::TrackParCov& param) = delete;
-  GPUd() trackInterface<o2::track::TrackParCov>(const o2::dataformats::TrackTPCITS& trkItsTpc) : o2::track::TrackParCov(trkItsTpc.getParamOut()) {}
-  GPUd() trackInterface<o2::track::TrackParCov>(const o2::tpc::TrackTPC& trkTpc) : o2::track::TrackParCov(trkTpc.getParamOut()) {}
+  GPUdDefault() trackInterface() = default;
+  trackInterface(const o2::track::TrackParCov& param) = delete;
+  GPUd() trackInterface(const o2::dataformats::TrackTPCITS& trkItsTpc) : o2::track::TrackParCov(trkItsTpc.getParamOut()) {}
+  GPUd() trackInterface(const o2::tpc::TrackTPC& trkTpc) : o2::track::TrackParCov(trkTpc.getParamOut()) {}
 
   GPUd() void set(float x, float alpha, const float* param, const float* cov)
   {
@@ -67,8 +68,8 @@ class trackInterface<o2::track::TrackParCov> : public o2::track::TrackParCov
       setCov(cov[i], i);
     }
   }
-  GPUd() trackInterface<o2::track::TrackParCov>(const GPUTPCGMMergedTrack& trk);
-  GPUd() trackInterface<o2::track::TrackParCov>(const gputpcgmmergertypes::GPUTPCOuterParam& param);
+  GPUd() trackInterface(const GPUTPCGMMergedTrack& trk);
+  GPUd() trackInterface(const gputpcgmmergertypes::GPUTPCOuterParam& param);
   GPUd() void updateCovZ2(float addZerror) { updateCov(addZerror, o2::track::CovLabels::kSigZ2); }
   GPUd() o2::track::TrackLTIntegral& getLTIntegralOut() { return mLTOut; }
   GPUd() const o2::track::TrackLTIntegral& getLTIntegralOut() const { return mLTOut; }
@@ -78,6 +79,16 @@ class trackInterface<o2::track::TrackParCov> : public o2::track::TrackParCov
   GPUdi() const float* getPar() const { return getParams(); }
 
   GPUdi() bool CheckNumericalQuality() const { return true; }
+
+  GPUdi() void setPileUpDistance(unsigned char bwd, unsigned char fwd) { setUserField((((unsigned short)bwd) << 8) | fwd); }
+  GPUdi() bool hasPileUpInfo() const { return getUserField() != 0; }
+  GPUdi() bool hasPileUpInfoBothSides() const { return getPileUpDistanceBwd() > 0 && getPileUpDistanceFwd() > 0; }
+  GPUdi() unsigned char getPileUpDistanceBwd() const { return getUserField() >> 8; }
+  GPUdi() unsigned char getPileUpDistanceFwd() const { return getUserField() & 255; }
+  GPUdi() unsigned short getPileUpSpan() const { return ((unsigned short)getPileUpDistanceBwd()) + getPileUpDistanceFwd(); }
+  GPUdi() float getPileUpMean() const { return hasPileUpInfoBothSides() ? 0.5f * (getPileUpDistanceFwd() + getPileUpDistanceBwd()) : getPileUpDistanceFwd() + getPileUpDistanceBwd(); }
+  GPUdi() float getPileUpTimeShiftMUS() const { return getPileUpMean() * o2::constants::lhc::LHCBunchSpacingMUS; }
+  GPUdi() float getPileUpTimeErrorMUS() const { return getPileUpSpan() * o2::constants::lhc::LHCBunchSpacingMUS / 3.4641016f; }
 
   typedef o2::track::TrackParCov baseClass;
 

@@ -46,6 +46,7 @@ class ThrustVolatileAsyncAllocator
 } // namespace gpu
 } // namespace GPUCA_NAMESPACE
 
+#ifndef __HIPCC__
 // Override synchronize call at end of thrust algorithm running on stream, just don't run cudaStreamSynchronize
 namespace thrust
 {
@@ -66,5 +67,6 @@ __host__ __device__ inline cudaError_t synchronize<thrustStreamPolicy>(thrustStr
 
 } // namespace cuda_cub
 } // namespace thrust
+#endif // __HIPCC__
 
-#endif
+#endif // GPU_CUDATHRUSTHELPERS_H

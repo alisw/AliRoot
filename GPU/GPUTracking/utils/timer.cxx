@@ -80,6 +80,13 @@ void HighResTimer::Stop()
   double EndTime = 0;
   EndTime = GetTime();
   ElapsedTime += EndTime - StartTime;
+  StartTime = 0;
+}
+
+void HighResTimer::Abort()
+{
+  StartTime = 0.;
+  running = 0;
 }
 
 void HighResTimer::StopAndStart(HighResTimer& startTimer)
@@ -91,6 +98,7 @@ void HighResTimer::StopAndStart(HighResTimer& startTimer)
   double EndTime = 0;
   EndTime = GetTime();
   ElapsedTime += EndTime - StartTime;
+  StartTime = 0;
   startTimer.StartTime = EndTime;
   startTimer.running = 1;
 }

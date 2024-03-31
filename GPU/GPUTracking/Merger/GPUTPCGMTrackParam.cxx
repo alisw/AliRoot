@@ -40,6 +40,7 @@
 #include "GPUO2DataTypes.h"
 #include "GPUConstantMem.h"
 #include "TPCFastTransform.h"
+#include "CorrectionMapsHelper.h"
 #include "GPUTPCConvertImpl.h"
 #include "GPUTPCGMMergerTypes.h"
 #include "GPUParam.inc"
@@ -84,25 +85,30 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
     }
   }
 
-  int nWays = param.rec.tpc.nWays;
-  int maxN = N;
+  const int nWays = param.rec.tpc.nWays;
+  const int maxN = N;
   int ihitStart = 0;
   float covYYUpd = 0.f;
   float lastUpdateX = -1.f;
   unsigned char lastRow = 255;
   unsigned char lastSlice = 255;
+  unsigned char storeOuter = 0;
 
   for (int iWay = 0; iWay < nWays; iWay++) {
     int nMissed = 0, nMissed2 = 0;
-    if (iWay && param.rec.tpc.nWaysOuter && iWay == nWays - 1 && outerParam) {
-      for (int i = 0; i < 5; i++) {
-        outerParam->P[i] = mP[i];
+    float sumInvSqrtCharge = 0.f;
+    int nAvgCharge = 0;
+
+    if (iWay && storeOuter != 255 && param.rec.tpc.nWaysOuter && outerParam) {
+      storeOuter = 0;
+      if (iWay == nWays - 1) {
+        StoreOuter(outerParam, prop, 0);
+        if (merger->OutputTracks()[iTrk].Looper()) {
+          storeOuter = 1;
+        }
+      } else if (iWay == nWays - 2 && merger->OutputTracks()[iTrk].Looper()) {
+        storeOuter = 2;
       }
-      for (int i = 0; i < 15; i++) {
-        outerParam->C[i] = mC[i];
-      }
-      outerParam->X = mX;
-      outerParam->alpha = prop.GetAlpha();
     }
 
     int resetT0 = initResetT0();
@@ -116,7 +122,7 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
     prop.SetMatLUT((param.rec.useMatLUT && iWay == nWays - 1) ? merger->GetConstantMem()->calibObjects.matLUT : nullptr);
     prop.SetTrack(this, iWay ? prop.GetAlpha() : Alpha);
     ConstrainSinPhi(prop.GetFitInProjections() ? 0.95f : GPUCA_MAX_SIN_PHI_LOW);
-    CADEBUG(printf("Fitting track %d way %d (sector %d, alpha %f)\n", iTrk, iWay, (int)(prop.GetAlpha() / kSectAngle + 0.5) + (mP[1] < 0 ? 18 : 0), prop.GetAlpha()));
+    CADEBUG(printf("Fitting track %d way %d (sector %d, alpha %f)\n", iTrk, iWay, CAMath::Float2IntRn(prop.GetAlpha() / kSectAngle) + (mP[1] < 0 ? 18 : 0), prop.GetAlpha()));
 
     N = 0;
     lastUpdateX = -1;
@@ -131,14 +137,18 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
       if (crossCE) {
         lastSlice = clusters[ihit].slice;
         noFollowCircle2 = true;
-        if (mC[2] < 0.5f) {
-          mC[2] = 0.5f;
+      }
+
+      if (storeOuter == 2 && clusters[ihit].leg == clusters[maxN - 1].leg - 1) {
+        if (lastLeg == clusters[maxN - 1].leg) {
+          StoreOuter(outerParam, prop, 1);
+          storeOuter = 255;
+        } else {
+          storeOuter = 0;
         }
       }
 
-      unsigned char clusterState = clusters[ihit].state;
-      const float clAlpha = param.Alpha(clusters[ihit].slice);
-      if ((param.rec.tpc.trackFitRejectMode > 0 && nMissed >= param.rec.tpc.trackFitRejectMode) || nMissed2 >= GPUCA_MERGER_MAXN_MISSED_HARD || clusters[ihit].state & GPUTPCGMMergedTrackHit::flagReject) {
+      if ((param.rec.tpc.trackFitRejectMode > 0 && nMissed >= param.rec.tpc.trackFitRejectMode) || nMissed2 >= param.rec.tpc.trackFitMaxRowMissedHard || clusters[ihit].state & GPUTPCGMMergedTrackHit::flagReject) {
         CADEBUG(printf("\tSkipping hit, %d hits rejected, flag %X\n", nMissed, (int)clusters[ihit].state));
         if (iWay + 2 >= nWays && !(clusters[ihit].state & GPUTPCGMMergedTrackHit::flagReject)) {
           clusters[ihit].state |= GPUTPCGMMergedTrackHit::flagRejectErr;
@@ -147,9 +157,10 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
       }
 
       const bool allowModification = refit && (iWay == 0 || (((nWays - iWay) & 1) ? (ihit >= CAMath::Min(maxN / 2, 30)) : (ihit <= CAMath::Max(maxN / 2, maxN - 30))));
-      int ihitMergeFirst = ihit;
-      prop.SetStatErrorCurCluster(&clusters[ihit]);
 
+      int ihitMergeFirst = ihit;
+      unsigned char clusterState = clusters[ihit].state;
+      const float clAlpha = param.Alpha(clusters[ihit].slice);
       float xx, yy, zz;
       if (merger->Param().par.earlyTpcTransform) {
         const float zOffset = (clusters[ihit].slice < 18) == (clusters[0].slice < 18) ? mTZOffset : -mTZOffset;
@@ -158,10 +169,10 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
         zz = clustersXYZ[ihit].z - zOffset;
       } else {
         const ClusterNative& GPUrestrict() cl = merger->GetConstantMem()->ioPtrs.clustersNative->clustersLinear[clusters[ihit].num];
-        merger->GetConstantMem()->calibObjects.fastTransform->Transform(clusters[ihit].slice, clusters[ihit].row, cl.getPad(), cl.getTime(), xx, yy, zz, mTZOffset);
+        merger->GetConstantMem()->calibObjects.fastTransformHelper->Transform(clusters[ihit].slice, clusters[ihit].row, cl.getPad(), cl.getTime(), xx, yy, zz, mTZOffset);
       }
       // clang-format off
-      CADEBUG(printf("\tHit %3d/%3d Row %3d: Cluster Alpha %8.3f %3d, X %8.3f - Y %8.3f, Z %8.3f (Missed %d)", ihit, maxN, (int)clusters[ihit].row, clAlpha, (int)clusters[ihit].slice, xx, yy, zz, nMissed));
+      CADEBUG(printf("\tHit %3d/%3d Row %3d: Cluster Alpha %8.3f %3d, X %8.3f - Y %8.3f, Z %8.3f (Missed %d)\n", ihit, maxN, (int)clusters[ihit].row, clAlpha, (int)clusters[ihit].slice, xx, yy, zz, nMissed));
       // CADEBUG(if ((unsigned int)merger->GetTrackingChain()->mIOPtrs.nMCLabelsTPC > clusters[ihit].num))
       // CADEBUG({printf(" MC:"); for (int i = 0; i < 3; i++) {int mcId = merger->GetTrackingChain()->mIOPtrs.mcLabelsTPC[clusters[ihit].num].fClusterID[i].fMCID; if (mcId >= 0) printf(" %d", mcId); } } printf("\n"));
       // clang-format on
@@ -171,17 +182,19 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
         continue;
       }
 
-      bool changeDirection = (clusters[ihit].leg - lastLeg) & 1;
+      const auto& cluster = clusters[ihit];
+
+      bool changeDirection = (cluster.leg - lastLeg) & 1;
       // clang-format off
       CADEBUG(if (changeDirection) printf("\t\tChange direction\n"));
-      CADEBUG(printf("\tLeg %3d%14sTrack   Alpha %8.3f %s, X %8.3f - Y %8.3f, Z %8.3f   -   QPt %7.2f (%7.2f), SP %5.2f (%5.2f) %28s    ---   Cov sY %8.3f sZ %8.3f sSP %8.3f sPt %8.3f   -   YPt %8.3f\n", (int)clusters[ihit].leg, "", prop.GetAlpha(), (CAMath::Abs(prop.GetAlpha() - clAlpha) < 0.01 ? "   " : " R!"), mX, mP[0], mP[1], mP[4], prop.GetQPt0(), mP[2], prop.GetSinPhi0(), "", sqrtf(mC[0]), sqrtf(mC[2]), sqrtf(mC[5]), sqrtf(mC[14]), mC[10]));
+      CADEBUG(printf("\tLeg %3d Slice %2d %4sTrack   Alpha %8.3f %s, X %8.3f - Y %8.3f, Z %8.3f   -   QPt %7.2f (%7.2f), SP %5.2f (%5.2f) %28s    ---   Cov sY %8.3f sZ %8.3f sSP %8.3f sPt %8.3f   -   YPt %8.3f\n", (int)cluster.leg, (int)cluster.slice, "", prop.GetAlpha(), (CAMath::Abs(prop.GetAlpha() - clAlpha) < 0.01 ? "   " : " R!"), mX, mP[0], mP[1], mP[4], prop.GetQPt0(), mP[2], prop.GetSinPhi0(), "", sqrtf(mC[0]), sqrtf(mC[2]), sqrtf(mC[5]), sqrtf(mC[14]), mC[10]));
       // clang-format on
       if (allowModification && changeDirection && !noFollowCircle && !noFollowCircle2) {
         bool tryFollow = lastRow != 255;
         if (tryFollow) {
           const GPUTPCGMTrackParam backup = *this;
           const float backupAlpha = prop.GetAlpha();
-          if (FollowCircle<0>(merger, prop, lastSlice, lastRow, iTrk, clAlpha, xx, yy, clusters[ihit].slice, clusters[ihit].row, inFlyDirection)) {
+          if (FollowCircle<0>(merger, prop, lastSlice, lastRow, iTrk, clAlpha, xx, yy, cluster.slice, cluster.row, inFlyDirection)) {
             CADEBUG(printf("Error during follow circle, resetting track!\n"));
             *this = backup;
             prop.SetTrack(this, backupAlpha);
@@ -190,10 +203,10 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
           }
         }
         if (tryFollow) {
-          MirrorTo(prop, yy, zz, inFlyDirection, param, clusters[ihit].row, clusterState, false);
+          MirrorTo(prop, yy, zz, inFlyDirection, param, cluster.row, clusterState, false, cluster.slice);
           lastUpdateX = mX;
-          lastLeg = clusters[ihit].leg;
-          lastSlice = clusters[ihit].slice;
+          lastLeg = cluster.leg;
+          lastSlice = cluster.slice;
           lastRow = 255;
           N++;
           resetT0 = initResetT0();
@@ -203,11 +216,12 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
           // clang-format on
           continue;
         }
-      } else if (allowModification && lastRow != 255 && CAMath::Abs(clusters[ihit].row - lastRow) > 1) {
-        if (merger->Param().par.dodEdx && iWay == nWays - 1 && clusters[ihit].row == lastRow - 2 && clusters[ihit].leg == clusters[maxN - 1].leg) {
+      } else if (allowModification && lastRow != 255 && CAMath::Abs(cluster.row - lastRow) > 1) {
+        bool dodEdx = merger->Param().par.dodEdx && merger->Param().rec.tpc.adddEdxSubThresholdClusters && iWay == nWays - 1 && CAMath::Abs(cluster.row - lastRow) == 2 && cluster.leg == clusters[maxN - 1].leg;
+        dodEdx = AttachClustersPropagate(merger, cluster.slice, lastRow, cluster.row, iTrk, cluster.leg == clusters[maxN - 1].leg, prop, inFlyDirection, GPUCA_MAX_SIN_PHI, dodEdx);
+        if (dodEdx) {
           dEdx.fillSubThreshold(lastRow - 1, param);
         }
-        AttachClustersPropagate(merger, clusters[ihit].slice, lastRow, clusters[ihit].row, iTrk, clusters[ihit].leg == clusters[maxN - 1].leg, prop, inFlyDirection);
       }
 
       int err = prop.PropagateToXAlpha(xx, clAlpha, inFlyDirection);
@@ -221,18 +235,30 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
           err = prop.PropagateToXAlpha(xx, clAlpha, inFlyDirection);
         }
       }
-      if (lastRow == 255 || CAMath::Abs((int)lastRow - (int)clusters[ihit].row) > 5 || lastSlice != clusters[ihit].slice || (param.rec.tpc.trackFitRejectMode < 0 && -nMissed <= param.rec.tpc.trackFitRejectMode)) {
+      if (lastRow == 255 || CAMath::Abs((int)lastRow - (int)cluster.row) > 5 || lastSlice != cluster.slice || (param.rec.tpc.trackFitRejectMode < 0 && -nMissed <= param.rec.tpc.trackFitRejectMode)) {
         goodRows = 0;
       } else {
         goodRows++;
       }
       if (err == 0) {
-        lastRow = clusters[ihit].row;
-        lastSlice = clusters[ihit].slice;
+        lastRow = cluster.row;
+        lastSlice = cluster.slice;
       }
       // clang-format off
       CADEBUG(printf("\t%21sPropaga Alpha %8.3f    , X %8.3f - Y %8.3f, Z %8.3f   -   QPt %7.2f (%7.2f), SP %5.2f (%5.2f)   ---   Res %8.3f %8.3f   ---   Cov sY %8.3f sZ %8.3f sSP %8.3f sPt %8.3f   -   YPt %8.3f   -   Err %d", "", prop.GetAlpha(), mX, mP[0], mP[1], mP[4], prop.GetQPt0(), mP[2], prop.GetSinPhi0(), mP[0] - yy, mP[1] - zz, sqrtf(mC[0]), sqrtf(mC[2]), sqrtf(mC[5]), sqrtf(mC[14]), mC[10], err));
       // clang-format on
+
+      if (crossCE) {
+        if (param.rec.tpc.addErrorsCECrossing) {
+          if (param.rec.tpc.addErrorsCECrossing >= 2) {
+            AddCovDiagErrorsWithCorrelations(param.rec.tpc.errorsCECrossing);
+          } else {
+            AddCovDiagErrors(param.rec.tpc.errorsCECrossing);
+          }
+        } else if (mC[2] < 0.5f) {
+          mC[2] = 0.5f;
+        }
+      }
 
       if (err == 0 && changeDirection) {
         const float mirrordY = prop.GetMirroredYTrack();
@@ -240,13 +266,13 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
         if (CAMath::Abs(yy - mP[0]) > CAMath::Abs(yy - mirrordY)) {
           CADEBUG(printf(" - Mirroring!!!"));
           if (allowModification) {
-            AttachClustersMirror<0>(merger, clusters[ihit].slice, clusters[ihit].row, iTrk, yy, prop); // TODO: Never true, will always call FollowCircle above, really???
+            AttachClustersMirror<0>(merger, cluster.slice, cluster.row, iTrk, yy, prop); // TODO: Never true, will always call FollowCircle above, really???
           }
-          MirrorTo(prop, yy, zz, inFlyDirection, param, clusters[ihit].row, clusterState, true);
+          MirrorTo(prop, yy, zz, inFlyDirection, param, cluster.row, clusterState, true, cluster.slice);
           noFollowCircle = false;
 
           lastUpdateX = mX;
-          lastLeg = clusters[ihit].leg;
+          lastLeg = cluster.leg;
           lastRow = 255;
           N++;
           resetT0 = initResetT0();
@@ -258,13 +284,14 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
         }
       }
 
+      float uncorrectedY = -1e6f;
       if (allowModification) {
-        AttachClusters(merger, clusters[ihit].slice, clusters[ihit].row, iTrk, clusters[ihit].leg == clusters[maxN - 1].leg, prop);
+        uncorrectedY = AttachClusters(merger, cluster.slice, cluster.row, iTrk, cluster.leg == clusters[maxN - 1].leg, prop);
       }
 
       const int err2 = mNDF > 0 && CAMath::Abs(prop.GetSinPhi0()) >= maxSinForUpdate;
       if (err || err2) {
-        if (mC[0] > GPUCA_MERGER_COV_LIMIT || mC[2] > GPUCA_MERGER_COV_LIMIT) {
+        if (mC[0] > param.rec.tpc.trackFitCovLimit || mC[2] > param.rec.tpc.trackFitCovLimit) {
           break;
         }
         MarkClusters(clusters, ihitMergeFirst, ihit, wayDirection, GPUTPCGMMergedTrackHit::flagNotFit);
@@ -278,9 +305,9 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
       int retVal;
       float threshold = 3.f + (lastUpdateX >= 0 ? (CAMath::Abs(mX - lastUpdateX) / 2) : 0.f);
       if (mNDF > 5 && (CAMath::Abs(yy - mP[0]) > threshold || CAMath::Abs(zz - mP[1]) > threshold)) {
-        retVal = 2;
+        retVal = GPUTPCGMPropagator::updateErrorClusterRejected;
       } else {
-        char rejectChi2 = attempt ? 0 : ((param.rec.tpc.mergerInterpolateErrors && CAMath::Abs(ihit - ihitMergeFirst) <= 1) ? (refit ? (2 + ((nWays - iWay) & 1)) : 0) : (allowModification && goodRows > 5));
+        char rejectChi2 = attempt ? 0 : ((param.rec.tpc.mergerInterpolateErrors && CAMath::Abs(ihit - ihitMergeFirst) <= 1) ? (refit ? (GPUTPCGMPropagator::rejectInterFill + ((nWays - iWay) & 1)) : 0) : (allowModification && goodRows > 5));
 #if EXTRACT_RESIDUALS == 1
         if (iWay == nWays - 1 && interpolation.hit[ihit].errorY > (GPUCA_MERGER_INTERPOLATION_ERROR_TYPE)0) {
           const float Iz0 = interpolation.hit[ihit].posY - mP[0];
@@ -297,10 +324,23 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
           const float ImC0 = mC[0] - Ik00 * mC[0] + Ik01 * mC[1];
           const float ImC2 = mC[2] - Ik10 * mC[1] + Ik11 * mC[2];
           auto& tup = GPUROOTDump<TNtuple>::get("clusterres", "row:clX:clY:clZ:angle:trkX:trkY:trkZ:trkSinPhi:trkDzDs:trkQPt:trkSigmaY2:trkSigmaZ2trkSigmaQPt2");
-          tup.Fill((float)clusters[ihit].row, xx, yy, zz, clAlpha, mX, ImP0, ImP1, mP[2], mP[3], mP[4], ImC0, ImC2, mC[14]);
+          tup.Fill((float)cluster.row, xx, yy, zz, clAlpha, mX, ImP0, ImP1, mP[2], mP[3], mP[4], ImC0, ImC2, mC[14]);
         }
 #endif
-        retVal = prop.Update(yy, zz, clusters[ihit].row, param, clusterState, rejectChi2, &interpolation.hit[ihit], refit);
+        GPUCA_DEBUG_STREAMER_CHECK(GPUTPCGMPropagator::DebugStreamerVals debugVals;);
+        if (merger->Param().rec.tpc.rejectEdgeClustersInTrackFit && uncorrectedY > -1e6f && merger->Param().rejectEdgeClusterByY(uncorrectedY, cluster.row, CAMath::Sqrt(mC[0]))) { // uncorrectedY > -1e6f implies allowModification
+          retVal = GPUTPCGMPropagator::updateErrorEdgeCluster;
+        } else {
+          const float time = merger->GetConstantMem()->ioPtrs.clustersNative ? merger->GetConstantMem()->ioPtrs.clustersNative->clustersLinear[cluster.num].getTime() : -1.f;
+          const float invSqrtCharge = merger->GetConstantMem()->ioPtrs.clustersNative ? CAMath::InvSqrt(merger->GetConstantMem()->ioPtrs.clustersNative->clustersLinear[cluster.num].qMax) : 0.f;
+          const float invCharge = merger->GetConstantMem()->ioPtrs.clustersNative ? (1.f / merger->GetConstantMem()->ioPtrs.clustersNative->clustersLinear[cluster.num].qMax) : 0.f;
+          float invAvgCharge = (sumInvSqrtCharge += invSqrtCharge) / ++nAvgCharge;
+          invAvgCharge *= invAvgCharge;
+          retVal = prop.Update(yy, zz, cluster.row, param, clusterState, rejectChi2, &interpolation.hit[ihit], refit, cluster.slice, time, invAvgCharge, invCharge GPUCA_DEBUG_STREAMER_CHECK(, &debugVals));
+        }
+        GPUCA_DEBUG_STREAMER_CHECK(if (o2::utils::DebugStreamer::checkStream(o2::utils::StreamFlags::streamUpdateTrack, iTrk)) {
+          merger->DebugStreamerUpdate(iTrk, ihit, xx, yy, zz, cluster, merger->GetConstantMem()->ioPtrs.clustersNative->clustersLinear[cluster.num], *this, prop, interpolation.hit[ihit], rejectChi2, refit, retVal, sumInvSqrtCharge / nAvgCharge * sumInvSqrtCharge / nAvgCharge, yy, zz, clusterState, debugVals.retVal, debugVals.err2Y, debugVals.err2Z);
+        });
       }
       // clang-format off
       CADEBUG(if (!CheckCov()) GPUError("INVALID COV AFTER UPDATE!!!"));
@@ -310,6 +350,10 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
       ConstrainSinPhi();
       if (retVal == 0) // track is updated
       {
+        if (storeOuter == 1 && cluster.leg == clusters[maxN - 1].leg) {
+          StoreOuter(outerParam, prop, 2);
+          storeOuter = 255;
+        }
         noFollowCircle2 = false;
         lastUpdateX = mX;
         covYYUpd = mC[0];
@@ -319,27 +363,31 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
         ihitStart = ihit;
         float dy = mP[0] - prop.Model().Y();
         float dz = mP[1] - prop.Model().Z();
-        if (CAMath::Abs(mP[4]) * merger->Param().par.qptB5Scaler > 10 && --resetT0 <= 0 && CAMath::Abs(mP[2]) < 0.15f && dy * dy + dz * dz > 1) {
+        if (CAMath::Abs(mP[4]) * merger->Param().qptB5Scaler > 10 && --resetT0 <= 0 && CAMath::Abs(mP[2]) < 0.15f && dy * dy + dz * dz > 1) {
           CADEBUG(printf("Reinit linearization\n"));
           prop.SetTrack(this, prop.GetAlpha());
         }
-        if (merger->Param().par.dodEdx && iWay == nWays - 1 && clusters[ihit].leg == clusters[maxN - 1].leg) {
-          float qtot, qmax, pad, relTime;
-          if (merger->GetConstantMem()->ioPtrs.clustersNative == nullptr) {
-            qtot = clustersXYZ[ihit].amp;
-            qmax = 0;
-            pad = 0;
-            relTime = 0;
-          } else {
-            const ClusterNative& cl = merger->GetConstantMem()->ioPtrs.clustersNative->clustersLinear[clusters[ihit].num];
-            qtot = cl.qTot;
-            qmax = cl.qMax;
-            pad = cl.getPad();
-            relTime = cl.getTime() - int(cl.getTime() + 0.5f);
+        if (merger->Param().par.dodEdx && iWay == nWays - 1 && cluster.leg == clusters[maxN - 1].leg && !(clusterState & GPUTPCGMMergedTrackHit::flagEdge)) {
+          float qtot = 0, qmax = 0, pad = 0, relTime = 0;
+          const int clusterCount = (ihit - ihitMergeFirst) * wayDirection + 1;
+          for (int iTmp = ihitMergeFirst; iTmp != ihit + wayDirection; iTmp += wayDirection) {
+            if (merger->GetConstantMem()->ioPtrs.clustersNative == nullptr) {
+              qtot += clustersXYZ[ihit].amp;
+            } else {
+              const ClusterNative& cl = merger->GetConstantMem()->ioPtrs.clustersNative->clustersLinear[cluster.num];
+              qtot += cl.qTot;
+              qmax = CAMath::Max<float>(qmax, cl.qMax);
+              pad += cl.getPad();
+              relTime += cl.getTime();
+            }
           }
-          dEdx.fillCluster(qtot, qmax, clusters[ihit].row, clusters[ihit].slice, mP[2], mP[3], param, merger->GetConstantMem()->calibObjects, zz, pad, relTime);
+          qtot /= clusterCount;
+          pad /= clusterCount;
+          relTime /= clusterCount;
+          relTime = relTime - CAMath::Round(relTime);
+          dEdx.fillCluster(qtot, qmax, cluster.row, cluster.slice, mP[2], mP[3], param, merger->GetConstantMem()->calibObjects, zz, pad, relTime);
         }
-      } else if (retVal == 2) { // cluster far away form the track
+      } else if (retVal >= GPUTPCGMPropagator::updateErrorClusterRejected) { // cluster far away form the track
         if (allowModification) {
           MarkClusters(clusters, ihitMergeFirst, ihit, wayDirection, GPUTPCGMMergedTrackHit::flagRejectDistance);
         } else if (iWay == nWays - 1) {
@@ -352,14 +400,22 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
       }
     }
     if (((nWays - iWay) & 1) && (clusters[0].slice < 18) == (clusters[maxN - 1].slice < 18)) {
-      ShiftZ2(clusters, clustersXYZ, merger, N);
+      ShiftZ2(clusters, clustersXYZ, merger, maxN);
     }
   }
   ConstrainSinPhi();
 
-  if (!(N + NTolerated >= GPUCA_TRACKLET_SELECTOR_MIN_HITS_B5(mP[4] * merger->Param().par.qptB5Scaler) && 2 * NTolerated <= CAMath::Max(10, N) && CheckNumericalQuality(covYYUpd))) {
-    return (false); // TODO: NTolerated should never become that large, check what is going wrong!
+  GPUCA_DEBUG_STREAMER_CHECK(if (o2::utils::DebugStreamer::checkStream(o2::utils::StreamFlags::streamUpdateTrack, iTrk)) {
+    o2::utils::DebugStreamer::instance()->getStreamer("debug_accept_track", "UPDATE") << o2::utils::DebugStreamer::instance()->getUniqueTreeName("debug_accept_track").data() << "iTrk=" << iTrk << "outerParam=" << *outerParam << "track=" << this << "ihitStart=" << ihitStart << "\n";
+  })
+
+  if (!(N + NTolerated >= GPUCA_TRACKLET_SELECTOR_MIN_HITS_B5(mP[4] * merger->Param().qptB5Scaler) && 2 * NTolerated <= CAMath::Max(10, N) && CheckNumericalQuality(covYYUpd))) {
+    return false; // TODO: NTolerated should never become that large, check what is going wrong!
   }
+  if (merger->Param().rec.tpc.minNClustersFinalTrack != -1 && N + NTolerated < merger->Param().rec.tpc.minNClustersFinalTrack) {
+    return false;
+  }
+
   // TODO: we have looping tracks here with 0 accepted clusters in the primary leg. In that case we should refit the track using only the primary leg.
 
   if (merger->Param().par.dodEdx) {
@@ -369,7 +425,7 @@ GPUd() bool GPUTPCGMTrackParam::Fit(GPUTPCGMMerger* GPUrestrict() merger, int iT
   MoveToReference(prop, param, Alpha);
   NormalizeAlpha(Alpha);
 
-  return (true);
+  return true;
 }
 
 GPUdni() void GPUTPCGMTrackParam::MoveToReference(GPUTPCGMPropagator& prop, const GPUParam& param, float& Alpha)
@@ -378,7 +434,7 @@ GPUdni() void GPUTPCGMTrackParam::MoveToReference(GPUTPCGMPropagator& prop, cons
     GPUTPCGMTrackParam save = *this;
     float saveAlpha = Alpha;
     for (int attempt = 0; attempt < 3; attempt++) {
-      float dAngle = floor(CAMath::ATan2(mP[0], mX) / kDeg2Rad / 20.f + 0.5f) * kSectAngle;
+      float dAngle = CAMath::Round(CAMath::ATan2(mP[0], mX) / kDeg2Rad / 20.f) * kSectAngle;
       Alpha += dAngle;
       if (prop.PropagateToXAlpha(param.rec.tpc.trackReferenceX, Alpha, 0)) {
         break;
@@ -392,20 +448,20 @@ GPUdni() void GPUTPCGMTrackParam::MoveToReference(GPUTPCGMPropagator& prop, cons
     Alpha = saveAlpha;
   }
   if (CAMath::Abs(mP[0]) > mX * CAMath::Tan(kSectAngle / 2.f)) {
-    float dAngle = floor(CAMath::ATan2(mP[0], mX) / kDeg2Rad / 20.f + 0.5f) * kSectAngle;
+    float dAngle = CAMath::Round(CAMath::ATan2(mP[0], mX) / kDeg2Rad / 20.f) * kSectAngle;
     Rotate(dAngle);
     ConstrainSinPhi();
     Alpha += dAngle;
   }
 }
 
-GPUd() void GPUTPCGMTrackParam::MirrorTo(GPUTPCGMPropagator& GPUrestrict() prop, float toY, float toZ, bool inFlyDirection, const GPUParam& param, unsigned char row, unsigned char clusterState, bool mirrorParameters)
+GPUd() void GPUTPCGMTrackParam::MirrorTo(GPUTPCGMPropagator& GPUrestrict() prop, float toY, float toZ, bool inFlyDirection, const GPUParam& param, unsigned char row, unsigned char clusterState, bool mirrorParameters, char sector)
 {
   if (mirrorParameters) {
     prop.Mirror(inFlyDirection);
   }
   float err2Y, err2Z;
-  prop.GetErr2(err2Y, err2Z, param, toZ, row, clusterState);
+  prop.GetErr2(err2Y, err2Z, param, toZ, row, clusterState, sector, -1.f, 0.f, 0.f); // Use correct time / avgCharge
   prop.Model().Y() = mP[0] = toY;
   prop.Model().Z() = mP[1] = toZ;
   if (mC[0] < err2Y) {
@@ -430,7 +486,7 @@ GPUd() int GPUTPCGMTrackParam::MergeDoubleRowClusters(int& ihit, int wayDirectio
 {
   if (ihit + wayDirection >= 0 && ihit + wayDirection < maxN && clusters[ihit].row == clusters[ihit + wayDirection].row && clusters[ihit].slice == clusters[ihit + wayDirection].slice && clusters[ihit].leg == clusters[ihit + wayDirection].leg) {
     float maxDistY, maxDistZ;
-    prop.GetErr2(maxDistY, maxDistZ, merger->Param(), zz, clusters[ihit].row, 0);
+    prop.GetErr2(maxDistY, maxDistZ, merger->Param(), zz, clusters[ihit].row, 0, clusters[ihit].slice, -1.f, 0.f, 0.f); // TODO: Use correct time, avgCharge
     maxDistY = (maxDistY + mC[0]) * 20.f;
     maxDistZ = (maxDistZ + mC[2]) * 20.f;
     int noReject = 0; // Cannot reject if simple estimation of y/z fails (extremely unlike case)
@@ -455,12 +511,12 @@ GPUd() int GPUTPCGMTrackParam::MergeDoubleRowClusters(int& ihit, int wayDirectio
       } else {
         const ClusterNative& GPUrestrict() cl = merger->GetConstantMem()->ioPtrs.clustersNative->clustersLinear[clusters[ihit].num];
         clamp = cl.qTot;
-        merger->GetConstantMem()->calibObjects.fastTransform->Transform(clusters[ihit].slice, clusters[ihit].row, cl.getPad(), cl.getTime(), clx, cly, clz, mTZOffset);
+        merger->GetConstantMem()->calibObjects.fastTransformHelper->Transform(clusters[ihit].slice, clusters[ihit].row, cl.getPad(), cl.getTime(), clx, cly, clz, mTZOffset);
       }
       float dy = cly - projY;
       float dz = clz - projZ;
       if (noReject == 0 && (dy * dy > maxDistY || dz * dz > maxDistZ)) {
-        CADEBUG(printf("Rejecting double-row cluster: dy %f, dz %f, chiY %f, chiZ %f (Y: trk %f prj %f cl %f - Z: trk %f prj %f cl %f)\n", dy, dz, sqrtf(maxDistY), sqrtf(maxDistZ), mP[0], projY, cly, mP[1], projZ, clz));
+        CADEBUG(printf("\t\tRejecting double-row cluster: dy %f, dz %f, chiY %f, chiZ %f (Y: trk %f prj %f cl %f - Z: trk %f prj %f cl %f)\n", dy, dz, sqrtf(maxDistY), sqrtf(maxDistZ), mP[0], projY, cly, mP[1], projZ, clz));
         if (rejectChi2) {
           clusters[ihit].state |= GPUTPCGMMergedTrackHit::flagRejectDistance;
         }
@@ -484,32 +540,31 @@ GPUd() int GPUTPCGMTrackParam::MergeDoubleRowClusters(int& ihit, int wayDirectio
     xx /= count;
     yy /= count;
     zz /= count;
-    CADEBUG(printf("\t\tDouble row (%f tot charge)\n", count));
   }
   return 0;
 }
 
-GPUd() void GPUTPCGMTrackParam::AttachClusters(const GPUTPCGMMerger* GPUrestrict() Merger, int slice, int iRow, int iTrack, bool goodLeg, GPUTPCGMPropagator& prop)
+GPUd() float GPUTPCGMTrackParam::AttachClusters(const GPUTPCGMMerger* GPUrestrict() Merger, int slice, int iRow, int iTrack, bool goodLeg, GPUTPCGMPropagator& prop)
 {
   float Y, Z;
   if (Merger->Param().par.earlyTpcTransform) {
     Y = mP[0];
     Z = mP[1];
   } else {
-    float X;
-    Merger->GetConstantMem()->calibObjects.fastTransform->InverseTransformYZtoX(slice, iRow, mP[0], mP[1], X);
+    float X = 0;
+    Merger->GetConstantMem()->calibObjects.fastTransformHelper->InverseTransformYZtoX(slice, iRow, mP[0], mP[1], X);
     if (prop.GetPropagatedYZ(X, Y, Z)) {
       Y = mP[0];
       Z = mP[1];
     }
   }
-  AttachClusters(Merger, slice, iRow, iTrack, goodLeg, Y, Z);
+  return AttachClusters(Merger, slice, iRow, iTrack, goodLeg, Y, Z);
 }
 
-GPUd() void GPUTPCGMTrackParam::AttachClusters(const GPUTPCGMMerger* GPUrestrict() Merger, int slice, int iRow, int iTrack, bool goodLeg, float Y, float Z)
+GPUd() float GPUTPCGMTrackParam::AttachClusters(const GPUTPCGMMerger* GPUrestrict() Merger, int slice, int iRow, int iTrack, bool goodLeg, float Y, float Z)
 {
   if (Merger->Param().rec.tpc.disableRefitAttachment & 1) {
-    return;
+    return -1e6f;
   }
   const GPUTPCTracker& GPUrestrict() tracker = *(Merger->GetConstantMem()->tpcTrackers + slice);
   const GPUTPCRow& GPUrestrict() row = tracker.Row(iRow);
@@ -518,10 +573,10 @@ GPUd() void GPUTPCGMTrackParam::AttachClusters(const GPUTPCGMMerger* GPUrestrict
   GPUglobalref() const calink* firsthit = tracker.FirstHitInBin(row);
 #endif //! GPUCA_TEXTURE_FETCH_CONSTRUCTOR
   if (row.NHits() == 0) {
-    return;
+    return -1e6f;
   }
 
-  const float zOffset = Merger->Param().par.earlyTpcTransform ? ((Merger->OutputTracks()[iTrack].CSide() ^ (slice >= 18)) ? -mTZOffset : mTZOffset) : Merger->GetConstantMem()->calibObjects.fastTransform->convVertexTimeToZOffset(slice, mTZOffset, Merger->Param().par.continuousMaxTimeBin);
+  const float zOffset = Merger->Param().par.earlyTpcTransform ? ((Merger->OutputTracks()[iTrack].CSide() ^ (slice >= 18)) ? -mTZOffset : mTZOffset) : Merger->GetConstantMem()->calibObjects.fastTransformHelper->getCorrMap()->convVertexTimeToZOffset(slice, mTZOffset, Merger->Param().par.continuousMaxTimeBin);
   const float y0 = row.Grid().YMin();
   const float stepY = row.HstepY();
   const float z0 = row.Grid().ZMin() - zOffset; // We can use our own ZOffset, since this is only used temporarily anyway
@@ -529,21 +584,25 @@ GPUd() void GPUTPCGMTrackParam::AttachClusters(const GPUTPCGMMerger* GPUrestrict
   int bin, ny, nz;
 
   float err2Y, err2Z;
-  Merger->Param().GetClusterErrors2(iRow, Z, mP[2], mP[3], err2Y, err2Z);
+  Merger->Param().GetClusterErrors2(slice, iRow, Z, mP[2], mP[3], -1.f, 0.f, 0.f, err2Y, err2Z);                                        // TODO: Use correct time/avgCharge
   const float sy2 = CAMath::Min(Merger->Param().rec.tpc.tubeMaxSize2, Merger->Param().rec.tpc.tubeChi2 * (err2Y + CAMath::Abs(mC[0]))); // Cov can be bogus when following circle
   const float sz2 = CAMath::Min(Merger->Param().rec.tpc.tubeMaxSize2, Merger->Param().rec.tpc.tubeChi2 * (err2Z + CAMath::Abs(mC[2]))); // In that case we should provide the track error externally
   const float tubeY = CAMath::Sqrt(sy2);
   const float tubeZ = CAMath::Sqrt(sz2);
   const float sy21 = 1.f / sy2;
   const float sz21 = 1.f / sz2;
-  float nY, nZ;
+  float uncorrectedY, uncorrectedZ;
   if (Merger->Param().par.earlyTpcTransform) {
-    nY = Y;
-    nZ = Z;
+    uncorrectedY = Y;
+    uncorrectedZ = Z;
   } else {
-    Merger->GetConstantMem()->calibObjects.fastTransform->InverseTransformYZtoNominalYZ(slice, iRow, Y, Z, nY, nZ);
+    Merger->GetConstantMem()->calibObjects.fastTransformHelper->InverseTransformYZtoNominalYZ(slice, iRow, Y, Z, uncorrectedY, uncorrectedZ);
   }
-  row.Grid().GetBinArea(nY, nZ + zOffset, tubeY, tubeZ, bin, ny, nz);
+
+  if (CAMath::Abs(uncorrectedY) > row.getTPCMaxY()) {
+    return uncorrectedY;
+  }
+  row.Grid().GetBinArea(uncorrectedY, uncorrectedZ + zOffset, tubeY, tubeZ, bin, ny, nz);
 
   const int nBinsY = row.Grid().Ny();
   const int idOffset = tracker.Data().ClusterIdOffset();
@@ -568,40 +627,50 @@ GPUd() void GPUTPCGMTrackParam::AttachClusters(const GPUTPCGMMerger* GPUrestrict
       const cahit2 hh = CA_TEXTURE_FETCH(cahit2, gAliTexRefu2, hits, ih);
       const float y = y0 + hh.x * stepY;
       const float z = z0 + hh.y * stepZ;
-      const float dy = y - nY;
-      const float dz = z - nZ;
+      const float dy = y - uncorrectedY;
+      const float dz = z - uncorrectedZ;
       if (dy * dy * sy21 + dz * dz * sz21 <= CAMath::Sqrt(2.f)) {
         // CADEBUG(printf("Found Y %f Z %f\n", y, z));
         CAMath::AtomicMax(weight, myWeight);
       }
     }
   }
+  return uncorrectedY;
 }
 
-GPUd() void GPUTPCGMTrackParam::AttachClustersPropagate(const GPUTPCGMMerger* GPUrestrict() Merger, int slice, int lastRow, int toRow, int iTrack, bool goodLeg, GPUTPCGMPropagator& GPUrestrict() prop, bool inFlyDirection, float maxSinPhi)
+GPUd() bool GPUTPCGMTrackParam::AttachClustersPropagate(const GPUTPCGMMerger* GPUrestrict() Merger, int slice, int lastRow, int toRow, int iTrack, bool goodLeg, GPUTPCGMPropagator& GPUrestrict() prop, bool inFlyDirection, float maxSinPhi, bool dodEdx)
 {
   if (Merger->Param().rec.tpc.disableRefitAttachment & 2) {
-    return;
+    return dodEdx;
   }
   if (CAMath::Abs(lastRow - toRow) < 2) {
-    return;
+    return dodEdx;
   }
   int step = toRow > lastRow ? 1 : -1;
   float xx = mX - Merger->Param().tpcGeometry.Row2X(lastRow);
   for (int iRow = lastRow + step; iRow != toRow; iRow += step) {
     if (CAMath::Abs(mP[2]) > maxSinPhi) {
-      return;
+      return dodEdx;
     }
-    if (CAMath::Abs(mX) > CAMath::Abs(mP[0]) * CAMath::Tan(kSectAngle / 2.f)) {
-      return;
+    if (CAMath::Abs(mP[0]) > CAMath::Abs(mX) * CAMath::Tan(kSectAngle / 2.f)) {
+      return dodEdx;
     }
     int err = prop.PropagateToXAlpha(xx + Merger->Param().tpcGeometry.Row2X(iRow), prop.GetAlpha(), inFlyDirection);
     if (err) {
-      return;
+      return dodEdx;
+    }
+    if (dodEdx && iRow + step == toRow) {
+      float yUncorrected, zUncorrected;
+      Merger->GetConstantMem()->calibObjects.fastTransformHelper->InverseTransformYZtoNominalYZ(slice, iRow, mP[0], mP[1], yUncorrected, zUncorrected);
+      unsigned int pad = CAMath::Float2UIntRn(Merger->Param().tpcGeometry.LinearY2Pad(slice, iRow, yUncorrected));
+      if (pad >= Merger->Param().tpcGeometry.NPads(iRow) || (Merger->GetConstantMem()->calibObjects.dEdxCalibContainer && Merger->GetConstantMem()->calibObjects.dEdxCalibContainer->isDead(slice, iRow, pad))) {
+        dodEdx = false;
+      }
     }
     CADEBUG(printf("Attaching in row %d\n", iRow));
     AttachClusters(Merger, slice, iRow, iTrack, goodLeg, prop);
   }
+  return dodEdx;
 }
 
 GPUd() bool GPUTPCGMTrackParam::FollowCircleChk(float lrFactor, float toY, float toX, bool up, bool right)
@@ -611,12 +680,25 @@ GPUd() bool GPUTPCGMTrackParam::FollowCircleChk(float lrFactor, float toY, float
          (up ? (-mP[0] * lrFactor > toX || (right ^ (mP[2] > 0))) : (-mP[0] * lrFactor < toX || (right ^ (mP[2] < 0)))); // don't overshoot in X
 }
 
+GPUdii() void GPUTPCGMTrackParam::StoreOuter(gputpcgmmergertypes::GPUTPCOuterParam* outerParam, const GPUTPCGMPropagator& prop, int phase)
+{
+  CADEBUG(printf("\t%21sStorO%d  Alpha %8.3f    , X %8.3f - Y %8.3f, Z %8.3f   -   QPt %7.2f (%7.2f), SP %5.2f (%5.2f)   ---   Cov sY %8.3f sZ %8.3f sSP %8.3f sPt %8.3f\n", "", phase, prop.GetAlpha(), mX, mP[0], mP[1], mP[4], prop.GetQPt0(), mP[2], prop.GetSinPhi0(), sqrtf(mC[0]), sqrtf(mC[2]), sqrtf(mC[5]), sqrtf(mC[14])));
+  for (int i = 0; i < 5; i++) {
+    outerParam->P[i] = mP[i];
+  }
+  for (int i = 0; i < 15; i++) {
+    outerParam->C[i] = mC[i];
+  }
+  outerParam->X = mX;
+  outerParam->alpha = prop.GetAlpha();
+}
+
 GPUdic(0, 1) void GPUTPCGMTrackParam::StoreAttachMirror(const GPUTPCGMMerger* GPUrestrict() Merger, int slice, int iRow, int iTrack, float toAlpha, float toY, float toX, int toSlice, int toRow, bool inFlyDirection, float alpha)
 {
   unsigned int nLoopData = CAMath::AtomicAdd(&Merger->Memory()->nLoopData, 1u);
   if (nLoopData >= Merger->NMaxTracks()) {
     Merger->raiseError(GPUErrors::ERROR_MERGER_LOOPER_OVERFLOW, nLoopData, Merger->NMaxTracks());
-    CAMath::AtomicExch(&Merger->Memory()->nLoopData, 0u);
+    CAMath::AtomicExch(&Merger->Memory()->nLoopData, Merger->NMaxTracks());
     return;
   }
   GPUTPCGMLoopData data;
@@ -661,7 +743,7 @@ GPUdic(0, 1) int GPUTPCGMTrackParam::FollowCircle(const GPUTPCGMMerger* GPUrestr
   if (Merger->Param().rec.tpc.disableRefitAttachment & 4) {
     return 1;
   }
-  if (Merger->Param().rec.tpc.loopInterpolationInExtraPass && phase2 == false) {
+  if (Merger->Param().rec.tpc.looperInterpolationInExtraPass && phase2 == false) {
     StoreAttachMirror(Merger, slice, iRow, iTrack, toAlpha, toY, toX, toSlice, toRow, inFlyDirection, prop.GetAlpha());
     return 1;
   }
@@ -685,20 +767,20 @@ GPUdic(0, 1) int GPUTPCGMTrackParam::FollowCircle(const GPUTPCGMMerger* GPUrestr
   if (prop.RotateToAlpha(prop.GetAlpha() + (CAMath::Pi() / 2.f) * lrFactor)) {
     return 1;
   }
-  CADEBUG(printf("Rotated: X %f Y %f Z %f SinPhi %f (Alpha %f / %f)\n", mP[0], mX, mP[1], mP[2], prop.GetAlpha(), prop.GetAlpha() + CAMath::Pi() / 2.f));
+  CADEBUG(printf("\tRotated: X %f Y %f Z %f SinPhi %f (Alpha %f / %f)\n", mP[0], mX, mP[1], mP[2], prop.GetAlpha(), prop.GetAlpha() + CAMath::Pi() / 2.f));
   while (slice != toSlice || FollowCircleChk(lrFactor, toY, toX, up, right)) {
     while ((slice != toSlice) ? (CAMath::Abs(mX) <= CAMath::Abs(mP[0]) * CAMath::Tan(kSectAngle / 2.f)) : FollowCircleChk(lrFactor, toY, toX, up, right)) {
       int err = prop.PropagateToXAlpha(mX + 1.f, prop.GetAlpha(), inFlyDirection);
       if (err) {
-        CADEBUG(printf("propagation error (%d)\n", err));
+        CADEBUG(printf("\t\tpropagation error (%d)\n", err));
         prop.RotateToAlpha(prop.GetAlpha() - (CAMath::Pi() / 2.f) * lrFactor);
         return 1;
       }
-      CADEBUG(printf("Propagated to y = %f: X %f Z %f SinPhi %f\n", mX, mP[0], mP[1], mP[2]));
+      CADEBUG(printf("\tPropagated to y = %f: X %f Z %f SinPhi %f\n", mX, mP[0], mP[1], mP[2]));
       for (int j = 0; j < GPUCA_ROW_COUNT; j++) {
         float rowX = Merger->Param().tpcGeometry.Row2X(j);
         if (CAMath::Abs(rowX - (-mP[0] * lrFactor)) < 1.5f) {
-          CADEBUG(printf("Attempt row %d (Y %f Z %f)\n", j, mX * lrFactor, mP[1]));
+          CADEBUG(printf("\t\tAttempt row %d (Y %f Z %f)\n", j, mX * lrFactor, mP[1]));
           AttachClusters(Merger, slice, j, iTrack, false, mX * lrFactor, mP[1]);
         }
       }
@@ -713,16 +795,16 @@ GPUdic(0, 1) int GPUTPCGMTrackParam::FollowCircle(const GPUTPCGMMerger* GPUrestr
           slice += 18;
         }
       }
-      CADEBUG(printf("Rotating to slice %d\n", slice));
+      CADEBUG(printf("\tRotating to slice %d\n", slice));
       if (prop.RotateToAlpha(param.Alpha(slice) + (CAMath::Pi() / 2.f) * lrFactor)) {
-        CADEBUG(printf("rotation error\n"));
+        CADEBUG(printf("\t\trotation error\n"));
         prop.RotateToAlpha(prop.GetAlpha() - (CAMath::Pi() / 2.f) * lrFactor);
         return 1;
       }
-      CADEBUG(printf("After Rotatin Alpha %f Position X %f Y %f Z %f SinPhi %f\n", prop.GetAlpha(), mP[0], mX, mP[1], mP[2]));
+      CADEBUG(printf("\tAfter Rotatin Alpha %f Position X %f Y %f Z %f SinPhi %f\n", prop.GetAlpha(), mP[0], mX, mP[1], mP[2]));
     }
   }
-  CADEBUG(printf("Rotating back\n"));
+  CADEBUG(printf("\tRotating back\n"));
   for (int i = 0; i < 2; i++) {
     if (prop.RotateToAlpha(prop.GetAlpha() + (CAMath::Pi() / 2.f) * lrFactor) == 0) {
       break;
@@ -731,11 +813,11 @@ GPUdic(0, 1) int GPUTPCGMTrackParam::FollowCircle(const GPUTPCGMMerger* GPUrestr
       CADEBUG(printf("Final rotation failed\n"));
       return 1;
     }
-    CADEBUG(printf("resetting physical model\n"));
+    CADEBUG(printf("\tresetting physical model\n"));
     prop.SetTrack(this, prop.GetAlpha());
   }
   prop.Rotate180();
-  CADEBUG(printf("Mirrored position: Alpha %f X %f Y %f Z %f SinPhi %f DzDs %f\n", prop.GetAlpha(), mX, mP[0], mP[1], mP[2], mP[3]));
+  CADEBUG(printf("\tMirrored position: Alpha %f X %f Y %f Z %f SinPhi %f DzDs %f\n", prop.GetAlpha(), mX, mP[0], mP[1], mP[2], mP[3]));
   iRow = toRow;
   float dx = toX - Merger->Param().tpcGeometry.Row2X(toRow);
   if (up ^ (toX > mX)) {
@@ -764,10 +846,11 @@ GPUdni() void GPUTPCGMTrackParam::AttachClustersMirror(const GPUTPCGMMerger* GPU
   if (Merger->Param().rec.tpc.disableRefitAttachment & 8) {
     return;
   }
-  if (Merger->Param().rec.tpc.loopInterpolationInExtraPass && phase2 == false) {
+  if (Merger->Param().rec.tpc.looperInterpolationInExtraPass && phase2 == false) {
     StoreAttachMirror(Merger, slice, iRow, iTrack, 0, toY, 0, -1, 0, 0, prop.GetAlpha());
     return;
   }
+  // Note that the coordinate system is rotated by 90 degree swapping X and Y!
   float X = mP[2] > 0 ? mP[0] : -mP[0];
   float toX = mP[2] > 0 ? toY : -toY;
   float Y = mP[2] > 0 ? -mX : mX;
@@ -781,7 +864,7 @@ GPUdni() void GPUTPCGMTrackParam::AttachClustersMirror(const GPUTPCGMMerger* GPU
   }
   float b = prop.GetBz(prop.GetAlpha(), mX, mP[0], mP[1]);
 
-  int count = CAMath::Abs((toX - X) / 0.5f) + 0.5f;
+  int count = CAMath::Float2IntRn(CAMath::Abs((toX - X) * 2.f));
   if (count == 0) {
     return;
   }
@@ -828,47 +911,84 @@ GPUdni() void GPUTPCGMTrackParam::AttachClustersMirror(const GPUTPCGMMerger* GPU
 GPUd() void GPUTPCGMTrackParam::ShiftZ2(const GPUTPCGMMergedTrackHit* clusters, GPUTPCGMMergedTrackHitXYZ* clustersXYZ, const GPUTPCGMMerger* merger, int N)
 {
   float tzInner, tzOuter;
+  float xInner, xOuter;
   if (N == 0) {
     N = 1;
   }
   if (merger->Param().par.earlyTpcTransform) {
     tzInner = clustersXYZ[N - 1].z;
     tzOuter = clustersXYZ[0].z;
+    xInner = clustersXYZ[N - 1].x;
+    xOuter = clustersXYZ[0].x;
   } else {
     const auto& GPUrestrict() cls = merger->GetConstantMem()->ioPtrs.clustersNative->clustersLinear;
     tzInner = cls[clusters[N - 1].num].getTime();
     tzOuter = cls[clusters[0].num].getTime();
+    xInner = merger->Param().tpcGeometry.Row2X(clusters[N - 1].row);
+    xOuter = merger->Param().tpcGeometry.Row2X(clusters[0].row);
   }
-  ShiftZ(merger, clusters[0].slice, tzInner, tzOuter);
+  ShiftZ(merger, clusters[0].slice, tzInner, tzOuter, xInner, xOuter);
 }
 
-GPUd() void GPUTPCGMTrackParam::ShiftZ(const GPUTPCGMMerger* GPUrestrict() merger, int slice, float tz1, float tz2)
+GPUd() void GPUTPCGMTrackParam::ShiftZ(const GPUTPCGMMerger* GPUrestrict() merger, int slice, float tz1, float tz2, float x1, float x2)
 {
   if (!merger->Param().par.continuousTracking) {
     return;
   }
-  const float cosPhi = CAMath::Abs(mP[2]) < 1.f ? CAMath::Sqrt(1 - mP[2] * mP[2]) : 0.f;
-  const float dxf = -CAMath::Abs(mP[2]);
-  const float dyf = cosPhi * (mP[2] > 0 ? 1.f : -1.f);
-  const float r1 = CAMath::Abs(mP[4] * merger->Param().polynomialField.GetNominalBz());
-  const float r = r1 > 0.0001 ? (1.f / r1) : 10000;
-  float xp = mX + dxf * r;
-  float yp = mP[0] + dyf * r;
-  // printf("X %f Y %f SinPhi %f QPt %f R %f --> XP %f YP %f\n", mX, mP[0], mP[2], mP[4], r, xp, yp);
-  const float r2 = (r + CAMath::Sqrt(xp * xp + yp * yp)) / 2.f; // Improve the radius by taking into acount both points we know (00 and xy).
-  xp = mX + dxf * r2;
-  yp = mP[0] + dyf * r2;
-  // printf("X %f Y %f SinPhi %f QPt %f R %f --> XP %f YP %f\n", mX, mP[0], mP[2], mP[4], r2, xp, yp);
-  float atana = CAMath::ATan2(CAMath::Abs(xp), CAMath::Abs(yp));
-  float atanb = CAMath::ATan2(CAMath::Abs(mX - xp), CAMath::Abs(mP[0] - yp));
-  // printf("Tan %f %f (%f %f)\n", atana, atanb, mX - xp, mP[0] - yp);
-  const float dS = (xp > 0 ? (atana + atanb) : (atanb - atana)) * r;
-  float z0 = dS * mP[3];
-  // printf("Track Z %f (Offset %f), z0 %f, V %f (dS %f, dZds %f, qPt %f)             - TZ span %f to %f: diff %f\n", mP[1], mTZOffset, z0, mP[1] - z0, dS, mP[3], mP[4], tz2, tz1, tz2 - tz1);
-  if (CAMath::Abs(z0) > 250.f) {
-    z0 = z0 > 0 ? 250.f : -250.f;
+  const float r1 = CAMath::Max(0.0001f, CAMath::Abs(mP[4] * merger->Param().polynomialField.GetNominalBz()));
+
+  const float dist2 = mX * mX + mP[0] * mP[0];
+  const float dist1r2 = dist2 * r1 * r1;
+  float deltaZ = 0.f;
+  bool beamlineReached = false;
+  if (dist1r2 < 4) {
+    const float alpha = CAMath::ACos(1 - 0.5f * dist1r2); // Angle of a circle, such that |(cosa, sina) - (1,0)| == dist
+    const float beta = CAMath::ATan2(mP[0], mX);
+    const int comp = mP[2] > CAMath::Sin(beta);
+    const float sinab = CAMath::Sin((comp ? 0.5f : -0.5f) * alpha + beta); // Angle of circle through origin and track position, to be compared to Snp
+    const float res = CAMath::Abs(sinab - mP[2]);
+
+    if (res < 0.2) {
+      const float r = 1.f / r1;
+      const float dS = alpha * r;
+      float z0 = dS * mP[3];
+      if (CAMath::Abs(z0) > GPUTPCGeometry::TPCLength()) {
+        z0 = z0 > 0 ? GPUTPCGeometry::TPCLength() : -GPUTPCGeometry::TPCLength();
+      }
+      deltaZ = mP[1] - z0;
+      beamlineReached = true;
+
+      // printf("X %9.3f Y %9.3f QPt %9.3f R %9.3f --> Alpha %9.3f Snp %9.3f Snab %9.3f Res %9.3f dS %9.3f z0 %9.3f\n", mX, mP[0], mP[4], r, alpha / 3.1415 * 180, mP[2], sinab, res, dS, z0);
+    }
   }
-  float deltaZ = mP[1] - z0;
+
+  if (!beamlineReached) {
+    if (merger->Param().par.earlyTpcTransform) {
+      float basez, basex;
+      if (CAMath::Abs(tz1) < CAMath::Abs(tz2)) {
+        basez = tz1;
+        basex = x1;
+      } else {
+        basez = tz2;
+        basex = x2;
+      }
+      float refZ = ((basez > 0) ? merger->Param().rec.tpc.defaultZOffsetOverR : -merger->Param().rec.tpc.defaultZOffsetOverR) * basex;
+      deltaZ = basez - refZ - mTZOffset;
+    } else {
+      float baset, basex;
+      if (CAMath::Abs(tz1) > CAMath::Abs(tz2)) {
+        baset = tz1;
+        basex = x1;
+      } else {
+        baset = tz2;
+        basex = x2;
+      }
+      float refZ = ((slice < GPUCA_NSLICES / 2) ? merger->Param().rec.tpc.defaultZOffsetOverR : -merger->Param().rec.tpc.defaultZOffsetOverR) * basex;
+      float basez;
+      merger->GetConstantMem()->calibObjects.fastTransformHelper->getCorrMap()->TransformIdealZ(slice, baset, basez, mTZOffset);
+      deltaZ = basez - refZ;
+    }
+  }
   if (merger->Param().par.earlyTpcTransform) {
     mTZOffset += deltaZ;
     mP[1] -= deltaZ;
@@ -876,36 +996,36 @@ GPUd() void GPUTPCGMTrackParam::ShiftZ(const GPUTPCGMMerger* GPUrestrict() merge
     float zMax = CAMath::Max(tz1, tz2);
     float zMin = CAMath::Min(tz1, tz2);
     // printf("Z Check: Clusters %f %f, min %f max %f vtx %f\n", tz1, tz2, zMin, zMax, mTZOffset);
-    if (zMin < 0 && zMin - mTZOffset < -250) {
-      deltaZ = zMin - mTZOffset + 250;
-    } else if (zMax > 0 && zMax - mTZOffset > 250) {
-      deltaZ = zMax - mTZOffset - 250;
+    if (zMin < 0 && zMin - mTZOffset < -GPUTPCGeometry::TPCLength()) {
+      deltaZ = zMin - mTZOffset + GPUTPCGeometry::TPCLength();
+    } else if (zMax > 0 && zMax - mTZOffset > GPUTPCGeometry::TPCLength()) {
+      deltaZ = zMax - mTZOffset - GPUTPCGeometry::TPCLength();
     }
-    if (zMin < 0 && zMax - mTZOffset > 0) {
+    if (zMin < 0 && zMax - (mTZOffset + deltaZ) > 0) {
       deltaZ = zMax - mTZOffset;
-    } else if (zMax > 0 && zMin - mTZOffset < 0) {
+    } else if (zMax > 0 && zMin - (mTZOffset + deltaZ) < 0) {
       deltaZ = zMin - mTZOffset;
     }
     // if (deltaZ != 0) printf("Moving clusters to TPC Range: Shift %f in Z: %f to %f --> %f to %f in Z\n", deltaZ, tz2 - mTZOffset, tz1 - mTZOffset, tz2 - mTZOffset - deltaZ, tz1 - mTZOffset - deltaZ);
     mTZOffset += deltaZ;
     mP[1] -= deltaZ;
   } else {
-    float deltaT = merger->GetConstantMem()->calibObjects.fastTransform->convDeltaZtoDeltaTimeInTimeFrame(slice, deltaZ);
+    float deltaT = merger->GetConstantMem()->calibObjects.fastTransformHelper->getCorrMap()->convDeltaZtoDeltaTimeInTimeFrame(slice, deltaZ);
     mTZOffset += deltaT;
     mP[1] -= deltaZ;
     const float maxT = CAMath::Min(tz1, tz2);
-    const float minT = CAMath::Max(tz1, tz2) - merger->GetConstantMem()->calibObjects.fastTransform->getMaxDriftTime(slice);
+    const float minT = CAMath::Max(tz1, tz2) - merger->GetConstantMem()->calibObjects.fastTransformHelper->getCorrMap()->getMaxDriftTime(slice);
     // printf("T Check: Clusters %f %f, min %f max %f vtx %f\n", tz1, tz2, minT, maxT, mTZOffset);
     deltaT = 0.f;
     if (mTZOffset < minT) {
       deltaT = minT - mTZOffset;
     }
-    if (mTZOffset > maxT) {
+    if (mTZOffset + deltaT > maxT) {
       deltaT = maxT - mTZOffset;
     }
     if (deltaT != 0.f) {
-      deltaZ = merger->GetConstantMem()->calibObjects.fastTransform->convDeltaTimeToDeltaZinTimeFrame(slice, deltaT);
-      // printf("Moving clusters to TPC Range: Shift %f in Z: %f to %f --> %f to %f in T\n", deltaZ, tz2 - mTZOffset, tz1 - mTZOffset, tz2 - mTZOffset - deltaT, tz1 - mTZOffset - deltaT);
+      deltaZ = merger->GetConstantMem()->calibObjects.fastTransformHelper->getCorrMap()->convDeltaTimeToDeltaZinTimeFrame(slice, deltaT);
+      // printf("Moving clusters to TPC Range: QPt %f, New mTZOffset %f, t1 %f, t2 %f, Shift %f in Z: %f to %f --> %f to %f in T\n", mP[4], mTZOffset + deltaT, tz1, tz2, deltaZ, tz2 - mTZOffset, tz1 - mTZOffset, tz2 - mTZOffset - deltaT, tz1 - mTZOffset - deltaT);
       mTZOffset += deltaT;
       mP[1] -= deltaZ;
     }
@@ -925,8 +1045,7 @@ GPUd() bool GPUTPCGMTrackParam::CheckNumericalQuality(float overrideCovYY) const
 {
   //* Check that the track parameters and covariance matrix are reasonable
   bool ok = CAMath::Finite(mX) && CAMath::Finite(mChi2);
-  CADEBUG(
-    printf("OK %d - %f - ", (int)ok, mX); for (int i = 0; i < 5; i++) { printf("%f ", mP[i]); } printf(" - "); for (int i = 0; i < 15; i++) { printf("%f ", mC[i]); } printf("\n"));
+  CADEBUG(printf("OK %d - %f - ", (int)ok, mX); for (int i = 0; i < 5; i++) { printf("%f ", mP[i]); } printf(" - "); for (int i = 0; i < 15; i++) { printf("%f ", mC[i]); } printf("\n"));
   const float* c = mC;
   for (int i = 0; i < 15; i++) {
     ok = ok && CAMath::Finite(c[i]);
@@ -1062,13 +1181,14 @@ GPUd() void GPUTPCGMTrackParam::RefitTrack(GPUTPCGMMergedTrack& GPUrestrict() tr
       zz = merger->ClustersXYZ()[ind].z - track.Param().GetTZOffset();
     } else {
       const ClusterNative& GPUrestrict() cl = merger->GetConstantMem()->ioPtrs.clustersNative->clustersLinear[merger->Clusters()[ind].num];
-      merger->GetConstantMem()->calibObjects.fastTransform->Transform(merger->Clusters()[ind].slice, merger->Clusters()[ind].row, cl.getPad(), cl.getTime(), xx, yy, zz, track.Param().GetTZOffset());
+      merger->GetConstantMem()->calibObjects.fastTransformHelper->Transform(merger->Clusters()[ind].slice, merger->Clusters()[ind].row, cl.getPad(), cl.getTime(), xx, yy, zz, track.Param().GetTZOffset());
     }
     float sinA, cosA;
     CAMath::SinCos(alphaa - track.Alpha(), sinA, cosA);
     track.SetLastX(xx * cosA - yy * sinA);
     track.SetLastY(xx * sinA + yy * cosA);
     track.SetLastZ(zz);
+    // merger->DebugRefitMergedTrack(track);
   }
 }
 
@@ -1084,7 +1204,7 @@ GPUd() void GPUTPCGMTrackParam::Rotate(float alpha)
   float j2 = cosPhi / cosPhi0;
   mX = x0 * cA + mP[0] * sA;
   mP[0] = -x0 * sA + mP[0] * cA;
-  mP[2] = sinPhi + j2;
+  mP[2] = sinPhi;
   mC[0] *= j0 * j0;
   mC[1] *= j0;
   mC[3] *= j0;
@@ -1106,5 +1226,26 @@ GPUd() void GPUTPCGMTrackParam::Rotate(float alpha)
     mC[7] = -mC[7];
     mC[10] = -mC[10];
     mC[11] = -mC[11];
+  }
+}
+
+GPUd() void GPUTPCGMTrackParam::AddCovDiagErrors(const float* GPUrestrict() errors2)
+{
+  mC[0] += errors2[0];
+  mC[2] += errors2[1];
+  mC[5] += errors2[2];
+  mC[9] += errors2[3];
+  mC[14] += errors2[4];
+}
+
+GPUd() void GPUTPCGMTrackParam::AddCovDiagErrorsWithCorrelations(const float* GPUrestrict() errors2)
+{
+  const int diagMap[5] = {0, 2, 5, 9, 14};
+  const float oldDiag[5] = {mC[0], mC[2], mC[5], mC[9], mC[14]};
+  for (int i = 0; i < 5; i++) {
+    mC[diagMap[i]] += errors2[i];
+    for (int j = 0; j < i; j++) {
+      mC[diagMap[i - 1] + j + 1] *= gpu::CAMath::Sqrt(mC[diagMap[i]] * mC[diagMap[j]] / (oldDiag[i] * oldDiag[j]));
+    }
   }
 }

@@ -41,16 +41,9 @@ GPUdii() void GPUTPCTrackletSelector::Thread<0>(int nBlocks, int nThreads, int i
   GPUTPCHitId trackHits[GPUCA_ROW_COUNT - GPUCA_TRACKLET_SELECTOR_HITS_REG_SIZE];
 
   for (int itr = s.mItr0 + iThread; itr < s.mNTracklets; itr += s.mNThreadsTotal) {
-    while (tracker.Tracklets()[itr].NHits() == 0) {
-      itr += s.mNThreadsTotal;
-      if (itr >= s.mNTracklets) {
-        return;
-      }
-    }
     GPUbarrierWarp();
 
     GPUglobalref() MEM_GLOBAL(GPUTPCTracklet) & GPUrestrict() tracklet = tracker.Tracklets()[itr];
-    const int kMaxRowGap = 4;
     const float kMaxShared = .1f;
 
     int firstRow = tracklet.FirstRow();
@@ -63,13 +56,15 @@ GPUdii() void GPUTPCTrackletSelector::Thread<0>(int nBlocks, int nThreads, int i
     int gap = 0;
     int nShared = 0;
     int nHits = 0;
-    const int minHits = tracker.Param().rec.tpc.minNTrackClusters == -1 ? GPUCA_TRACKLET_SELECTOR_MIN_HITS_B5(tracklet.Param().QPt() * tracker.Param().par.qptB5Scaler) : tracker.Param().rec.tpc.minNTrackClusters;
+    const int minHits = tracker.Param().rec.tpc.minNClustersTrackSeed == -1 ? GPUCA_TRACKLET_SELECTOR_MIN_HITS_B5(tracklet.Param().QPt() * tracker.Param().qptB5Scaler) : tracker.Param().rec.tpc.minNClustersTrackSeed;
 
     GPUCA_UNROLL(, U(1))
     for (irow = firstRow; irow <= lastRow && lastRow - irow + nHits >= minHits; irow++) {
-      gap++;
       calink ih = tracker.TrackletRowHits()[tracklet.FirstHit() + (irow - firstRow)];
-      if (ih != CALINK_INVAL) {
+      if (ih != CALINK_DEAD_CHANNEL) {
+        gap++;
+      }
+      if (ih != CALINK_INVAL && ih != CALINK_DEAD_CHANNEL) {
         GPUglobalref() const MEM_GLOBAL(GPUTPCRow)& row = tracker.Row(irow);
         bool own = (tracker.HitWeight(row, ih) <= w);
         bool sharedOK = ((nShared < nHits * kMaxShared));
@@ -90,20 +85,18 @@ GPUdii() void GPUTPCTrackletSelector::Thread<0>(int nBlocks, int nThreads, int i
         }
       }
 
-      if (gap > kMaxRowGap || irow == lastRow) { // store
+      if (gap > tracker.Param().rec.tpc.trackFollowingMaxRowGap || irow == lastRow) { // store
         if (nHits >= minHits) {
-          unsigned int itrout = CAMath::AtomicAdd(tracker.NTracks(), 1u);
           unsigned int nFirstTrackHit = CAMath::AtomicAdd(tracker.NTrackHits(), (unsigned int)nHits);
-          if (itrout >= tracker.NMaxTracks() || nFirstTrackHit + nHits > tracker.NMaxTrackHits()) {
-            if (itrout >= tracker.NMaxTracks()) {
-              tracker.raiseError(GPUErrors::ERROR_TRACK_OVERFLOW, tracker.ISlice(), itrout, tracker.NMaxTracks());
-            } else {
-              tracker.raiseError(GPUErrors::ERROR_TRACK_HIT_OVERFLOW, tracker.ISlice(), nFirstTrackHit + nHits, tracker.NMaxTrackHits());
-            }
-            CAMath::AtomicExch(tracker.NTracks(), 0u);
-            if (nFirstTrackHit + nHits > tracker.NMaxTrackHits()) {
-              CAMath::AtomicExch(tracker.NTrackHits(), tracker.NMaxTrackHits());
-            }
+          if (nFirstTrackHit + nHits > tracker.NMaxTrackHits()) {
+            tracker.raiseError(GPUErrors::ERROR_TRACK_HIT_OVERFLOW, tracker.ISlice(), nFirstTrackHit + nHits, tracker.NMaxTrackHits());
+            CAMath::AtomicExch(tracker.NTrackHits(), tracker.NMaxTrackHits());
+            return;
+          }
+          unsigned int itrout = CAMath::AtomicAdd(tracker.NTracks(), 1u);
+          if (itrout >= tracker.NMaxTracks()) {
+            tracker.raiseError(GPUErrors::ERROR_TRACK_OVERFLOW, tracker.ISlice(), itrout, tracker.NMaxTracks());
+            CAMath::AtomicExch(tracker.NTracks(), tracker.NMaxTracks());
             return;
           }
           tracker.Tracks()[itrout].SetLocalTrackId(itrout);

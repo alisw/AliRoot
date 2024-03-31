@@ -378,7 +378,7 @@ int GPUTPCTrackerComponent::ConfigureSlices()
   GPUSettingsGRP grp;
   GPUSettingsProcessing devProc;
 
-  grp.solenoidBz = fSolenoidBz;
+  grp.solenoidBzNominalGPU = fSolenoidBz;
   grp.continuousMaxTimeBin = 0; // triggered events
   if (mNeighboursSearchArea > 0) {
     rec.tpc.neighboursSearchArea = mNeighboursSearchArea;
@@ -389,7 +389,7 @@ int GPUTPCTrackerComponent::ConfigureSlices()
   if (fClusterErrorCorrectionZ > 1.e-4) {
     rec.tpc.clusterError2CorrectionZ = fClusterErrorCorrectionZ * fClusterErrorCorrectionZ;
   }
-  rec.tpc.minNTrackClusters = fMinNTrackClusters;
+  rec.tpc.minNClustersTrackSeed = fMinNTrackClusters;
   rec.SetMinTrackPtB5(fMinTrackPt * fabsf(fSolenoidBz / 5));
   rec.tpc.searchWindowDZDR = fSearchWindowDZDR;
   devProc.nDeviceHelperThreads = fGPUHelperThreads;

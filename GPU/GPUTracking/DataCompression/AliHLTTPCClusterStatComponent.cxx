@@ -177,12 +177,12 @@ void AliHLTTPCClusterStatComponent::TransformReverse(int slice, int row, float y
     padWidth = param->GetPadPitchWidth(sector);
   }
 
-  padtime[0] = y * sign / padWidth + 0.5 * maxPad;
+  padtime[0] = y * sign / padWidth + 0.5f * maxPad;
 
   float xyzGlobal[2] = {param->GetPadRowRadii(sector, sectorrow), y};
   AliHLTTPCGeometry::Local2Global(xyzGlobal, slice);
 
-  float time = z * sign * 1024.f / 250.f;
+  float time = z * sign * 1024.f / GPUTPCGeometry::TPCLength();
   padtime[1] = (1024.f - time);
 }
 
@@ -214,12 +214,12 @@ void AliHLTTPCClusterStatComponent::TransformForward(int slice, int row, float p
   }
 
   xyz[0] = param->GetPadRowRadii(sector, sectorrow);
-  xyz[1] = (pad - 0.5 * maxPad) * padWidth * sign;
+  xyz[1] = (pad - 0.5f * maxPad) * padWidth * sign;
 
   float xyzGlobal[2] = {xyz[0], xyz[1]};
   AliHLTTPCGeometry::Local2Global(xyzGlobal, slice);
 
-  xyz[2] = sign * (1024 - time) * 250.f / 1024.f;
+  xyz[2] = sign * (1024 - time) * GPUTPCGeometry::TPCLength() / 1024.f;
 }
 
 static bool AliHLTTPCClusterStat_sorthelper(const AliHLTTPCRawCluster& a, const AliHLTTPCRawCluster& b)
@@ -369,8 +369,8 @@ int AliHLTTPCClusterStatComponent::DoEvent(const AliHLTComponentEventData& evtDa
 
         int padrow = AliHLTTPCGeometry::GetFirstRow(patch) + cluster.GetPadRow();
         float x = AliHLTTPCGeometry::Row2X(padrow);
-        float y = 0.0;
-        float z = 0.0;
+        float y = 0.0f;
+        float z = 0.0f;
 
         float xyz[3];
         if (1) // Use forward (exact reverse-reverse) transformation of raw cluster (track fit in distorted coordinates)
@@ -472,7 +472,7 @@ int AliHLTTPCClusterStatComponent::DoEvent(const AliHLTComponentEventData& evtDa
 
         if (ip != 0) {
           int rowType = padrow < 64 ? 0 : (padrow < 128 ? 2 : 1);
-          prop.Update(xyz[1], xyz[2], rowType, *mSliceParam, 0, 0, nullptr, false);
+          prop.Update(xyz[1], xyz[2], rowType, *mSliceParam, 0, 0, nullptr, false, slice > 18, -1.f, 0.f, 0.f);
         }
       }
       if (hitsUsed) {

@@ -14,7 +14,7 @@
 //* provided "as is" without express or implied warranty.                  *\
 //**************************************************************************
 
-/// \file GPUReconstructionCUDIncludes.h
+/// \file GPUReconstructionCUDAIncludes.h
 /// \author David Rohr
 
 #ifndef O2_GPU_GPURECONSTRUCTIONCUDAINCLUDES_H

@@ -20,7 +20,7 @@
 #ifndef GPUERRORS_H
 #define GPUERRORS_H
 
-#include "GPUDef.h"
+#include "GPUCommonDef.h"
 
 namespace GPUCA_NAMESPACE
 {
@@ -31,7 +31,7 @@ class GPUErrors
 {
  public:
   enum errorNumbers {
-#define GPUCA_ERROR_CODE(num, name) name = num,
+#define GPUCA_ERROR_CODE(num, name, ...) name = num,
 #include "GPUErrorCodes.h"
 #undef GPUCA_ERROR_CODE
   };
@@ -41,6 +41,8 @@ class GPUErrors
   void setMemory(GPUglobalref() unsigned int* m) { mErrors = m; }
   void clear();
   void printErrors(bool silent = false);
+  unsigned int getNErrors() const;
+  const unsigned int* getErrorPtr() const;
   static unsigned int getMaxErrors();
 
  private:

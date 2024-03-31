@@ -18,23 +18,29 @@
 #include "Framework/DispatchPolicy.h"
 #include "Framework/ConcreteDataMatcher.h"
 #include "TPCReaderWorkflow/TPCSectorCompletionPolicy.h"
+#include "Framework/CustomWorkflowTerminationHook.h"
 #include "GPUWorkflow/GPUWorkflowSpec.h"
 #include "CommonUtils/ConfigurableParam.h"
 #include "DetectorsRaw/HBFUtilsInitializer.h"
+#include "DetectorsBase/GRPGeomHelper.h"
 #include "Framework/CallbacksPolicy.h"
 #include "TPCBase/Sector.h"
 #include "Algorithm/RangeTokenizer.h"
 #include "GlobalTrackingWorkflowHelpers/InputHelper.h"
 #include "ReconstructionDataFormats/GlobalTrackID.h"
+#include "TPCCalibration/CorrectionMapsLoader.h"
 
 #include <unordered_map>
 #include <numeric>
 
 using namespace o2::framework;
 using namespace o2::dataformats;
+using namespace o2::gpu;
 using CompletionPolicyData = std::vector<InputSpec>;
-CompletionPolicyData gPolicyData;
+static CompletionPolicyData gPolicyData;
 static constexpr unsigned long gTpcSectorMask = 0xFFFFFFFFF;
+static std::function<bool(o2::framework::DataProcessingHeader::StartTime)>* gPolicyOrderCheck;
+static std::shared_ptr<GPURecoWorkflowSpec> gTask;
 
 void customize(std::vector<o2::framework::CallbacksPolicy>& policies)
 {
@@ -45,13 +51,18 @@ void customize(std::vector<ConfigParamSpec>& workflowOptions)
 {
 
   std::vector<ConfigParamSpec> options{
-    {"input-type", VariantType::String, "digits", {"digitizer, digits, zsraw, zsonthefly, clustersnative, compressed-clusters-root, compressed-clusters-ctf, trd-tracklets"}},
-    {"output-type", VariantType::String, "tracks", {"clustersnative, tracks, compressed-clusters-ctf, qa, no-shared-cluster-map, send-clusters-per-sector, trd-tracks"}},
+    {"input-type", VariantType::String, "digits", {"digitizer, digits, zsraw, zsonthefly, clustersnative, compressed-clusters-root, compressed-clusters-ctf, trd-tracklets, its-clusters"}},
+    {"output-type", VariantType::String, "tracks", {"clustersnative, tracks, compressed-clusters-ctf, qa, no-shared-cluster-map, send-clusters-per-sector, trd-tracks, error-qa, tpc-triggers, its-tracks"}},
+    {"corrmap-lumi-mode", VariantType::Int, 0, {"scaling mode: (default) 0 = static + scale * full; 1 = full + scale * derivative"}},
     {"disable-root-input", VariantType::Bool, true, {"disable root-files input reader"}},
     {"disable-mc", VariantType::Bool, false, {"disable sending of MC information"}},
     {"ignore-dist-stf", VariantType::Bool, false, {"do not subscribe to FLP/DISTSUBTIMEFRAME/0 message (no lost TF recovery)"}},
     {"configKeyValues", VariantType::String, "", {"Semicolon separated key=value strings (e.g.: 'TPCHwClusterer.peakChargeThreshold=4;...')"}},
-    {"configFile", VariantType::String, "", {"configuration file for configurable parameters"}}};
+    {"configFile", VariantType::String, "", {"configuration file for configurable parameters"}},
+    {"enableDoublePipeline", VariantType::Bool, false, {"enable GPU double pipeline mode"}},
+    {"tpc-deadMap-sources", VariantType::Int, -1, {"Sources to consider for TPC dead channel map creation; -1=all, 0=deactivated"}},
+  };
+  o2::tpc::CorrectionMapsLoader::addGlobalOptions(options);
   o2::raw::HBFUtilsInitializer::addConfigOption(options);
   std::swap(workflowOptions, options);
 }
@@ -65,7 +76,16 @@ void customize(std::vector<DispatchPolicy>& policies)
 
 void customize(std::vector<CompletionPolicy>& policies)
 {
-  policies.push_back(o2::tpc::TPCSectorCompletionPolicy("gpu-reconstruction.*", o2::tpc::TPCSectorCompletionPolicy::Config::RequireAll, &gPolicyData, &gTpcSectorMask)());
+  policies.push_back(o2::tpc::TPCSectorCompletionPolicy("gpu-reconstruction.*", o2::tpc::TPCSectorCompletionPolicy::Config::RequireAll, &gPolicyData, &gTpcSectorMask, &gPolicyOrderCheck)());
+}
+
+void customize(o2::framework::OnWorkflowTerminationHook& hook)
+{
+  hook = [](const char* idstring) {
+    if (gTask) {
+      gTask->deinitialize();
+    }
+  };
 }
 
 #include "Framework/runDataProcessing.h" // the main driver
@@ -80,10 +100,14 @@ enum struct ioType { Digits,
                      CompClustCTF,
                      Tracks,
                      QA,
+                     ErrorQA,
                      TRDTracklets,
                      TRDTracks,
                      NoSharedMap,
-                     SendClustersPerSector };
+                     SendClustersPerSector,
+                     ITSClusters,
+                     ITSTracks,
+                     TPCTriggers };
 
 static const std::unordered_map<std::string, ioType> InputMap{
   {"digits", ioType::Digits},
@@ -92,16 +116,20 @@ static const std::unordered_map<std::string, ioType> InputMap{
   {"zsonthefly", ioType::ZSRawOTF},
   {"compressed-clusters-root", ioType::CompClustROOT},
   {"compressed-clusters-ctf", ioType::CompClustCTF},
-  {"trd-tracklets", ioType::TRDTracklets}};
+  {"trd-tracklets", ioType::TRDTracklets},
+  {"its-clusters", ioType::ITSClusters}};
 
 static const std::unordered_map<std::string, ioType> OutputMap{
   {"clusters", ioType::Clusters},
   {"tracks", ioType::Tracks},
   {"compressed-clusters-ctf", ioType::CompClustCTF},
   {"qa", ioType::QA},
+  {"error-qa", ioType::ErrorQA},
   {"no-shared-cluster-map", ioType::NoSharedMap},
   {"send-clusters-per-sector", ioType::SendClustersPerSector},
-  {"trd-tracks", ioType::TRDTracks}};
+  {"trd-tracks", ioType::TRDTracks},
+  {"its-tracks", ioType::ITSTracks},
+  {"tpc-triggers", ioType::TPCTriggers}};
 
 WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
 {
@@ -111,7 +139,7 @@ WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
 
   auto inputType = cfgc.options().get<std::string>("input-type");
   bool doMC = !cfgc.options().get<bool>("disable-mc");
-
+  auto sclOpt = o2::tpc::CorrectionMapsLoader::parseGlobalOptions(cfgc.options());
   o2::conf::ConfigurableParam::updateFromFile(cfgc.options().get<std::string>("configFile"));
   o2::conf::ConfigurableParam::updateFromString(cfgc.options().get<std::string>("configKeyValues"));
   o2::conf::ConfigurableParam::writeINI("o2gpurecoworkflow_configuration.ini");
@@ -128,7 +156,12 @@ WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
     return std::find(list.begin(), list.end(), type) != list.end();
   };
 
-  o2::gpu::gpuworkflow::Config cfg;
+  GPURecoWorkflowSpec::Config cfg;
+  cfg.runTPCTracking = true;
+  cfg.lumiScaleType = sclOpt.lumiType;
+  cfg.lumiScaleMode = sclOpt.lumiMode;
+  cfg.enableMShape = sclOpt.enableMShapeCorrection;
+  cfg.enableCTPLumi = sclOpt.requestCTPLumi;
   cfg.decompressTPC = isEnabled(inputTypes, ioType::CompClustCTF);
   cfg.decompressTPCFromROOT = isEnabled(inputTypes, ioType::CompClustROOT);
   cfg.zsDecoder = isEnabled(inputTypes, ioType::ZSRaw);
@@ -139,13 +172,47 @@ WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
   cfg.outputCompClustersFlat = isEnabled(outputTypes, ioType::CompClustCTF);
   cfg.outputCAClusters = isEnabled(outputTypes, ioType::Clusters);
   cfg.outputQA = isEnabled(outputTypes, ioType::QA);
+  cfg.outputErrorQA = isEnabled(outputTypes, ioType::ErrorQA);
   cfg.outputSharedClusterMap = (cfg.outputCAClusters || cfg.caClusterer || isEnabled(inputTypes, ioType::Clusters)) && cfg.outputTracks && !isEnabled(outputTypes, ioType::NoSharedMap);
   cfg.processMC = doMC;
   cfg.sendClustersPerSector = isEnabled(outputTypes, ioType::SendClustersPerSector);
   cfg.askDISTSTF = !cfgc.options().get<bool>("ignore-dist-stf");
   cfg.readTRDtracklets = isEnabled(inputTypes, ioType::TRDTracklets);
   cfg.runTRDTracking = isEnabled(outputTypes, ioType::TRDTracks);
-  specs.emplace_back(o2::gpu::getGPURecoWorkflowSpec(&gPolicyData, cfg, tpcSectors, gTpcSectorMask, "gpu-reconstruction"));
+  cfg.tpcTriggerHandling = isEnabled(outputTypes, ioType::TPCTriggers) || cfg.caClusterer;
+  cfg.enableDoublePipeline = cfgc.options().get<bool>("enableDoublePipeline");
+  cfg.tpcDeadMapSources = cfgc.options().get<int>("tpc-deadMap-sources");
+  cfg.runITSTracking = isEnabled(outputTypes, ioType::ITSTracks);
+
+  Inputs ggInputs;
+  auto ggRequest = std::make_shared<o2::base::GRPGeomRequest>(false, true, false, true, true, o2::base::GRPGeomRequest::Aligned, ggInputs, true);
+
+  auto task = std::make_shared<GPURecoWorkflowSpec>(&gPolicyData, cfg, tpcSectors, gTpcSectorMask, ggRequest, &gPolicyOrderCheck);
+  Inputs taskInputs = task->inputs();
+  std::move(ggInputs.begin(), ggInputs.end(), std::back_inserter(taskInputs));
+  gTask = task;
+
+  specs.emplace_back(DataProcessorSpec{
+    "gpu-reconstruction",
+    taskInputs,
+    task->outputs(),
+    AlgorithmSpec{adoptTask<GPURecoWorkflowSpec>(task)},
+    task->options()});
+
+  if (cfg.enableDoublePipeline) {
+    cfg.enableDoublePipeline = 2;
+    Inputs ggInputsPrepare;
+    auto ggRequestPrepare = std::make_shared<o2::base::GRPGeomRequest>(false, true, false, false, false, o2::base::GRPGeomRequest::None, ggInputsPrepare, true);
+    auto taskPrepare = std::make_shared<GPURecoWorkflowSpec>(&gPolicyData, cfg, tpcSectors, gTpcSectorMask, ggRequestPrepare);
+    Inputs taskInputsPrepare = taskPrepare->inputs();
+    std::move(ggInputsPrepare.begin(), ggInputsPrepare.end(), std::back_inserter(taskInputsPrepare));
+    specs.emplace_back(DataProcessorSpec{
+      "gpu-reconstruction-prepare",
+      taskInputsPrepare,
+      taskPrepare->outputs(),
+      AlgorithmSpec{adoptTask<GPURecoWorkflowSpec>(taskPrepare)},
+      taskPrepare->options()});
+  }
 
   if (!cfgc.options().get<bool>("ignore-dist-stf")) {
     GlobalTrackID::mask_t srcTrk = GlobalTrackID::getSourcesMask("none");
@@ -153,7 +220,7 @@ WorkflowSpec defineDataProcessing(ConfigContext const& cfgc)
     o2::globaltracking::InputHelper::addInputSpecs(cfgc, specs, srcCl, srcTrk, srcTrk, doMC);
   }
 
-  // configure dpl timer to inject correct firstTFOrbit: start from the 1st orbit of TF containing 1st sampled orbit
+  // configure dpl timer to inject correct firstTForbit: start from the 1st orbit of TF containing 1st sampled orbit
   o2::raw::HBFUtilsInitializer hbfIni(cfgc, specs);
 
   return specs;

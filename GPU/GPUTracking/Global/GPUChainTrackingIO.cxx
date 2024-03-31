@@ -37,6 +37,8 @@
 #include "GPUReconstructionConvert.h"
 #include "GPUMemorySizeScalers.h"
 #include "GPUTrackingInputProvider.h"
+#include "TPCZSLinkMapping.h"
+#include "GPUTriggerOutputs.h"
 
 #ifdef GPUCA_HAVE_O2HEADERS
 #include "SimulationDataFormat/MCCompLabel.h"
@@ -51,6 +53,7 @@
 #endif
 
 #include "TPCFastTransform.h"
+#include "CorrectionMapsHelper.h"
 
 #include "utils/linux_helpers.h"
 
@@ -96,9 +99,14 @@ void GPUChainTracking::DumpData(const char* filename)
       const char* ptrs[NSLICES];
       size_t sizes[NSLICES];
       for (unsigned int i = 0; i < NSLICES; i++) {
-        const auto& buffer = mIOPtrs.tpcPackedDigits->tpcDigitsMC->v[i]->getBuffer();
-        ptrs[i] = buffer.data();
-        sizes[i] = buffer.size();
+        if (mIOPtrs.tpcPackedDigits->tpcDigitsMC->v[i]) {
+          const auto& buffer = mIOPtrs.tpcPackedDigits->tpcDigitsMC->v[i]->getBuffer();
+          ptrs[i] = buffer.data();
+          sizes[i] = buffer.size();
+        } else {
+          ptrs[i] = nullptr;
+          sizes[i] = 0;
+        }
       }
       DumpData(fp, ptrs, sizes, InOutPointerType::TPC_DIGIT_MC);
     }
@@ -129,6 +137,14 @@ void GPUChainTracking::DumpData(const char* filename)
     if (DumpData(fp, &ptr, &total, InOutPointerType::TPC_ZS)) {
       fwrite(&counts, sizeof(counts), 1, fp);
     }
+  }
+  if (mIOPtrs.tpcCompressedClusters) {
+    if (mIOPtrs.tpcCompressedClusters->ptrForward) {
+      throw std::runtime_error("Cannot dump non-flat compressed clusters");
+    }
+    char* ptr = (char*)mIOPtrs.tpcCompressedClusters;
+    size_t size = mIOPtrs.tpcCompressedClusters->totalDataSize;
+    DumpData(fp, &ptr, &size, InOutPointerType::TPC_COMPRESSED_CL);
   }
   if (mIOPtrs.settingsTF) {
     unsigned int n = 1;
@@ -201,8 +217,12 @@ int GPUChainTracking::ReadData(const char* filename)
       mIOMem.tpcDigitMCMap = std::make_unique<GPUTPCDigitsMCInput>();
       mIOMem.tpcDigitMCView.reset(new ConstMCLabelContainerView[NSLICES]);
       for (unsigned int i = 0; i < NSLICES; i++) {
-        mIOMem.tpcDigitMCView.get()[i] = gsl::span<const char>(ptrs[i], ptrs[i] + sizes[i]);
-        mIOMem.tpcDigitMCMap->v[i] = mIOMem.tpcDigitMCView.get() + i;
+        if (sizes[i]) {
+          mIOMem.tpcDigitMCView.get()[i] = gsl::span<const char>(ptrs[i], ptrs[i] + sizes[i]);
+          mIOMem.tpcDigitMCMap->v[i] = mIOMem.tpcDigitMCView.get() + i;
+        } else {
+          mIOMem.tpcDigitMCMap->v[i] = nullptr;
+        }
       }
       mIOMem.digitMap->tpcDigitsMC = mIOMem.tpcDigitMCMap.get();
     }
@@ -227,6 +247,9 @@ int GPUChainTracking::ReadData(const char* filename)
       }
     }
     mIOPtrs.tpcZS = mIOMem.tpcZSmeta.get();
+  }
+  if (ReadData(fp, &ptr, &total, &mIOMem.tpcCompressedClusters, InOutPointerType::TPC_COMPRESSED_CL)) {
+    mIOPtrs.tpcCompressedClusters = (const o2::tpc::CompressedClustersFlat*)ptr;
   }
   unsigned int n;
   ReadData(fp, &mIOPtrs.settingsTF, &n, &mIOMem.settingsTF, InOutPointerType::TF_SETTINGS);
@@ -286,10 +309,30 @@ void GPUChainTracking::DumpSettings(const char* dir)
     f += "tpctransform.dump";
     DumpFlatObjectToFile(processors()->calibObjects.fastTransform, f.c_str());
   }
+  if (processors()->calibObjects.fastTransformRef != nullptr) {
+    f = dir;
+    f += "tpctransformref.dump";
+    DumpFlatObjectToFile(processors()->calibObjects.fastTransformRef, f.c_str());
+  }
+  if (processors()->calibObjects.fastTransformMShape != nullptr) {
+    f = dir;
+    f += "tpctransformmshape.dump";
+    DumpFlatObjectToFile(processors()->calibObjects.fastTransformMShape, f.c_str());
+  }
+  if (processors()->calibObjects.fastTransformHelper != nullptr) {
+    f = dir;
+    f += "tpctransformhelper.dump";
+    DumpStructToFile(processors()->calibObjects.fastTransformHelper, f.c_str());
+  }
   if (processors()->calibObjects.tpcPadGain != nullptr) {
     f = dir;
     f += "tpcpadgaincalib.dump";
     DumpStructToFile(processors()->calibObjects.tpcPadGain, f.c_str());
+  }
+  if (processors()->calibObjects.tpcZSLinkMapping != nullptr) {
+    f = dir;
+    f += "tpczslinkmapping.dump";
+    DumpStructToFile(processors()->calibObjects.tpcZSLinkMapping, f.c_str());
   }
 #ifdef GPUCA_HAVE_O2HEADERS
   if (processors()->calibObjects.dEdxCalibContainer != nullptr) {
@@ -318,9 +361,29 @@ void GPUChainTracking::ReadSettings(const char* dir)
   mTPCFastTransformU = ReadFlatObjectFromFile<TPCFastTransform>(f.c_str());
   processors()->calibObjects.fastTransform = mTPCFastTransformU.get();
   f = dir;
+  f += "tpctransformref.dump";
+  mTPCFastTransformRefU = ReadFlatObjectFromFile<TPCFastTransform>(f.c_str());
+  processors()->calibObjects.fastTransformRef = mTPCFastTransformRefU.get();
+  f = dir;
+  f += "tpctransformmshape.dump";
+  mTPCFastTransformMShapeU = ReadFlatObjectFromFile<TPCFastTransform>(f.c_str());
+  processors()->calibObjects.fastTransformMShape = mTPCFastTransformMShapeU.get();
+  f = dir;
+  f += "tpctransformhelper.dump";
+  mTPCFastTransformHelperU = ReadStructFromFile<CorrectionMapsHelper>(f.c_str());
+  if ((processors()->calibObjects.fastTransformHelper = mTPCFastTransformHelperU.get())) {
+    mTPCFastTransformHelperU->setCorrMap(mTPCFastTransformU.get());
+    mTPCFastTransformHelperU->setCorrMapRef(mTPCFastTransformRefU.get());
+    mTPCFastTransformHelperU->setCorrMapMShape(mTPCFastTransformMShapeU.get());
+  }
+  f = dir;
   f += "tpcpadgaincalib.dump";
   mTPCPadGainCalibU = ReadStructFromFile<TPCPadGainCalib>(f.c_str());
   processors()->calibObjects.tpcPadGain = mTPCPadGainCalibU.get();
+  f = dir;
+  f += "tpczslinkmapping.dump";
+  mTPCZSLinkMappingU = ReadStructFromFile<TPCZSLinkMapping>(f.c_str());
+  processors()->calibObjects.tpcZSLinkMapping = mTPCZSLinkMappingU.get();
 #ifdef GPUCA_HAVE_O2HEADERS
   f = dir;
   f += "dEdxCalibContainer.dump";

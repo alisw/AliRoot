@@ -21,7 +21,6 @@
 
 #include "GPUTPCGeometry.h"
 #include "DataFormatsTPC/Constants.h"
-#include "TPCBase/CalDet.h"
 
 using namespace GPUCA_NAMESPACE::gpu;
 
@@ -34,6 +33,9 @@ TPCPadGainCalib::TPCPadGainCalib()
     offset += geo.NPads(r);
   }
 }
+
+#ifndef GPUCA_STANDALONE
+#include "TPCBase/CalDet.h"
 
 TPCPadGainCalib::TPCPadGainCalib(const o2::tpc::CalDet<float>& gainMap) : TPCPadGainCalib()
 {
@@ -56,3 +58,4 @@ void TPCPadGainCalib::setFromMap(const o2::tpc::CalDet<float>& gainMap, const bo
     }
   }
 }
+#endif

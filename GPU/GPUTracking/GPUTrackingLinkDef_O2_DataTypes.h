@@ -23,14 +23,18 @@
 #pragma link off all classes;
 #pragma link off all functions;
 
+#ifdef GPUCA_HAVE_O2HEADERS
 #pragma link C++ class o2::gpu::trackInterface < o2::track::TrackParCov> + ;
 #pragma link C++ class o2::gpu::GPUTRDTrack_t < o2::gpu::trackInterface < o2::track::TrackParCov>> + ;
 #pragma link C++ class std::vector < o2::gpu::GPUTRDTrack_t < o2::gpu::trackInterface < o2::track::TrackParCov>>> + ;
+#endif
+#ifdef GPUCA_O2_LIB
 #pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsO2 + ;
 #pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsRec + ;
 #pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsRecTPC + ;
 #pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsRecTRD + ;
 #pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsProcessing + ;
+#pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsProcessingParam + ;
 #pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsProcessingRTC + ;
 #pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsDisplay + ;
 #pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsDisplayLight + ;
@@ -38,5 +42,10 @@
 #pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsDisplayRenderer + ;
 #pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsDisplayVulkan + ;
 #pragma link C++ class o2::gpu::GPUConfigurableParamGPUSettingsQA + ;
+#endif
+#pragma link C++ class o2::gpu::GPUTPCGMMergedTrackHit + ;
+#pragma link C++ class o2::tpc::CalibdEdxTrackTopologyPol + ;
+#pragma link C++ class o2::tpc::CalibdEdxTrackTopologySpline + ;
+#pragma link C++ struct o2::tpc::CalibdEdxTrackTopologyPolContainer + ;
 
 #endif

@@ -114,14 +114,6 @@
     #else
       #define GPUAtomic(type) volatile type
     #endif
-    #ifdef CONSTEXPR
-      #undef CONSTEXPR
-    #endif
-    #if defined(__OPENCLCPP__)
-      #define CONSTEXPR constexpr
-    #else
-      #define CONSTEXPR const
-    #endif
   #endif
   #if !defined(__OPENCLCPP__) // Other special defines for OpenCL 1
     #define GPUCA_USE_TEMPLATE_ADDRESS_SPACES // TODO: check if we can make this (partially, where it is already implemented) compatible with OpenCL CPP
@@ -196,10 +188,7 @@
 #define GPUCA_GPUdic_select_1() GPUdii()
 #define GPUCA_GPUdic_select_2() GPUd()
 
-#ifdef GPUCA_CONSTANT_AS_ARGUMENT
-  #undef GPUconstant
-  #define GPUconstant()
-#elif defined(GPUCA_NO_CONSTANT_MEMORY)
+#if defined(GPUCA_NO_CONSTANT_MEMORY)
   #undef GPUconstant
   #define GPUconstant() GPUglobal()
 #endif

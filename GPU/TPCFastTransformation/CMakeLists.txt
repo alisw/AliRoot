@@ -20,20 +20,23 @@ set(SRCS
     Spline1DHelperOld.cxx
     Spline2DSpec.cxx
     Spline2D.cxx
-    Spline1DHelper.cxx
-    Spline2DHelper.cxx
     ChebyshevFit1D.cxx
     TPCFastTransformGeo.cxx
     TPCFastSpaceChargeCorrection.cxx
+    TPCFastSpaceChargeCorrectionMap.cxx
     TPCFastTransform.cxx
-    SymMatrixSolver.cxx
+    CorrectionMapsHelper.cxx
 )
 
-if(ALIGPU_BUILD_TYPE STREQUAL "O2")
+if(NOT ALIGPU_BUILD_TYPE STREQUAL "Standalone")
   set(SRCS ${SRCS}
+      Spline1DHelper.cxx
+      Spline2DHelper.cxx
+      SymMatrixSolver.cxx
       BandMatrixSolver.cxx
       MultivariatePolynomial.cxx
       MultivariatePolynomialHelper.cxx
+      NDPiecewisePolynomials.cxx
       devtools/IrregularSpline1D.cxx
       devtools/IrregularSpline2D3D.cxx
       devtools/SemiregularSpline2D3D.cxx
@@ -53,10 +56,12 @@ if(${ALIGPU_BUILD_TYPE} STREQUAL "O2")
                                             ${CMAKE_SOURCE_DIR}/GPU/Common
                  PUBLIC_LINK_LIBRARIES O2::GPUCommon
                                        O2::GPUUtils
+                                       O2::TPCSpaceCharge
                                        Vc::Vc
-                                       ROOT::Core ROOT::Matrix ROOT::Tree ROOT::Gpad
+                                       ROOT::Core ROOT::Matrix ROOT::Tree ROOT::Gpad ROOT::Minuit
                              )
-                 
+  target_compile_definitions(${targetName} PRIVATE GPUCA_HAVE_O2HEADERS)
+
   o2_target_root_dictionary(${MODULE}
                             HEADERS ${HDRS_CINT_O2}
                             LINKDEF TPCFastTransformationLinkDef_O2.h)
@@ -76,18 +81,21 @@ if(${ALIGPU_BUILD_TYPE} STREQUAL "O2")
               SOURCES test/testMultivarPolynomials.cxx
               ENVIRONMENT O2_ROOT=${CMAKE_BINARY_DIR}/stage
               LABELS gpu
-              CONFIGURATIONS RelWithDebInfo Release MinRelSize)
+              CONFIGURATIONS RelWithDebInfo Release MinSizeRel)
 
   foreach(m
           SplineDemo.C
-          SplineConstructionDemo.C
+          SplineRecoveryDemo.C
           fastTransformQA.C
+          TPCFastTransformInit.C
           generateTPCCorrectionNTuple.C)
     o2_add_test_root_macro(macro/${m}
                            PUBLIC_LINK_LIBRARIES O2::TPCFastTransformation
                                                  O2::DataFormatsTPC
                                                  O2::TPCSimulation
                                                  O2::TPCReconstruction
+                                                 O2::TPCCalibration
+                                                 O2::SpacePoints
                           PUBLIC_INCLUDE_DIRECTORIES
                                                  ${CMAKE_BINARY_DIR}/stage/include
                            LABELS gpu tpc COMPILE_ONLY)
@@ -168,6 +176,9 @@ endif()
 if(ALIGPU_BUILD_TYPE STREQUAL "Standalone")
   add_library(${MODULE} SHARED ${SRCS})
 endif()
+
+install (FILES macro/TPCFastTransformInit.C
+         DESTINATION share/macro/)
 
 #
 # FIXME: this one is misplaced : it depends (at least) on TPCSimulation which is

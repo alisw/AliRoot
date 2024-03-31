@@ -26,6 +26,7 @@
 #include "GPUTPCClusterData.h"
 #include "AliHLTTPCRawCluster.h"
 #include "TPCFastTransform.h"
+#include "CorrectionMapsHelper.h"
 #include "GPUO2DataTypes.h"
 
 #include <cstdio>
@@ -43,12 +44,12 @@ extern GPUSettingsStandalone configStandalone;
 }
 static auto& config = configStandalone.TF;
 
-GPUReconstructionTimeframe::GPUReconstructionTimeframe(GPUChainTracking* chain, int (*read)(int), int nEvents) : mChain(chain), mReadEvent(read), mNEventsInDirectory(nEvents), mDisUniReal(0., 1.), mRndGen1(configStandalone.seed), mRndGen2(mDisUniInt(mRndGen1))
+GPUReconstructionTimeframe::GPUReconstructionTimeframe(GPUChainTracking* chain, int (*read)(int), int nEvents) : mChain(chain), mReadEvent(read), mNEventsInDirectory(nEvents), mDisUniReal(0.f, 1.f), mRndGen1(configStandalone.seed), mRndGen2(mDisUniInt(mRndGen1))
 {
   mMaxBunchesFull = TIME_ORBIT / config.bunchSpacing;
   mMaxBunches = (TIME_ORBIT - config.abortGapTime) / config.bunchSpacing;
 
-  if (config.overlayRaw && chain->GetTPCTransform() == nullptr) {
+  if (config.overlayRaw && chain->GetTPCTransformHelper() == nullptr) {
     GPUInfo("Overlay Raw Events requires TPC Fast Transform");
     throw std::exception();
   }
@@ -75,7 +76,7 @@ int GPUReconstructionTimeframe::ReadEventShifted(int iEvent, float shiftZ, float
 {
   mReadEvent(iEvent);
   if (config.overlayRaw) {
-    float shiftTTotal = (((double)config.timeFrameLen - DRIFT_TIME) * ((double)TPCZ / (double)DRIFT_TIME) - shiftZ) / mChain->GetTPCTransform()->getVDrift();
+    float shiftTTotal = (((double)config.timeFrameLen - DRIFT_TIME) * ((double)TPCZ / (double)DRIFT_TIME) - shiftZ) / mChain->GetTPCTransformHelper()->getCorrMap()->getVDrift();
     for (unsigned int iSlice = 0; iSlice < NSLICES; iSlice++) {
       for (unsigned int j = 0; j < mChain->mIOPtrs.nRawClusters[iSlice]; j++) {
         auto& tmp = mChain->mIOMem.rawClusters[iSlice][j];
@@ -83,7 +84,7 @@ int GPUReconstructionTimeframe::ReadEventShifted(int iEvent, float shiftZ, float
       }
     }
   }
-  if (shiftZ != 0.) {
+  if (shiftZ != 0.f) {
     for (unsigned int iSlice = 0; iSlice < NSLICES; iSlice++) {
       for (unsigned int j = 0; j < mChain->mIOPtrs.nClusterData[iSlice]; j++) {
         auto& tmp = mChain->mIOMem.clusterData[iSlice][j];
@@ -343,18 +344,18 @@ int GPUReconstructionTimeframe::LoadMergedEvents(int iEvent)
           if (iEventInTimeframe == 0) {
             shift = 0;
           } else {
-            shift = (iEventInTimeframe - 0.5 + shift) * config.averageDistance;
+            shift = (iEventInTimeframe - 0.5f + shift) * config.averageDistance;
           }
         }
       } else {
         if (config.shiftFirstEvent) {
-          shift = config.averageDistance * (iEventInTimeframe + 0.5);
+          shift = config.averageDistance * (iEventInTimeframe + 0.5f);
         } else {
           shift = config.averageDistance * (iEventInTimeframe);
         }
       }
     } else {
-      shift = 0.;
+      shift = 0.f;
     }
 
     if (ReadEventShifted(iEvent * config.nMerge + iEventInTimeframe, shift) < 0) {
