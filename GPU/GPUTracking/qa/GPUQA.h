@@ -33,6 +33,7 @@ class TFile;
 class TH1D;
 class TObjArray;
 class TColor;
+class TGraphAsymmErrors;
 typedef short int Color_t;
 
 #if !defined(GPUCA_BUILD_QA) || defined(GPUCA_GPUCODE)
@@ -58,8 +59,10 @@ class GPUQA
   bool clusterRemovable(int attach, bool prot) const { return false; }
   void DumpO2MCData(const char* filename) const {}
   int ReadO2MCData(const char* filename) { return 1; }
+  void* AllocateScratchBuffer(size_t nBytes) { return nullptr; }
   static bool QAAvailable() { return false; }
   static bool IsInitialized() { return false; }
+  void UpdateChain(GPUChainTracking* chain) {}
 };
 } // namespace gpu
 } // namespace GPUCA_NAMESPACE
@@ -100,6 +103,7 @@ class GPUQA
   GPUQA(GPUChainTracking* chain, const GPUSettingsQA* config = nullptr, const GPUParam* param = nullptr);
   ~GPUQA();
 
+  void UpdateParam(const GPUParam* param) { mParam = param; }
   int InitQA(int tasks = -1);
   void RunQA(bool matchOnly = false, const std::vector<o2::tpc::TrackTPC>* tracksExternal = nullptr, const std::vector<o2::MCCompLabel>* tracksExtMC = nullptr, const o2::tpc::ClusterNativeAccess* clNative = nullptr);
   int DrawQAHistograms(TObjArray* qcout = nullptr);
@@ -115,12 +119,15 @@ class GPUQA
   int ReadO2MCData(const char* filename);
   static bool QAAvailable() { return true; }
   bool IsInitialized() { return mQAInitialized; }
+  void UpdateChain(GPUChainTracking* chain) { mTracking = chain; }
 
   const std::vector<TH1F>& getHistograms1D() const { return *mHist1D; }
   const std::vector<TH2F>& getHistograms2D() const { return *mHist2D; }
   const std::vector<TH1D>& getHistograms1Dd() const { return *mHist1Dd; }
+  const std::vector<TGraphAsymmErrors>& getGraphs() const { return *mHistGraph; }
   void resetHists();
-  int loadHistograms(std::vector<TH1F>& i1, std::vector<TH2F>& i2, std::vector<TH1D>& i3, int tasks = -1);
+  int loadHistograms(std::vector<TH1F>& i1, std::vector<TH2F>& i2, std::vector<TH1D>& i3, std::vector<TGraphAsymmErrors>& i4, int tasks = -1);
+  void* AllocateScratchBuffer(size_t nBytes);
 
   static constexpr int N_CLS_HIST = 8;
   static constexpr int N_CLS_TYPE = 3;
@@ -135,7 +142,8 @@ class GPUQA
     taskTrackStatistics = 16,
     taskClusterCounts = 32,
     taskDefault = 63,
-    taskDefaultPostprocess = 31
+    taskDefaultPostprocess = 31,
+    tasksNoQC = 56
   };
 
  private:
@@ -152,7 +160,8 @@ class GPUQA
   int DoClusterCounts(unsigned long long int* attachClusterCounts, int mode = 0);
   void PrintClusterCount(int mode, int& num, const char* name, unsigned long long int n, unsigned long long int normalization);
   void CopyO2MCtoIOPtr(GPUTrackingInOutPointers* ptr);
-  void SetAxisSize(TH1F* e);
+  template <class T>
+  void SetAxisSize(T* e);
   void SetLegend(TLegend* l);
   double* CreateLogAxis(int nbins, float xmin, float xmax);
   void ChangePadTitleSize(TPad* p, float size);
@@ -218,7 +227,7 @@ class GPUQA
 
   GPUChainTracking* mTracking;
   const GPUSettingsQA& mConfig;
-  const GPUParam& mParam;
+  const GPUParam* mParam;
 
   const char* str_perf_figure_1 = "ALICE Performance 2018/03/20";
   // const char* str_perf_figure_2 = "2015, MC pp, #sqrt{s} = 5.02 TeV";
@@ -242,7 +251,8 @@ class GPUQA
   std::vector<additionalClusterParameters> mClusterParam;
   int mNTotalFakes = 0;
 
-  TH1F* mEff[4][2][2][5][2]; // eff,clone,fake,all - findable - secondaries - y,z,phi,eta,pt - work,result
+  TH1F* mEff[4][2][2][5]; // eff,clone,fake,all - findable - secondaries - y,z,phi,eta,pt - work,result
+  TGraphAsymmErrors* mEffResult[4][2][2][5];
   TCanvas* mCEff[6];
   TPad* mPEff[6][4];
   TLegend* mLEff[6];
@@ -287,15 +297,21 @@ class GPUQA
   TPad* mPNCl;
   TLegend* mLNCl;
 
+  TH2F* mClXY;
+  TCanvas* mCClXY;
+  TPad* mPClXY;
+
   std::vector<TH2F*> mHistClusterCount;
 
   std::vector<TH1F>* mHist1D = nullptr;
   std::vector<TH2F>* mHist2D = nullptr;
   std::vector<TH1D>* mHist1Dd = nullptr;
+  std::vector<TGraphAsymmErrors>* mHistGraph = nullptr;
   bool mHaveExternalHists = false;
   std::vector<TH1F**> mHist1D_pos{};
   std::vector<TH2F**> mHist2D_pos{};
   std::vector<TH1D**> mHist1Dd_pos{};
+  std::vector<TGraphAsymmErrors**> mHistGraph_pos{};
   template <class T>
   auto getHistArray();
   template <class T, typename... Args>
@@ -314,6 +330,8 @@ class GPUQA
   std::vector<std::vector<int>> mcLabelBuffer;
   std::vector<std::vector<bool>> mGoodTracks;
   std::vector<std::vector<bool>> mGoodHits;
+
+  std::vector<unsigned long int> mTrackingScratchBuffer;
 
   static std::vector<TColor*> mColors;
   static int initColors();

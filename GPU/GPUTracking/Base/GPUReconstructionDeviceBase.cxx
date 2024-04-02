@@ -305,12 +305,28 @@ int GPUReconstructionDeviceBase::ExitDevice()
   return retVal;
 }
 
-int GPUReconstructionDeviceBase::registerMemoryForGPU(const void* ptr, size_t size)
+int GPUReconstructionDeviceBase::registerMemoryForGPU_internal(const void* ptr, size_t size)
 {
   return IsGPU();
 }
 
-int GPUReconstructionDeviceBase::unregisterMemoryForGPU(const void* ptr)
+int GPUReconstructionDeviceBase::unregisterMemoryForGPU_internal(const void* ptr)
 {
   return IsGPU();
+}
+
+void GPUReconstructionDeviceBase::unregisterRemainingRegisteredMemory()
+{
+  for (auto& ptr : mRegisteredMemoryPtrs) {
+    unregisterMemoryForGPU_internal(ptr);
+  }
+  mRegisteredMemoryPtrs.clear();
+}
+
+void GPUReconstructionDeviceBase::runConstantRegistrators()
+{
+  auto& list = getDeviceConstantMemRegistratorsVector();
+  for (unsigned int i = 0; i < list.size(); i++) {
+    mDeviceConstantMemList.emplace_back(list[i]());
+  }
 }

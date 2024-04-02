@@ -25,6 +25,7 @@
 
 namespace o2::its
 {
+template <unsigned char N>
 class Road;
 struct TrackingFrameInfo;
 struct Cluster;
@@ -48,7 +49,7 @@ class GPUITSFitter : public GPUProcessor
   void* SetPointersMemory(void* mem);
 #endif
 
-  GPUd() o2::its::Road* roads()
+  GPUd() o2::its::Road<5>* roads()
   {
     return mRoads;
   }
@@ -90,7 +91,7 @@ class GPUITSFitter : public GPUProcessor
   int mNMaxTracks = 0;
   int* mNTF = nullptr;
   Memory* mMemory = nullptr;
-  o2::its::Road* mRoads = nullptr;
+  o2::its::Road<5>* mRoads = nullptr;
   o2::its::TrackingFrameInfo** mTF = {nullptr};
   GPUITSTrack* mTracks = nullptr;
 

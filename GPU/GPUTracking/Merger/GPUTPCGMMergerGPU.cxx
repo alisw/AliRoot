@@ -17,6 +17,7 @@
 /// \file GPUTPCGMMergerGPU.cxx
 /// \author David Rohr
 
+#if !defined(GPUCA_GPUCODE) || !defined(GPUCA_ALIROOT_LIB) // GPU Merger was not available for Run 2
 #include "GPUTPCGMMergerGPU.h"
 #include "GPUCommonAlgorithm.h"
 #if defined(WITH_OPENMP) && !defined(GPUCA_GPUCODE)
@@ -102,9 +103,9 @@ GPUdii() void GPUTPCGMMergerResolve::Thread<4>(int nBlocks, int nThreads, int iB
 }
 
 template <>
-GPUdii() void GPUTPCGMMergerClearLinks::Thread<0>(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() GPUSharedMemory& smem, processorType& GPUrestrict() merger, char nOutput)
+GPUdii() void GPUTPCGMMergerClearLinks::Thread<0>(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() GPUSharedMemory& smem, processorType& GPUrestrict() merger, char output)
 {
-  merger.ClearTrackLinks(nBlocks, nThreads, iBlock, iThread, nOutput);
+  merger.ClearTrackLinks(nBlocks, nThreads, iBlock, iThread, output);
 }
 
 template <>
@@ -222,3 +223,4 @@ GPUdii() void GPUTPCGMMergerMergeLoopers::Thread<2>(int nBlocks, int nThreads, i
 {
   merger.MergeLoopersMain(nBlocks, nThreads, iBlock, iThread);
 }
+#endif // !defined(GPUCA_GPUCODE) || !defined(GPUCA_ALIROOT_LIB)

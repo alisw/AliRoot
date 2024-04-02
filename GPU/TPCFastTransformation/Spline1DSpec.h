@@ -55,7 +55,7 @@ class Spline1DContainer : public FlatObject
     DataT u;  ///< u coordinate of the knot i (an integer number in float format)
     DataT Li; ///< inverse length of the [knot_i, knot_{i+1}] segment ( == 1./ a (small) integer )
     /// Get u as an integer
-    GPUd() int getU() const { return (int)(u + 0.1); }
+    GPUd() int getU() const { return (int)(u + 0.1f); }
   };
 
   /// _____________  Version control __________________________
@@ -230,7 +230,7 @@ GPUdi() int Spline1DContainer<DataT>::getLeftKnotIndexForU(DataT u) const
 {
   /// Get i: u is in [knot_i, knot_{i+1}) segment
   /// when u is otside of [0, mUmax], return a corresponding edge segment
-  int iu = (int)u;
+  int iu = u < 0 ? 0 : (u > (float)mUmax ? mUmax : (int)u);
   if (SafeT == SafetyLevel::kSafe) {
     iu = (iu < 0) ? 0 : (iu > mUmax ? mUmax : iu);
   }

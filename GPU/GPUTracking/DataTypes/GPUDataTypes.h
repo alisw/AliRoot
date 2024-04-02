@@ -108,9 +108,10 @@ namespace GPUCA_NAMESPACE
 {
 namespace gpu
 {
+class CorrectionMapsHelper;
 class TPCFastTransform;
 struct TPCPadGainCalib;
-
+struct TPCZSLinkMapping;
 } // namespace gpu
 } // namespace GPUCA_NAMESPACE
 
@@ -177,7 +178,9 @@ class GPUDataTypes
                               TPCCompressedClusters = 8,
                               TRDTracklets = 16,
                               TRDTracks = 32,
-                              TPCRaw = 64 };
+                              TPCRaw = 64,
+                              ITSClusters = 128,
+                              ITSTracks = 256 };
 
 #ifdef GPUCA_NOCOMPAT_ALLOPENCL
   static constexpr const char* const DEVICE_TYPE_NAMES[] = {"INVALID", "CPU", "CUDA", "HIP", "OCL", "OCL2"};
@@ -215,11 +218,15 @@ struct ConstPtr {
 };
 
 template <template <typename T> class S>
-struct GPUCalibObjectsTemplate {
+struct GPUCalibObjectsTemplate { // use only pointers on PODs or flat objects here
   typename S<TPCFastTransform>::type* fastTransform = nullptr;
+  typename S<TPCFastTransform>::type* fastTransformRef = nullptr;
+  typename S<TPCFastTransform>::type* fastTransformMShape = nullptr;
+  typename S<CorrectionMapsHelper>::type* fastTransformHelper = nullptr;
   typename S<o2::base::MatLayerCylSet>::type* matLUT = nullptr;
   typename S<o2::trd::GeometryFlat>::type* trdGeometry = nullptr;
   typename S<TPCPadGainCalib>::type* tpcPadGain = nullptr;
+  typename S<TPCZSLinkMapping>::type* tpcZSLinkMapping = nullptr;
   typename S<o2::tpc::CalibdEdxContainer>::type* dEdxCalibContainer = nullptr;
   typename S<o2::base::PropagatorImpl<float>>::type* o2Propagator = nullptr;
   typename S<o2::itsmft::TopologyDictionary>::type* itsPatternDict = nullptr;

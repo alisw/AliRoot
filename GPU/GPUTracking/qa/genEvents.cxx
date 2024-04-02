@@ -240,7 +240,7 @@ int genEvents::GenerateEvent(const GPUParam& param, char* filename)
           t.Print();
           break;
         }
-        if (fabsf(t.GetZ()) >= 250.) {
+        if (fabsf(t.GetZ()) >= GPUTPCGeometry::TPCLength()) {
           std::cout << "Can not propagate to x = " << xRow << ": Z outside the volume" << std::endl;
           t.Print();
           err = -1;
@@ -283,7 +283,7 @@ int genEvents::GenerateEvent(const GPUParam& param, char* filename)
       float sigmaZ = 0.5;
       const int rowType = iRow < 64 ? 0 : iRow < 128 ? 2 : 1;
       t.UpdateValues();
-      param.GetClusterErrors2(rowType, t.GetZ(), t.GetSinPhi(), t.GetDzDs(), sigmaY, sigmaZ);
+      param.GetClusterErrors2(iSlice, rowType, t.GetZ(), t.GetSinPhi(), t.GetDzDs(), -1.f, 0.f, 0.f, sigmaY, sigmaZ);
       sigmaY = std::sqrt(sigmaY);
       sigmaZ = std::sqrt(sigmaZ);
       mClusterError[rowType][0]->Fill(sigmaY);

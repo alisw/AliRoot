@@ -53,6 +53,8 @@ class GPUDisplay : public GPUDisplayInterface
   void ShowNextEvent(const GPUTrackingInOutPointers* ptrs = nullptr) override;
   void WaitForNextEvent() override;
   void SetCollisionFirstCluster(unsigned int collision, int slice, int cluster) override;
+  void UpdateCalib(const GPUCalibObjectsConst* calib) override { mCalib = calib; }
+  void UpdateParam(const GPUParam* param) override { mParam = param; }
 
   void HandleKey(unsigned char key);
   int DrawGLScene();
@@ -163,7 +165,10 @@ class GPUDisplay : public GPUDisplayInterface
   template <typename... Args>
   void SetInfo(Args... args)
   {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
     snprintf(mInfoText2, 1024, args...);
+#pragma GCC diagnostic pop
     GPUInfo("%s", mInfoText2);
     mInfoText2Timer.ResetStart();
   }

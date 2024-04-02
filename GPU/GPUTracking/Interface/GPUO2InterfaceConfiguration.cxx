@@ -24,7 +24,7 @@ using namespace o2::gpu;
 
 GPUSettingsO2 GPUO2InterfaceConfiguration::ReadConfigurableParam()
 {
-  return ReadConfigurableParam_internal();
+  return ReadConfigurableParam(*this);
 }
 
 void GPUO2InterfaceConfiguration::PrintParam()

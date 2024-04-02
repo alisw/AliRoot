@@ -37,9 +37,9 @@ using namespace GPUCA_NAMESPACE::gpu;
     return (1);            \
   }
 
-#define GPUCA_KRNL(x_class, x_attributes, x_arguments, x_forward) GPUCA_KRNL_PROP(x_class, x_attributes)
+#define GPUCA_KRNL(x_class, x_attributes, ...) GPUCA_KRNL_PROP(x_class, x_attributes)
 #define GPUCA_KRNL_BACKEND_CLASS GPUReconstructionOCL
-#include "GPUReconstructionKernels.h"
+#include "GPUReconstructionKernelList.h"
 #undef GPUCA_KRNL
 
 GPUReconstructionOCL::GPUReconstructionOCL(const GPUSettingsDeviceBackend& cfg) : GPUReconstructionDeviceBase(cfg, sizeof(GPUReconstructionDeviceBase))
@@ -58,9 +58,31 @@ GPUReconstructionOCL::~GPUReconstructionOCL()
   }
 }
 
-void GPUReconstructionOCL::UpdateSettings()
+int GPUReconstructionOCL::GPUFailedMsgAI(const long int error, const char* file, int line)
 {
-  GPUCA_GPUReconstructionUpdateDefailts();
+  // Check for OPENCL Error and in the case of an error display the corresponding error string
+  if (error == CL_SUCCESS) {
+    return (0);
+  }
+  GPUError("OCL Error: %ld / %s (%s:%d)", error, opencl_error_string(error), file, line);
+  return 1;
+}
+
+void GPUReconstructionOCL::GPUFailedMsgA(const long int error, const char* file, int line)
+{
+  if (GPUFailedMsgAI(error, file, line)) {
+    static bool runningCallbacks = false;
+    if (IsInitialized() && runningCallbacks == false) {
+      runningCallbacks = true;
+      CheckErrorCodes(false, true);
+    }
+    throw std::runtime_error("OpenCL Failure");
+  }
+}
+
+void GPUReconstructionOCL::UpdateAutomaticProcessingSettings()
+{
+  GPUCA_GPUReconstructionUpdateDefaults();
 }
 
 int GPUReconstructionOCL::InitDevice_Runtime()
@@ -93,7 +115,7 @@ int GPUReconstructionOCL::InitDevice_Runtime()
       found = true;
     } else {
       for (unsigned int i_platform = 0; i_platform < num_platforms; i_platform++) {
-        char platform_profile[64] = {}, platform_version[64] = {}, platform_name[64] = {}, platform_vendor[64] = {};
+        char platform_profile[256] = {}, platform_version[256] = {}, platform_name[256] = {}, platform_vendor[256] = {};
         clGetPlatformInfo(mInternals->platforms[i_platform], CL_PLATFORM_PROFILE, sizeof(platform_profile), platform_profile, nullptr);
         clGetPlatformInfo(mInternals->platforms[i_platform], CL_PLATFORM_VERSION, sizeof(platform_version), platform_version, nullptr);
         clGetPlatformInfo(mInternals->platforms[i_platform], CL_PLATFORM_NAME, sizeof(platform_name), platform_name, nullptr);
@@ -101,9 +123,12 @@ int GPUReconstructionOCL::InitDevice_Runtime()
         if (mProcessingSettings.debugLevel >= 2) {
           GPUInfo("Available Platform %d: (%s %s) %s %s", i_platform, platform_profile, platform_version, platform_vendor, platform_name);
         }
-        if (CheckPlatform(i_platform)) {
+        if (!found && CheckPlatform(i_platform)) {
           found = true;
           mInternals->platform = mInternals->platforms[i_platform];
+          if (mProcessingSettings.debugLevel >= 2) {
+            GPUInfo("    Using this platform");
+          }
         }
       }
     }
@@ -301,8 +326,9 @@ int GPUReconstructionOCL::InitDevice_Runtime()
     if (GPUFailedMsgI(ocl_error)) {
       quit("Error creating kernel");
     }
-    OCLsetKernelParameters(kernel, mInternals->mem_gpu, mInternals->mem_constant, mInternals->mem_host);
-    if (GPUFailedMsgI(clExecuteKernelA(mInternals->command_queue[0], kernel, 16, 16, nullptr)) ||
+
+    if (GPUFailedMsgI(OCLsetKernelParameters(kernel, mInternals->mem_gpu, mInternals->mem_constant, mInternals->mem_host)) ||
+        GPUFailedMsgI(clExecuteKernelA(mInternals->command_queue[0], kernel, 16, 16, nullptr)) ||
         GPUFailedMsgI(clFinish(mInternals->command_queue[0])) ||
         GPUFailedMsgI(clReleaseKernel(kernel)) ||
         GPUFailedMsgI(clReleaseProgram(program))) {
@@ -384,11 +410,11 @@ size_t GPUReconstructionOCL::GPUMemCpy(void* dst, const void* src, size_t size, 
     SynchronizeGPU();
   }
   if (toGPU == -2) {
-    GPUFailedMsg(clEnqueueCopyBuffer(mInternals->command_queue[stream == -1 ? 0 : stream], mInternals->mem_gpu, mInternals->mem_gpu, (char*)src - (char*)mDeviceMemoryBase, (char*)dst - (char*)mDeviceMemoryBase, size, nEvents, (cl_event*)evList, (cl_event*)ev));
+    GPUFailedMsg(clEnqueueCopyBuffer(mInternals->command_queue[stream == -1 ? 0 : stream], mInternals->mem_gpu, mInternals->mem_gpu, (char*)src - (char*)mDeviceMemoryBase, (char*)dst - (char*)mDeviceMemoryBase, size, nEvents, evList->getEventList<cl_event>(), ev->getEventList<cl_event>()));
   } else if (toGPU) {
-    GPUFailedMsg(clEnqueueWriteBuffer(mInternals->command_queue[stream == -1 ? 0 : stream], mInternals->mem_gpu, stream == -1, (char*)dst - (char*)mDeviceMemoryBase, size, src, nEvents, (cl_event*)evList, (cl_event*)ev));
+    GPUFailedMsg(clEnqueueWriteBuffer(mInternals->command_queue[stream == -1 ? 0 : stream], mInternals->mem_gpu, stream == -1, (char*)dst - (char*)mDeviceMemoryBase, size, src, nEvents, evList->getEventList<cl_event>(), ev->getEventList<cl_event>()));
   } else {
-    GPUFailedMsg(clEnqueueReadBuffer(mInternals->command_queue[stream == -1 ? 0 : stream], mInternals->mem_gpu, stream == -1, (char*)src - (char*)mDeviceMemoryBase, size, dst, nEvents, (cl_event*)evList, (cl_event*)ev));
+    GPUFailedMsg(clEnqueueReadBuffer(mInternals->command_queue[stream == -1 ? 0 : stream], mInternals->mem_gpu, stream == -1, (char*)src - (char*)mDeviceMemoryBase, size, dst, nEvents, evList->getEventList<cl_event>(), ev->getEventList<cl_event>()));
   }
   return size;
 }
@@ -412,21 +438,21 @@ size_t GPUReconstructionOCL::WriteToConstantMemory(size_t offset, const void* sr
   if (stream == -1) {
     SynchronizeGPU();
   }
-  GPUFailedMsg(clEnqueueWriteBuffer(mInternals->command_queue[stream == -1 ? 0 : stream], mInternals->mem_constant, stream == -1, offset, size, src, 0, nullptr, (cl_event*)ev));
+  GPUFailedMsg(clEnqueueWriteBuffer(mInternals->command_queue[stream == -1 ? 0 : stream], mInternals->mem_constant, stream == -1, offset, size, src, 0, nullptr, ev->getEventList<cl_event>()));
   return size;
 }
 
-void GPUReconstructionOCL::ReleaseEvent(deviceEvent* ev) { GPUFailedMsg(clReleaseEvent(*(cl_event*)ev)); }
+void GPUReconstructionOCL::ReleaseEvent(deviceEvent ev) { GPUFailedMsg(clReleaseEvent(ev.get<cl_event>())); }
 
-void GPUReconstructionOCL::RecordMarker(deviceEvent* ev, int stream) { GPUFailedMsg(clEnqueueMarkerWithWaitList(mInternals->command_queue[stream], 0, nullptr, (cl_event*)ev)); }
+void GPUReconstructionOCL::RecordMarker(deviceEvent ev, int stream) { GPUFailedMsg(clEnqueueMarkerWithWaitList(mInternals->command_queue[stream], 0, nullptr, ev.getEventList<cl_event>())); }
 
-int GPUReconstructionOCL::DoStuckProtection(int stream, void* event)
+int GPUReconstructionOCL::DoStuckProtection(int stream, deviceEvent event)
 {
   if (mProcessingSettings.stuckProtection) {
     cl_int tmp = 0;
     for (int i = 0; i <= mProcessingSettings.stuckProtection / 50; i++) {
       usleep(50);
-      clGetEventInfo(*(cl_event*)event, CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(tmp), &tmp, nullptr);
+      clGetEventInfo(event.get<cl_event>(), CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(tmp), &tmp, nullptr);
       if (tmp == CL_COMPLETE) {
         break;
       }
@@ -450,12 +476,12 @@ void GPUReconstructionOCL::SynchronizeGPU()
 
 void GPUReconstructionOCL::SynchronizeStream(int stream) { GPUFailedMsg(clFinish(mInternals->command_queue[stream])); }
 
-void GPUReconstructionOCL::SynchronizeEvents(deviceEvent* evList, int nEvents) { GPUFailedMsg(clWaitForEvents(nEvents, (cl_event*)evList)); }
+void GPUReconstructionOCL::SynchronizeEvents(deviceEvent* evList, int nEvents) { GPUFailedMsg(clWaitForEvents(nEvents, evList->getEventList<cl_event>())); }
 
 void GPUReconstructionOCL::StreamWaitForEvents(int stream, deviceEvent* evList, int nEvents)
 {
   if (nEvents) {
-    GPUFailedMsg(clEnqueueMarkerWithWaitList(mInternals->command_queue[stream], nEvents, (cl_event*)evList, nullptr));
+    GPUFailedMsg(clEnqueueMarkerWithWaitList(mInternals->command_queue[stream], nEvents, evList->getEventList<cl_event>(), nullptr));
   }
 }
 
@@ -463,7 +489,7 @@ bool GPUReconstructionOCL::IsEventDone(deviceEvent* evList, int nEvents)
 {
   cl_int eventdone;
   for (int i = 0; i < nEvents; i++) {
-    GPUFailedMsg(clGetEventInfo(((cl_event*)evList)[i], CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(eventdone), &eventdone, nullptr));
+    GPUFailedMsg(clGetEventInfo(evList[i].get<cl_event>(), CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(eventdone), &eventdone, nullptr));
     if (eventdone != CL_COMPLETE) {
       return false;
     }

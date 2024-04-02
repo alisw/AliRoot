@@ -41,7 +41,7 @@ namespace GPUCA_NAMESPACE::gpu
 {
 
 class GPUTPCClusterFinder;
-struct GPUTPCClusterMCInterim;
+struct GPUTPCClusterMCInterimArray;
 
 class MCLabelAccumulator
 {
@@ -58,7 +58,7 @@ class MCLabelAccumulator
  private:
   Array2D<const uint> mIndexMap;
   const o2::dataformats::ConstMCLabelContainerView* mLabels = nullptr;
-  GPUTPCClusterMCInterim* mOutput = nullptr;
+  GPUTPCClusterMCInterimArray* mOutput = nullptr;
 
   std::bitset<64> mMaybeHasLabel;
   std::vector<o2::MCCompLabel> mClusterLabels;

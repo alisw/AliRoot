@@ -256,7 +256,7 @@ void Spline2DHelper<DataT>::approximateFunctionViaDataPoints(
       F(x1, x2, &dataPointF[ind * mFdimensions]);
     }
   }
-  approximateDataPoints(spline, x1Min, x1Max, x2Min, x2Max, &dataPointX1[0], &dataPointX2[0], &dataPointF[0], getNumberOfDataPoints());
+  approximateDataPoints(spline, spline.getParameters(), x1Min, x1Max, x2Min, x2Max, &dataPointX1[0], &dataPointX2[0], &dataPointF[0], getNumberOfDataPoints());
 }
 
 template <typename DataT>
@@ -324,7 +324,7 @@ void Spline2DHelper<DataT>::getScoefficients(int iu, int iv, double u, double v,
 
 template <typename DataT>
 void Spline2DHelper<DataT>::approximateDataPoints(
-  Spline2DContainer<DataT>& spline, double x1Min, double x1Max, double x2Min, double x2Max,
+  Spline2DContainer<DataT>& spline, DataT* splineParameters, double x1Min, double x1Max, double x2Min, double x2Max,
   const double dataPointX1[], const double dataPointX2[], const double dataPointF[/*getNumberOfDataPoints() x nFdim*/],
   int nDataPoints)
 {
@@ -365,7 +365,8 @@ void Spline2DHelper<DataT>::approximateDataPoints(
     }
   } // data points
 
-  // add extra smoothness for a case some data is missing
+  // add extra smoothness in case some data is missing
+
   for (int iu = 0; iu < nu - 1; iu++) {
     for (int iv = 0; iv < nv - 1; iv++) {
       int smoothPoint[4][2] = {
@@ -386,7 +387,7 @@ void Spline2DHelper<DataT>::approximateDataPoints(
         c[16] = -1.;
         ind[16] = ip;
         // S = sum c[i]*Par[ind[i]]
-        double w = 0.0001;
+        double w = 1.e-8;
         for (int i = 0; i < 17; i++) {
           for (int j = i; j < 17; j++) {
             solver.A(ind[i], ind[j]) += w * c[i] * c[j];
@@ -399,7 +400,7 @@ void Spline2DHelper<DataT>::approximateDataPoints(
   solver.solve();
   for (int i = 0; i < nPar; i++) {
     for (int iDim = 0; iDim < nFdim; iDim++) {
-      spline.getParameters()[i * nFdim + iDim] = solver.B(i, iDim);
+      splineParameters[i * nFdim + iDim] = solver.B(i, iDim);
     }
   }
 }
@@ -524,7 +525,7 @@ int Spline2DHelper<DataT>::test(const bool draw, const bool drawDataPoints)
     auto stopTime = std::chrono::high_resolution_clock::now();
     statTime += std::chrono::duration_cast<std::chrono::nanoseconds>(stopTime - startTime);
 
-    //if (itry == 0)
+    // if (itry == 0)
     if (0) {
       TFile outf("testSpline2D.root", "recreate");
       if (outf.IsZombie()) {

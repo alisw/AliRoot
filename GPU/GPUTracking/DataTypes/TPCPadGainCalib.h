@@ -137,7 +137,7 @@ struct TPCPadGainCalib {
       f -= mMinCorrectionFactor;
       f *= float(NumOfSteps);
       f /= (mMaxCorrectionFactor - mMinCorrectionFactor);
-      return CAMath::Nint(f);
+      return CAMath::Round(f);
     }
 
     GPUd() float unpack(T c) const

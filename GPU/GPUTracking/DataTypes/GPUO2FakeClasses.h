@@ -43,6 +43,8 @@ class TrackTPC
 };
 class CalibdEdxContainer
 {
+ public:
+  static bool isDead(int slice, int row, int pad) { return false; }
 };
 struct ClusterNative {
   GPUd() static float getTime() { return 0.f; }
@@ -120,6 +122,9 @@ class GPUTPCCompression
 {
  public:
   GPUFakeEmpty* mOutput;
+};
+class GPUTPCDecompression
+{
 };
 class GPUTPCClusterFinder
 {

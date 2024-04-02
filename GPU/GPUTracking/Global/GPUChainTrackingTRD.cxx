@@ -25,6 +25,7 @@
 #include "GPUTRDTrack.h"
 #include "GPUTRDTracker.h"
 #include "GPUTrackingInputProvider.h"
+#include "GPUTRDTrackerKernels.h"
 #include "utils/strtag.h"
 
 using namespace GPUCA_NAMESPACE::gpu;
@@ -33,6 +34,7 @@ using namespace o2::trd;
 template <int I>
 int GPUChainTracking::RunTRDTracking()
 {
+#ifndef GPUCA_ALIROOT_LIB
   if (!processors()->trdTrackerGPU.IsInitialized()) {
     return 1;
   }
@@ -132,6 +134,7 @@ int GPUChainTracking::RunTRDTracking()
   }
   mRec->PopNonPersistentMemory(RecoStep::TRDTracking, qStr2Tag("TRDTRACK"));
 
+#endif // GPUCA_ALIROOT_LIB
   return 0;
 }
 
@@ -188,7 +191,7 @@ int GPUChainTracking::DoTRDGPUTracking(T* externalInstance)
   }
 
   TransferMemoryResourcesToGPU(RecoStep::TRDTracking, Tracker, useStream);
-  runKernel<GPUTRDTrackerKernels, I>(GetGridAuto(useStream), krnlRunRangeNone, krnlEventNone, externalInstance ? Tracker : nullptr);
+  runKernel<GPUTRDTrackerKernels, I>(GetGridAuto(useStream), externalInstance ? Tracker : nullptr);
   TransferMemoryResourcesToHost(RecoStep::TRDTracking, Tracker, useStream);
   SynchronizeStream(useStream);
 
@@ -200,8 +203,8 @@ int GPUChainTracking::DoTRDGPUTracking(T* externalInstance)
 }
 
 template int GPUChainTracking::RunTRDTracking<GPUTRDTrackerKernels::gpuVersion>();
-template int GPUChainTracking::RunTRDTracking<GPUTRDTrackerKernels::o2Version>();
 template int GPUChainTracking::DoTRDGPUTracking<GPUTRDTrackerKernels::gpuVersion>(GPUTRDTrackerGPU*);
 template int GPUChainTracking::DoTRDGPUTracking<GPUTRDTrackerKernels::gpuVersion>(GPUTRDTracker*);
+template int GPUChainTracking::RunTRDTracking<GPUTRDTrackerKernels::o2Version>();
 template int GPUChainTracking::DoTRDGPUTracking<GPUTRDTrackerKernels::o2Version>(GPUTRDTracker*);
 template int GPUChainTracking::DoTRDGPUTracking<GPUTRDTrackerKernels::o2Version>(GPUTRDTrackerGPU*);

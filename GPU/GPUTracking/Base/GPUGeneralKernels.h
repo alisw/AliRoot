@@ -23,7 +23,7 @@
 #include "GPUDef.h"
 #include "GPUDataTypes.h"
 
-#if defined(GPUCA_GPUCODE) && !defined(GPUCA_GPUCODE_GENRTC) && !defined(GPUCA_GPUCODE_HOSTONLY)
+#if defined(GPUCA_GPUCODE) && !defined(GPUCA_GPUCODE_COMPILEKERNELS) && !defined(GPUCA_GPUCODE_HOSTONLY)
 #if defined(__CUDACC__)
 #include <cub/cub.cuh>
 #elif defined(__HIPCC__)
@@ -60,6 +60,17 @@ class GPUKernelTemplate
   };
 
   template <class T, int I>
+  struct GPUSharedMemoryWarpScan64 {
+    // Provides the shared memory resources for warp wide CUB collectives
+#if (defined(__CUDACC__) || defined(__HIPCC__)) && defined(GPUCA_GPUCODE) && !defined(GPUCA_GPUCODE_HOSTONLY)
+    typedef GPUCA_CUB::WarpScan<T> WarpScan;
+    union {
+      typename WarpScan::TempStorage cubWarpTmpMem;
+    };
+#endif
+  };
+
+  template <class T, int I>
   struct GPUSharedMemoryScan64 {
     // Provides the shared memory resources for CUB collectives
 #if (defined(__CUDACC__) || defined(__HIPCC__)) && defined(GPUCA_GPUCODE) && !defined(GPUCA_GPUCODE_HOSTONLY)
@@ -71,12 +82,13 @@ class GPUKernelTemplate
       typename BlockReduce::TempStorage cubReduceTmpMem;
       typename WarpScan::TempStorage cubWarpTmpMem;
       int tmpBroadcast;
+      int warpPredicateSum[I / GPUCA_WARP_SIZE];
     };
 #endif
   };
 
   typedef GPUconstantref() MEM_CONSTANT(GPUConstantMem) processorType;
-  GPUhdi() CONSTEXPRRET static GPUDataTypes::RecoStep GetRecoStep() { return GPUCA_RECO_STEP::NoRecoStep; }
+  GPUhdi() CONSTEXPR static GPUDataTypes::RecoStep GetRecoStep() { return GPUCA_RECO_STEP::NoRecoStep; }
   MEM_TEMPLATE()
   GPUhdi() static processorType* Processor(MEM_TYPE(GPUConstantMem) & processors)
   {
@@ -99,10 +111,20 @@ class GPUKernelTemplate
 class GPUMemClean16 : public GPUKernelTemplate
 {
  public:
-  GPUhdi() CONSTEXPRRET static GPUDataTypes::RecoStep GetRecoStep() { return GPUCA_RECO_STEP::NoRecoStep; }
+  GPUhdi() CONSTEXPR static GPUDataTypes::RecoStep GetRecoStep() { return GPUCA_RECO_STEP::NoRecoStep; }
   template <int iKernel = defaultKernel>
   GPUd() static void Thread(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() MEM_LOCAL(GPUSharedMemory) & smem, processorType& processors, GPUglobalref() void* ptr, unsigned long size);
 };
+
+// Fill with incrementing sequnce of integers
+class GPUitoa : public GPUKernelTemplate
+{
+ public:
+  GPUhdi() CONSTEXPR static GPUDataTypes::RecoStep GetRecoStep() { return GPUCA_RECO_STEP::NoRecoStep; }
+  template <int iKernel = defaultKernel>
+  GPUd() static void Thread(int nBlocks, int nThreads, int iBlock, int iThread, GPUsharedref() MEM_LOCAL(GPUSharedMemory) & smem, processorType& processors, GPUglobalref() int* ptr, unsigned long size);
+};
+
 } // namespace gpu
 } // namespace GPUCA_NAMESPACE
 
