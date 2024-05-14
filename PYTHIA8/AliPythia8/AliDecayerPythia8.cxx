@@ -628,6 +628,12 @@ void AliDecayerPythia8::ForceDecay()
     case kBeautyUpgrade:
       ForceBeautyUpgrade();
 	break;
+	case kEtaPrime: // eta prime -> pi+ pi- eta and eta -> gamma gamma
+		fPythia8->ReadString("331:onMode = off");
+		fPythia8->ReadString("331:onIfMatch = 211 -211 221");
+		fPythia8->ReadString("221:onMode = off");
+		fPythia8->ReadString("221:onIfMatch = 22 22");
+		break;
     case kAll:
 	break;
     case kNoDecay:
