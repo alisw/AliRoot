@@ -78,6 +78,10 @@ AliTPCPIDResponse::AliTPCPIDResponse():
   fResponseFunctions(fgkNumberOfParticleSpecies*fgkNumberOfGainScenarios),
   fOADBContainer(0x0),
   fPileupCorrection(0x0),
+  fQPtTglCorrection(0x0),
+  fEnergyLossCorrectionRequested(kFALSE),     //  flag fEnergyLossCorrectionRequested
+  fGasType(0),                                // type of the gas (0-Argon, 1-Neon)
+  fEnergyLossFactor(1.4),                     // energy loss facto - fit parameters in respect to tabulated value
   fVoltageMap(72),
   fLowGainIROCthreshold(-40),
   fBadIROCthreshhold(-70),
@@ -105,6 +109,7 @@ AliTPCPIDResponse::AliTPCPIDResponse():
   fOROClongWeight(1.),
   fPileupCorrectionStrategy(kPileupCorrectionInExpectedSignal),
   fPileupCorrectionRequested(kFALSE),
+  fQPtTglCorrectionRequested(kFALSE),
   fSigmaParametrization(0x0),
   fMultiplicityNormalization(1),
   fRecoPassNameUsed(),
@@ -243,6 +248,7 @@ AliTPCPIDResponse::AliTPCPIDResponse(const AliTPCPIDResponse& that):
   fOROClongWeight(that.fOROClongWeight),
   fPileupCorrectionStrategy(that.fPileupCorrectionStrategy),
   fPileupCorrectionRequested(that.fPileupCorrectionRequested),
+  fQPtTglCorrectionRequested(that.fQPtTglCorrectionRequested),
   fSigmaParametrization(that.fSigmaParametrization),
   fMultiplicityNormalization(that.fMultiplicityNormalization),
   fRecoPassNameUsed(that.fRecoPassNameUsed),
@@ -367,7 +373,7 @@ AliTPCPIDResponse& AliTPCPIDResponse::operator=(const AliTPCPIDResponse& that)
   fOROClongWeight            = that.fOROClongWeight;
   fPileupCorrectionStrategy  = that.fPileupCorrectionStrategy;
   fPileupCorrectionRequested = that.fPileupCorrectionRequested;
-  fPileupCorrectionRequested = that.fPileupCorrectionRequested;
+  fQPtTglCorrectionRequested = that.fQPtTglCorrectionRequested;
   fSigmaParametrization      = that.fSigmaParametrization;
   fMultiplicityNormalization = that.fMultiplicityNormalization;
   fRecoPassNameUsed          = that.fRecoPassNameUsed;
@@ -493,7 +499,9 @@ Double_t AliTPCPIDResponse::GetExpectedSignal(const AliVTrack* track,
                                               const TSpline3* responseFunction,
                                               Bool_t correctEta,
                                               Bool_t correctMultiplicity,
-                                              Bool_t usePileupCorrection) const 
+                                              Bool_t usePileupCorrection,
+                                              Bool_t useQPtTglCorrection,
+                                              Bool_t useEnergyLossCorrection) const
 {
   // Calculates the expected PID signal as the function of 
   // the information stored in the track and the given parameters,
@@ -523,6 +531,17 @@ Double_t AliTPCPIDResponse::GetExpectedSignal(const AliVTrack* track,
   if (usePileupCorrection && fPileupCorrectionStrategy == kPileupCorrectionInExpectedSignal) {
     corrPileup = GetPileupCorrectionValue(track);
   }
+  //qPtTglCorrection
+   Double_t corrqPtTgl = 1.;
+  if (useQPtTglCorrection && fQPtTglCorrectionRequested) {
+    corrqPtTgl = GetQPtTglCorrectionValue(track);
+  }
+  // energy loss correction
+  Double_t corrELoss = 1.;
+  if (useEnergyLossCorrection && fEnergyLossCorrectionRequested) {
+    corrELoss = GetEnergyLossCorrectionValue(track,species);
+  }
+
 
   if (!correctEta && !correctMultiplicity) {
     return dEdxSplines + corrPileup;
@@ -541,7 +560,7 @@ Double_t AliTPCPIDResponse::GetExpectedSignal(const AliVTrack* track,
     corrFactorMultiplicity = GetMultiplicityCorrectionFast(track, dEdxSplines * corrFactorEta, fCurrentEventMultiplicity);
   }
 
-  return dEdxSplines * corrFactorEta * corrFactorMultiplicity + corrPileup;
+  return dEdxSplines * corrFactorEta * corrFactorMultiplicity * corrqPtTgl *corrELoss+ corrPileup;
 }
 
 
@@ -551,7 +570,9 @@ Double_t AliTPCPIDResponse::GetExpectedSignal(const AliVTrack* track,
                                               ETPCdEdxSource dedxSource,
                                               Bool_t correctEta,
                                               Bool_t correctMultiplicity,
-                                              Bool_t usePileupCorrection) const
+                                              Bool_t usePileupCorrection,
+                                              Bool_t useQPtTglCorrection,
+                                              Bool_t useEnergyLossCorrection) const
 {
   // Calculates the expected PID signal as the function of 
   // the information stored in the track, for the specified particle type 
@@ -582,7 +603,7 @@ Double_t AliTPCPIDResponse::GetExpectedSignal(const AliVTrack* track,
   }
   
   // Charge factor already taken into account inside the following function call
-  return GetExpectedSignal(track, species, dEdx, responseFunction, correctEta, correctMultiplicity, usePileupCorrection);
+  return GetExpectedSignal(track, species, dEdx, responseFunction, correctEta, correctMultiplicity, usePileupCorrection, useQPtTglCorrection,useEnergyLossCorrection);
 }
   
 //_________________________________________________________________________
@@ -646,7 +667,9 @@ Double_t AliTPCPIDResponse::GetExpectedSigma(const AliVTrack* track,
                                              const TSpline3* responseFunction,
                                              Bool_t correctEta,
                                              Bool_t correctMultiplicity,
-                                             Bool_t usePileupCorrection) const 
+                                             Bool_t usePileupCorrection,
+                                             Bool_t useQPtTglCorrection,
+                                             Bool_t useEnergyLossCorrection) const
 {
   // Calculates the expected sigma of the PID signal as the function of 
   // the information stored in the track and the given parameters,
@@ -671,10 +694,10 @@ Double_t AliTPCPIDResponse::GetExpectedSigma(const AliVTrack* track,
   // If no sigma map is available or if no eta correction is requested (sigma maps only for corrected eta!), use the old parametrisation
   if (!fhEtaSigmaPar1 || !correctEta) {  
     if (nPoints != 0) 
-      return GetExpectedSignal(track, species, dEdx, responseFunction, kFALSE, correctMultiplicity, usePileupCorrection) *
+      return GetExpectedSignal(track, species, dEdx, responseFunction, kFALSE, correctMultiplicity, usePileupCorrection, useQPtTglCorrection,useEnergyLossCorrection) *
                fRes0[gainScenario] * sqrt(1. + fResN2[gainScenario]/nPoints);
     else
-      return GetExpectedSignal(track, species, dEdx, responseFunction, kFALSE, correctMultiplicity, usePileupCorrection)*fRes0[gainScenario];
+      return GetExpectedSignal(track, species, dEdx, responseFunction, kFALSE, correctMultiplicity, usePileupCorrection, useQPtTglCorrection,useEnergyLossCorrection)*fRes0[gainScenario];
   }
     
   if (nPoints > 0) {
@@ -711,7 +734,9 @@ Double_t AliTPCPIDResponse::GetExpectedSigma(const AliVTrack* track,
                                              ETPCdEdxSource dedxSource,
                                              Bool_t correctEta,
                                              Bool_t correctMultiplicity,
-                                             Bool_t usePileupCorrection) const 
+                                             Bool_t usePileupCorrection,
+                                             Bool_t useQPtTglCorrection,
+                                             Bool_t useEnergyLossCorrection) const
 {
   // Calculates the expected sigma of the PID signal as the function of 
   // the information stored in the track, for the specified particle type 
@@ -726,7 +751,7 @@ Double_t AliTPCPIDResponse::GetExpectedSigma(const AliVTrack* track,
   if (!ResponseFunctiondEdxN(track, species, dedxSource, dEdx, nPoints, gainScenario, &responseFunction))
     return 999; //TODO: better handling!
   
-  return GetExpectedSigma(track, species, gainScenario, dEdx, nPoints, responseFunction, correctEta, correctMultiplicity, usePileupCorrection);
+  return GetExpectedSigma(track, species, gainScenario, dEdx, nPoints, responseFunction, correctEta, correctMultiplicity, usePileupCorrection, useQPtTglCorrection);
 }
 
 
@@ -736,7 +761,9 @@ Float_t AliTPCPIDResponse::GetNumberOfSigmas(const AliVTrack* track,
                              ETPCdEdxSource dedxSource,
                              Bool_t correctEta,
                              Bool_t correctMultiplicity,
-                             Bool_t usePileupCorrection) const
+                             Bool_t usePileupCorrection,
+                             Bool_t useQPtTglCorrection,
+                             Bool_t useEnergyLossCorrection) const
 {
   //Calculates the number of sigmas of the PID signal from the expected value
   //for a given particle species in the presence of multiple gain scenarios
@@ -750,8 +777,8 @@ Float_t AliTPCPIDResponse::GetNumberOfSigmas(const AliVTrack* track,
   if (!ResponseFunctiondEdxN(track, species, dedxSource, dEdx, nPoints, gainScenario, &responseFunction))
     return -999; //TODO: Better handling!
     
-  Double_t bethe = GetExpectedSignal(track, species, dEdx, responseFunction, correctEta, correctMultiplicity, usePileupCorrection);
-  Double_t sigma = GetExpectedSigma(track, species, gainScenario, dEdx, nPoints, responseFunction, correctEta, correctMultiplicity, usePileupCorrection);
+  Double_t bethe = GetExpectedSignal(track, species, dEdx, responseFunction, correctEta, correctMultiplicity, usePileupCorrection, useQPtTglCorrection,useEnergyLossCorrection);
+  Double_t sigma = GetExpectedSigma(track, species, gainScenario, dEdx, nPoints, responseFunction, correctEta, correctMultiplicity, usePileupCorrection, useQPtTglCorrection,useEnergyLossCorrection);
   // 999 will be returned by GetExpectedSigma e.g. in case of 0 dEdx clusters
   if (sigma >= 998) 
     return -999;
@@ -766,6 +793,8 @@ Float_t AliTPCPIDResponse::GetSignalDelta(const AliVTrack* track,
                                           Bool_t correctEta,
                                           Bool_t correctMultiplicity,
                                           Bool_t usePileupCorrection /*= kFALSE*/,
+                                          Bool_t useQPtTglCorrection,
+                                          Bool_t useEnergyLossCorrection,
                                           Bool_t ratio/*=kFALSE*/)const
 {
   //Calculates the number of sigmas of the PID signal from the expected value
@@ -780,7 +809,7 @@ Float_t AliTPCPIDResponse::GetSignalDelta(const AliVTrack* track,
   if (!ResponseFunctiondEdxN(track, species, dedxSource, dEdx, nPoints, gainScenario, &responseFunction))
     return -9999.; //TODO: Better handling!
 
-  const Double_t bethe = GetExpectedSignal(track, species, dEdx, responseFunction, correctEta, correctMultiplicity, usePileupCorrection);
+  const Double_t bethe = GetExpectedSignal(track, species, dEdx, responseFunction, correctEta, correctMultiplicity, usePileupCorrection, useQPtTglCorrection,useEnergyLossCorrection);
 
   Double_t delta=-9999.;
   if (!ratio) delta=dEdx-bethe;
@@ -1837,6 +1866,28 @@ Double_t AliTPCPIDResponse::GetPileupCorrectionValue(const AliVTrack* track) con
   return corrPileup;
 }
 
+
+//_____________________________________________________________________________
+Double_t AliTPCPIDResponse::GetQPtTglCorrectionValue(const AliVTrack* track) const
+{
+  //
+  // The  correction is an additive value. The corrected dEdx is
+  // dEdx - corrQPtTgl
+  //
+  if (!fQPtTglCorrection) {
+    return 0.;
+  }
+
+  //const Double_t trackTgl = TMath::Abs(TMath::SinH(track->GetTPCTgl()));
+  const Double_t trackTgl = track->GetTgl();
+  Double_t corrVals[2] = {track->GetInnerParam()->GetSigned1Pt(), trackTgl};
+  const Double_t corrQPtTgl = (1+fQPtTglCorrection->Eval(corrVals)) ;
+
+  return corrQPtTgl;
+}
+
+
+
 //______________________________________________________________________________
 AliNDLocalRegression* AliTPCPIDResponse::GetPileupCorrectionFromFile(const TString fileName)
 {
@@ -1873,6 +1924,45 @@ AliNDLocalRegression* AliTPCPIDResponse::GetPileupCorrectionFromFile(const TStri
   delete f;
   return ndLocal;
 }
+
+
+//______________________________________________________________________________
+AliNDLocalRegression* AliTPCPIDResponse::GetQPtTglCorrectionFromFile(const TString fileName)
+{
+  if (fileName.Contains("alien://") && !gGrid) {
+    TGrid::Connect("alien");
+  }
+
+  TFile* f = TFile::Open(fileName);
+  if (!f || !f->IsOpen() || f->IsZombie()) {
+    printf("AliTPCPIDResponse::GetQPtTglCorrectionFromFile: Could not open QPtTgl correction file: %s", fileName.Data());
+    delete f;
+    return 0x0;
+  }
+
+  // Assume that the only object in the file is the QPtTgl correction
+  const Int_t numberOfKeys = f->GetListOfKeys()->GetEntries();
+  if ( numberOfKeys != 1) {
+    printf("AliTPCPIDResponse::GetQPtTglCorrectionFromFile: Number of objects in the file %d is not 1", numberOfKeys);
+    delete f;
+    return 0x0;
+  }
+
+  const char* objectName = f->GetListOfKeys()->At(0)->GetName();
+  TObject* o = f->Get(objectName);
+  AliNDLocalRegression* ndLocal = dynamic_cast<AliNDLocalRegression*>(o);
+  if (!ndLocal) {
+    printf("AliTPCPIDResponse::GetQPtTglCorrectionFromFile: Object in file %s with name %s is not of type AliNDLocalRegression but %s", fileName.Data(), objectName, o->IsA()->GetName());
+    delete f;
+    return 0x0;
+  }
+
+  ndLocal->SetName("QPtTglCorrection");
+
+  delete f;
+  return ndLocal;
+}
+
 
 //_____________________________________________________________________________
 Bool_t AliTPCPIDResponse::InitFromOADB(const Int_t run, const Int_t pass, TString passName,
@@ -2325,9 +2415,9 @@ void AliTPCPIDResponse::GetTF1ParametrizationValues(Double_t values[7], const Al
   const Double_t p = track->GetTPCmomentum();
   const Double_t bg = p / AliPID::ParticleMassZ(Int_t(species));
   const Double_t bbAlpeh = AliExternalTrackParam::BetheBlochAleph(bg);
-
+  // bbAleph not well defined below BG 0.01 - putting to the code protection against outliers
   // values[0] = fMIP / bbAlpeh;   // bbAlelp is already normalized to the MIP
-  values[0] = 1. / bbAlpeh;
+  values[0] = (bbAlpeh>0) ? 1. / bbAlpeh:1.;
   values[1] = track->GetTPCTgl();
   values[2] = track->GetTPCmomentum();
   values[3] = Double_t(species);
@@ -2335,6 +2425,22 @@ void AliTPCPIDResponse::GetTF1ParametrizationValues(Double_t values[7], const Al
   values[5] = TMath::Sqrt(maxCl[dEdxType]  / ncl);
   values[6] = fCurrentEventMultiplicity / fMultiplicityNormalization;
 }
+
+
+  // energy loss correction - expected mean energy loss divide energy loss at the TPC inner wall
+  /// calculate relative energy loss correction in the TPC - in helix approximation for primary tracks
+  /// \param track
+  /// \return
+  Double_t AliTPCPIDResponse::GetEnergyLossCorrectionValue(const AliVTrack* track, Int_t pidCode) const{
+    Double_t elossCorr=1;
+    const Float_t rMin=83;
+    Float_t mass = AliPID::ParticleMass(pidCode);
+    //  makeFitBGRegion(doCheck, "ldEdxRawDist",period,
+    //  "dEdxMeanToInHelix(1/ldEdxRawDist.qPtMean,ldEdxRawDist.tglMean,AliPID::ParticleMass(pidCenter),83,83+tpcNcr3Dist.binMedian,0,5,10,1.4)","dEdxMeanToInHelix(1/qPtMean,tglMean,AliPID::ParticleMass(pidCenter),83,83+tpcNcr3Dist.binMedian,0,5,10,1.4)<1.1",&info);
+    elossCorr=dEdxMeanToInHelix(track->Pt(),track->GetTPCTgl(),mass,rMin,rMin+track->GetTPCCrossedRows(),fGasType,track->GetBz(),10,fEnergyLossFactor);
+    return elossCorr;
+}
+
 
 
 /// This is the empirical ALEPH parameterization of the Bethe-Bloch formula.
@@ -2377,4 +2483,110 @@ double AliTPCPIDResponse::sigmadEdxPt(double p, double PID, double resol ){
   double dEdx2=AliExternalTrackParam::BetheBlochAleph(bgDelta);
   double deltaRel = TMath::Abs(dEdx2-dEdx)/dEdx;
   return deltaRel;
+}
+
+
+/// return pt after traversing length in TPC volume assummig AliExternalTrackParam::BetheBlochAleph standard parameterization
+/// formula approximation for primary and new to primary tracks
+/// \param ptIn       - input Pt
+/// \param tgl        - pz/pt
+/// \param mass       - particle mass
+/// \param type       - 0-Argon, 1-Neon
+/// \param bz         - magnetic field in kG
+/// \param fraction   - scaling factor for energy loss
+/// \return
+double AliTPCPIDResponse::GetPtOutHelix(Float_t ptIn, Double_t tgl, Float_t mass, Double_t rIn, Double_t rOut,  Int_t type, Float_t bz,Float_t fraction){
+  const Float_t kB2C=-0.299792458e-3;
+  const Float_t kMaxSnp=0.95;
+  Float_t pin=ptIn*TMath::Sqrt(1+tgl*tgl);
+  Float_t qPt=1/ptIn;
+  Float_t bg = pin/mass;
+  Float_t elossNe = 0.001*0.00156;  // page 3 https://www.slac.stanford.edu/pubs/icfa/summer98/paper3/paper3.pdf
+  Float_t elossAr = 0.001*0.00244;  // page 3 https://www.slac.stanford.edu/pubs/icfa/summer98/paper3/paper3.pdf
+  Float_t dEdx= AliExternalTrackParam::BetheBlochAleph(bg)*fraction;
+  Double_t e0=TMath::Sqrt(pin*pin+mass*mass);
+  Float_t eloss=(type==0) ? elossAr:elossNe;
+  Float_t lengthNorm=TMath::Abs(rOut-rIn)*TMath::Sqrt(1+tgl*tgl);
+  Float_t C = kB2C*bz*qPt;
+  if (TMath::Abs(0.5*rIn*C)>1)  rIn=2.*kMaxSnp/C;
+  if (TMath::Abs(0.5*rOut*C)>1)  rOut=2.*kMaxSnp/C;
+  Float_t lIn = 2.*TMath::ASin(0.5*rIn*C)/C;
+  Float_t lOut = 2.*TMath::ASin((0.5*rOut*C))/C;
+  lengthNorm=(TMath::Abs(lOut)-TMath::Abs(lIn))*TMath::Sqrt(1+tgl*tgl);
+   //
+  Double_t e1=e0-dEdx*eloss*lengthNorm;
+  if (e1<mass) return 0;
+  return TMath::Sqrt(e1*e1-mass*mass)/TMath::Sqrt(1+tgl*tgl);
+}
+
+/// calcucate dEdx ratio  in region 0 and region 0
+/// \param ptIn     - pt at the inner wall (rIn0) in (GeV)
+/// \param tgl      - pz/pt
+/// \param mass     - particle mass
+/// \param rIn0     - rIn0  (e.g rIn0 of IROC)
+/// \param rOut0    - rOut0 (e.g rOut of OROC)
+/// \param rIn1     - rIn1  (e.g rIn0 of OROC medium)
+/// \param rOut1    - rIn1  (e.g rOut of OROC medium)
+/// \param type     - 0-Argon, 1-Neon
+/// \param bz       - magnetic field (kGaus)
+/// \param nStep    - number of steps for Euler integration
+/// \return
+double AliTPCPIDResponse::dEdxRationR0R1Helix(Float_t ptIn, Float_t tgl,  Float_t mass, Double_t rIn0,Float_t rOut0, Double_t rIn1,Float_t rOut1,  Int_t type, Float_t bz, Int_t nStep){
+  Float_t pin=ptIn*TMath::Sqrt(1+tgl*tgl);
+  Double_t rMin=TMath::Min(rIn0,rIn1);
+  Double_t rMax=TMath::Max(rOut0,rOut1);
+  Float_t rStep=(rMax-rMin)/nStep;
+  //
+  Float_t ptOut=ptIn;
+  Float_t dEdxSum0=0, dEdxSumN0=0;
+  Float_t dEdxSum1=0, dEdxSumN1=0;
+  for (Int_t iStep=0; iStep<nStep; iStep++) {
+    Float_t radiusM=rMin+rStep*(iStep*0.5);
+    ptOut = AliTPCPIDResponse::GetPtOutHelix(ptOut, tgl, mass, rMin+rStep*iStep, rMin+rStep*(iStep+1), type, bz);
+    if (ptOut <= 0) return 1;
+    Float_t pOut = ptOut * TMath::Sqrt(1 + tgl * tgl);
+    Float_t dEdxOut = AliExternalTrackParam::BetheBlochAleph(pOut / mass);
+    if (radiusM>rIn0 && radiusM<rOut0){
+      dEdxSum0+=dEdxOut;
+      dEdxSumN0++;
+    }
+    if (radiusM>rIn1 && radiusM<rOut1){
+      dEdxSum1+=dEdxOut;
+      dEdxSumN1++;
+    }
+  }
+  return (dEdxSum0/dEdxSumN0)/(dEdxSum1/dEdxSumN1);
+}
+
+
+
+/// return ration of mean  dEdx alogn trajectroy to the dEdx at the beginning of trajectory
+/// \param ptIn         - pt at the input (GeV)
+/// \param tgl          - pz/pt
+/// \param mass         - particle mass
+/// \param rIn          - inner radius
+/// \param rOut         - outer radius
+/// \param type         - 0-Argon, 1-Neon
+/// \param bz           - magnetic field
+/// \param nStep        - Euler integration approximation with n steps
+/// \param useInnerPt   - default kFLASE - used for debugging purposes
+/// \return
+double AliTPCPIDResponse::dEdxMeanToInHelix(Float_t ptIn, Float_t tgl,  Float_t mass, Double_t rIn,Float_t rOut,  Int_t type, Float_t bz, Int_t nStep, Float_t scale, Bool_t useInnerPt){
+  Float_t pin=ptIn*TMath::Sqrt(1+tgl*tgl);
+  Float_t dEdxIn=AliExternalTrackParam::BetheBlochAleph(pin/mass);
+  Float_t rStep=(rOut-rIn)/nStep;
+  Float_t ptOut=ptIn;
+  Float_t dEdxSum=0;
+  Float_t dEdxSumN=0;
+  for (Int_t iStep=0; iStep<nStep; iStep++) {
+    Float_t pt=(useInnerPt) ? ptIn:ptOut;
+    ptOut = AliTPCPIDResponse::GetPtOutHelix(pt, tgl, mass, rIn+rStep*iStep, rIn+rStep*(iStep+1), type, bz,scale);
+    if (ptOut <= 0) continue;
+    Float_t pOut = ptOut * TMath::Sqrt(1 + tgl * tgl);
+    Float_t dEdxOut = AliExternalTrackParam::BetheBlochAleph(pOut / mass);
+    dEdxSum+=dEdxOut;
+    dEdxSumN++;
+  }
+  if (dEdxSumN==0) return 1;
+  return (dEdxSum/dEdxSumN)/dEdxIn;
 }
