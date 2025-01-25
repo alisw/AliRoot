@@ -24,7 +24,6 @@ class AliDecayerPythia8 : public TVirtualMCDecayer {
   virtual Int_t   ImportParticles(TClonesArray *particles);
   virtual void    SetForceDecay(Decay_t decay) {fDecay=decay;}
   virtual void    SetForceDecay(Int_t decay)   {SetForceDecay((Decay_t) decay);}
-  virtual void    SetLongLivedDecay(bool val = true) { fEnableLongLivedDecay = val; }
   virtual void    ForceDecay();
   virtual Float_t GetPartialBranchingRatio(Int_t ipart);
   virtual void    HeavyFlavourOff() {fHeavyFlavour = kFALSE;}
@@ -46,10 +45,9 @@ class AliDecayerPythia8 : public TVirtualMCDecayer {
   Int_t         fDebug;                 // Debug level
  
   Decay_t       fDecay;                 //  Forced decay mode
-  bool          fEnableLongLivedDecay;  // To enable long lived particle decay
   Bool_t        fHeavyFlavour;          //! Flag for heavy flavors
   static Bool_t fgInit;                 //! initialization flag 
-  ClassDef(AliDecayerPythia8, 3)        // Particle Decayer using Pythia8
+  ClassDef(AliDecayerPythia8, 4)        // Particle Decayer using Pythia8
 };
 #endif
 

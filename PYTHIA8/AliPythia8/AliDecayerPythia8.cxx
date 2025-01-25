@@ -36,7 +36,6 @@ AliDecayerPythia8::AliDecayerPythia8():
   fPythia8(AliTPythia8::Instance()),
   fDebug(0),
   fDecay(kAll),
-  fEnableLongLivedDecay(kFALSE),
   fHeavyFlavour(kTRUE)
 {
     // Constructor
@@ -96,18 +95,12 @@ void AliDecayerPythia8::Init()
     }
  
     fPythia8->ReadString("111:onMode = on");
-    
-//...Switch off decay of K0S, Lambda, Sigma+-, Xi0-, Omega-.
-    if(!fEnableLongLivedDecay) {
-      fPythia8->ReadString("310:onMode  = off");
-      fPythia8->ReadString("3122:onMode = off");
-      fPythia8->ReadString("3112:onMode = off");
-      fPythia8->ReadString("3222:onMode = off");
-      fPythia8->ReadString("3312:onMode = off");
-      fPythia8->ReadString("3322:onMode = off");
-      fPythia8->ReadString("3334:onMode = off");
-    }
-// .. Force decay channels
+
+    // implement ALICE primary particle definition 
+    fPythia8->ReadString("ParticleDecays:limitTau0 = on"); // set long-lived particle stable ...
+    fPythia8->ReadString("ParticleDecays:tau0Max = 10"); // ... if c*tau0 > 10 mm/c
+
+    // .. Force decay channels
     ForceDecay();
 }
 
