@@ -34,11 +34,11 @@
 #endif
 
 // Redefine dlsym to suppress compiler warnings.
-#ifndef __APPLE__
+/* #ifndef __APPLE__ */
 extern "C" void *(*dlsym(void *handle, const char *symbol))();
-#else
-extern void * dlsym(void * __handle, const char * __symbol) __DYLDDL_DRIVERKIT_UNAVAILABLE;
-#endif
+/* #else */
+/* extern void * dlsym(void * __handle, const char * __symbol) __DYLDDL_DRIVERKIT_UNAVAILABLE; */
+/* #endif */
 
 // Stdlib header file for input and output.
 #include <iostream>

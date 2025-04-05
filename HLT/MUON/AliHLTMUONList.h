@@ -581,7 +581,7 @@ protected:
 
 		Node() : fNext(NULL), fData() {};
 		Node(const DataType& data) : fNext(NULL), fData(data) {};
-		Node(const Node& node) : fNext(node.fNext), fData(node.data) {};
+		Node(const Node& node) : fNext(node.fNext), fData(node.fData) {};
 		
 		// Shallow copy the node.
 		Node& operator = (const Node& node)
