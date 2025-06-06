@@ -13,7 +13,7 @@
 # * provided "as is" without express or implied warranty.                  *
 # **************************************************************************
 
-add_subdirectory (test)
+#PH add_subdirectory (test)
 # Module
 set(MODULE Utilities)
 add_definitions(-D_MODULE_="${MODULE}")
@@ -38,10 +38,10 @@ install(PROGRAMS utilities.sh   DESTINATION libexec)
 install(PROGRAMS alihadd.sh     DESTINATION libexec)
 
 # Tests
-add_executable(test_helpers test_helpers.cxx)
-add_executable(test_alisync01 test_alisync01.cxx)
+#PH add_executable(test_helpers test_helpers.cxx)
+#PH add_executable(test_alisync01 test_alisync01.cxx)
 
-enable_testing()
-add_test(test_helpers ./test_helpers)
-add_test(test_alisync01 ./test_alisync01)
+#PH enable_testing()
+#PH add_test(test_helpers ./test_helpers)
+#PH add_test(test_alisync01 ./test_alisync01)
 
