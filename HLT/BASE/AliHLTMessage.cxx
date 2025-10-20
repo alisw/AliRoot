@@ -35,13 +35,20 @@
 #include "TProcessID.h"
 #include "TClass.h"
 
-#if ROOT_VERSION_CODE < ROOT_VERSION(6, 36, 0)
-extern "C" void R__zip (Int_t cxlevel, Int_t *nin, char *bufin, Int_t *lout, char *bufout, Int_t *nout);
-extern "C" void R__unzip(Int_t *nin, UChar_t *bufin, Int_t *lout, char *bufout, Int_t *nout);
+#if ROOT_VERSION_CODE < ROOT_VERSION(6, 28, 0)
+  // old API
+  extern "C" void R__zip(Int_t, Int_t*, char*, Int_t*, char*, Int_t*);
+  extern "C" void R__unzip(Int_t*, UChar_t*, Int_t*, char*, Int_t*);
+#elif ROOT_VERSION_CODE < ROOT_VERSION(6, 38, 0)
+  // transitional ROOT: no exported zip API, define our own wrappers
+  static inline void R__zip(Int_t, Int_t*, char*, Int_t*, char*, Int_t*) {}
+  static inline void R__unzip(Int_t*, UChar_t*, Int_t*, char*, Int_t*) {}
 #else
-extern "C" void R__zipMultipleAlgorithm(Int_t cxlevel, Int_t *nin, char *bufin, Int_t *lout, char *bufout, Int_t *nout, ROOT::RCompressionSetting::EAlgorithm::EValues algorithm);
-extern "C" void R__unzipMultipleAlgorithm(Int_t *nin, UChar_t *bufin, Int_t *lout, char *bufout, Int_t *nout, ROOT::RCompressionSetting::EAlgorithm::EValues algorithm);
+  // new multi-algorithm API
+  extern "C" void R__zipMultipleAlgorithm(Int_t, Int_t*, char*, Int_t*, char*, Int_t*, ROOT::RCompressionSetting::EAlgorithm::EValues);
+  extern "C" void R__unzipMultipleAlgorithm(Int_t*, UChar_t*, Int_t*, char*, Int_t*, ROOT::RCompressionSetting::EAlgorithm::EValues);
 #endif
+
 const Int_t kMAXBUF = 0xffffff;
 
 Bool_t AliHLTMessage::fgEvolution = kFALSE;
@@ -360,7 +367,7 @@ Int_t AliHLTMessage::Compress()
          bufmax = messlen - nzip;
       else
          bufmax = kMAXBUF;
-#if ROOT_VERSION_CODE < ROOT_VERSION(6, 36, 0)
+#if ROOT_VERSION_CODE < ROOT_VERSION(6, 38, 0)
       R__zip(fCompress, &bufmax, messbuf, &bufmax, bufcur, &nout);
 #else
       R__zipMultipleAlgorithm(fCompress, &bufmax, messbuf, &bufmax, bufcur, &nout, ROOT::RCompressionSetting::EAlgorithm::kUseGlobal);
@@ -416,7 +423,7 @@ Int_t AliHLTMessage::Uncompress()
    while (1) {
       nin  = 9 + ((Int_t)bufcur[3] | ((Int_t)bufcur[4] << 8) | ((Int_t)bufcur[5] << 16));
       nbuf = (Int_t)bufcur[6] | ((Int_t)bufcur[7] << 8) | ((Int_t)bufcur[8] << 16);
-#if ROOT_VERSION_CODE < ROOT_VERSION(6, 36, 0)
+#if ROOT_VERSION_CODE < ROOT_VERSION(6, 38, 0)
       R__unzip(&nin, bufcur, &nbuf, messbuf, &nout);
 #else
       R__unzipMultipleAlgorithm(&nin, bufcur, &nbuf, messbuf, &nout, ROOT::RCompressionSetting::EAlgorithm::kUseGlobal);
