@@ -33,7 +33,7 @@ cd ../simF
 ln -s fluka.out fort.11
 ln -s fluka.err fort.15
 ln -fs $ALICE_ROOT/TFluka/input/coreFlukaVmc.inp coreFlukaVmc.inp
-cp $FLUPRO/data/random.dat old.seed
+cp $FLUPRO/data/random.dat fort.1
 
 root.exe -b -q runsim.C\(5\) 2>&1 | tee sim.log
 mv syswatch.log simwatch.log
