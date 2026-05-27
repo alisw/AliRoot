@@ -286,7 +286,16 @@ Int_t AliHMPIDCluster::Solve(TClonesArray *pCluLst,Int_t *pSigmaCut, Bool_t isTr
 //Phase 0. Initialise Fitter  
   Double_t arglist[10];
   Int_t ierflg = 0;
-  TVirtualFitter* fitter = TVirtualFitter::Fitter(this,3*6);                       //initialize Fitter
+  TVirtualFitter* fitter = TVirtualFitter::Fitter(this,3*kMaxLocMax);                       //initialize Fitter
+  if (!fitter) {
+    TVirtualFitter::SetDefaultFitter("Minuit");
+    fitter = TVirtualFitter::Fitter(this, 3*kMaxLocMax);
+  }
+  if (!fitter) {
+    AliError("Cannot create TVirtualFitter");
+    fSt = kAbn;
+    return 1;
+  }
   //
   arglist[0] = -1;
   ierflg = fitter->ExecuteCommand("SET PRI", arglist, 1);                               // no printout
