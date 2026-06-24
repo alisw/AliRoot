@@ -428,7 +428,7 @@ else()
   # Unneeded modules to disable on DARPM/SHUTTLE builds
   set(ALIROOT_MODULES_NOONLINE
       MONITOR EVGEN DIME DRGEN PYTHIA6 PYTHIA8 STARLIGHT TAmpt TDPMjet TEPEMGEN
-      THbtp THerwig THijing THydjet TPHIC TTherminator TUHKMgen)
+      THbtp THijing THydjet TPHIC TTherminator TUHKMgen)
 
   # AliRoot modules requiring OpenGL
   set(ALIROOT_MODULES_OPENGL
@@ -442,8 +442,8 @@ else()
 
   # AliRoot modules requiring Fortran
   set(ALIROOT_MODULES_FORTRAN
-      DIME HERWIG HIJING LHAPDF MICROCERN PYTHIA6 PYTHIA8 TAmpt
-      TEPEMGEN THbtp THerwig THijing THydjet TPHIC TUHKMgen)
+      DIME HIJING LHAPDF MICROCERN PYTHIA6 PYTHIA8 TAmpt
+      TEPEMGEN THbtp THijing THydjet TPHIC TUHKMgen)
   if(NOT DISABLE_FORTRAN)
     list(INSERT ALIROOT_MODULES 0 "${ALIROOT_MODULES_FORTRAN}")
     find_package(DPMJET)
