@@ -41,7 +41,7 @@ AliAnalysisTaskStat::~AliAnalysisTaskStat()
 /// Destructor.
 
   if (fOutputList) {
-    if (!AliAnalysisManager::GetAnalysisManager()->IsProofMode()) delete fOutputList;
+    delete fOutputList;
   } else {
     if (fStatistics) delete fStatistics;
   }

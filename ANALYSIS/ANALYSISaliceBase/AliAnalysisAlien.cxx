@@ -111,9 +111,6 @@ AliAnalysisAlien::AliAnalysisAlien()
                   fFastReadOption(0),
                   fOverwriteMode(1),
                   fNreplicas(2),
-                  fNproofWorkers(0),
-                  fNproofWorkersPerSlave(0),
-                  fProofReset(0),
                   fNMCevents(0),
                   fNMCjobs(0),
                   fRunNumbers(),
@@ -152,16 +149,11 @@ AliAnalysisAlien::AliAnalysisAlien()
                   fJobTag(),
                   fOutputSingle(),
                   fRunPrefix(),
-                  fProofCluster(),
-                  fProofDataSet(),
                   fFileForTestMode(),
-                  fAliRootMode(),
-                  fProofProcessOpt(),
                   fMergeDirName(),
                   fInputFiles(0),
                   fPackages(0),
                   fModules(0),
-                  fProofParam(),
                   fDropToShell(true),
                   fMCLoop(false),
                   fGridJobIDs(""),
@@ -194,9 +186,6 @@ AliAnalysisAlien::AliAnalysisAlien(const char *name)
                   fFastReadOption(0),
                   fOverwriteMode(1),
                   fNreplicas(2),
-                  fNproofWorkers(0),
-                  fNproofWorkersPerSlave(0),
-                  fProofReset(0),
                   fNMCevents(0),
                   fNMCjobs(0),
                   fRunNumbers(),
@@ -235,16 +224,11 @@ AliAnalysisAlien::AliAnalysisAlien(const char *name)
                   fJobTag(),
                   fOutputSingle(),
                   fRunPrefix(),
-                  fProofCluster(),
-                  fProofDataSet(),
                   fFileForTestMode(),
-                  fAliRootMode(),
-                  fProofProcessOpt(),
                   fMergeDirName(),
                   fInputFiles(0),
                   fPackages(0),
                   fModules(0),
-                  fProofParam(),
                   fDropToShell(true),
                   fMCLoop(false),
                   fGridJobIDs(""),
@@ -277,9 +261,6 @@ AliAnalysisAlien::AliAnalysisAlien(const AliAnalysisAlien& other)
                   fFastReadOption(other.fFastReadOption),
                   fOverwriteMode(other.fOverwriteMode),
                   fNreplicas(other.fNreplicas),
-                  fNproofWorkers(other.fNproofWorkers),
-                  fNproofWorkersPerSlave(other.fNproofWorkersPerSlave),
-                  fProofReset(other.fProofReset),
                   fNMCevents(other.fNMCevents),
                   fNMCjobs(other.fNMCjobs),
                   fRunNumbers(other.fRunNumbers),
@@ -318,16 +299,11 @@ AliAnalysisAlien::AliAnalysisAlien(const AliAnalysisAlien& other)
                   fJobTag(other.fJobTag),
                   fOutputSingle(other.fOutputSingle),
                   fRunPrefix(other.fRunPrefix),
-                  fProofCluster(other.fProofCluster),
-                  fProofDataSet(other.fProofDataSet),
                   fFileForTestMode(other.fFileForTestMode),
-                  fAliRootMode(other.fAliRootMode),
-                  fProofProcessOpt(other.fProofProcessOpt),
                   fMergeDirName(other.fMergeDirName),
                   fInputFiles(0),
                   fPackages(0),
                   fModules(0),
-                  fProofParam(),
                   fDropToShell(other.fDropToShell),
                   fMCLoop(other.fMCLoop),
                   fGridJobIDs(other.fGridJobIDs),
@@ -375,7 +351,6 @@ AliAnalysisAlien::~AliAnalysisAlien()
    delete fInputFiles;
    delete fPackages;
    delete fModules;
-   fProofParam.DeleteAll();
 }   
 
 //______________________________________________________________________________
@@ -402,9 +377,6 @@ AliAnalysisAlien &AliAnalysisAlien::operator=(const AliAnalysisAlien& other)
       fFastReadOption          = other.fFastReadOption;
       fOverwriteMode           = other.fOverwriteMode;
       fNreplicas               = other.fNreplicas;
-      fNproofWorkers           = other.fNproofWorkers;
-      fNproofWorkersPerSlave   = other.fNproofWorkersPerSlave;
-      fProofReset              = other.fProofReset;
       fNMCevents               = other.fNMCevents;
       fNMCjobs                 = other.fNMCjobs;
       fRunNumbers              = other.fRunNumbers;
@@ -443,11 +415,7 @@ AliAnalysisAlien &AliAnalysisAlien::operator=(const AliAnalysisAlien& other)
       fJobTag                  = other.fJobTag;
       fOutputSingle            = other.fOutputSingle;
       fRunPrefix               = other.fRunPrefix;
-      fProofCluster            = other.fProofCluster;
-      fProofDataSet            = other.fProofDataSet;
       fFileForTestMode         = other.fFileForTestMode;
-      fAliRootMode             = other.fAliRootMode;
-      fProofProcessOpt         = other.fProofProcessOpt;
       fMergeDirName            = other.fMergeDirName;
       fDropToShell             = other.fDropToShell;
       fMCLoop                  = other.fMCLoop;
@@ -2411,7 +2379,7 @@ TChain *AliAnalysisAlien::GetChainForTestMode(const char *treeName) const
 // Make a tree from files having the location specified in fFileForTestMode. 
 // Inspired from JF's CreateESDChain.
    if (fFileForTestMode.IsNull()) {
-      Error("GetChainForTestMode", "For proof test mode please use SetFileForTestMode() pointing to a file that contains data file locations.");
+      Error("GetChainForTestMode", "For local test mode please use SetFileForTestMode() pointing to a file that contains data file locations.");
       return NULL;
    }
    if (gSystem->AccessPathName(fFileForTestMode)) {
@@ -2590,46 +2558,6 @@ void AliAnalysisAlien::Print(Option_t *) const
 {
 // Print current plugin settings.
    printf("### AliEn analysis plugin current settings ###\n");
-   AliAnalysisManager *mgr = AliAnalysisManager::GetAnalysisManager();
-   if (mgr && mgr->IsProofMode()) {
-      TString proofType = "=   PLUGIN IN PROOF MODE ON CLUSTER:_________________";
-      if (TestBit(AliAnalysisGrid::kTest))
-         proofType = "=   PLUGIN IN PROOF LITE MODE ON CLUSTER:____________";
-      printf("%s %s\n", proofType.Data(), fProofCluster.Data());
-      if (!fProofDataSet.IsNull())
-      printf("=   Requested data set:___________________________ %s\n", fProofDataSet.Data());
-      if (fProofReset==1)
-      printf("=   Soft reset signal will be send to master______ CHANGE BEHAVIOR AFTER COMPLETION\n");      
-      if (fProofReset>1)   
-      printf("=   Hard reset signal will be send to master______ CHANGE BEHAVIOR AFTER COMPLETION\n");      
-      if (!fROOTVersion.IsNull())
-      printf("=   ROOT version requested________________________ %s\n", fROOTVersion.Data());
-      else
-      printf("=   ROOT version requested________________________ default\n");
-      printf("=   AliRoot version requested_____________________ %s\n", fAliROOTVersion.Data());
-      printf("=   AliPhysics version requested__________________ %s\n", fAliPhysicsVersion.Data());
-      if (!fAliRootMode.IsNull())
-      printf("=   Requested AliRoot mode________________________ %s\n", fAliRootMode.Data());  
-      if (fNproofWorkers)
-      printf("=   Number of PROOF workers limited to____________ %d\n", fNproofWorkers);
-      if  (fNproofWorkersPerSlave)
-      printf("=   Maximum number of workers per slave___________ %d\n", fNproofWorkersPerSlave);
-      if (TestSpecialBit(kClearPackages))
-      printf("=   ClearPackages requested...\n");
-      if (fIncludePath.Data())
-      printf("=   Include path for runtime task compilation: ___ %s\n", fIncludePath.Data());
-      printf("=   Additional libs to be loaded or souces to be compiled runtime: <%s>\n",fAdditionalLibs.Data());
-      if (fPackages && fPackages->GetEntries()) {
-         TIter next(fPackages);
-         TObject *obj;
-         TString list;
-         while ((obj=next())) list += obj->GetName();
-         printf("=   Par files to be used: ________________________ %s\n", list.Data());
-      } 
-      if (TestSpecialBit(kProofConnectGrid))
-      printf("=   Requested PROOF connection to grid\n");
-      return;
-   }
    printf("=   OverwriteMode:________________________________ %d\n", fOverwriteMode);
    if (fOverwriteMode) {
       printf("***** NOTE: Overwrite mode will overwrite the input generated datasets and partial results from previous analysis. \
@@ -2789,15 +2717,6 @@ void AliAnalysisAlien::SetFriendChainName(const char *name, const char *libnames
    }
 }
 
-//______________________________________________________________________________
-void AliAnalysisAlien::SetRootVersionForProof(const char *version)
-{
-// Obsolete method. Use SetROOTVersion instead
-   Warning("SetRootVersionForProof", "Obsolete. Use SetROOTVersion instead");
-   if (fROOTVersion.IsNull()) SetROOTVersion(version);
-   else Error("SetRootVersionForProof", "ROOT version already set to %s", fROOTVersion.Data());
-}
-   
 //______________________________________________________________________________
 Bool_t AliAnalysisAlien::CheckMergedFiles(const char *filename, const char *aliendir, Int_t nperchunk, const char *jdl)
 {
@@ -3337,30 +3256,6 @@ void AliAnalysisAlien::SetOutputArchive(const char *list)
 }
 
 //______________________________________________________________________________
-void AliAnalysisAlien::SetProofParameter(const char *pname, const char *value)
-{
-// Set some PROOF special parameter.
-   TPair *pair = dynamic_cast<TPair*>(fProofParam.FindObject(pname));
-   if (pair) {
-      TObject *old = pair->Key();
-      TObject *val = pair->Value();
-      fProofParam.Remove(old);
-      delete old;
-      delete val;
-   }
-   fProofParam.Add(new TObjString(pname), new TObjString(value));
-}
-
-//______________________________________________________________________________
-const char *AliAnalysisAlien::GetProofParameter(const char *pname) const
-{
-// Returns a special PROOF parameter.
-   TPair *pair = dynamic_cast<TPair*>(fProofParam.FindObject(pname));
-   if (!pair) return 0;
-   return pair->Value()->GetName();
-}      
-
-//______________________________________________________________________________
 Bool_t AliAnalysisAlien::StartAnalysis(Long64_t nentries, Long64_t firstEntry)
 {
 // Start remote grid analysis.
@@ -3370,268 +3265,7 @@ Bool_t AliAnalysisAlien::StartAnalysis(Long64_t nentries, Long64_t firstEntry)
       Error("StartAnalysis", "You need an initialized analysis manager for this");
       return kFALSE;
    }
-   // Are we in PROOF mode ?
-   if (mgr->IsProofMode()) {
-      if (testMode) Info("StartAnalysis", "##### Starting PROOF analysis with Proof Lite via the plugin #####");
-      else Info("StartAnalysis", "##### Starting PROOF analysis on cluster <%s> via the plugin #####", fProofCluster.Data());
-      if (fProofCluster.IsNull()) {
-         Error("StartAnalysis", "You need to specify the proof cluster name via SetProofCluster");
-         return kFALSE;
-      }   
-      if (fProofDataSet.IsNull() && !testMode) {
-         Error("StartAnalysis", "You need to specify a dataset using SetProofDataSet()");
-         return kFALSE;
-      }   
-      // Set the needed environment
-      gEnv->SetValue("XSec.GSI.DelegProxy","2");
-      // Do we need to reset PROOF ? The success of the Reset operation cannot be checked
-      if (fProofReset && !testMode) {
-         if (fProofReset==1) {
-            Info("StartAnalysis", "Sending soft reset signal to proof cluster %s", fProofCluster.Data());
-            gROOT->ProcessLine(Form("TProof::Reset(\"%s\", kFALSE);", fProofCluster.Data()));
-         } else {         
-            Info("StartAnalysis", "Sending hard reset signal to proof cluster %s", fProofCluster.Data());
-            gROOT->ProcessLine(Form("TProof::Reset(\"%s\", kTRUE);", fProofCluster.Data()));
-         }
-         Info("StartAnalysis", "Stopping the analysis. Please use SetProofReset(0) to resume.");
-         return kFALSE;
-      }
-      
-      if (!testMode) {
-        // Check if there is an old active session
-        Long_t nsessions = gROOT->ProcessLine(Form("TProof::Mgr(\"%s\")->QuerySessions(\"\")->GetEntries();", fProofCluster.Data()));
-        if (nsessions) {
-          Error("StartAnalysis","You have to reset your old session first\n");
-          return kFALSE;
-        }
-      }
-      // Do we need to change the ROOT version ? The success of this cannot be checked.
-      if (!fROOTVersion.IsNull() && !testMode) {
-         gROOT->ProcessLine(Form("TProof::Mgr(\"%s\")->SetROOTVersion(\"VO_ALICE@ROOT::%s\");", 
-                            fProofCluster.Data(), fROOTVersion.Data()));
-      }
-      // Connect to PROOF and check the status
-      Long_t proof = 0;
-      TString sworkers;
-      if (fNproofWorkersPerSlave) sworkers = Form("workers=%dx", fNproofWorkersPerSlave);
-      else if (fNproofWorkers) sworkers = Form("workers=%d", fNproofWorkers);
-      if (!testMode) {
-         if (!sworkers.IsNull()) 
-            proof = gROOT->ProcessLine(Form("TProof::Open(\"%s\", \"%s\");", fProofCluster.Data(), sworkers.Data()));
-         else   
-            proof = gROOT->ProcessLine(Form("TProof::Open(\"%s\");", fProofCluster.Data()));
-      } else {
-         proof = gROOT->ProcessLine("TProof::Open(\"\");");
-         if (!proof) {
-            Error("StartAnalysis", "Could not start PROOF in test mode");
-            return kFALSE;
-         }   
-      }
-      if (!proof) {
-         Error("StartAnalysis", "Could not connect to PROOF cluster <%s>", fProofCluster.Data());
-         return kFALSE;
-      }   
-      if (fNproofWorkersPerSlave*fNproofWorkers > 0)
-         gROOT->ProcessLine(Form("gProof->SetParallel(%d);", fNproofWorkers));
-      // Set proof special parameters if any
-      TIter nextpp(&fProofParam);
-      TObject *proofparam;
-      while ((proofparam=nextpp())) {
-         TString svalue = GetProofParameter(proofparam->GetName());
-         gROOT->ProcessLine(Form("gProof->SetParameter(\"%s\",%s);", proofparam->GetName(), svalue.Data()));
-      }   
-      // Is dataset existing ?
-      if (!testMode) {
-         TString dataset = fProofDataSet;
-         Int_t index = dataset.Index("#");
-         if (index>=0) dataset.Remove(index);
-//         if (!gROOT->ProcessLine(Form("gProof->ExistsDataSet(\"%s\");",fProofDataSet.Data()))) {
-//            Error("StartAnalysis", "Dataset %s not existing", fProofDataSet.Data());
-//            return kFALSE;
-//         }
-//         Info("StartAnalysis", "Dataset %s found", dataset.Data());
-      }
-      // Is ClearPackages() needed ?
-      if (TestSpecialBit(kClearPackages)) {
-         Info("StartAnalysis", "ClearPackages signal sent to PROOF. Use SetClearPackages(kFALSE) to reset this.");
-         gROOT->ProcessLine("gProof->ClearPackages();");
-      }
-      // Is a given aliroot mode requested ?
-      TList optionsList;
-      TString parLibs;
-      if (!fAliRootMode.IsNull()) {
-         TString alirootMode = fAliRootMode;
-         if (alirootMode == "default") alirootMode = "";
-         Info("StartAnalysis", "You are requesting AliRoot mode: %s", fAliRootMode.Data());
-         optionsList.SetOwner();
-         optionsList.Add(new TNamed("ALIROOT_MODE", alirootMode.Data()));
-         // Check the additional libs to be loaded
-         TString extraLibs;
-         Bool_t parMode = kFALSE;
-         if (!alirootMode.IsNull()) extraLibs = "ANALYSIS:ANALYSISalice:OADB";
-         // Parse the extra libs for .so or .dylib
-         if (fAdditionalLibs.Length()) {
-            TString additionalLibs = fAdditionalLibs;
-            additionalLibs.Strip();
-            if (additionalLibs.Length() && fFriendLibs.Length())
-               additionalLibs += " ";
-            additionalLibs += fFriendLibs;
-            TObjArray *list = additionalLibs.Tokenize(" ");
-            TIter next(list);
-            TObjString *str;
-            while((str=(TObjString*)next())) {
-               if (str->GetString().Contains(".so") ||
-                   str->GetString().Contains(".dylib") ) {
-                  if (parMode) {
-                     Warning("StartAnalysis", "Plugin does not support loading libs after par files in PROOF mode. Library %s and following will not load on workers", str->GetName());
-                     break;
-                  }   
-                  TString stmp = str->GetName();
-                  if (stmp.BeginsWith("lib")) stmp.Remove(0,3);
-                  stmp.ReplaceAll(".so","");
-                  stmp.ReplaceAll(".dylib","");
-                  if (!extraLibs.IsNull()) extraLibs += ":";
-                  extraLibs += stmp;
-                  continue;
-               }
-               if (str->GetString().Contains(".par")) {
-                  // The first par file found in the list will not allow any further .so
-                  parMode = kTRUE;
-                  if (!parLibs.IsNull()) parLibs += ":";
-                  parLibs += str->GetName();
-                  continue;
-               }   
-            }
-            if (list) delete list;            
-         }
-         if (!extraLibs.IsNull()) {
-           Info("StartAnalysis", "Adding extra libs: %s",extraLibs.Data());
-           optionsList.Add(new TNamed("ALIROOT_EXTRA_LIBS",extraLibs.Data()));
-         }
-         // Check extra includes
-         if (!fIncludePath.IsNull()) {
-            TString includePath = fIncludePath;
-            includePath.ReplaceAll(" ",":");
-            includePath.ReplaceAll("$ALICE_ROOT/","");
-            includePath.ReplaceAll("${ALICE_ROOT}/","");
-            includePath.ReplaceAll("-I","");
-            includePath.Remove(TString::kTrailing, ':');
-            Info("StartAnalysis", "Adding extra includes: %s",includePath.Data()); 
-            optionsList.Add(new TNamed("ALIROOT_EXTRA_INCLUDES",includePath.Data()));
-         }
-         // Check if connection to grid is requested
-         if (TestSpecialBit(kProofConnectGrid)) 
-            optionsList.Add(new TNamed("ALIROOT_ENABLE_ALIEN", "1"));
-         // Enable AliRoot par
-         if (testMode) {
-         // Enable proof lite package
-            TString alirootLite = gSystem->ExpandPathName("$ALICE_ROOT/ANALYSIS/macros/AliRootProofLite.par");
-            for (Int_t i=0; i<optionsList.GetSize(); i++) {
-               TNamed *obj = (TNamed*)optionsList.At(i);
-               printf("%s  %s\n", obj->GetName(), obj->GetTitle());
-            }   
-            if (!gROOT->ProcessLine(Form("gProof->UploadPackage(\"%s\");",alirootLite.Data()))
-              && !gROOT->ProcessLine(Form("gProof->EnablePackage(\"%s\", (TList*)%p);",alirootLite.Data(),&optionsList))) {
-                  Info("StartAnalysis", "AliRootProofLite enabled");
-            } else {                      
-               Error("StartAnalysis", "There was an error trying to enable package AliRootProofLite.par");
-               return kFALSE;
-            }   
-         } else {
-           if ( ! fAliROOTVersion.IsNull() ) {
-             if (gROOT->ProcessLine(Form("gProof->EnablePackage(\"VO_ALICE@AliRoot::%s\", (TList*)%p, kTRUE);", 
-                                         fAliROOTVersion.Data(), &optionsList))) {
-                Error("StartAnalysis", "There was an error trying to enable package VO_ALICE@AliRoot::%s", fAliROOTVersion.Data());
-                return kFALSE;
-             }
-           }
-           if ( ! fAliPhysicsVersion.IsNull() ) {
-             if (gROOT->ProcessLine(Form("gProof->EnablePackage(\"VO_ALICE@AliPhysics::%s\", (TList*)%p, kTRUE);", 
-                                         fAliPhysicsVersion.Data(), &optionsList))) {
-                Error("StartAnalysis", "There was an error trying to enable package VO_ALICE@AliPhysics::%s", fAliPhysicsVersion.Data());
-                return kFALSE;
-             }
-           }
-         }
-         // Enable first par files from fAdditionalLibs
-         if (!parLibs.IsNull()) {
-            TObjArray *list = parLibs.Tokenize(":");
-            TIter next(list);
-            TObjString *package;
-            while((package=(TObjString*)next())) {
-               TString spkg = package->GetName();
-               spkg.ReplaceAll(".par", "");
-               gSystem->Exec(TString::Format("rm -rf %s", spkg.Data()));
-               if (!gROOT->ProcessLine(Form("gProof->UploadPackage(\"%s\");", package->GetName()))) {
-                  TString enablePackage = (testMode)?Form("gProof->EnablePackage(\"%s\",kFALSE);", package->GetName()):Form("gProof->EnablePackage(\"%s\",kTRUE);", package->GetName());
-                  if (gROOT->ProcessLine(enablePackage)) {
-                     Error("StartAnalysis", "There was an error trying to enable package %s", package->GetName());
-                     return kFALSE;
-                  }
-               } else {
-                  Error("StartAnalysis", "There was an error trying to upload package %s", package->GetName());
-                  return kFALSE;
-               }
-            }
-            if (list) delete list; 
-         }
-      } else {
-         if ((fAdditionalLibs.Contains(".so") || fAdditionalLibs.Contains(".dylib")) && 
-             !testMode) {
-            Error("StartAnalysis", "You request additional libs to be loaded but did not enabled any AliRoot mode. Please refer to: \
-                   \n http://aaf.cern.ch/node/83 and use a parameter for SetAliRootMode()");
-            return kFALSE;       
-         }
-      }
-      // Enable par files if requested
-      if (fPackages && fPackages->GetEntries()) {
-         TIter next(fPackages);
-         TObject *package;
-         while ((package=next())) {
-            // Skip packages already enabled
-            if (parLibs.Contains(package->GetName())) continue;
-            TString spkg = package->GetName();
-            spkg.ReplaceAll(".par", "");
-            gSystem->Exec(TString::Format("rm -rf %s", spkg.Data()));
-            if (!gROOT->ProcessLine(Form("gProof->UploadPackage(\"%s\");", package->GetName()))) {
-               if (gROOT->ProcessLine(Form("gProof->EnablePackage(\"%s\",kTRUE);", package->GetName()))) {
-                  Error("StartAnalysis", "There was an error trying to enable package %s", package->GetName());
-                  return kFALSE;
-               }
-            } else {
-               Error("StartAnalysis", "There was an error trying to upload package %s", package->GetName());
-               return kFALSE;
-            }
-         }
-      }
-      // Do we need to load analysis source files ?
-      // NOTE: don't load on client since this is anyway done by the user to attach his task.
-      if (fAnalysisSource.Length()) {
-         TObjArray *list = fAnalysisSource.Tokenize(" ");
-         TIter next(list);
-         TObjString *str;
-         while((str=(TObjString*)next())) {
-            gROOT->ProcessLine(Form("gProof->Load(\"%s+g\", kTRUE);", str->GetName()));
-         }
-         if (list) delete list;
-      }
-      if (testMode) {
-      // Register dataset to proof lite.
-         if (fFileForTestMode.IsNull()) {
-            Error("GetChainForTestMode", "For proof test mode please use SetFileForTestMode() pointing to a file that contains data file locations.");
-            return kFALSE;
-         }
-         if (gSystem->AccessPathName(fFileForTestMode)) {
-            Error("GetChainForTestMode", "File not found: %s", fFileForTestMode.Data());
-            return kFALSE;
-         }   
-         TFileCollection *coll = new TFileCollection();
-         coll->AddFromFile(fFileForTestMode);
-         gROOT->ProcessLine(Form("gProof->RegisterDataSet(\"test_collection\", (TFileCollection*)%p, \"OV\");", coll));
-         gROOT->ProcessLine("gProof->ShowDataSets()");
-      }
-      return kTRUE;
-   }
+
    
    // Check if output files have to be taken from the analysis manager
    if (TestBit(AliAnalysisGrid::kDefaultOutputs)) {

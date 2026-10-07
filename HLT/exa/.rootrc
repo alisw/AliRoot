@@ -134,8 +134,6 @@ Root.Html.Copyright:        //*-- Copyright
 # Default authentication method for rootd (0=clear, 1=SRP, 2=Krb5)
 #Rootd.Authentication:   0
 
-# Default authentication method for proofd (0=clear, 1=SRP, 2=Krb5)
-#Proofd.Authentication:  0
 
 # Plugin library handlers
 #Plugin.TFile:        ^rfio:    TRFIOFile     RFIO    "TRFIOFile(const char*,Option_t*,const char*,Int_t)"
@@ -161,7 +159,6 @@ Root.Html.Copyright:        //*-- Copyright
 #+Plugin.TVirtualPS:     svg    TSVG          Postscript   "TSVG()"
 #Plugin.TViewerX3D:          *  TViewerX3D    X3d          "TViewerX3D(TVirtualPad*,Option_t*,const char*,UInt_t,UInt_t)"
 #Plugin.TMinuitGraph:        *  TGraph        Graf         "TGraph(Int_t,const Double_t*,const Double_t*)"
-#Plugin.TVirtualProof:       *  TProof        Proof        "TProof(const char*,const char*,const char*,Int_t)"
 #Plugin.TPaletteEditor:      *  TASPaletteEditor  ASImage  "TASPaletteEditor(TAttImage*,UInt_t,UInt_t)"
 #Plugin.TImage:              *  TASImage          ASImage  "TASImage()"
 #Plugin.TFileDrawMap         *  TFileDrawMap  TreePlayer   "TFileDrawMap(const TFile*, const char*, const char*)"
@@ -171,7 +168,6 @@ Root.Html.Copyright:        //*-- Copyright
 #+Plugin.TVirtualX:   win32gdk  TGWin32       Win32gdk     "TGWin32(const char*,const char*)"
 #Plugin.TGuiFactory:  root      TRootGuiFactory Gui        "TRootGuiFactory()"
 #+Plugin.TGuiFactory: win32     TWin32GuiFactory Win32     "TWin32GuiFactory()"
-#Plugin.TProofProgressDialog: * TProofProgressDialog ProofGui  "TProofProgressDialog(TVirtualProof*,const char*,Int_t,Long64_t,Long64_t)"
 
 # Example of custom setting for the Rint application (root.exe).
 # This overrides the default specified above for a generic application.

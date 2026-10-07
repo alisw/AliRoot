@@ -23,7 +23,6 @@ class TClass;
 class TTree;
 class TChain;
 class TFile;
-class TFileCollection;
 class TStopwatch;
 class TMap;
 class AliAnalysisSelector;
@@ -50,7 +49,6 @@ enum EAliAnalysisContType {
 
 enum EAliAnalysisExecMode {
    kLocalAnalysis    = 0,
-   kProofAnalysis    = 1,
    kGridAnalysis     = 2,
    kMixingAnalysis   = 3
 };
@@ -58,7 +56,6 @@ enum EAliAnalysisExecMode {
 enum EAliAnalysisFlags {
    kEventLoop        = BIT(14),
    kDisableBranches  = BIT(15),
-   kUseDataSet       = BIT(16),
    kSaveCanvases     = BIT(17),
    kExternalLoop     = BIT(18),
    kSkipTerminate    = BIT(19),
@@ -81,13 +78,10 @@ enum EAliAnalysisFlags {
    virtual Bool_t      Notify();
    virtual Bool_t      ProcessCut(Long64_t entry) {return Process(entry);}
    virtual Bool_t      Process(Long64_t entry);
-   TFile              *OpenProofFile(AliAnalysisDataContainer *cont, const char *option, const char *extaod="");
-   static TFile       *OpenFile(AliAnalysisDataContainer *cont, const char *option, Bool_t ignoreProof=kFALSE);
+   static TFile       *OpenFile(AliAnalysisDataContainer *cont, const char *option);
    void                PackOutput(TList *target);
    void                RegisterExtraFile(const char *fname);
    Long64_t            StartAnalysis(const char *type, TTree * const tree, Long64_t nentries=1234567890, Long64_t firstentry=0);
-   Long64_t            StartAnalysis(const char *type, const char *dataset, Long64_t nentries=1234567890, Long64_t firstentry=0);
-   Long64_t            StartAnalysis(const char *type, TFileCollection* dataset, Long64_t nentries=1234567890, Long64_t firstentry=0);
    Long64_t            StartAnalysis(const char *type, Long64_t nentries=1234567890, Long64_t firstentry=0);
    virtual void        SlaveBegin(TTree *tree);
    virtual void        Terminate();
@@ -113,7 +107,6 @@ enum EAliAnalysisFlags {
    Bool_t              GetAsyncReading() const {return fAsyncReading;}
    TString             GetExtraFiles() const      {return fExtraFiles;}
    AliVEventPool*      GetEventPool()  const      {return fEventPool;}
-   Bool_t              GetFileFromWrapper(const char *filename, const TList *source);
    const char         *GetFileInfoLog() const     {return fFileInfoLog.Data();}
    static Int_t        GetRunFromAlienPath(const char *path);
    AliAnalysisGrid*    GetGridHandler()           {return fGridHandler;}
@@ -138,10 +131,8 @@ enum EAliAnalysisFlags {
    static Bool_t       IsMacroLoaded(const char * filename);
    Bool_t              IsMCLoop() const           {return fMCLoop;}
    static Bool_t       IsPipe(std::ostream &out);
-   Bool_t              IsProofMode() const        {return (fMode==kProofAnalysis)?kTRUE:kFALSE;}
    Bool_t              IsRemote() const           {return fIsRemote;}
    Bool_t              IsCollectThroughput()      {return TObject::TestBit(kCollectThroughput);}
-   Bool_t              IsUsingDataSet() const     {return TObject::TestBit(kUseDataSet);}
    void                LoadBranch(const char *n)  { if(fAutoBranchHandling) return; DoLoadBranch(n); }
    void                RunLocalInit();
    void                SetAnalysisType(EAliAnalysisExecMode mode) {fMode = mode;}

@@ -11,7 +11,6 @@ Int_t loadlibssim ()
   
   if ( gSystem->Load("libPhysics") < 0 ) return ret; ret--;
   if ( gSystem->Load("libMinuit") < 0 ) return ret; ret--;
-  if ( gSystem->Load("libProof") < 0 ) return ret; ret--;
 
   if ( gSystem->Load("libmicrocern") < 0 ) return ret; ret--;
   if ( gSystem->Load("liblhapdf") < 0 ) return ret; ret--;

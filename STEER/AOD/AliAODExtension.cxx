@@ -179,7 +179,7 @@ void AliAODExtension::FillTree()
 }
 
 //______________________________________________________________________________
-Bool_t AliAODExtension::Init(Option_t *option)
+Bool_t AliAODExtension::Init(Option_t * /*option*/)
 {
   /// Initialize IO.
 
@@ -191,21 +191,8 @@ Bool_t AliAODExtension::Init(Option_t *option)
   }
   
   TDirectory *owd = gDirectory;
-  TString opt(option);
-  opt.ToLower();
-  
-  if (opt.Contains("proof")) 
-  {
-    // proof
-    // Merging via files. Need to access analysis manager via interpreter.
-    gROOT->ProcessLine(Form("AliAnalysisDataContainer *c_common_out = AliAnalysisManager::GetAnalysisManager()->GetCommonOutputContainer();"));
-    gROOT->ProcessLine(Form("AliAnalysisManager::GetAnalysisManager()->OpenProofFile(c_common_out, \"RECREATE\", \"%s\");", fName.Data()));
-    fFileE = gFile;
-  } 
-  else 
-  {
-    fFileE = new TFile(GetName(), "RECREATE");
-  }  
+  fFileE = new TFile(GetName(), "RECREATE");
+
   fTreeE = new TTree("aodTree", "AliAOD tree");
   
   delete fObjectList;

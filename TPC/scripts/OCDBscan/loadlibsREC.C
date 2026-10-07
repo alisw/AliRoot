@@ -13,7 +13,6 @@ void loadlibsREC ()
 
   gSystem->Load("libNet");
   gSystem->Load("libTree");
-  gSystem->Load("libProof");
 
   gSystem->Load("libSTEERBase");
   gSystem->Load("libESD");

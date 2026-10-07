@@ -365,7 +365,7 @@ TObject *AliAnalysisTask::GetInputData(Int_t islot) const
 TObject *AliAnalysisTask::GetOutputData(Int_t islot) const
 {
 /// Retreive output data for a slot. Normally called in UserTask::Terminate to
-/// get a valid pointer to data even in case of Proof.
+/// retrieve the current output data after processing or merging.
 
    AliAnalysisDataSlot *output = GetOutputSlot(islot);
    if (!output) {
@@ -416,10 +416,8 @@ void AliAnalysisTask::EnableBranch(Int_t islot, const char *bname) const
 void AliAnalysisTask::FinishTaskOutput()
 {
 /// Optional method that is called in SlaveTerminate phase.
-/// Used for calling aditional methods just after the last event was processed ON
-/// THE WORKING NODE. The call is made also in local case.
-/// Do NOT delete output objects here since they will have to be sent for
-/// merging in PROOF mode - use class destructor for cleanup.
+/// Called after the last event. Output objects are still needed for writing;
+/// use the class destructor for cleanup.
 
 }
       
@@ -444,7 +442,7 @@ void AliAnalysisTask::LocalInit()
 //______________________________________________________________________________
 void AliAnalysisTask::CreateOutputObjects()
 {
-/// Called once per task either in PROOF or local mode. Overload to put some
+/// Called once per task. Overload to put some
 /// task initialization and/or create your output objects here.
 
 }
@@ -458,18 +456,7 @@ TFile *AliAnalysisTask::OpenFile(Int_t iout, Option_t *option) const
 /// objects that may not fit memory during processing.
 /// - 'option' is the file opening option.
 ///
-/// NOTE !: The method call will be ignored in PROOF mode, in which case the
-/// results have to be streamed back to the client and written just before Terminate()
-///
-/// Example:
-/// void MyAnaTask::CreateOutputObjects() {
-///    OpenFile(0);   // Will open the file for the object to be written at output #0
-///    fAOD = new TTree("AOD for D0toKPi");
-///    OpenFile(1);
-/// now some histos that should go in the file of the second output container
-///    fHist1 = new TH1F("my quality check hist1",...);
-///    fHist2 = new TH2F("my quality check hist2",...);
-/// }
+
 
    if (iout<0 || iout>=fNoutputs) {
       Error("OpenFile", "No output slot for task %s with index %d", GetName(), iout);

@@ -217,7 +217,7 @@ AliHMPIDAnalysisTask::~AliHMPIDAnalysisTask() {
   //destructor
   //
   Info("~AliHMPIDAnalysisTask","Calling Destructor");
-  if (fHmpHistList && !AliAnalysisManager::GetAnalysisManager()->IsProofMode()) delete fHmpHistList;
+  if (fHmpHistList) delete fHmpHistList;
 }
 
 //___________________________________________________________________________

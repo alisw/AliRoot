@@ -4,7 +4,6 @@
   gSystem->Load("libVMC");
   gSystem->Load("libMinuit");
   gSystem->Load("libMinuit2");
-  gSystem->Load("libProof");
   gSystem->Load("libPhysics");
   gSystem->Load("libSTEERBase");
   gSystem->Load("libESD");

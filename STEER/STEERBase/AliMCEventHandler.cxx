@@ -135,7 +135,7 @@ Bool_t AliMCEventHandler::Init(Option_t* opt)
 { 
     // Initialize input
     //
-    if (!(strcmp(opt, "proof")) || !(strcmp(opt, "local"))) return kTRUE;
+    if (!(strcmp(opt, "local"))) return kTRUE;
     //
     if (fPathName->BeginsWith("alien://") && !gGrid && !TGrid::Connect("alien://")) {
       AliFatal("Failed to connect to alien");

@@ -326,7 +326,7 @@ DrawCalib(Long_t runNo=145167, const char* store=0)
 
   g++ -c `root-config --cflags --glibs` -L$ALICE_ROOT/lib/tgt_${ALICE_TARGET} \
     -I${ALICE_ROOT}/include -I../ -lGeom -lMinuit -lPhysics -lVMC -lXMLParser \
-    -lProofPlayer -lSTEERBase -lSTEER -lCDB -lESD -lRAWDatabase -lRAWDatarec \
+    -lSTEERBase -lSTEER -lCDB -lESD -lRAWDatabase -lRAWDatarec \
     -lANALYSIS -lFMDbase -lFMDrec -lFMDutil DrawCalib.C 
 */
 

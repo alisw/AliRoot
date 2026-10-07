@@ -1,8 +1,5 @@
 {
    train_name      = "train_LHC09a3ESD";
-   proof_cluster   = "alicecaf.cern.ch";
-   useAFPAR        = 0;
-   proof_dataset   = "/COMMON/COMMON/LHC09a4_run8100X#/esdTree";
    usePLUGIN       = 1;
    usePAR          = 0;
    useCPAR         = 0;

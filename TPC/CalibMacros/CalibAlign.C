@@ -15,10 +15,8 @@
 /// AliXRDPROOFtoolkit tool; 
 /// TChain * chainCosmic = tool.MakeChain("cosmic.txt","Track0",0,1000000);
 /// chainCosmic->Lookup();
-/// chainCosmic->SetProof(kTRUE);
 /// TChain * chainTr = tool.MakeChain("align.txt","Tracklet",0,10200);
 /// chainTr->Lookup();
-/// //chainTr->SetProof(kTRUE);
 ///
 /// .L $ALICE_ROOT/TPC/CalibMacros/CalibAlign.C
 /// SetAlias();

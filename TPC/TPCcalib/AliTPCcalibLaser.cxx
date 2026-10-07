@@ -3810,17 +3810,13 @@ void AliTPCcalibLaser::DumpFitInfo(TTree * chainFit,Int_t id){
     AliXRDPROOFtoolkit tool;
     chainTrack = tool.MakeChain("laser.txt","Track",0,10200);
     chainTrack->Lookup();
-    chainTrack->SetProof(kTRUE);
     chainDrift = tool.MakeChain("laser.txt","driftv",0,10200);
     chainDrift->Lookup();
-    chainDrift->SetProof(kTRUE);
  
     chain = tool.MakeChain("laser.txt","Residuals",0,10200);
     chain->Lookup();
     chainFit = tool.MakeChain("laser.txt","FitModels",0,10200);
     chainFit->Lookup();
-    chainFit->SetProof(kTRUE);
-    chain->SetProof(kTRUE);
     AliTPCLaserTrack::LoadTracks();  
     //AliTPCcalibLaser::DumpFitInfo(chainFit,0);
 

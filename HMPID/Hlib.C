@@ -12,7 +12,6 @@ void Hlib()
   gSystem->Load("libNet");
   gSystem->Load("libTree");
  
-  gSystem->Load("libProof");
   gSystem->Load("libSTEERBase");
   gSystem->Load("libESD");
   gSystem->Load("libCDB");

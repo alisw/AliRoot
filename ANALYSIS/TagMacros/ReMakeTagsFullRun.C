@@ -22,7 +22,6 @@ AliGRPObject *GetGRPForRun(Int_t runno) {
 
 void ReMakeTagsFullRun(const char *esdfile, Int_t runno)
 {
-  gSystem->Load("libProofPlayer");
   gSystem->Load("libVMC");
   gSystem->Load("libSTEERBase");
   gSystem->Load("libESD");

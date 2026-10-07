@@ -165,7 +165,7 @@ AliHMPIDPIDEfficiencyV0AnalysisTask::~AliHMPIDPIDEfficiencyV0AnalysisTask() {
   //destructor
   //
   Info("~AliHMPIDPIDEfficiencyV0AnalysisTask","Calling Destructor");
-  if (fHmpHistList && !AliAnalysisManager::GetAnalysisManager()->IsProofMode()) delete fHmpHistList;
+  if (fHmpHistList) delete fHmpHistList;
 }
 
 //___________________________________________________________________________

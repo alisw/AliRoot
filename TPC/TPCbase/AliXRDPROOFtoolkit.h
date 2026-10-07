@@ -9,7 +9,6 @@
 class TObjArray;
 class TTree;
 class TChain;
-class TDSet;
 class UserGroup_t;
 
 class AliXRDPROOFtoolkit : public TObject
@@ -18,8 +17,6 @@ class AliXRDPROOFtoolkit : public TObject
   AliXRDPROOFtoolkit ();
   static TChain * MakeChain(const char*fileIn, const char * treeName, const char *fName=0, Int_t maxFiles=-1, Int_t startFile=0, Int_t checkLevel=0);
   static TChain * MakeChainRandom(const char*fileIn, const char * treeName, const char *fName=0, Int_t maxFiles=-1, Int_t startFile=0,  Int_t checkLevel=0);
-  TDSet  * MakeSet(const char*fileIn, const char * treeName, const char *fName=0, Int_t maxFiles=-1);
-  TDSet  * MakeSetRandom(const char*fileIn, const char * treeName,const char *fName=0, Int_t maxFiles=-1);
   static Bool_t FilterList(const char*inputList, const char*fileList, Int_t checkLevel);
   static Bool_t FilterListZip(const char*inputList, const char*fileList, Int_t checkLevel);
   Bool_t  XRDCopyDir(const char * idir, const char * files, const char *odir, Bool_t zip);

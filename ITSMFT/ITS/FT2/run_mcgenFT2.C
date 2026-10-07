@@ -275,7 +275,6 @@ void LoadAllLibraries(){
 	gSystem->Load("libTree.so");
 	gSystem->Load("libPhysics.so");
 	gSystem->Load("libMinuit.so");
-	gSystem->Load("libProof.so");
 	gSystem->Load("libmicrocern.so");
 	gSystem->Load("liblhapdf.so");
 	gSystem->Load("libpythia6_4_21");   // Pythia 6.4

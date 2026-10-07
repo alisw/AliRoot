@@ -73,9 +73,8 @@
 /// }
 ///
 /// The method Terminate() will be called by the framework once at the end of
-/// data processing. Overload this if needed. DO NOT ASSUME that the pointers
-/// to histograms defined in  CreateOutputObjects() are valid, since this is
-/// not true in case of PROOF. Restore the pointer values like:
+/// data processing. Overload this if needed. Retrieve the current output data
+/// through the output slots, including after grid merging:
 ///
 /// void MyAnalysisTask::Terminate(Option_t *) 
 /// {
@@ -170,8 +169,7 @@ public:
   virtual Bool_t            NotifyBinChange();
   //=====================================================================
   // Optional method that will be called in SlaveTerminate phase for each task
-  // Warning: in PROOF mode this is called before merging so their cleanup is
-  //          not allowed - do output cleanup in class destructor.
+  // Output objects are still needed for writing; clean them up in the destructor.
   virtual void              FinishTaskOutput();
   // Conect inputs/outputs to data containers (by AliAnalysisModule)
   Bool_t                    ConnectInput(Int_t islot, AliAnalysisDataContainer *cont);

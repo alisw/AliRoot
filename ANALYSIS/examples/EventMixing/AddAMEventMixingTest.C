@@ -1,4 +1,4 @@
-Bool_t AddAMEventMixingTest(TString analysisSource = "proof", TString analysisMode = "test",TString input="aod",TString inputMC="", TString postfix = "",TString idStr="0")
+Bool_t AddAMEventMixingTest(TString analysisSource = "local", TString analysisMode = "test",TString input="aod",TString inputMC="", TString postfix = "",TString idStr="0")
 {
   
    Bool_t useEventMixingPar      = 0;

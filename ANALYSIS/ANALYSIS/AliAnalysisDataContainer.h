@@ -47,7 +47,6 @@ enum ENotifyMessage {
 enum EAnalysisContainerFlags {
    kPostEventLoop = BIT(14),
    kSpecialOutput = BIT(15),
-   kRegisterDataset = BIT(16),
    kExchangeData  = BIT(17),
    kTouchedFlag   = BIT(18),
    kDirList       = BIT(19)
@@ -76,7 +75,6 @@ enum EAnalysisContainerFlags {
    void                      SetExchange(Bool_t flag) {TObject::SetBit(kExchangeData,flag);}
    void                      SetPostEventLoop(Bool_t flag=kTRUE) {TObject::SetBit(kPostEventLoop,flag);}
    void                      SetSpecialOutput(Bool_t flag=kTRUE) {TObject::SetBit(kSpecialOutput,flag);}
-   void                      SetRegisterDataset(Bool_t flag=kTRUE) {TObject::SetBit(kRegisterDataset,flag);}
    void                      SetFileName(const char *filename);
    void                      SetFile(TFile *f) {fFile = f;}
    void                      SetProducer(AliAnalysisTask *prod, Int_t islot);
@@ -92,7 +90,6 @@ enum EAnalysisContainerFlags {
    Bool_t                    IsExchange() const      {return TObject::TestBit(kExchangeData);}
    Bool_t                    IsPostEventLoop() const {return TObject::TestBit(kPostEventLoop);}
    Bool_t                    IsSpecialOutput() const {return TObject::TestBit(kSpecialOutput);}
-   Bool_t                    IsRegisterDataset() const {return TObject::TestBit(kRegisterDataset);}
    Bool_t                    IsTouched() const       {return TObject::TestBit(kTouchedFlag);}
    Bool_t                    IsOwnedData() const  {return fOwnedData;}
    Bool_t                    ClientsExecuted() const;
@@ -124,9 +121,8 @@ protected:
 };
 
 ///==============================================================================
-///   AliAnalysysDataWrapper - A basic wrapper for exchanging via the network
-/// the data held by AliAnalysisDataContainer between the master and the client
-/// in PROOF case. 
+///   AliAnalysisDataWrapper - A wrapper for merging and exchanging
+/// data held by AliAnalysisDataContainer.
 ///==============================================================================
 
 class AliAnalysisDataWrapper : public TNamed {

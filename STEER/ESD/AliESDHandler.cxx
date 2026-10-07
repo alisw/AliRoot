@@ -76,30 +76,18 @@ AliESDHandler::~AliESDHandler()
 }
 
 //______________________________________________________________________________
-Bool_t AliESDHandler::Init(Option_t* opt)
+Bool_t AliESDHandler::Init(Option_t* /*opt*/)
 {
 	//
 	// Initialize IO
 	//
 	
-	// File opening according to execution mode
-	TString option(opt);
-	option.ToLower();
 	TDirectory *owd = gDirectory;
 
 	fesdf = new AliESDfriend();
 
-	// Open the file with friends
-	if (option.Contains("proof")) {
-		// proof
-		// Merging via files. Need to access analysis manager via interpreter.
-		gROOT->ProcessLine(Form("AliAnalysisManager::GetAnalysisManager()->OpenProofFile(\"%s\", \"RECREATE\");", fFileName.Data()));
-		gROOT->ProcessLine(Form("AliAnalysisManager::GetAnalysisManager()->GetCommonOutputContainer()->SetFile((TFile*)0x%p);", gFile));
-		fFileEF = gFile;
-	} else {
-		// local and grid
-		fFileEF = new TFile(fFileName.Data(), "RECREATE");
-	}
+	// Open the file with friends for local and grid processing
+	fFileEF = new TFile(fFileName.Data(), "RECREATE");
 
 	// Create the friends tree
 	fFileEF->cd();

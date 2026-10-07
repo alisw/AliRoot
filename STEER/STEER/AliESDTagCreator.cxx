@@ -192,7 +192,7 @@ Bool_t AliESDTagCreator::ReadCAFCollection(const char *filename) {
   AliInfo(Form("Chain entries: %lld",fChain->GetEntries()));	
   // Switch of branches on user request
   SwitchOffBranches();
-  CreateTag(fChain,"proof");
+  CreateTag(fChain,"local");
 
   return kTRUE;
 }

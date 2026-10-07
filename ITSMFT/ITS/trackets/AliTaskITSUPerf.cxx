@@ -169,7 +169,7 @@ AliTaskITSUPerf::~AliTaskITSUPerf()
   // Destructor
   // histograms are in the output list and deleted when the output
   // list is deleted by the TSelector dtor
-  if (fOutput && !AliAnalysisManager::GetAnalysisManager()->IsProofMode()) {  //RRR
+  if (fOutput) {  //RRR
     printf("Deleteing output\n");
     delete fOutput;
     fOutput = 0;

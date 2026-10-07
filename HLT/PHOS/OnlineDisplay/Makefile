@@ -6,9 +6,9 @@ HeadSuf		= h
 ALIHLT_LIBDIR = $(ALICE_ROOT)/HLT/build/lib
 
 
-#ROOTLIBS	= `root-config --libs --glibs` -lGed -lFTGL -lRGL -lEve -lEG -lGeom -lTreePlayer -lProofPlayer -lProof
-#ROOTLIBS	= `root-config --libs --glibs` -lGed -lEG -lGeom -lTreePlayer -lProofPlayer -lProof -lXMLParser
-ROOTLIBS	= `root-config --libs --glibs` -lGed -lEG -lGeom -lTreePlayer -lProofPlayer -lProof -lXMLParser -lEve -lRGL
+#ROOTLIBS	= `root-config --libs --glibs` -lGed -lFTGL -lRGL -lEve -lEG -lGeom -lTreePlayer
+#ROOTLIBS	= `root-config --libs --glibs` -lGed -lEG -lGeom -lTreePlayer -lXMLParser
+ROOTLIBS	= `root-config --libs --glibs` -lGed -lEG -lGeom -lTreePlayer -lXMLParser -lEve -lRGL
 
 ALIROOTLIBS	= -L$(ALICE_ROOT)/lib/tgt_$(ALICE_TARGET)  -lHLTbase -lAliHLTHOMER  -lAliHLTPHOS  -lRAWDatarec \
 		   -lRAWDatabase -lESD -lSTEER -lSTEERBase -lCDB -lMinuit -lVMC -lPHOSbase -lPHOSshuttle -lPHOSUtils \

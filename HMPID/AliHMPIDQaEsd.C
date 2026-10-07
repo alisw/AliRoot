@@ -30,7 +30,6 @@
 #include <AliAnalysisTask.h>    //qa()
 #include <AliAnalysisManager.h> //qa()
 #include <TBenchmark.h>         //qa()
-#include <TProof.h>             //qa()
 
 class AliHMPIDQaEsd : public AliAnalysisTask {
 
@@ -201,12 +200,6 @@ void qa(Int_t mode=0)
   switch(mode){
     case 0:   chain->Add("AliESDs.root");
               mgr->StartAnalysis("local",chain);  
-              break;
-              
-    case 1:   if(TProof::Open("proof://hmpid@lxb6046.cern.ch")==0x0) return; 
-              gProof->UploadPackage("ESD.par"); gProof->EnablePackage("ESD");
-              gProof->UploadPackage("ANALYSIS.par"); gProof->EnablePackage("ANALYSIS");                
-              mgr->StartAnalysis("proof",chain);  
               break;
               
     case 2:   mgr->StartAnalysis("grid" ,chain);  

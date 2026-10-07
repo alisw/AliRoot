@@ -187,8 +187,6 @@ const char* AliHLTMUONAgent::GetRequiredComponentLibraries() const
 		"libGpad",
 		"libPhysics",
 		"libGui",
-		"libProofPlayer",
-		"libProof",
 		"libThread",
 		"libGeom",
 		"libEG",

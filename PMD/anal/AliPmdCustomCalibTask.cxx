@@ -88,7 +88,7 @@ AliPmdCustomCalibTask::AliPmdCustomCalibTask(const char *name)
 
 //________________________________________________________________________
 AliPmdCustomCalibTask::~AliPmdCustomCalibTask() {
-  if (fOutput && !AliAnalysisManager::GetAnalysisManager()->IsProofMode()) delete fOutput;
+  if (fOutput) delete fOutput;
 }
 
 //________________________________________________________________________

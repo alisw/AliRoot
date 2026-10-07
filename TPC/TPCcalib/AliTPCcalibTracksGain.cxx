@@ -187,7 +187,6 @@
 #include <TIterator.h>
 #include <TProfile.h>
 #include <TProfile2D.h>
-#include <TProof.h>
 #include <TStatToolkit.h>
 
 //
@@ -448,7 +447,6 @@ void AliTPCcalibTracksGain::Process(AliTPCseed* seed) {
    if (!fCuts->AcceptTrack(seed)) return;
    //
    // reinint on proof
-   //   if (gProof){
      static Bool_t doinit= kTRUE;
      if (doinit){
        fSimpleFitter = new AliTPCFitPad(8, "hyp7", "");
