@@ -12,8 +12,8 @@
 #include <TString.h>
 #include "TStyle.h"
 #include "TGrid.h"
- 
- 
+
+
 class TList;
 class TH2F;
 class TH1F;
@@ -23,7 +23,6 @@ class TFile;
 class TCanvas;
 class TStyle;
 class TF1;
-class TGrid;
 
 
 
@@ -70,7 +69,7 @@ Double_t convolution(Double_t* x,Double_t *par)
       step = (xupp-xlow) / np;
 
       // Convolution integral of Landau and Gaussian by sum
-      for(i=1.0; i<=np/2; i++) 
+      for(i=1.0; i<=np/2; i++)
       {
         	 xx = xlow + (i-.5) * step;
          	fland = TMath::Landau(xx,mpc,par[0]) / par[0];
@@ -92,10 +91,10 @@ void GetGainModuleLevel(TString filename,Bool_t normal=1,Int_t ntofit=500, Bool_
 	gROOT->SetStyle("Plain");
 	gStyle->SetPalette(1,0);
 	gStyle->SetOptStat(111111);
-	gStyle->SetOptFit(1);	
+	gStyle->SetOptFit(1);
 	if(grid)
 		TGrid::Connect("alien://");
-	
+
 	TFile* file_data=TFile::Open(filename);
 	if(!file_data)
 		return;
@@ -103,14 +102,14 @@ void GetGainModuleLevel(TString filename,Bool_t normal=1,Int_t ntofit=500, Bool_
 	listin=(TList*)file_data->Get("output");
 	if(!listin)
 		listin=(TList*)file_data->Get("PWGPPdEdxSSDQA/output");
-	if(!listin)	
+	if(!listin)
 		listin=(TList*)file_data->Get("PWGPPdEdxSSDQA/SSDdEdxQA");
-	if(!listin)	
+	if(!listin)
 		listin=(TList*)file_data->Get("SSDdEdxQA");
-	if(!listin)	
+	if(!listin)
 		return;
 	TH2F* fHistQ=0x0;
-	if (normal)		
+	if (normal)
 		fHistQ=(TH2F*)listin ->FindObject("QACharge");
 	else
 		fHistQ=(TH2F*)listin ->FindObject("QAChargeCorrected");
@@ -120,52 +119,52 @@ void GetGainModuleLevel(TString filename,Bool_t normal=1,Int_t ntofit=500, Bool_
 	if(!fHistCR)
 		return;
 	TList *listout1=new TList();
-	
+
 	TList *listout2=new TList();
-	
+
 	TH1F* fHistMPVs=new TH1F("HistMPVS","HistMPVs;MPV;N",75,70,95);
 	fHistMPVs->SetDirectory(0);
 	listout2->Add(fHistMPVs);
-	
+
 	TH1F* fHistSL=new TH1F("HistSL","#sigma_{Landau};#sigma_{Landau};N",40,0,16);
 	fHistSL->SetDirectory(0);
 	listout2->Add(fHistSL);
-	
+
 	TH1F* fHistSG=new TH1F("HistSG","#sigma_{Gaus};#sigma_{Gaus};N",40,0,16);
 	fHistSG->SetDirectory(0);
 	listout2->Add(fHistSG);
-	
+
 	TH1F* fHistCRmean=new TH1F("HistCRmean","HistCRmean;CRmean;N",200,-1,1);
 	fHistCRmean->SetDirectory(0);
 	listout2->Add(fHistCRmean);
-	
+
 	TH1F* fHistCRRMS=new TH1F("HistCRRMS","HistCRRMS;CRRMS;N",100,0,1);
 	fHistCRRMS->SetDirectory(0);
 	listout2->Add(fHistCRRMS);
-	
+
 	TH1F* fHistGainP=new TH1F("HistGainP","HistGainP;CRGainPcorr;N",120,0.5,2.0);
 	fHistGainP->SetDirectory(0);
 	listout2->Add(fHistGainP);
-	
+
 	TH1F* fHistGainN=new TH1F("HistGainN","HistGainN;CRGainNcorr;N",120,0.5,2.0);
 	fHistGainN->SetDirectory(0);
 	listout2->Add(fHistGainN);
-	
+
 	TH1F *fMPVGraph = new TH1F("MPVgraph","MPVgraph;Module number;MPV",1698,-0.5,1697.5);
 	fMPVGraph->SetMarkerColor(kRed);
 	fMPVGraph->SetMarkerStyle(22);
 	listout2->Add(fMPVGraph);
-	
+
 	TH1F *fCRmeanGraph = new TH1F("CRmeangraph","CRmeangraph;Module number;MPV",1698,-0.5,1697.5);
 	fCRmeanGraph->SetMarkerColor(kBlue);
 	fCRmeanGraph->SetMarkerStyle(23);
 	listout2->Add(fCRmeanGraph);
-	
+
 	Float_t gainP[1698];
 	Float_t gainN[1698];
 	Float_t mpv[1698];
-	Int_t flag[1698];	
-	
+	Int_t flag[1698];
+
 	ofstream outfiletxt;
 	outfiletxt.open("gain.txt");
 	 outfiletxt.width(10) ;
@@ -183,14 +182,14 @@ void GetGainModuleLevel(TString filename,Bool_t normal=1,Int_t ntofit=500, Bool_
 	outfiletxt.width(10) ;
 	outfiletxt.setf(outfiletxt.left);
 	outfiletxt<<"MPV"<<endl;
-	
-	
+
+
 	ofstream outfiletxtbad;
 	outfiletxtbad.open("badModules.txt");
-	
-	
-	
-	
+
+
+
+
 	for (int i =0;i<1698;i++)
 	{
 		cout<<i<<endl;
@@ -201,7 +200,7 @@ void GetGainModuleLevel(TString filename,Bool_t normal=1,Int_t ntofit=500, Bool_
 		TH1D* fHist1DCR= fHistCR->ProjectionY(tmpCR,i+1,i+1);
 		Double_t mean=fHist1DCR->GetMean();
 		if(!(TMath::Abs(mean)<1.0)||fHist1DCR->GetEntries()<10)
-		{		
+		{
 			flag[i]=-2;
 			gainN[i]=1.0;
 			gainP[i]=1.0;
@@ -216,8 +215,8 @@ void GetGainModuleLevel(TString filename,Bool_t normal=1,Int_t ntofit=500, Bool_
 		fHistGainN->Fill(gainN[i]);
 		fCRmeanGraph->SetBinContent(i+1,mean);
 		fCRmeanGraph->SetBinError(i+1,fHist1DCR->GetRMS());
-		
-		
+
+
 		TH1D* fHist1DQ=fHistQ->ProjectionY(tmpQ,i+1,i+1);
 		 fHist1DQ->SetDirectory(0);
 		 listout1->Add(fHist1DQ);
@@ -246,23 +245,23 @@ void GetGainModuleLevel(TString filename,Bool_t normal=1,Int_t ntofit=500, Bool_
 				fHistMPVs->Fill(mpv[i]);
 				fHistSL->Fill(f1->GetParameter(0));
 				fHistSG->Fill(f1->GetParameter(3));
-				flag[i]=1;		
+				flag[i]=1;
 				fMPVGraph->SetBinContent(i+1,f1->GetParameter(1));
 				fMPVGraph->SetBinError(i+1,f1->GetParError(1));
 				if(mpv[i]<75.0)
 				{
 					outfiletxtbad<<"MPV lower than 75 \t module="<<i<<endl;
 					flag[i]=0;
-				}	
+				}
 				if(mpv[i]>100.0)
 				{
 					outfiletxtbad<<"MPV higher than 100 \t module="<<i<<endl;
 					flag[i]=0;
-					
+
 				}
 				if(f1->GetParError(1)>1.0)
 				{
-					outfiletxtbad<<"MPV high error on MPV  \t module="<<i<<endl;				
+					outfiletxtbad<<"MPV high error on MPV  \t module="<<i<<endl;
 					flag[i]=0;
 				}
 			}
@@ -272,14 +271,14 @@ void GetGainModuleLevel(TString filename,Bool_t normal=1,Int_t ntofit=500, Bool_
 				flag[i]=0;
 				 outfiletxtbad<<"BAD FIT \t module="<<i<<endl;
 				//continue;
-			}	
-		}	
-	}	
-	
+			}
+		}
+	}
+
 	for (int i=0;i<1698;i++)
-	{	
+	{
 		outfiletxt.setf(outfiletxt.scientific);
-		outfiletxt.precision(2);	
+		outfiletxt.precision(2);
 		 outfiletxt.width(10) ;
 		outfiletxt.setf(outfiletxt.left);
 		outfiletxt<<i<<"\t";
@@ -296,24 +295,24 @@ void GetGainModuleLevel(TString filename,Bool_t normal=1,Int_t ntofit=500, Bool_
 		outfiletxt.setf(outfiletxt.left);
 		outfiletxt<<mpv[i]<<endl;
 	}
-		 
+
 	TCanvas *c1 = new TCanvas("1","1",1200,800);
 	c1->Divide(2,1);
 	c1->cd(1);
 	fHistQ->Draw("colz");
 	c1->cd(2);
 	fHistCR->Draw("colz");
-	
-	
-	
+
+
+
 	TFile* fout1=TFile::Open("gain_all_fits.root","recreate");
-	listout1->Write("output",TObject::kSingleKey);	
+	listout1->Write("output",TObject::kSingleKey);
 	fout1->Close();
-	
+
 	TFile* fout2=TFile::Open("gain_control_plots.root","recreate");
-	listout2->Write("output",TObject::kSingleKey);	
+	listout2->Write("output",TObject::kSingleKey);
 	fout2->Close();
-	
-	
-	
+
+
+
 }

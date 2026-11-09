@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include <cmath>
 
 #include "AliCDBManager.h"
 #include "AliCDBEntry.h"
@@ -195,7 +196,7 @@ AliMUONTrackerVoltages::CreateMap(Int_t runNumber, Bool_t /*patched*/) const
 bool AliMUONTrackerVoltages::IsAlmostEqualRelative(float A, float B, float maxRelDiff) const
 {
     // Calculate the difference.
-    float diff = fabs(A - B);
+    float diff = std::fabs(A - B);
     A = fabs(A);
     B = fabs(B);
     // Find the largest

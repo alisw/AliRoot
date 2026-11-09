@@ -16,14 +16,14 @@
 /* $Id$ */
 
 //____________________________________________________________________
-//                                                                          
-// Buffer to read RAW ALTRO FMD format from a AliRawReader 
-// 
+//
+// Buffer to read RAW ALTRO FMD format from a AliRawReader
+//
 // This class derives from AliAltroBuffer, but overloads the memer
 // function Next to do some extra processing.  In particular, it tries
 // to autodetect the sample rate.  If zero-suppression was used when
 // writing the raw data, then the automatic discovery will not work,
-// and the sample rate should be set explicitly. 
+// and the sample rate should be set explicitly.
 //
 #include "AliFMDRawStream.h"		// ALIFMDRAWSTREAM_H
 // #include <AliRawReader.h>		// ALIRAWREADER_H
@@ -33,6 +33,7 @@
 // #include <iomanip>
 // #include <iostream>
 #include "AliRawReader.h"
+#include <TMath.h>
 #include <climits>
 
 //____________________________________________________________________
@@ -42,22 +43,22 @@ ClassImp(AliFMDRawStream)
 #endif
 
 //____________________________________________________________________
-AliFMDRawStream::AliFMDRawStream(AliRawReader* reader) 
+AliFMDRawStream::AliFMDRawStream(AliRawReader* reader)
   : AliAltroRawStream(reader)
 {
-  // CTOR 
+  // CTOR
   reader->Reset();
-  // Select FMD DDL's 
+  // Select FMD DDL's
   SelectRawData("FMD");
 }
 
 //_____________________________________________________________________________
-Bool_t 
-AliFMDRawStream::ReadChannel(UInt_t& ddl, UInt_t& addr, 
+Bool_t
+AliFMDRawStream::ReadChannel(UInt_t& ddl, UInt_t& addr,
 			     UInt_t& len, volatile UShort_t* data)
 {
   // Read one channel and return.   Returns 0 when there's no more
-  // data. 
+  // data.
   Int_t        l         = 0;
   static Int_t last      = 0xFFFF; // 0xFFFF means signal is used
   Bool_t       next      = kTRUE;
@@ -76,7 +77,7 @@ AliFMDRawStream::ReadChannel(UInt_t& ddl, UInt_t& addr,
       }
       signal = GetSignal();
       if (GetHWAddress() != GetPrevHWAddress() && GetPrevHWAddress() >= 0) {
-	AliFMDDebug(15, ("New hardware address, was 0x%x, now 0x%x", 
+	AliFMDDebug(15, ("New hardware address, was 0x%x, now 0x%x",
 			  GetPrevHWAddress(), GetHWAddress()));
 	addr = GetPrevHWAddress();
 	ddl  = (GetPrevDDLNumber() < 0 ? UINT_MAX : UInt_t(GetPrevDDLNumber()));
@@ -86,21 +87,21 @@ AliFMDRawStream::ReadChannel(UInt_t& ddl, UInt_t& addr,
       }
     }
     // Sanity check - if the total bunch length is less than 1, then
-    // read until we get the next bunch. 
+    // read until we get the next bunch.
     Int_t b  = GetTimeLength();
-    if (b < 1) { 
+    if (b < 1) {
       AliWarning(Form("Bunch length %0d is less than 0 for "
-		      "DDL %4d address 0x%03x", 
+		      "DDL %4d address 0x%03x",
 		      b, ddl, addr));
       last = 0xFFFF;
       continue;
     }
 
     // Sanity check - if the current time is less than 0, then read
-    // until we get a new bunch. 
+    // until we get a new bunch.
     Int_t t  = GetTime();
     if (t < 0) {
-      AliWarning(Form("Time %0d is less than 0 for DDL %4d address 0x%03x", 
+      AliWarning(Form("Time %0d is less than 0 for DDL %4d address 0x%03x",
 		      t, ddl, addr));
       last = 0xFFFF;
       continue;
@@ -109,7 +110,7 @@ AliFMDRawStream::ReadChannel(UInt_t& ddl, UInt_t& addr,
     data[t]  = signal;
     last     = 0xFFFF;
 #if 0
-    AliFMDDebug(signal > 512 ? 1 : 0, ("Signal @ %d (%d) is %d", 
+    AliFMDDebug(signal > 512 ? 1 : 0, ("Signal @ %d (%d) is %d",
 				       time, t, data[t]));
 #endif
   } while (next);

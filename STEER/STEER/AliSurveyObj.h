@@ -12,12 +12,11 @@
 /////////////////////////////////////////////////////////////////////
 
 #include <TObject.h>
-
 #include <TString.h>
 #include <TObjArray.h>
+#include <TGridResult.h>
 
 class AliSurveyPoint;
-class TGridResult;
 
 class AliSurveyObj: public TObject {
 
@@ -36,7 +35,7 @@ class AliSurveyObj: public TObject {
 		    Int_t reportVersion = -1);
 
   void SetGridUser(TString username);
- 
+
   // Number of points (AliSurveyPoint) in the TObjArray
   Int_t GetEntries() const {return fDataPoints->GetEntries();};
 
@@ -67,7 +66,7 @@ class AliSurveyObj: public TObject {
 
   Bool_t IsValid() const {return fIsValid;};
 
-  
+
  private:
   TString fTitle;     // Report Title
   TString fDate;      // Report Date
@@ -82,15 +81,15 @@ class AliSurveyObj: public TObject {
   TString fColNames;  // Column names sepparated by commas
   Bool_t fIsValid;    // Is the data valid? (sucessfully parsed)
   TString fGridUser;  // Username to be used for the connection to GRID
-  
+
   TObjArray *fDataPoints;	// Actual Data
-  
+
   static const TString fgkStorage; // Storage
   static const TString fgkBaseFolder; // Base folder
   static const TString fgkValidDetectors;// Valid detectors
   static const TString fgkGRPDetectors;// GRP detectors
   static const TString fgkMUONDetectors;// MUON detectors
-    
+
   Bool_t Connect(const char *gridUrl, const char *user);
   Bool_t OpenFile(TString openString);
   TString &Sanitize(TString str);
@@ -106,7 +105,7 @@ class AliSurveyObj: public TObject {
 			    Int_t reportNumber, Int_t reportVersion);
 
   AliSurveyObj (const AliSurveyObj& surveyObj);
-  AliSurveyObj& operator=(const AliSurveyObj& surveyObj); 
+  AliSurveyObj& operator=(const AliSurveyObj& surveyObj);
   void AddPoint(AliSurveyPoint* point);
 
   ClassDef(AliSurveyObj, 1);

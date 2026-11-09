@@ -33,9 +33,6 @@
 // Note: CDB manager should be initialized beforehand                     //
 ////////////////////////////////////////////////////////////////////////////
 
-#include <THashTable.h>
-#include <TGeoGlobalMagField.h>
-
 #include "AliGRPManager.h"
 #include "AliLog.h"
 #include "AliRunInfo.h"
@@ -43,6 +40,10 @@
 #include "AliCDBManager.h"
 #include "AliCDBEntry.h"
 #include "AliMagF.h"
+
+#include <THashTable.h>
+#include <TGeoGlobalMagField.h>
+#include <TMath.h>
 
 ClassImp(AliGRPManager)
 
@@ -65,7 +66,7 @@ AliGRPManager::~AliGRPManager()
 Bool_t AliGRPManager::ReadGRPEntry()
 {
   //------------------------------------
-  // Initialization of the GRP entry. 
+  // Initialization of the GRP entry.
   // Returns kTRUE in case of success.
   //------------------------------------
 
@@ -131,50 +132,50 @@ Bool_t AliGRPManager::SetMagField()
     AliError("GRP/GRP/Data entry:  missing value for the L3 current !");
     ok = kFALSE;
   }
-  
+
   Char_t l3Polarity = fGRPData->GetL3Polarity();
   if (l3Polarity == AliGRPObject::GetInvalidChar()) {
     AliError("GRP/GRP/Data entry:  missing value for the L3 polarity !");
     ok = kFALSE;
   }
-  
+
   // Dipole
   Float_t diCurrent = fGRPData->GetDipoleCurrent((AliGRPObject::Stats)0);
   if (diCurrent == AliGRPObject::GetInvalidFloat()) {
     AliError("GRP/GRP/Data entry:  missing value for the dipole current !");
     ok = kFALSE;
   }
-  
+
   Char_t diPolarity = fGRPData->GetDipolePolarity();
   if (diPolarity == AliGRPObject::GetInvalidChar()) {
     AliError("GRP/GRP/Data entry:  missing value for the dipole polarity !");
     ok = kFALSE;
   }
-  
+
   TString beamType = fGRPData->GetBeamType();
   if (beamType==AliGRPObject::GetInvalidString()) {
     AliError("GRP/GRP/Data entry:  missing value for the beam type ! Using UNKNOWN");
     beamType = "UNKNOWN";
     //ok = kFALSE;  // temprorary suppressed to make read cosmics data
   }
-  
+
   Float_t beamEnergy = fGRPData->GetBeamEnergy();
   if (beamEnergy==AliGRPObject::GetInvalidFloat()) {
     AliError("GRP/GRP/Data entry:  missing value for the beam energy ! Using 0");
     beamEnergy = 0;
     //ok = kFALSE;  // temprorary suppressed to make read cosmics data
   }
-  
+
   // read special bits for the polarity convention and map type
   Int_t  polConvention = fGRPData->IsPolarityConventionLHC() ? AliMagF::kConvLHC : AliMagF::kConvDCS2008;
   Bool_t uniformB = fGRPData->IsUniformBMap();
-  
-  int az0 = fGRPData->GetSingleBeamType(0).Atoi();
-  int az1 = fGRPData->GetSingleBeamType(1).Atoi();    
 
-  if (ok) { 
-    AliMagF* fld = AliMagF::CreateFieldMap(TMath::Abs(l3Current) * (l3Polarity ? -1:1), 
-					   TMath::Abs(diCurrent) * (diPolarity ? -1:1), 
+  int az0 = fGRPData->GetSingleBeamType(0).Atoi();
+  int az1 = fGRPData->GetSingleBeamType(1).Atoi();
+
+  if (ok) {
+    AliMagF* fld = AliMagF::CreateFieldMap(TMath::Abs(l3Current) * (l3Polarity ? -1:1),
+					   TMath::Abs(diCurrent) * (diPolarity ? -1:1),
 					   polConvention,uniformB,beamEnergy, beamType.Data(), az0, az1);
     if (fld) {
       TGeoGlobalMagField::Instance()->SetField( fld );
@@ -189,7 +190,7 @@ Bool_t AliGRPManager::SetMagField()
   else {
     AliError("B field is neither set nor constructed from GRP ! Exitig...");
   }
-  
+
   return ok;
 }
 
@@ -240,7 +241,7 @@ THashTable* AliGRPManager::GetCosmicTriggers()
 {
   THashTable* listOfCosmicTriggers = 0;
   AliCDBEntry* entry = 0;
-	
+
   entry = AliCDBManager::Instance()->Get("GRP/Calib/CosmicTriggers");
   if (entry) {
     listOfCosmicTriggers = dynamic_cast<THashTable*>(entry->GetObject());
@@ -250,7 +251,7 @@ THashTable* AliGRPManager::GetCosmicTriggers()
   if (!listOfCosmicTriggers) {
     AliWarning("Can not get list of cosmic triggers from OCDB! Cosmic event specie will be effectively disabled!");
   }
-  
+
   return listOfCosmicTriggers;
 }
 
@@ -266,4 +267,3 @@ void AliGRPManager::SetGRPEntry(const AliGRPObject* source)
   AliInfo("Created GRP Data from external object");
   //
 }
- 

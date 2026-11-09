@@ -22,9 +22,11 @@
 #include "AliMUONVStore.h"
 #include "AliMUONVDigit.h"
 #include "AliLog.h"
+
 #include <Riostream.h>
 #include <TArrayI.h>
 #include <TVector2.h>
+#include <TMath.h>
 
 ///\class AliMUONPainterPadStore
 ///
@@ -65,19 +67,19 @@ AliMUONPainterPadStore::FindPadID(const TArrayI& pads, Double_t x, Double_t y) c
 {
   /// Find, in array of pads, the one which contains (x,y). Returns -1 if not
   /// found
-  
-  for ( Int_t i = 0; i < pads.GetSize(); ++i ) 
+
+  for ( Int_t i = 0; i < pads.GetSize(); ++i )
   {
     Int_t id = pads.At(i);
-    
+
     TVector2 position;
     TVector2 dimensions;
-    
+
     GetPadGeometry(id,position,dimensions);
-    
+
     TVector2 bl(position-dimensions);
-    TVector2 ur(position+dimensions);    
-    if ( bl.X() <= x && ur.X() >= x && bl.Y() <= y && ur.Y() >= y ) 
+    TVector2 ur(position+dimensions);
+    if ( bl.X() <= x && ur.X() >= x && bl.Y() <= y && ur.Y() >= y )
     {
       return id;
     }
@@ -91,16 +93,16 @@ AliMUONVCalibParam*
 AliMUONPainterPadStore::Get(Int_t detElemId, Int_t manuId) const
 {
   /// Get the pad container for a given manu
-  
-  AliMUONVCalibParam* param = 
+
+  AliMUONVCalibParam* param =
   static_cast<AliMUONVCalibParam*>(fPadStore->FindObject(detElemId,manuId));
-  
+
   if (!param)
   {
     param = new AliMUONCalibParamND(4,64,detElemId,manuId,-1.0);
     fPadStore->Add(param);
   }
-  
+
   return param;
 }
 
@@ -113,51 +115,51 @@ AliMUONPainterPadStore::GetBoundaries(const TArrayI& pads,
                                       Double_t& ymax) const
 {
   /// Get the area covered by an array of pads
-  
+
   xmin=ymin=1E9;
   xmax=ymax=-1E9;
-  
-  for ( Int_t i = 0; i < pads.GetSize(); ++i ) 
+
+  for ( Int_t i = 0; i < pads.GetSize(); ++i )
   {
     Int_t id = pads.At(i);
-    
+
     TVector2 position;
     TVector2 dimensions;
-    
+
     GetPadGeometry(id,position,dimensions);
-    
+
     TVector2 bl(position-dimensions);
     TVector2 ur(position+dimensions);
     xmin = TMath::Min(xmin,bl.X());
     ymin = TMath::Min(ymin,bl.Y());
     xmax = TMath::Max(xmax,ur.X());
     ymax = TMath::Max(ymax,ur.Y());
-  }     
+  }
 }
 
 //_____________________________________________________________________________
 void
-AliMUONPainterPadStore::GetPadGeometry(Int_t padId, 
+AliMUONPainterPadStore::GetPadGeometry(Int_t padId,
                                        TVector2& position,
                                        TVector2& dimensions) const
 {
   /// Get the geomtry of one pad
-  
-  if ( padId < 0 ) 
+
+  if ( padId < 0 )
   {
     AliError(Form("padId is < 0 : %d",padId));
     position.Set(0.0,0.0);
     dimensions.Set(-1.0,-1.0);
     return;
   }
-  
+
   Int_t detElemId = AliMUONVDigit::DetElemId(padId);
   Int_t manuId = AliMUONVDigit::ManuId(padId);
   Int_t manuChannel = AliMUONVDigit::ManuChannel(padId);
-  
-  AliMUONVCalibParam* param = 
+
+  AliMUONVCalibParam* param =
     static_cast<AliMUONVCalibParam*>(fPadStore->FindObject(detElemId,manuId));
-  
+
   if (!param)
   {
     AliError(Form("Could not find object DE %d manu %d",detElemId,manuId));
@@ -165,13 +167,13 @@ AliMUONPainterPadStore::GetPadGeometry(Int_t padId,
     dimensions.Set(-1.0,-1.0);
     return;
   }
-  
+
   position.Set(param->ValueAsDouble(manuChannel,0),
                param->ValueAsDouble(manuChannel,1));
-  
+
   dimensions.Set(param->ValueAsDouble(manuChannel,2),
                  param->ValueAsDouble(manuChannel,3));
-  
+
 }
 
 //_____________________________________________________________________________
@@ -179,22 +181,22 @@ Int_t
 AliMUONPainterPadStore::GetSize() const
 {
   /// Get the number of pads we handle
-  
+
   TIter next(fPadStore->CreateIterator());
   AliMUONVCalibParam* param;
   Int_t n(0);
-  
+
   while ( ( param = static_cast<AliMUONVCalibParam*>(next()) ) )
   {
-    for ( Int_t i = 0; i < param->Size(); ++i ) 
+    for ( Int_t i = 0; i < param->Size(); ++i )
     {
-      if ( param->ValueAsDouble(i,2) >= 0 && param->ValueAsDouble(i,3) >= 0 ) 
+      if ( param->ValueAsDouble(i,2) >= 0 && param->ValueAsDouble(i,3) >= 0 )
       {
         ++n;
       }
     }
   }
-  
+
   return n;
 }
 
@@ -204,8 +206,8 @@ AliMUONPainterPadStore::PrintPads(const TArrayI& pads) const
 {
   /// Printout
   cout << "n=" << pads.GetSize() << endl;
-  
-  for ( Int_t i = 0; i < pads.GetSize(); ++i ) 
+
+  for ( Int_t i = 0; i < pads.GetSize(); ++i )
   {
     Int_t id = pads.At(i);
     TVector2 position, dimensions;
@@ -220,4 +222,3 @@ AliMUONPainterPadStore::PrintPads(const TArrayI& pads) const
                  dimensions.X(),dimensions.Y()) << endl;
   }
 }
-

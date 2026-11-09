@@ -1,7 +1,7 @@
 // @(#) $Id$
 
 /**************************************************************************
- * This file is property of and copyright by the ALICE HLT Project        * 
+ * This file is property of and copyright by the ALICE HLT Project        *
  * ALICE Experiment at CERN, All rights reserved.                         *
  *                                                                        *
  * Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *
@@ -18,7 +18,7 @@
 
 /** @file   AliHLTLoaderPublisherComponent.cxx
     @author Matthias Richter
-    @date   
+    @date
     @brief  A general tree publisher component for the AliLoader.
 */
 
@@ -33,6 +33,7 @@
 #include "AliLoader.h"
 #include "AliLog.h"
 #include "TTree.h"
+#include "TMath.h"
 
 /** ROOT macro for the implementation of ROOT specific class methods */
 ClassImp(AliHLTLoaderPublisherComponent)
@@ -161,7 +162,7 @@ int AliHLTLoaderPublisherComponent::DoInit( int argc, const char** argv )
       if (fTreeType.CompareTo("tracklets")==0){
 	AliDataLoader *dataLoader = fpLoader->GetDataLoader("tracklets");
 	TTree* pTree=GetTree();
-	if (dataLoader) {      
+	if (dataLoader) {
 	  dataLoader->Load("read");
 	} else {
 	  HLTWarning("Loader %s does not have data loader for %s", fLoaderType.Data(), fTreeType.Data());
@@ -173,11 +174,11 @@ int AliHLTLoaderPublisherComponent::DoInit( int argc, const char** argv )
 	TTree* pTree=GetTree();
 	if (pTree) {
 	  pTree->LoadBaskets();
-	  int size=EstimateObjectSize(pTree);	  
+	  int size=EstimateObjectSize(pTree);
 	  if (size>fMaxSize) fMaxSize=size;
 	  if (fVerbose) {
-	    AliInfoStream() << "event " << i << " " 
-			    << fTreeType <<" size " << size 
+	    AliInfoStream() << "event " << i << " "
+			    << fTreeType <<" size " << size
 			    << " count " << pTree->GetEntries() << endl;
 	  }
 	} else {
@@ -251,7 +252,7 @@ TTree* AliHLTLoaderPublisherComponent::GetTree()
       AliDataLoader *dataLoader = fpLoader->GetDataLoader("tracklets");
       if (dataLoader) {
 	pTree = dataLoader->Tree();
-	//if( !pTree ) HLTInfo("No TRD tracklet tree found in event %d", GetEventCount());	
+	//if( !pTree ) HLTInfo("No TRD tracklet tree found in event %d", GetEventCount());
       } else {
 	HLTWarning("TRD tracklet loader not found");
       }

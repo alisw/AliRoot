@@ -31,9 +31,11 @@
 #include "AliMpVSegmentation.h"
 #include "AliMUONObjectPair.h"
 #include "AliLog.h"
+
 #include <Riostream.h>
 #include <TObjString.h>
 #include <TArrayI.h>
+#include <TMath.h>
 #include <cassert>
 #include <float.h>
 
@@ -64,7 +66,7 @@ fChamberId(-1)
 }
 
 //_____________________________________________________________________________
-AliMUONChamberPainter::AliMUONChamberPainter(const AliMUONAttPainter& att, 
+AliMUONChamberPainter::AliMUONChamberPainter(const AliMUONAttPainter& att,
                                              Int_t chamberId)
 : AliMUONVPainter("Chamber"),
 fChamberId(chamberId)
@@ -74,59 +76,59 @@ fChamberId(chamberId)
   AliMUONPainterHelper* h = AliMUONPainterHelper::Instance(); // to be sure mapping is loaded...
 
   AliMUONAttPainter chAtt(att);
-  
+
   chAtt.SetCathodeAndPlaneMutuallyExclusive(kTRUE);
-  
+
   SetAttributes(chAtt);
-  
+
   SetID(chamberId,-1);
   SetName(h->ChamberName(fChamberId).Data());
   SetPathName(h->ChamberPathName(fChamberId).Data());
-              
+
   AliMpDEIterator deIt;
-  
+
   deIt.First(fChamberId);
-  
+
   AliMUONContour* contour = h->GetContour(ContourName());
   TObjArray contourArray;
-  
+
   while (!deIt.IsDone())
   {
     Int_t detElemId = deIt.CurrentDEId();
 
     AliMUONAttPainter deAtt(att);
-    
-    if ( att.IsCathodeDefined() ) 
+
+    if ( att.IsCathodeDefined() )
     {
       deAtt.SetCathode(kFALSE,kFALSE);
       AliMp::PlaneType planeType;
-      
+
       if ( att.IsCathode0() ) planeType = AliMpDEManager::GetPlaneType(detElemId,AliMp::kCath0);
       else planeType = AliMpDEManager::GetPlaneType(detElemId,AliMp::kCath1);
-      
+
       Bool_t bending = ( planeType == AliMp::kBendingPlane );
-      
+
       deAtt.SetPlane(bending,!bending);
     }
-    
+
     assert(deAtt.IsPlaneDefined());
-    
+
     AliMUONVPainter* painter = new AliMUONDEPainter(deAtt,detElemId);
 
     Add(painter);
-    
+
     if (!contour)
     {
       contourArray.Add(painter->Contour());
     }
-    
+
     deIt.Next();
   }
-  
+
   Double_t xmin(1E9), xmax(-1E9), ymin(1E9), ymax(-1E9);
   TIter next(Children());
   AliMUONVPainter* painter;
-  
+
   while ( ( painter = static_cast<AliMUONVPainter*>(next()) ) )
   {
     const AliMpArea& area = painter->Area();
@@ -135,13 +137,13 @@ fChamberId(chamberId)
     ymin = TMath::Min(ymin,area.DownBorder());
     ymax = TMath::Max(ymax,area.UpBorder());
   }
-  
-  if ( contourArray.GetLast() >= 0 ) 
+
+  if ( contourArray.GetLast() >= 0 )
   {
     contour = h->MergeContours(contourArray,ContourName());
   }
-  
-  SetContour(contour);    
+
+  SetContour(contour);
 }
 
 //_____________________________________________________________________________
@@ -172,8 +174,8 @@ AliMUONChamberPainter::~AliMUONChamberPainter()
 }
 
 //_____________________________________________________________________________
-void 
-AliMUONChamberPainter::ComputeDataRange(const AliMUONVTrackerData& data, Int_t dataIndex, 
+void
+AliMUONChamberPainter::ComputeDataRange(const AliMUONVTrackerData& data, Int_t dataIndex,
                                         Double_t& dataMin, Double_t& dataMax) const
 {
   /// Compute data range spanned by this (plane of that) chamber
@@ -196,16 +198,16 @@ AliMUONChamberPainter::Describe(const AliMUONVTrackerData& data, Int_t dataIndex
                            Double_t, Double_t)
 {
   /// Describe data at this chamber
-  
+
   if (!data.HasChamber(fChamberId)) return "";
-  
+
   Double_t value = data.Chamber(fChamberId,dataIndex);
-  
+
   return AliMUONPainterHelper::Instance()->FormatValue(data.DimensionName(dataIndex).Data(),value);
 }
 
 //_____________________________________________________________________________
-Bool_t 
+Bool_t
 AliMUONChamberPainter::IsIncluded() const
 {
   /// whether this chamber is included in the readout or not
@@ -218,37 +220,37 @@ AliMUONChamberPainter::PaintArea(const AliMUONVTrackerData& data, Int_t dataInde
                                  Double_t min, Double_t max)
 {
   /// Paint area of this chamber according to data
-  
+
   if (!data.HasChamber(fChamberId)) return;
-  
+
   Double_t value = data.Chamber(fChamberId,dataIndex);
-  
+
   if ( value >= AliMUONVCalibParam::InvalidFloatValue() ) return;
-  
+
   Int_t color = AliMUONPainterHelper::Instance()->ColorFromValue(value,min,max);
-  
+
   PaintArea(color);
 }
 
 //_____________________________________________________________________________
-AliMUONAttPainter 
+AliMUONAttPainter
 AliMUONChamberPainter::Validate(const AliMUONAttPainter& attributes) const
 {
   /// Normalize attributes
-  
+
   AliMUONAttPainter norm(attributes);
-  
+
   // A chamber painter must be either cathode defined or plane defined
-  
-  if ( norm.IsCathodeDefined() && norm.IsPlaneDefined() ) 
+
+  if ( norm.IsCathodeDefined() && norm.IsPlaneDefined() )
   {
     norm.SetValid(kFALSE);
   }
 
-  if ( !norm.IsCathodeDefined() && !norm.IsPlaneDefined() ) 
+  if ( !norm.IsCathodeDefined() && !norm.IsPlaneDefined() )
   {
     norm.SetValid(kFALSE);
   }
-  
+
   return norm;
 }

@@ -42,18 +42,19 @@ Updated Aliases for DCS TOF datapoints (C.Zampolli)
 Revision 1.1  2006/10/26 09:10:52  arcelli
 Class for handling the TOF DCS data in the Shuttle (C.Zampolli)
 
-*/  
+*/
 
 // AliTOFDataDCS class
 // main aim to introduce the aliases for the TOF DCS
 // data points to be then
-// stored in the OCDB, and to process them. 
+// stored in the OCDB, and to process them.
 // Process() method called by TOFPrepr
 
 #include "TString.h"
 #include "TTimeStamp.h"
 #include "TMap.h"
 #include "TCanvas.h"
+#include "TMath.h"
 
 #include "AliDCSValue.h"
 #include "AliLog.h"
@@ -79,7 +80,7 @@ AliTOFDataDCS::AliTOFDataDCS():
 	fFDR(kFALSE)
 {
 
-  // main constructor 
+  // main constructor
 
   for(int i=0;i<kNHV;i++) {
     fHVvp[i]=0x0;
@@ -87,8 +88,8 @@ AliTOFDataDCS::AliTOFDataDCS():
     fHVip[i]=0x0;
     fHVin[i]=0x0;
   }
-    
-  
+
+
 }
 
 //---------------------------------------------------------------
@@ -107,8 +108,8 @@ AliTOFDataDCS::AliTOFDataDCS(Int_t nRun, UInt_t startTime, UInt_t endTime, UInt_
 
 	AliInfo(Form("\n\tRun %d \n\tStartTime %s \n\tEndTime %s \n\tStartTime DCS Query %s \n\tEndTime DCS Query %s", nRun,
 	TTimeStamp(startTime).AsString(),
-	TTimeStamp(endTime).AsString(), 
-	TTimeStamp(startTimeDCSQuery).AsString(), 
+	TTimeStamp(endTime).AsString(),
+	TTimeStamp(startTimeDCSQuery).AsString(),
         TTimeStamp(endTimeDCSQuery).AsString()));
 
 	Init();
@@ -118,7 +119,7 @@ AliTOFDataDCS::AliTOFDataDCS(Int_t nRun, UInt_t startTime, UInt_t endTime, UInt_
 //---------------------------------------------------------------
 
 AliTOFDataDCS::AliTOFDataDCS(const AliTOFDataDCS & data):
-  TObject(data), 
+  TObject(data),
   fRun(data.fRun),
   fStartTime(data.fStartTime),
   fEndTime(data.fEndTime),
@@ -134,19 +135,19 @@ AliTOFDataDCS::AliTOFDataDCS(const AliTOFDataDCS & data):
   for(int i=0;i<kNAliases;i++) {
     fAliasNames[i]=data.fAliasNames[i];
   }
- 
+
   for(int i=0;i<kNHV;i++) {
     fHVvp[i]=data.fHVvp[i];
     fHVvn[i]=data.fHVvn[i];
     fHVip[i]=data.fHVip[i];
     fHVin[i]=data.fHVin[i];
   }
-  
-    
+
+
 }
 //---------------------------------------------------------------
 
-AliTOFDataDCS& AliTOFDataDCS:: operator=(const AliTOFDataDCS & data) { 
+AliTOFDataDCS& AliTOFDataDCS:: operator=(const AliTOFDataDCS & data) {
 
   // assignment operator
 
@@ -189,7 +190,7 @@ AliTOFDataDCS::~AliTOFDataDCS() {
     delete fHVin[i];
     fHVin[i]=0;
   }
-  
+
 }
 
 //---------------------------------------------------------------
@@ -202,9 +203,9 @@ Bool_t AliTOFDataDCS::ProcessData(TMap& aliasMap){
   Float_t val=0;
   Float_t val0=0;
   Float_t val1=0;
-  Float_t time=0; 
-  Float_t time0=0; 
-  Float_t time1=0; 
+  Float_t time=0;
+  Float_t time0=0;
+  Float_t time1=0;
   Float_t delta[2];
   Float_t timedelta[2];
 
@@ -242,7 +243,7 @@ Bool_t AliTOFDataDCS::ProcessData(TMap& aliasMap){
     }
 
     Introduce(j, aliasArr);
-    
+
     if(aliasArr->GetEntries()==0){
       AliError(Form("Alias %s has no entries! Nothing will be stored",
 		    fAliasNames[j].Data()));
@@ -315,9 +316,9 @@ Bool_t AliTOFDataDCS::ProcessData(TMap& aliasMap){
       }
       continue;
     }
-    
+
     TIter iterarray(aliasArr);
-    
+
     Int_t nentries = aliasArr->GetEntries();
     Int_t deltaTimeStamp = (Int_t) nentries/3;
     Int_t deltaTimeStamp1 = (Int_t) nentries/2;
@@ -331,9 +332,9 @@ Bool_t AliTOFDataDCS::ProcessData(TMap& aliasMap){
       }
       else if (k==1) {
 	index=deltaTimeStamp1;
-      } 
+      }
       else if (k==2) {
-	index=nentries-1; 
+	index=nentries-1;
       }
       aValue = (AliDCSValue*) aliasArr->At(index);
       val = aValue->GetFloat();
@@ -355,14 +356,14 @@ Bool_t AliTOFDataDCS::ProcessData(TMap& aliasMap){
 	fHVin[j-3*kNHV]->SetTimeStampFloat(k,time);
       }
     }
-  
+
     //computing the most significant variations
 
     //Float_t timeDiff = (Float_t)(fEndTime-fStartTime);
     Float_t timeDiff = (Float_t)(fEndTimeDCSQuery-fStartTimeDCSQuery);
     Int_t deltamin = (Int_t)(60/timeDiff*nentries); //sampling every minute
     Int_t klast = nentries-deltamin;
-      
+
     for (Int_t k=0;k<klast;k++){
       aValue = (AliDCSValue*) aliasArr->At(k);
       aValue1 = (AliDCSValue*) aliasArr->At(k+deltamin);
@@ -381,7 +382,7 @@ Bool_t AliTOFDataDCS::ProcessData(TMap& aliasMap){
 	timedelta[0]=timetemp;
       }
     }
-    
+
     for (Int_t kk=0;kk<2;kk++){
       if (j<kNHV){
 	fHVvp[j]->SetDelta(kk,delta[kk]);
@@ -401,7 +402,7 @@ Bool_t AliTOFDataDCS::ProcessData(TMap& aliasMap){
       }
     }
   }
-  
+
   fIsProcessed=kTRUE;
 
   return kTRUE;
@@ -474,4 +475,3 @@ void AliTOFDataDCS::Draw(const Option_t* /*option*/)
   // to be implemented
 
 }
-

@@ -22,6 +22,7 @@
 #include <Riostream.h>
 
 #include <TTree.h>
+#include <TMath.h>
 #include <TROOT.h>
 #include "AliRun.h"
 
@@ -42,7 +43,7 @@ using std::cout;
 /// \cond CLASSIMP
 ClassImp(AliSegmentArray)
 /// \endcond
-  
+
   AliSegmentArray::AliSegmentArray()
                   :TNamed(),
                    fSegment(0),
@@ -51,7 +52,7 @@ ClassImp(AliSegmentArray)
                    fTree(0),
                    fTreeOwner(kFALSE),
                    fBranch(0),
-                   fClass(0)                                      
+                   fClass(0)
 {
   //
   // constructor
@@ -67,7 +68,7 @@ AliSegmentArray::AliSegmentArray(const char *classname, Int_t n)
                  fTree(0),
                  fTreeOwner(kFALSE),
                  fBranch(0),
-                 fClass(0) 
+                 fClass(0)
 {
   /// constructor which
   ///
@@ -91,8 +92,8 @@ AliSegmentArray::AliSegmentArray(const AliSegmentArray &segment)
                  fTree(0),
                  fTreeOwner(kFALSE),
                  fBranch(0),
-                 fClass(0)                                      
-               
+                 fClass(0)
+
 {
   /// copy constructor
   /// to be later implemented
@@ -115,7 +116,7 @@ AliSegmentArray::~AliSegmentArray()
     fSegment->Delete();
     delete fSegment;
   }
-  if (fTree) { 
+  if (fTree) {
    if (fTreeOwner) delete fTree;
    else fTree->Reset();}
 
@@ -139,17 +140,17 @@ Bool_t AliSegmentArray::SetClass(const char *classname)
     fBranch = 0;
     delete fTreeIndex;
     fTreeIndex = 0;
-  } 
-  
+  }
+
   if (fSegment != 0) {
     fSegment->Delete();
     delete fSegment;
     fSegment = 0;
   }
-  
+
   if (!gROOT)
       ::Fatal("AliSegmentArray::AliSegmentArray", "ROOT system not initialized");
-   
+
    fClass = gROOT->GetClass(classname);
    if (!fClass) {
       Error("AliSegmentArray", "%s is not a valid class name", classname);
@@ -158,7 +159,7 @@ Bool_t AliSegmentArray::SetClass(const char *classname)
    if (!fClass->InheritsFrom(AliSegmentID::Class())) {
       Error("AliSegmentArray", "%s does not inherit from AliSegmentID", classname);
       return kFALSE;
-   }  
+   }
    return kTRUE;
 }
 
@@ -228,17 +229,17 @@ Bool_t AliSegmentArray::MakeArray(Int_t n)
   if (fSegment) {
     fSegment->Delete();
     delete fSegment;
-  }  
-  fSegment = new TObjArray(n);  
+  }
+  fSegment = new TObjArray(n);
   fNSegment=n;
-  if (fSegment) return kTRUE;  
-  else return kFALSE;		  
+  if (fSegment) return kTRUE;
+  else return kFALSE;
 }
 void AliSegmentArray::MakeTree(TTree* tree)
 {
              /// Make tree with the name
 
-  AliSegmentID * psegment = NewSegment();  
+  AliSegmentID * psegment = NewSegment();
   fTree = tree;
   //PH  fBranch = fTree->Branch("Segment",psegment->IsA()->GetName(),&psegment,64000);
   fBranch = fTree->Branch("Segment",psegment->IsA()->GetName(),&psegment,64000,99);
@@ -249,12 +250,12 @@ void AliSegmentArray::MakeTree(char *file)
 {
   ///  AliSegmentID  segment;
 
-  AliSegmentID * psegment = NewSegment();  
+  AliSegmentID * psegment = NewSegment();
   if (fTree) {
-    if (fTreeOwner) 
+    if (fTreeOwner)
      {
        delete fTree;
-       fTree = new TTree("Segment Tree","Tree with segments");     
+       fTree = new TTree("Segment Tree","Tree with segments");
      }
     else fTree->Reset();
   }
@@ -263,10 +264,10 @@ void AliSegmentArray::MakeTree(char *file)
     return;
   }
 
-  
+
   //PH  fBranch = fTree->Branch("Segment",psegment->IsA()->GetName(),&psegment,64000);
    fBranch = fTree->Branch("Segment",psegment->IsA()->GetName(),&psegment,64000,99);
- 
+
   if (file) {
         TString outFile = gAlice->GetBaseFile();
         outFile = outFile + "/" + file;
@@ -277,11 +278,11 @@ void AliSegmentArray::MakeTree(char *file)
         while ((b=(TBranch*)next())) {
            b->SetFile(outFile.Data());
         }
-        cout << "Diverting branch " << "Segment" << " to file " << outFile << endl;  
-        wd->cd(); 
+        cout << "Diverting branch " << "Segment" << " to file " << outFile << endl;
+        wd->cd();
     }
   delete psegment;
-}              
+}
 
 
 Bool_t  AliSegmentArray::MakeDictionary(Int_t size)
@@ -290,19 +291,19 @@ Bool_t  AliSegmentArray::MakeDictionary(Int_t size)
 
   if (size<1) return kFALSE;
   if (fTreeIndex) delete fTreeIndex;
-  fTreeIndex = new TArrayI(); 
+  fTreeIndex = new TArrayI();
   fTreeIndex->Set(size);
-  
+
   AliSegmentID * psegment = NewSegment(); //MI change
   fBranch->SetAddress(&psegment);
   TBranch * brindix = fTree->GetBranch("fSegmentID");
-  Int_t nevent = (Int_t)fTree->GetEntries();  
+  Int_t nevent = (Int_t)fTree->GetEntries();
   for (Int_t i = 0; i<nevent; i++){
     brindix->GetEvent(i);
     Int_t treeIndex=psegment->GetID();
     if (fTreeIndex->fN<treeIndex) fTreeIndex->Set(Int_t(Float_t(treeIndex)*1.5)+1);
-    //    Int_t index = segment.GetID(); 
-    (*fTreeIndex)[treeIndex]=i+1; //  
+    //    Int_t index = segment.GetID();
+    (*fTreeIndex)[treeIndex]=i+1; //
   }
   if (psegment) delete psegment;
   return kTRUE;
@@ -325,7 +326,7 @@ Bool_t AliSegmentArray::ConnectTree(const char * treeName)
   /// connect tree from current directory
 
   if (fTree){
-   if (fTreeOwner) 
+   if (fTreeOwner)
     {
      delete fTree;
      fTree = 0;
@@ -334,7 +335,7 @@ Bool_t AliSegmentArray::ConnectTree(const char * treeName)
    fBranch = 0;
   }
   fTree =(TTree*)gDirectory->Get(treeName);
-  
+
   if (fTree == 0)    return kFALSE;
   fBranch = fTree->GetBranch("Segment");
   if (fBranch==0) return kFALSE;
@@ -348,7 +349,7 @@ AliSegmentID *AliSegmentArray::LoadSegment(Int_t index)
   /// load segment with index to the memory
 
   if (fTreeIndex ==0 ) MakeDictionary(3000);
-  //firstly try to load dictionary 
+  //firstly try to load dictionary
   if (fTreeIndex ==0 ) return 0;
   if (fBranch==0) return 0;
   if (index>fTreeIndex->fN) return 0;
@@ -356,19 +357,19 @@ AliSegmentID *AliSegmentArray::LoadSegment(Int_t index)
   AliSegmentID *s = (AliSegmentID*)fSegment->At(index);
   if (s==0)  s=  NewSegment();
 
-  
+
   if (s!=0) {
     s->SetID(index);
     //  new AliSegmentID(index);
     Int_t treeIndex =(*fTreeIndex)[index];
     if (treeIndex<1) return 0;
-    else treeIndex--;   //I don't like it Int table I have index shifted by 1		       
+    else treeIndex--;   //I don't like it Int table I have index shifted by 1
     fBranch->SetAddress(&s);
     fTree->GetEvent(treeIndex);
     //PH    (*fSegment)[index] = (TObject*) s;
     fSegment->AddAt((TObject*) s, index);
   }
-  else 
+  else
     return 0;
   return s;
 
@@ -380,12 +381,12 @@ AliSegmentID *AliSegmentArray::LoadEntry(Int_t index)
   if (fBranch==0) return 0;
   if (index>fTree->GetEntries()) return 0;
   AliSegmentID * s =  NewSegment();
-  
+
   if (s) {
     fBranch->SetAddress(&s);
     fTree->GetEvent(index);
   }
-  else 
+  else
     return 0;
   Int_t nindex = s->GetID();
   ClearSegment(nindex);
@@ -414,10 +415,10 @@ void AliSegmentArray::Streamer(TBuffer &R__b)
     TNamed::Streamer(R__b);
     R__b>>ptreeName;
     if (fTree && fTreeOwner) delete fTree;
-    ConnectTree(ptreeName->String());   
+    ConnectTree(ptreeName->String());
   } else {
     R__b.WriteVersion(AliSegmentArray::IsA());
-    TNamed::Streamer(R__b);      
+    TNamed::Streamer(R__b);
     //  char  ch[200];
     //  sprintf(ch,"%s",fTrre->GetTitle());
     treeName.String() = fTree->GetTitle();
@@ -425,4 +426,3 @@ void AliSegmentArray::Streamer(TBuffer &R__b)
     fTree->Write();
   }
 }
-

@@ -18,8 +18,8 @@
 // *
 // * this class defines the TOF object to be stored
 // * in OCDB for the fine time-slewing calibration
-// * 
-// * 
+// *
+// *
 // *
 // *
 // *
@@ -27,6 +27,7 @@
 #include "AliTOFCalibFineSlewing.h"
 #include "TObjArray.h"
 #include "TGraph.h"
+#include "TMath.h"
 #include "AliLog.h"
 
 ClassImp(AliTOFCalibFineSlewing)
@@ -58,7 +59,7 @@ AliTOFCalibFineSlewing::AliTOFCalibFineSlewing(TObjArray *oa) :
   /*
    * standard constructor
    */
-  
+
   // count number of valid points to be stored
   Int_t nvalid = 0;
   // loop over channels
@@ -72,12 +73,12 @@ AliTOFCalibFineSlewing::AliTOFCalibFineSlewing(TObjArray *oa) :
     }
   }
   AliInfo(Form("Found %d valid points", nvalid));
-  
+
   // alloc arrays
   fSize = nvalid;
   fX = new UShort_t[fSize];
   fY = new Short_t[fSize];
-  
+
   // store valid points
   Int_t nstored = 0;
   // loop over channels
@@ -94,7 +95,7 @@ AliTOFCalibFineSlewing::AliTOFCalibFineSlewing(TObjArray *oa) :
     }
   }
   AliInfo(Form("Stored %d points", nstored));
-  
+
 }
 
 //_________________________________________________________
@@ -108,7 +109,7 @@ AliTOFCalibFineSlewing::AliTOFCalibFineSlewing(const AliTOFCalibFineSlewing &src
   /*
    * copy constructor
    */
-  
+
   // copy data
   for (Int_t ich = 0; ich < 157248; ich++)
     fStart[ich] = src.fStart[ich];
@@ -116,7 +117,7 @@ AliTOFCalibFineSlewing::AliTOFCalibFineSlewing(const AliTOFCalibFineSlewing &src
     fX[ipt] = src.fX[ipt];
     fY[ipt] = src.fY[ipt];
   }
-  
+
 }
 
 //_________________________________________________________
@@ -127,11 +128,11 @@ AliTOFCalibFineSlewing::operator=(const AliTOFCalibFineSlewing &src)
   /*
    * operator=
    */
-  
+
   if (this == &src) return *this;
   TObject::operator=(src);
-  
-  // delete and realloc if needed 
+
+  // delete and realloc if needed
   if (fSize != src.fSize) {
     if (fX) delete [] fX;
     if (fY) delete [] fY;
@@ -139,7 +140,7 @@ AliTOFCalibFineSlewing::operator=(const AliTOFCalibFineSlewing &src)
     fX = new UShort_t[src.fSize];
     fY = new Short_t[src.fSize];
   }
-  
+
   // copy data
   for (Int_t ich = 0; ich < 157248; ich++)
     fStart[ich] = src.fStart[ich];
@@ -184,7 +185,7 @@ AliTOFCalibFineSlewing::Eval(Int_t ich, Float_t tot)
   /*
    * eval via interpolation
    */
-  
+
   // get start point
   Int_t st = fStart[ich];
   // get number of points
@@ -193,7 +194,7 @@ AliTOFCalibFineSlewing::Eval(Int_t ich, Float_t tot)
   else               npt = fStart[ich + 1] - st;
 
   /*
-   * the following is adapted starting from TGraph implementation 
+   * the following is adapted starting from TGraph implementation
    */
 
   if (npt == 0) return 0.;
@@ -201,13 +202,13 @@ AliTOFCalibFineSlewing::Eval(Int_t ich, Float_t tot)
 
   // convert input TOT to used x value
   Int_t x = (Int_t)(tot * 1000.);
-  
+
   //linear interpolation
   //In case x is < fX[0] or > fX[fNpoints-1] return the first or last point
-  
+
   //find points in graph around x assuming points are not sorted
   // (if point are sorted could use binary search)
-  
+
   // find neighbours simply looping  all points
   // and find also the 2 adjacent points: (low2 < low < x < up < up2 )
   // needed in case x is outside the graph ascissa interval
@@ -220,7 +221,7 @@ AliTOFCalibFineSlewing::Eval(Int_t ich, Float_t tot)
     return fY[st];
   if (x > fX[st + npt - 1])
     return fY[st + npt - 1];
-  
+
   for (Int_t i = st; i < st + npt; ++i) {
     if (fX[i] < x) {
       if (low == -1 || fX[i] > fX[low])  {
@@ -235,7 +236,7 @@ AliTOFCalibFineSlewing::Eval(Int_t ich, Float_t tot)
     } else // case x == fX[i]
       return (Float_t)fY[i]; // no interpolation needed
   }
-  
+
   // treat cases when x is outside graph min max abscissa
   //  if (up == -1)  {
   //    up  = low;
@@ -245,10 +246,10 @@ AliTOFCalibFineSlewing::Eval(Int_t ich, Float_t tot)
   //    low = up;
   //    up  = up2;
   //  }
- 
+
   //  assert(low != -1 && up != -1);
   if (!(low != -1 && up != -1)) return 0.;
-  
+
   if (fX[low] == fX[up]) return (Float_t)fY[low];
   Float_t yup = (Float_t)fY[up];
   Float_t ylow = (Float_t)fY[low];
@@ -257,5 +258,5 @@ AliTOFCalibFineSlewing::Eval(Int_t ich, Float_t tot)
     //  Float_t yn = (Float_t)fY[up] + (x - fX[up]) * (fY[low] - fY[up]) / (fX[low] - fX[up]);
   Float_t yn = yup + a * (ylow - yup) / b;
   return yn;
-  
+
 }

@@ -12,7 +12,7 @@
  * about the suitability of this software for any purpose. It is          *
  * provided "as is" without express or implied warranty.                  *
  **************************************************************************/
- 
+
 /* $Id$ */
 
 ///_________________________________________________________________________
@@ -74,7 +74,7 @@ ClassImp(AliVZERODigitizer)
   Init();
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
   AliVZERODigitizer::AliVZERODigitizer(AliVZERO *vzero, DigiTask_t task)
                     :AliDigitizer(),
 		     fCalibData(GetCalibData()),
@@ -93,8 +93,8 @@ ClassImp(AliVZERODigitizer)
 
   Init();
 }
-           
-//____________________________________________________________________________ 
+
+//____________________________________________________________________________
   AliVZERODigitizer::AliVZERODigitizer(AliDigitizationInput* digInput)
                     :AliDigitizer(digInput),
 		     fCalibData(GetCalibData()),
@@ -113,16 +113,16 @@ ClassImp(AliVZERODigitizer)
 
   Init();
 }
-           
-//____________________________________________________________________________ 
+
+//____________________________________________________________________________
   AliVZERODigitizer::~AliVZERODigitizer()
 {
   // destructor
-  
+
   if (fDigits) {
     fDigits->Delete();
     delete fDigits;
-    fDigits=0; 
+    fDigits=0;
   }
 
   if (fSignalShape) {
@@ -152,15 +152,15 @@ Bool_t AliVZERODigitizer::Init()
   // check if the digitizer was already initialized
   if (fSignalShape) return kTRUE;
 
-  fSignalShape = new TF1("VZEROSignalShape",this,&AliVZERODigitizer::SignalShape,0,200,6,"AliVZERODigitizer","SignalShape");
+  fSignalShape = new TF1("VZEROSignalShape",this,&AliVZERODigitizer::SignalShape,0,200,6);
   //  fSignalShape->SetParameters(0,1.57345e1,-4.25603e-1,2.9,6.40982,3.69339e-01);
   //  fSignalShape->SetParameters(1.34330e+00,1.13007e+02,-4.95705e-01,
   //			      3.68911e+00,1.01040e+00, 3.94675e-01);
   fSignalShape->SetParameters(-1.07335e+00,2.16002e+01,-1.26133e-01,
 			      1.41619e+00,5.50334e-01,3.86111e-01);
-  fPMResponse = new TF1("VZEROPMResponse",this,&AliVZERODigitizer::PMResponse,-kPMRespTime,2.*kPMRespTime,0,"AliVZERODigitizer","PMResponse");
-  fSinglePhESpectrum = new TF1("VZEROSinglePhESpectrum",this,&AliVZERODigitizer::SinglePhESpectrum,0,20,0,"AliVZERODigitizer","SinglePhESpectrum");
-  
+  fPMResponse = new TF1("VZEROPMResponse",this,&AliVZERODigitizer::PMResponse,-kPMRespTime,2.*kPMRespTime,0);
+  fSinglePhESpectrum = new TF1("VZEROSinglePhESpectrum",this,&AliVZERODigitizer::SinglePhESpectrum,0,20,0);
+
   // Now get the CTP L0->L1 delay
   AliCDBEntry *entry = AliCDBManager::Instance()->Get("GRP/CTP/CTPtiming");
   if (!entry) AliFatal("CTP timing parameters are not found in OCDB !");
@@ -188,9 +188,9 @@ Bool_t AliVZERODigitizer::Init()
     fPmGain[i] = fCalibData->GetGain(i);
 
     fAdcPedestal[i][0] = fCalibData->GetPedestal(i);
-    fAdcSigma[i][0]    = fCalibData->GetSigma(i); 
+    fAdcSigma[i][0]    = fCalibData->GetSigma(i);
     fAdcPedestal[i][1] = fCalibData->GetPedestal(i+64);
-    fAdcSigma[i][1]    = fCalibData->GetSigma(i+64); 
+    fAdcSigma[i][1]    = fCalibData->GetSigma(i+64);
 
     Int_t board = AliVZEROCalibData::GetBoardNumber(i);
     fNBins[i] = TMath::Nint(((Float_t)(fCalibData->GetMatchWindow(board)+1)*25.0+
@@ -225,10 +225,10 @@ Bool_t AliVZERODigitizer::Init()
 }
 
 //____________________________________________________________________________
-void AliVZERODigitizer::Digitize(Option_t* /*option*/) 
-{   
+void AliVZERODigitizer::Digitize(Option_t* /*option*/)
+{
   // Creates digits from hits
-  fNdigits = 0;  
+  fNdigits = 0;
   if (fVZERO && !fDigInput) {
     AliLoader *loader = fVZERO->GetLoader();
     if (!loader) {
@@ -254,7 +254,7 @@ void AliVZERODigitizer::Digitize(Option_t* /*option*/)
     DigitizeSDigits();
     AliRunLoader *currentLoader = AliRunLoader::GetRunLoader(fDigInput->GetOutputFolderName());
     AliLoader *loader = currentLoader->GetLoader("VZEROLoader");
-    if (!loader) { 
+    if (!loader) {
       AliError("Cannot get VZERO Loader via RunDigitizer!");
       return;
     }
@@ -266,26 +266,26 @@ void AliVZERODigitizer::Digitize(Option_t* /*option*/)
 }
 
 //____________________________________________________________________________
-void AliVZERODigitizer::AddDigit(Int_t pmnumber, Float_t time, Float_t width, Bool_t integrator, Short_t *chargeADC, Int_t *labels) 
- { 
- 
-// Adds Digit 
- 
-  TClonesArray &ldigits = *fDigits;  
-	 
+void AliVZERODigitizer::AddDigit(Int_t pmnumber, Float_t time, Float_t width, Bool_t integrator, Short_t *chargeADC, Int_t *labels)
+ {
+
+// Adds Digit
+
+  TClonesArray &ldigits = *fDigits;
+
   new(ldigits[fNdigits++]) AliVZEROdigit(pmnumber,time,width,integrator,chargeADC,labels);
-	 
+
 }
 //____________________________________________________________________________
-void AliVZERODigitizer::AddSDigit(Int_t pmnumber, Int_t nbins, Float_t *charges, Int_t *labels) 
- { 
- 
-// Adds SDigit 
- 
-  TClonesArray &ldigits = *fDigits;  
-	 
+void AliVZERODigitizer::AddSDigit(Int_t pmnumber, Int_t nbins, Float_t *charges, Int_t *labels)
+ {
+
+// Adds SDigit
+
+  TClonesArray &ldigits = *fDigits;
+
   new(ldigits[fNdigits++]) AliVZEROSDigit(pmnumber,nbins,charges,labels);
-	 
+
 }
 //____________________________________________________________________________
 void AliVZERODigitizer::ResetDigits(Option_t* opt)
@@ -316,7 +316,7 @@ AliVZEROCalibData* AliVZERODigitizer::GetCalibData() const
 //     Int_t runNumber = man->GetRun();
 //     entry = man->GetStorage("local://$ALICE_ROOT/OCDB")
 //       ->Get("VZERO/Calib/Data",runNumber);
-// 	
+//
 //   }
 
   // Retrieval of data in directory VZERO/Calib/Data:
@@ -412,7 +412,7 @@ void AliVZERODigitizer::DigitizeHits()
          for (Int_t iHit = 0; iHit < nHits; iHit++) {
 	   AliVZEROhit* hit = (AliVZEROhit *)hits->UncheckedAt(iHit);
 	   Int_t nPhot = hit->Nphot();
-	   Int_t cell  = hit->Cell();                          
+	   Int_t cell  = hit->Cell();
 	   Int_t pmt = Cell2Pmt(cell);
 	   if (pmt < 0) continue;
 	   Int_t trackLabel = hit->GetTrack();
@@ -511,7 +511,7 @@ void AliVZERODigitizer::DigitizeSDigits()
       fAdc[j][iClock]  += gRandom->Gaus(fAdcPedestal[j][integrator], fAdcSigma[j][integrator]);
     }
   }
-	
+
 }
 
 void AliVZERODigitizer::WriteDigits(AliLoader *loader)
@@ -529,9 +529,9 @@ void AliVZERODigitizer::WriteDigits(AliLoader *loader)
     treeD->SetBranchAddress("VZERODigits", &fDigits);
   else
     treeD->Bronch("VZERODigit", "TClonesArray", &fDigits);
-  
+
   Short_t *chargeADC = new Short_t[kNClocks];
-  for (Int_t i=0; i<64; i++) {      
+  for (Int_t i=0; i<64; i++) {
     for (Int_t j = 0; j < kNClocks; ++j) {
       Int_t tempadc = Int_t(fAdc[i][j]);
       if (tempadc > 1023) tempadc = 1023;
@@ -542,8 +542,8 @@ void AliVZERODigitizer::WriteDigits(AliLoader *loader)
   delete [] chargeADC;
 
   treeD->Fill();
-  loader->WriteDigits("OVERWRITE");  
-  loader->UnloadDigits();     
+  loader->WriteDigits("OVERWRITE");
+  loader->UnloadDigits();
   ResetDigits("C");
 }
 
@@ -562,14 +562,14 @@ void AliVZERODigitizer::WriteSDigits(AliLoader *loader)
     treeS->SetBranchAddress("VZEROSDigits", &fDigits);
   else
     treeS->Bronch("VZEROSDigit", "TClonesArray", &fDigits);
-  
+
   for (Int_t ipmt = 0; ipmt < 64; ++ipmt) {
     AddSDigit(ipmt,fNBins[ipmt],fTime[ipmt],fLabels[ipmt]);
   }
 
   treeS->Fill();
-  loader->WriteSDigits("OVERWRITE");  
-  loader->UnloadSDigits();     
+  loader->WriteSDigits("OVERWRITE");
+  loader->UnloadSDigits();
   ResetDigits("C");
 }
 
@@ -585,21 +585,21 @@ void AliVZERODigitizer::ReadSDigits()
   // Loop over input files
   Int_t nFiles= fDigInput->GetNinputs();
   for (Int_t inputFile = 0; inputFile < nFiles; inputFile++) {
-    // Get the current loader 
-    AliRunLoader* currentLoader = 
+    // Get the current loader
+    AliRunLoader* currentLoader =
       AliRunLoader::GetRunLoader(fDigInput->GetInputFolderName(inputFile));
 
     AliLoader *loader = currentLoader->GetLoader("VZEROLoader");
     loader->LoadSDigits("READ");
-  
+
     // Get the tree of summable digits
     TTree* sdigitsTree = loader->TreeS();
     if (!sdigitsTree)  {
       AliError("No sdigit tree from digInput");
       continue;
     }
-    
-    // Get the branch 
+
+    // Get the branch
     TBranch* sdigitsBranch = sdigitsTree->GetBranch("VZEROSDigit");
     if (!sdigitsBranch) {
       AliError("Failed to get sdigit branch");
@@ -612,11 +612,11 @@ void AliVZERODigitizer::ReadSDigits()
     int offset = fDigInput->GetMask(inputFile);
 
     // Sum contributions from the sdigits
-    // Get number of entries in the tree 
+    // Get number of entries in the tree
     Int_t nentries  = Int_t(sdigitsBranch->GetEntries());
     for (Int_t entry = 0; entry < nentries; ++entry)  {
       sdigitsBranch->GetEntry(entry);
-      // Get the number of sdigits 
+      // Get the number of sdigits
       Int_t nsdigits = sdigitsArray->GetEntries();
       for (Int_t sdigit = 0; sdigit < nsdigits; sdigit++) {
 	AliVZEROSDigit* sDigit = static_cast<AliVZEROSDigit*>(sdigitsArray->UncheckedAt(sdigit));
@@ -650,11 +650,11 @@ void AliVZERODigitizer::ReadSDigits()
 
 //____________________________________________________________________
 TClonesArray*
-AliVZERODigitizer::DigitsArray() 
+AliVZERODigitizer::DigitsArray()
 {
   // Initialize digit array if not already and
-  // return pointer to it. 
-  if (!fDigits) { 
+  // return pointer to it.
+  if (!fDigits) {
     fDigits = new TClonesArray("AliVZEROdigit", 64);
     fNdigits = 0;
   }
@@ -663,11 +663,11 @@ AliVZERODigitizer::DigitsArray()
 
 //____________________________________________________________________
 TClonesArray*
-AliVZERODigitizer::SDigitsArray() 
+AliVZERODigitizer::SDigitsArray()
 {
   // Initialize sdigit array if not already and
-  // return pointer to it. 
-  if (!fDigits) { 
+  // return pointer to it.
+  if (!fDigits) {
     fDigits = new TClonesArray("AliVZEROSDigit", 64);
     fNdigits = 0;
   }

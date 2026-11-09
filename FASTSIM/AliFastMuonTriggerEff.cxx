@@ -15,24 +15,26 @@
 
 /* $Id$ */
 // The trigger parametrization is computed for background levels 0., 0.5 and 1.
-// In order to set a background level different from 0 it is necessary to 
+// In order to set a background level different from 0 it is necessary to
 // explicitly force it with:
 // ForceBkgLevel(BkgLevel).
-// For intermediate background levels, the trigger response is linearly 
+// For intermediate background levels, the trigger response is linearly
 // interpolated between these values.
 // There is increased granularity in the pT region below 3 GeV. Although
 // it does not seem to be necessary it is also possible to interpolate
 // between pT bins using SetInt().
-// Author: Pietro Cortese (Universita' del Piemonte Orientale - Alessandria 
+// Author: Pietro Cortese (Universita' del Piemonte Orientale - Alessandria
 // and INFN of Torino)
 
 
 #include "AliFastMuonTriggerEff.h"
-#include "TROOT.h"
-#include "TFile.h"
-#include "stdlib.h"
-#include "TH3.h"
-#include "TObjString.h"
+
+#include <TROOT.h>
+#include <TFile.h>
+#include <TH3.h>
+#include <TObjString.h>
+#include <TMath.h>
+#include <stdlib.h>
 
 #define PLIN printf("%s: %d: ",__FILE__,__LINE__)
 
@@ -140,8 +142,8 @@ AliFastMuonTriggerEff::AliFastMuonTriggerEff(const AliFastMuonTriggerEff& eff)
     eff.Copy(*this);
 }
 
-void AliFastMuonTriggerEff::SetCut(Int_t cut) 
-{  
+void AliFastMuonTriggerEff::SetCut(Int_t cut)
+{
   //
   // Set the pt cut
   if(cut==kLow){
@@ -155,7 +157,7 @@ void AliFastMuonTriggerEff::SetCut(Int_t cut)
     cut=kLow;
   }
   fCut = cut;
-  
+
 }
 
 Int_t AliFastMuonTriggerEff::SetBkgLevel(Float_t Bkg)
@@ -184,8 +186,8 @@ Int_t AliFastMuonTriggerEff::SetBkgLevel(Float_t Bkg)
 Int_t AliFastMuonTriggerEff::ForceBkgLevel(Float_t Bkg)
 {
   //
-  // Check and enforce consistency of the background level 
-  // 
+  // Check and enforce consistency of the background level
+  //
     if((Bkg!=0.)) {
        printf("%s: Warning: requested Bkg: %f\n",
        __FILE__,Bkg);
@@ -391,7 +393,7 @@ void AliFastMuonTriggerEff::Evaluate(Float_t charge, Float_t pt,Float_t theta,
     }
     if(pt<0) {
         printf("Warning: pt: %f < 0. GeV/c\n",pt);
-	return;	
+	return;
     }
 
     Int_t iPt   = fhLZ->FindBin((Double_t)pt);
@@ -442,7 +444,7 @@ void AliFastMuonTriggerEff::Evaluate(Float_t charge, Float_t pt,Float_t theta,
     printf(" 4:%1d Result: charge, iTheta, iPhi, iPt: %f %d %d %d effLow: %f, effHigh: %f, effAny: %f\n",
               fInt,charge,iTheta,iPhi,iPt,effLow,effHigh,effAny);
 #endif
-        
+
     if(fInt==1) {
       Float_t angl,angh,anga;
       Float_t effLowp,effHighp,effAnyp;
@@ -454,7 +456,7 @@ void AliFastMuonTriggerEff::Evaluate(Float_t charge, Float_t pt,Float_t theta,
         #ifdef MYTRIGDEBUG
 	printf(" 6:1 No more points above! No interpolation is needed!\n");
         #endif
-	return;        
+	return;
       }else if(TMath::Abs(ptc-pt) < 1.e-10){
         #ifdef MYTRIGDEBUG
 	  printf(" 6:1 No interpolation is needed!\n");
@@ -475,7 +477,7 @@ void AliFastMuonTriggerEff::Evaluate(Float_t charge, Float_t pt,Float_t theta,
           effAnyp=0;
           #ifdef MYTRIGDEBUG
           printf(" 8:1 result is: %f %f %f\n",effLowp,effHighp,effAnyp);
-	  #endif	  
+	  #endif
 	}
         angl=(effLow-effLowp)/fDpt;
         angh=(effHigh-effHighp)/fDpt;
@@ -495,7 +497,7 @@ void AliFastMuonTriggerEff::Evaluate(Float_t charge, Float_t pt,Float_t theta,
 	  effAnyp=effAny;
           #ifdef MYTRIGDEBUG
           printf(" 8:1 result is: pt: %f %f %f\n",effLowp,effHighp,effAnyp);
-	  #endif	  
+	  #endif
         }
         angl=(effLowp-effLow)/fDpt;
         angh=(effHighp-effHigh)/fDpt;
@@ -521,16 +523,16 @@ Float_t AliFastMuonTriggerEff::Evaluate(Float_t charge, Float_t pt,
 {
     //
     // Trigger efficiency for pt, theta, phi depending of fCut
-    // 
+    //
     if(fZones==0) {
         printf("Call to uninitialized object of class: AliFastMuonTriggerEff\n");
 	return 0.;
     }
     Float_t eff;
     Float_t effLow, effHigh, effAny;
-    
+
     Evaluate(charge,pt,theta,phi,effLow,effHigh,effAny);
-    if (fCut == kLow) 
+    if (fCut == kLow)
 	eff  = effLow;
     else if (fCut == kHigh)
 	eff  = effHigh;
@@ -548,4 +550,3 @@ AliFastMuonTriggerEff& AliFastMuonTriggerEff::operator=(const  AliFastMuonTrigge
     rhs.Copy(*this);
     return *this;
 }
-

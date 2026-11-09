@@ -13,7 +13,7 @@
 #include <AliEveMUONChamberData.h>
 
 #include <TGLRnrCtx.h>
-#include <TGLIncludes.h>
+#include "AliEveGLIncludes.h"
 #include <TMath.h>
 
 

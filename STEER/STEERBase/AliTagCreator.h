@@ -25,8 +25,8 @@
 
 //ROOT
 #include <TObject.h>
+#include <TGridResult.h>
 
-class TGridResult;
 class TChain;
 
 //___________________________________________________________________________
@@ -34,7 +34,7 @@ class AliTagCreator : public TObject {
 
  public:
   AliTagCreator();
-  ~AliTagCreator(); 
+  ~AliTagCreator();
 
   //____________________________________________________//
   Bool_t MergeTags(const char* type);
@@ -57,9 +57,8 @@ class AliTagCreator : public TObject {
   TString fSE;   //the defined storage element
   TString fgridpath;   //the alien location of the tag files
   Int_t fStorage;  //0:local - 1:grid
-   
-  ClassDef(AliTagCreator,0)  
+
+  ClassDef(AliTagCreator,0)
 };
 
 #endif
-

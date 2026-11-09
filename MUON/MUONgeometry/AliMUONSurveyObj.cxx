@@ -15,11 +15,11 @@
 
 //-----------------------------------------------------------------------------
 /// \class AliMUONSurveyObj
-/// Base class for the survey processing of the ALICE DiMuon spectrometer 
+/// Base class for the survey processing of the ALICE DiMuon spectrometer
 ///
 /// This base object provides methods to process the survey+photogrammetry
 /// data of the Chambers (frames) and Detection Elements of the DiMuon
-/// Spectrometer and calculate their misalignments. 
+/// Spectrometer and calculate their misalignments.
 ///
 /// \author Javier Castillo
 //-----------------------------------------------------------------------------
@@ -49,8 +49,8 @@ void SurveyFcn(int &npar, double *g, double &f, double *par, int iflag);
 ClassImp(AliMUONSurveyObj)
 /// \endcond
 
-AliMUONSurveyObj::AliMUONSurveyObj() 
-  : TObject() 
+AliMUONSurveyObj::AliMUONSurveyObj()
+  : TObject()
   , fSTargets(0x0)
   , fGBTargets(0x0)
   , fLBTargets(0x0)
@@ -72,12 +72,12 @@ AliMUONSurveyObj::AliMUONSurveyObj()
 {
   /// Default constructor
 
-  fSTargets = new TObjArray();  
+  fSTargets = new TObjArray();
   fSTargets->SetOwner(kFALSE);
-  fGBTargets = new TObjArray();  
+  fGBTargets = new TObjArray();
   fGBTargets->SetOwner(kFALSE);
-  fLBTargets = new TObjArray();  
-  fLBTargets->SetOwner(kFALSE);  
+  fLBTargets = new TObjArray();
+  fLBTargets->SetOwner(kFALSE);
 
   fAlignTrf = new TGeoCombiTrans();
 
@@ -135,7 +135,7 @@ void AliMUONSurveyObj::AddGButtonTarget(AliSurveyPoint *btPoint){
     fGBTargets->Add(ConvertPointUnits(btPoint,0.1));
   } else {
     fGBTargets->Add(btPoint);
-  }  
+  }
 }
 
 void AliMUONSurveyObj::AddLButtonTarget(AliSurveyPoint *btPoint){
@@ -144,7 +144,7 @@ void AliMUONSurveyObj::AddLButtonTarget(AliSurveyPoint *btPoint){
     fLBTargets->Add(ConvertPointUnits(btPoint,0.1));
   } else {
     fLBTargets->Add(btPoint);
-  }  
+  }
 }
 
 void AliMUONSurveyObj::AddLButtonTarget(TVector3 *btVector){
@@ -153,7 +153,7 @@ void AliMUONSurveyObj::AddLButtonTarget(TVector3 *btVector){
 }
 
 Int_t AliMUONSurveyObj::AddStickerTargets(TObjArray *pArray, TString stBaseName, Int_t lTargetMax){
-  /// Add a maximum of lTargetMax sticker targets with stBaseName from pArray 
+  /// Add a maximum of lTargetMax sticker targets with stBaseName from pArray
   if (!pArray) {
     AliError(Form("Survey points array is empty %p!",pArray));
     return 0;
@@ -162,12 +162,12 @@ Int_t AliMUONSurveyObj::AddStickerTargets(TObjArray *pArray, TString stBaseName,
     AliError(Form("Need base name for sticker targets %s!",stBaseName.Data()));
     return 0;
   }
-  
+
   Int_t stIndex = 0;
   AliSurveyPoint *pointSST = 0x0;
 
   TString stNumber;
-  
+
   for (int iPoint=0; iPoint<lTargetMax; iPoint++) {
     TString stFullName(stBaseName);
     stNumber = Form("%d",iPoint+1);
@@ -190,7 +190,7 @@ Int_t AliMUONSurveyObj::AddStickerTargets(TObjArray *pArray, TString stBaseName,
 }
 
 Int_t AliMUONSurveyObj::AddGButtonTargets(TObjArray *pArray, TString btBaseName, Int_t lTargetMax){
-  /// Add a maximum of lTargetMax global button targets with stBaseName from pArray 
+  /// Add a maximum of lTargetMax global button targets with stBaseName from pArray
   printf("%s \n",btBaseName.Data());
   if (!pArray) {
     AliError(Form("Survey points array is empty %p!",pArray));
@@ -200,12 +200,12 @@ Int_t AliMUONSurveyObj::AddGButtonTargets(TObjArray *pArray, TString btBaseName,
     AliError(Form("Need base name for button targets %s!",btBaseName.Data()));
     return 0;
   }
-  
+
   Int_t btIndex = 0;
   AliSurveyPoint *pointSBT = 0x0;
 
   TString btNumber;
-  
+
   for (int iPoint=0; iPoint<lTargetMax; iPoint++) {
     TString btFullName(btBaseName);
     btNumber = Form("%d",iPoint+1);
@@ -228,7 +228,7 @@ Int_t AliMUONSurveyObj::AddGButtonTargets(TObjArray *pArray, TString btBaseName,
 }
 
 Int_t AliMUONSurveyObj::AddLButtonTargets(TObjArray *pArray, TString btBaseName, Int_t lTargetMax){
-  /// Add a maximum of lTargetMax local button targets with stBaseName from pArray 
+  /// Add a maximum of lTargetMax local button targets with stBaseName from pArray
   printf("%s \n",btBaseName.Data());
   if (!pArray) {
     AliError(Form("Local points array is empty %p!",pArray));
@@ -238,12 +238,12 @@ Int_t AliMUONSurveyObj::AddLButtonTargets(TObjArray *pArray, TString btBaseName,
     AliError(Form("Need base name for button targets %s!",btBaseName.Data()));
     return 0;
   }
-  
+
   Int_t btIndex = 0;
   AliSurveyPoint *pointSBT = 0x0;
 
   TString btNumber;
-  
+
   for (int iPoint=0; iPoint<lTargetMax; iPoint++) {
     TString btFullName(btBaseName);
     btNumber = Form("%d",iPoint+1);
@@ -329,7 +329,7 @@ void AliMUONSurveyObj::SetPlane(TString pName, Double_t xMin, Double_t xMax, Dou
     fPlane->Delete();
     fPlane = 0x0;
   }
-  fPlane = new TF2(pName,this,&AliMUONSurveyObj::EqPlane,xMin,xMax,yMin,yMax,3,"AliMUONSurveyObj","EqPlane");
+  fPlane = new TF2(pName,this,&AliMUONSurveyObj::EqPlane,xMin,xMax,yMin,yMax,3);
 }
 
 void AliMUONSurveyObj::SetPlaneParameters(Double_t p0, Double_t p1, Double_t p2) {
@@ -372,15 +372,15 @@ Double_t AliMUONSurveyObj::FitPlane() {
 
   Double_t pl[3] = {0};
   Double_t pg[3] = {0};
-    
+
   TGraph2DErrors *gST = new TGraph2DErrors(3);
   AliSurveyPoint *pST = 0x0;
   for (Int_t iPoint=0; iPoint<GetNStickerTargets(); iPoint++) {
     pST = GetStickerTarget(iPoint);
     //    pST->PrintPoint();
-    pg[0] =  pST->GetX(); 
-    pg[1] =  pST->GetY(); 
-    pg[2] =  pST->GetZ(); 
+    pg[0] =  pST->GetX();
+    pg[1] =  pST->GetY();
+    pg[2] =  pST->GetZ();
     fBaseTrf->MasterToLocal(pg,pl);
     gST->SetPoint(iPoint,pl[0],pl[1],pl[2]);
     printf("%d %f %f %f\n",iPoint,pl[0],pl[1],pl[2]);
@@ -411,10 +411,10 @@ Double_t AliMUONSurveyObj::SurveyChi2(Double_t *par){
 
   TGeoHMatrix matGlo = (*fBaseTrf)*trfTemp;
   TGeoCombiTrans trfGlo(matGlo);
-		
+
   Double_t pl[3] = {0};
   Double_t pg[3] = {0};
-  
+
   for(Int_t iPoint=0; iPoint<fGBTargets->GetEntries(); iPoint++){
     AliSurveyPoint *gBT = (AliSurveyPoint*)fGBTargets->At(iPoint);
     if(fLBTargets->At(iPoint)->IsA()==TVector3::Class()){
@@ -454,24 +454,24 @@ Double_t AliMUONSurveyObj::SurveyChi2(Double_t *par){
 
 //_____________________________________________________________________________
 void SurveyFcn(int &npar, double *g, double &f, double *par, int iflag) {
-  /// 
-  /// Standard function as needed by Minuit-like minimization procedures. 
+  ///
+  /// Standard function as needed by Minuit-like minimization procedures.
   /// For the set of parameters par calculates and returns chi-squared.
   ///
 
   // smuggle a C++ object into a C function
-  AliMUONSurveyObj *aSurveyObj = (AliMUONSurveyObj*) gMinuit->GetObjectFit(); 
+  AliMUONSurveyObj *aSurveyObj = (AliMUONSurveyObj*) gMinuit->GetObjectFit();
 
   f = aSurveyObj->SurveyChi2(par);
   if (iflag==3) {}
-  if (npar) {} 
+  if (npar) {}
   if (g) {} // no warnings about unused stuff...
 
 }
 
 //_____________________________________________________________________________
 Int_t AliMUONSurveyObj::SurveyToAlign(TGeoCombiTrans &quadTransf, Double_t *parErr, Double_t psi, Double_t tht, Double_t epsi, Double_t etht) {
-  /// Main function to obtain the misalignments from the surveyed position of the button targets; 
+  /// Main function to obtain the misalignments from the surveyed position of the button targets;
   if (fGBTargets->GetEntries()!=fLBTargets->GetEntries()){
     AliError(Form("Different number of button targets: %d survey points and %d local coord!",
 		  fGBTargets->GetEntries(),fLBTargets->GetEntries()));
@@ -505,8 +505,8 @@ Int_t AliMUONSurveyObj::SurveyToAlign(TGeoCombiTrans &quadTransf, Double_t *parE
   //  fitter.ExecuteCommand("MINOS", arglist, 1);
   //  fitter.ExecuteCommand("CALL 3", arglist,0);
 
-  for (int j=0; j<3; j++) printf("%10.3f ",fitter.GetParameter(j));   
-  for (int j=3; j<6; j++) printf("%10.3f ",1000*fitter.GetParameter(j));   
+  for (int j=0; j<3; j++) printf("%10.3f ",fitter.GetParameter(j));
+  for (int j=3; j<6; j++) printf("%10.3f ",1000*fitter.GetParameter(j));
   printf("\n");
   for (int j=0; j<3; j++) printf("%10.3f ",fitter.GetParError(j));
   for (int j=3; j<6; j++) printf("%10.3f ",1000*fitter.GetParError(j));
@@ -530,7 +530,7 @@ Int_t AliMUONSurveyObj::SurveyToAlign(TGeoCombiTrans &quadTransf, Double_t *parE
 
 //_____________________________________________________________________________
 Int_t AliMUONSurveyObj::SurveyToAlign(Double_t psi, Double_t tht, Double_t epsi, Double_t etht) {
-  /// Main function to obtain the misalignments from the surveyed position of the button targets; 
+  /// Main function to obtain the misalignments from the surveyed position of the button targets;
   if (fGBTargets->GetEntries()!=fLBTargets->GetEntries()){
     AliError(Form("Different number of button targets: %d survey points and %d local coord!",
 		  fGBTargets->GetEntries(),fLBTargets->GetEntries()));
@@ -570,8 +570,8 @@ Int_t AliMUONSurveyObj::SurveyToAlign(Double_t psi, Double_t tht, Double_t epsi,
 //   fFitter->ExecuteCommand("MINOS", arglist, 1);
 //   fFitter->ExecuteCommand("CALL 3", arglist,0);
 
-  for (int j=0; j<3; j++) printf("%10.3f ",fFitter->GetParameter(j));   
-  for (int j=3; j<6; j++) printf("%10.3f ",1000*fFitter->GetParameter(j));   
+  for (int j=0; j<3; j++) printf("%10.3f ",fFitter->GetParameter(j));
+  for (int j=3; j<6; j++) printf("%10.3f ",1000*fFitter->GetParameter(j));
   printf("\n");
   for (int j=0; j<3; j++) printf("%10.3f ",fFitter->GetParError(j));
   for (int j=3; j<6; j++) printf("%10.3f ",1000*fFitter->GetParError(j));
@@ -615,7 +615,7 @@ Double_t AliMUONSurveyObj::EvalFunction(const TF2 *lFunction, Int_t iP1, Int_t i
   }
   AliSurveyPoint *gP1 = GetGButtonTarget(iP1);
   AliSurveyPoint *gP2 = GetGButtonTarget(iP2);
-  
+
   if(!gP1||!gP2){
     AliError("Missing global button target!!!");
     return 0;
@@ -626,13 +626,13 @@ Double_t AliMUONSurveyObj::EvalFunction(const TF2 *lFunction, Int_t iP1, Int_t i
   Double_t pl2[3] = {0};
   Double_t pg1[3] = {0};
   Double_t pg2[3] = {0};
-    
-  pg1[0] =  gP1->GetX(); 
-  pg1[1] =  gP1->GetY(); 
-  pg1[2] =  gP1->GetZ(); 
-  pg2[0] =  gP2->GetX(); 
-  pg2[1] =  gP2->GetY(); 
-  pg2[2] =  gP2->GetZ(); 
+
+  pg1[0] =  gP1->GetX();
+  pg1[1] =  gP1->GetY();
+  pg1[2] =  gP1->GetZ();
+  pg2[0] =  gP2->GetX();
+  pg2[1] =  gP2->GetY();
+  pg2[2] =  gP2->GetZ();
 
   fBaseTrf->MasterToLocal(pg1,pl1);
   fBaseTrf->MasterToLocal(pg2,pl2);
@@ -725,14 +725,14 @@ Double_t AliMUONSurveyObj::CalculateGlobalDiff(TGeoCombiTrans &lTransf, Int_t nP
     lDiff[iPoint*(3+1)+0] = (pml[0]-pg[0]);
     lDiff[iPoint*(3+1)+1] = (pml[1]-pg[1]);
     lDiff[iPoint*(3+1)+2] = (pml[2]-pg[2]);
-    
+
     lDiff[iPoint*(3+1)+3] = TMath::Sqrt(lDiff[iPoint*(3+1)+0]*lDiff[iPoint*(3+1)+0]+
 					lDiff[iPoint*(3+1)+1]*lDiff[iPoint*(3+1)+1]+
 					lDiff[iPoint*(3+1)+2]*lDiff[iPoint*(3+1)+2]);
 
     lDiff[nPoints*(3+1)] += lDiff[iPoint*(3+1)+3]*lDiff[iPoint*(3+1)+3];
   }
-		
+
   lDiff[nPoints*(3+1)] = TMath::Sqrt(lDiff[nPoints*(3+1)]);
   return lDiff[nPoints*(3+1)];
 }
@@ -779,63 +779,63 @@ Int_t AliMUONSurveyObj::CalculateBestTransf(Int_t iP1, Int_t iP2, Double_t *lXYZ
     return 0;
   }
 
-  
+
   AliMUONSurveyUtil *surveyUtil = AliMUONSurveyUtil::Instance();
 
   // Xcenter functions
-  const char *fxcName = "fXcn00"; 
+  const char *fxcName = "fXcn00";
   TF2 **fXc = new TF2*[2];
   fxcName = "fXcn";
-  fXc[0] = new TF2(fxcName,surveyUtil,&AliMUONSurveyUtil::XnCenter,fXMin,fXMax,fYMin,fYMax,7,"AliMUONSurveyUtil","XnCenter");
+  fXc[0] = new TF2(fxcName,surveyUtil,&AliMUONSurveyUtil::XnCenter,fXMin,fXMax,fYMin,fYMax,7);
   fxcName = "fXcp";
-  fXc[1] = new TF2(fxcName,surveyUtil,&AliMUONSurveyUtil::XpCenter,fXMin,fXMax,fYMin,fYMax,7,"AliMUONSurveyUtil","XpCenter");
+  fXc[1] = new TF2(fxcName,surveyUtil,&AliMUONSurveyUtil::XpCenter,fXMin,fXMax,fYMin,fYMax,7);
 
   // Ycenter functions
-  const char *fycName = "fYcn00"; 
+  const char *fycName = "fYcn00";
   TF2 **fYc = new TF2*[2];
   fycName = "fYcn";
-  fYc[0] = new TF2(fycName,surveyUtil,&AliMUONSurveyUtil::YnCenter,fYMin,fYMax,fYMin,fYMax,8,"AliMUONSurveyUtil","YnCenter");
+  fYc[0] = new TF2(fycName,surveyUtil,&AliMUONSurveyUtil::YnCenter,fYMin,fYMax,fYMin,fYMax,8);
   fycName = "fYcp";
-  fYc[1] = new TF2(fycName,surveyUtil,&AliMUONSurveyUtil::YpCenter,fYMin,fYMax,fYMin,fYMax,8,"AliMUONSurveyUtil","YpCenter");   
+  fYc[1] = new TF2(fycName,surveyUtil,&AliMUONSurveyUtil::YpCenter,fYMin,fYMax,fYMin,fYMax,8);
 
   // Zcenter functions
-  const char *fzcName = "fZcn00"; 
+  const char *fzcName = "fZcn00";
   TF2 **fZc = new TF2*[2];
   fzcName = "fZcn";
-  fZc[0] = new TF2(fzcName,surveyUtil,&AliMUONSurveyUtil::ZnCenter,fZMin,fZMax,fZMin,fZMax,8,"AliMUONSurveyUtil","ZnCenter");
+  fZc[0] = new TF2(fzcName,surveyUtil,&AliMUONSurveyUtil::ZnCenter,fZMin,fZMax,fZMin,fZMax,8);
   fzcName = "fZcp";
-  fZc[1] = new TF2(fzcName,surveyUtil,&AliMUONSurveyUtil::ZpCenter,fZMin,fZMax,fZMin,fZMax,8,"AliMUONSurveyUtil","ZpCenter");   
+  fZc[1] = new TF2(fzcName,surveyUtil,&AliMUONSurveyUtil::ZpCenter,fZMin,fZMax,fZMin,fZMax,8);
 
   // Phi rotation using xglobal coords functions
-  const char *fphixName = "fPhiXnn00"; 
+  const char *fphixName = "fPhiXnn00";
   TF2 ***fPhiX = new TF2**[2];
   for (Int_t iX =0; iX<2; iX++) {
     fPhiX[iX] = new TF2*[2];
   }
   fphixName = "fPhiXnn";
-  fPhiX[0][0] = new TF2(fphixName,surveyUtil,&AliMUONSurveyUtil::PhiXnn,fXMin,fXMax,fXMin,fXMax,7,"AliMUONSurveyUtil","PhiXnn");
+  fPhiX[0][0] = new TF2(fphixName,surveyUtil,&AliMUONSurveyUtil::PhiXnn,fXMin,fXMax,fXMin,fXMax,7);
   fphixName = "fPhiXnp";
-  fPhiX[0][1] = new TF2(fphixName,surveyUtil,&AliMUONSurveyUtil::PhiXnp,fXMin,fXMax,fXMin,fXMax,7,"AliMUONSurveyUtil","PhiXnp");   
+  fPhiX[0][1] = new TF2(fphixName,surveyUtil,&AliMUONSurveyUtil::PhiXnp,fXMin,fXMax,fXMin,fXMax,7);
   fphixName = "fPhiXpn";
-  fPhiX[1][0] = new TF2(fphixName,surveyUtil,&AliMUONSurveyUtil::PhiXpn,fXMin,fXMax,fXMin,fXMax,7,"AliMUONSurveyUtil","PhiXpn");
+  fPhiX[1][0] = new TF2(fphixName,surveyUtil,&AliMUONSurveyUtil::PhiXpn,fXMin,fXMax,fXMin,fXMax,7);
   fphixName = "fPhiXpp";
-  fPhiX[1][1] = new TF2(fphixName,surveyUtil,&AliMUONSurveyUtil::PhiXpp,fXMin,fXMax,fXMin,fXMax,7,"AliMUONSurveyUtil","PhiXpp");   
+  fPhiX[1][1] = new TF2(fphixName,surveyUtil,&AliMUONSurveyUtil::PhiXpp,fXMin,fXMax,fXMin,fXMax,7);
 
   // Phi rotation using yglobal coords functions
-  const char *fphiyName = "fPhiYnn00"; 
+  const char *fphiyName = "fPhiYnn00";
   TF2 ***fPhiY = new TF2**[2];
   for (Int_t iY =0; iY<2; iY++) {
     fPhiY[iY] = new TF2*[2];
   }
   fphiyName = "fPhiYnn";
-  fPhiY[0][0] = new TF2(fphiyName,surveyUtil,&AliMUONSurveyUtil::PhiYnn,fYMin,fYMax,fYMin,fYMax,8,"AliMUONSurveyUtil","PhiYnn");
+  fPhiY[0][0] = new TF2(fphiyName,surveyUtil,&AliMUONSurveyUtil::PhiYnn,fYMin,fYMax,fYMin,fYMax,8);
   fphiyName = "fPhiYnp";
-  fPhiY[0][1] = new TF2(fphiyName,surveyUtil,&AliMUONSurveyUtil::PhiYnp,fYMin,fYMax,fYMin,fYMax,8,"AliMUONSurveyUtil","PhiYnp");   
+  fPhiY[0][1] = new TF2(fphiyName,surveyUtil,&AliMUONSurveyUtil::PhiYnp,fYMin,fYMax,fYMin,fYMax,8);
   fphiyName = "fPhiYpn";
-  fPhiY[1][0] = new TF2(fphiyName,surveyUtil,&AliMUONSurveyUtil::PhiYpn,fYMin,fYMax,fYMin,fYMax,8,"AliMUONSurveyUtil","PhiYpn");
+  fPhiY[1][0] = new TF2(fphiyName,surveyUtil,&AliMUONSurveyUtil::PhiYpn,fYMin,fYMax,fYMin,fYMax,8);
   fphiyName = "fPhiYpp";
-  fPhiY[1][1] = new TF2(fphiyName,surveyUtil,&AliMUONSurveyUtil::PhiYpp,fYMin,fYMax,fYMin,fYMax,8,"AliMUONSurveyUtil","PhiYpp");   
-  
+  fPhiY[1][1] = new TF2(fphiyName,surveyUtil,&AliMUONSurveyUtil::PhiYpp,fYMin,fYMax,fYMin,fYMax,8);
+
 
   // Set Parameters of functions
   for(Int_t iS=0; iS<2; iS++){
@@ -870,36 +870,36 @@ Int_t AliMUONSurveyObj::CalculateBestTransf(Int_t iP1, Int_t iP2, Double_t *lXYZ
 
   //
   // Calculate Detection Element Center from button targets
-  //	
-  
+  //
+
   // Trying 2x*2y*2z*(2phi+2phi) possibilities
   for(Int_t iX=0; iX<2; iX++){
     for(Int_t iY=0; iY<2; iY++){
       for(Int_t iZ=0; iZ<2; iZ++){
 	CalculateTranslation(fXc[iX],fYc[iY],fZc[iZ],iP1,iP2,lCenTemp);
-	
+
 	lRotTemp[0] = lPsi;
 	lRotTemp[1] = lTht;
 	for(Int_t iP=0; iP<2; iP++){
 	  lRotTemp[2] = EvalFunction(fPhiX[iX][iP],iP1,iP2,"X");
-	  
+
 	  trfTemp.Clear();
 	  trfTemp.RotateZ(TMath::RadToDeg()*lRotTemp[2]);
 	  trfTemp.RotateY(TMath::RadToDeg()*lRotTemp[1]);
 	  trfTemp.RotateX(TMath::RadToDeg()*lRotTemp[0]);
 	  trfTemp.SetTranslation(lCenTemp);
-	  
+
 	  if(CalculateGlobalDiff(trfTemp,nPoints,lDiffTemp)<lDiffMin[nPoints*(3+1)]){
 	    printf("Diffs");
 	    for(Int_t i=0; i<nPoints*(3+1)+1; i++){
-	      printf(" %f",lDiffTemp[i]); 
+	      printf(" %f",lDiffTemp[i]);
 	    }
 	    printf("\n");
 	    printf(" : mycenX%dY%dZ%d(%f,%f,%f); rotx%d(%f,%f,%f)\n",iX,iY,iZ,lCenTemp[0],lCenTemp[1],lCenTemp[2],iP,lRotTemp[0],lRotTemp[1],lRotTemp[2]);
 	    printf("Transformation improved ...\n");
 	    for (int i=0; i<3; i++) {
 	      lXYZ[i] = lCenTemp[i];
-	    } 
+	    }
 	    lPTP[2] = lRotTemp[2];
 	    for(Int_t i=0; i<nPoints*(3+1)+1; i++){
 	      lDiffMin[i]=lDiffTemp[i];
@@ -908,24 +908,24 @@ Int_t AliMUONSurveyObj::CalculateBestTransf(Int_t iP1, Int_t iP2, Double_t *lXYZ
 	}
 	for(Int_t iP=0; iP<2; iP++){
 	  lRotTemp[2] = EvalFunction(fPhiY[iY][iP],iP1,iP2,"Y");
-	  
+
 	  trfTemp.Clear();
 	  trfTemp.RotateZ(TMath::RadToDeg()*lRotTemp[2]);
 	  trfTemp.RotateY(TMath::RadToDeg()*lRotTemp[1]);
 	  trfTemp.RotateX(TMath::RadToDeg()*lRotTemp[0]);
 	  trfTemp.SetTranslation(lCenTemp);
-	  
+
 	  if(CalculateGlobalDiff(trfTemp,nPoints,lDiffTemp)<lDiffMin[nPoints*(3+1)]){
 	    printf("Diffs");
 	    for(Int_t i=0; i<nPoints*(3+1)+1; i++){
-	      printf(" %f",lDiffTemp[i]); 
+	      printf(" %f",lDiffTemp[i]);
 	    }
 	    printf("\n");
 	    printf(" : mycenX%dY%dZ%d(%f,%f,%f); roty%d(%f,%f,%f)\n",iX,iY,iZ,lCenTemp[0],lCenTemp[1],lCenTemp[2],iP,lRotTemp[0],lRotTemp[1],lRotTemp[2]);
 	    printf("Transformation improved ...\n");
 	    for (int i=0; i<3; i++) {
 	      lXYZ[i] = lCenTemp[i];
-	    } 
+	    }
 	    lPTP[2] = lRotTemp[2];
 	    for(Int_t i=0; i<nPoints*(3+1)+1; i++){
 	      lDiffMin[i]=lDiffTemp[i];
@@ -964,7 +964,7 @@ void AliMUONSurveyObj::CalculateMeanTransf(Double_t *lXYZ, Double_t *lPTP) {
     Double_t yce=0.;
     Double_t zce=0.;
     Double_t phi=0.;
-    
+
     Int_t nPairs = 0;
     Int_t nPoints = GetNGButtonTargets();
     // Loop over all possible pairs of button tragets
@@ -974,7 +974,7 @@ void AliMUONSurveyObj::CalculateMeanTransf(Double_t *lXYZ, Double_t *lPTP) {
 
 	if(CalculateBestTransf(iP1,iP2,lXYZ,lPTP)) {
 	  nPairs++;
-	
+
 	  xce+=lXYZ[0];
 	  yce+=lXYZ[1];
 	  zce+=lXYZ[2];
@@ -984,7 +984,7 @@ void AliMUONSurveyObj::CalculateMeanTransf(Double_t *lXYZ, Double_t *lPTP) {
     }
 
     if (!nPairs) return;
-    
+
     lXYZ[0]=xce/nPairs;
     lXYZ[1]=yce/nPairs;
     lXYZ[2]=zce/nPairs;
@@ -1017,7 +1017,7 @@ void AliMUONSurveyObj::FillSTHistograms(TString baseNameC, TH2 *hSTc, TString ba
     if (!pointST) continue;
     if (pointST->GetPointName().Contains(baseNameC)){
       hSTc->Fill(pointST->GetX(),pointST->GetY(),-pointST->GetZ());
-    } else if ((!baseNameA.IsNull()) && 
+    } else if ((!baseNameA.IsNull()) &&
 	      (pointST->GetPointName().Contains(baseNameA))) {
       if (!hSTa){
 	AliError("Base name for points on side A provided but no histogram for them!");
@@ -1029,7 +1029,7 @@ void AliMUONSurveyObj::FillSTHistograms(TString baseNameC, TH2 *hSTc, TString ba
 }
 
 Double_t AliMUONSurveyObj::GetAlignResX() {
-  /// Returns the uncertainty of the x translation parameter 
+  /// Returns the uncertainty of the x translation parameter
   if(!fFitter) {
     AliError("There is no fitter for this object! X resolution will be 0.");
     return 0.;
@@ -1038,7 +1038,7 @@ Double_t AliMUONSurveyObj::GetAlignResX() {
 }
 
 Double_t AliMUONSurveyObj::GetAlignResY() {
-  /// Returns the uncertainty of the y translation parameter 
+  /// Returns the uncertainty of the y translation parameter
   if(!fFitter) {
     AliError("There is no fitter for this object! Y resolution will be 0.");
     return 0.;
@@ -1047,7 +1047,7 @@ Double_t AliMUONSurveyObj::GetAlignResY() {
 }
 
 AliSurveyPoint* AliMUONSurveyObj::ConvertPointUnits(AliSurveyPoint *stPoint, Float_t lFactor) {
-  /// Return the AliSurveyPoint with new units. Default is from mm -> cm 
+  /// Return the AliSurveyPoint with new units. Default is from mm -> cm
   return new AliSurveyPoint(stPoint->GetPointName(),
 			    lFactor*stPoint->GetX(),lFactor*stPoint->GetY(),lFactor*stPoint->GetZ(),
 			    lFactor*stPoint->GetPrecisionX(),lFactor*stPoint->GetPrecisionY(),lFactor*stPoint->GetPrecisionZ(),

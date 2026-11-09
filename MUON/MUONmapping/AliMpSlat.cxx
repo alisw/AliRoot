@@ -23,9 +23,9 @@
 #include "AliMpMotifPosition.h"
 #include "AliMpPCB.h"
 
-#include "Riostream.h"
-
-#include "TArrayI.h"
+#include <Riostream.h>
+#include <TArrayI.h>
+#include <TMath.h>
 
 #include <cassert>
 
@@ -38,7 +38,7 @@
 /// All the PCBs have a least the same height, if not the same width. In most
 /// of the case, height=width=40 cm, at least for St345 (for trigger,
 /// width varies)
-// 
+//
 /// \author Laurent Aphecetche
 //-----------------------------------------------------------------------------
 
@@ -49,13 +49,13 @@ ClassImp(AliMpSlat)
 /// \endcond
 
 //_____________________________________________________________________________
-AliMpSlat::AliMpSlat(TRootIOCtor* ioCtor) 
-: TObject(), 
-  fId(""), 
+AliMpSlat::AliMpSlat(TRootIOCtor* ioCtor)
+: TObject(),
+  fId(""),
   fPlaneType(AliMp::kNonBendingPlane),
-  fDX(0), 
+  fDX(0),
   fDY(0),
-  fNofPadsX(0), 
+  fNofPadsX(0),
   fMaxNofPadsY(0),
   fManuMap(ioCtor),
   fPCBs(),
@@ -74,12 +74,12 @@ AliMpSlat::AliMpSlat(TRootIOCtor* ioCtor)
 
 //_____________________________________________________________________________
 AliMpSlat::AliMpSlat(const char* id, AliMp::PlaneType bendingOrNonBending)
-: TObject(), 
-  fId(id), 
+: TObject(),
+  fId(id),
   fPlaneType(bendingOrNonBending),
-  fDX(0), 
+  fDX(0),
   fDY(0),
-  fNofPadsX(0), 
+  fNofPadsX(0),
   fMaxNofPadsY(0),
   fManuMap(),
   fPCBs(),
@@ -90,7 +90,7 @@ AliMpSlat::AliMpSlat(const char* id, AliMp::PlaneType bendingOrNonBending)
     ///
     /// Normal ctor
     ///
-  AliDebug(1,Form("this=%p id=%s",this,id));			
+  AliDebug(1,Form("this=%p id=%s",this,id));
 
     fPCBs.SetOwner(kTRUE);
     fManuMap.SetOwner(kFALSE);
@@ -102,18 +102,18 @@ AliMpSlat::~AliMpSlat()
   ///
   /// Dtor.
   ///
-  AliDebug(1,Form("this=%p fId=%s",this,fId.Data()));			
+  AliDebug(1,Form("this=%p fId=%s",this,fId.Data()));
 
   fPCBs.Delete();
 }
 
 //_____________________________________________________________________________
 void
-AliMpSlat::Add(const AliMpPCB& pcbType, const TArrayI& manuList) 
+AliMpSlat::Add(const AliMpPCB& pcbType, const TArrayI& manuList)
 {
   ///
   /// Adds a PCB to this slat. The manuList specifies the ids of the manu
-  /// that compose the PCB. The manuList ordering is important, as the 
+  /// that compose the PCB. The manuList ordering is important, as the
   /// assumption is that it's ordered counter-clockwise, starting from
   /// the lower-left of the PCB.
   ///
@@ -148,7 +148,7 @@ AliMpSlat::Add(const AliMpPCB& pcbType, const TArrayI& manuList)
     }
     else
     {
-      AliError(Form("ManuID %d is duplicated for PCB %s",manuID,pcbType.GetID()));      
+      AliError(Form("ManuID %d is duplicated for PCB %s",manuID,pcbType.GetID()));
     }
   }
   fPositionX = DX();
@@ -230,7 +230,7 @@ AliMpSlat::FindPCB(Int_t ix) const
   ///
   /// Returns the PCB containing x-integer-position ix
   ///
-  for ( Int_t i = 0; i < GetSize(); ++i ) 
+  for ( Int_t i = 0; i < GetSize(); ++i )
 	{
 		AliMpPCB* pcb = GetPCB(i);
 		if ( ix >= pcb->Ixmin() && ix <= pcb->Ixmax() )
@@ -248,7 +248,7 @@ AliMpSlat::FindPCBIndex(Int_t ix) const
   ///
   /// Returns the index of the PCB containing x-integer-position ix.
   ///
-  for ( Int_t i = 0; i < GetSize(); ++i ) 
+  for ( Int_t i = 0; i < GetSize(); ++i )
 	{
 		AliMpPCB* pcb = GetPCB(i);
 		if ( ix >= pcb->Ixmin() && ix <= pcb->Ixmax() )
@@ -266,7 +266,7 @@ AliMpSlat::FindPCB(Double_t x, Double_t y) const
   ///
   /// Returns the PCB containing position (x,y)
   ///
-  for ( Int_t i = 0; i < GetSize(); ++i ) 
+  for ( Int_t i = 0; i < GetSize(); ++i )
 	{
 		AliMpPCB* pcb = GetPCB(i);
 //		if ( x >= pcb->Xmin() && x < pcb->Xmax() &&
@@ -291,7 +291,7 @@ AliMpSlat::FindPCBIndex(Double_t x, Double_t y) const
   ///
   /// Returns the index of the PCB containing position (x,y)
   ///
-  for ( Int_t i = 0; i < GetSize(); ++i ) 
+  for ( Int_t i = 0; i < GetSize(); ++i )
 	{
 		AliMpPCB* pcb = GetPCB(i);
 		if ( x >= pcb->Xmin() && x < pcb->Xmax() &&
@@ -304,7 +304,7 @@ AliMpSlat::FindPCBIndex(Double_t x, Double_t y) const
 }
 
 //_____________________________________________________________________________
-Int_t 
+Int_t
 AliMpSlat::FindPCBIndexByMotifPositionID(Int_t manuId) const
 {
   /// Find the index of the PCB containing a given manu
@@ -362,17 +362,17 @@ AliMpSlat::GetID() const
 }
 
 //_____________________________________________________________________________
-Int_t 
+Int_t
 AliMpSlat::GetMaxNofPadsY() const
 {
   ///
   /// Returns the maximum number of pads to be found in this slat y-direction.
-  /// 
+  ///
   return fMaxNofPadsY;
 }
 
 //_____________________________________________________________________________
-Int_t 
+Int_t
 AliMpSlat::GetMaxPadIndexX() const
 {
   ///
@@ -407,7 +407,7 @@ AliMpSlat::GetName() const
   {
     name += ".Invalid";
   }
-  return name.Data();  
+  return name.Data();
 }
 
 //_____________________________________________________________________________
@@ -460,12 +460,12 @@ AliMpSlat::Print(Option_t* option) const
   ///
   cout << "SLAT " << GetID() <<  " 1/2 DIM = (" << DX() << "," << DY() << ")"
   << " POS = " << GetPositionX() << "," << GetPositionY()
-	<< " NPADSX = " << GetNofPadsX() 
+	<< " NPADSX = " << GetNofPadsX()
   << " MAXNPADSY = " << GetMaxNofPadsY()
   << " NPCBs=" << GetSize() << endl;
-  
+
   TString soption(option);
-  
+
   if ( soption.Contains("P") )
 	{
     for ( Int_t i = 0; i < GetSize() ; ++i )
@@ -481,7 +481,7 @@ AliMpSlat::Print(Option_t* option) const
 	    }
 		}
 	}
-  
+
   if ( soption.Contains("M") || soption.Contains("L") )
   {
     cout << fManuMap.GetSize() << " ";

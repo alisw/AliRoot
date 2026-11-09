@@ -12,7 +12,7 @@
 
 #include <TEveBoxSetGL.h>
 
-#include <TGLIncludes.h>
+#include "AliEveGLIncludes.h"
 #include <TGLRnrCtx.h>
 #include <TGLSelectRecord.h>
 

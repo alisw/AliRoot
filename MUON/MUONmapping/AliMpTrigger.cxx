@@ -22,18 +22,19 @@
 #include "AliLog.h"
 #include "AliMpSlat.h"
 
-#include "Riostream.h"
-#include "TArrayI.h"
-#include "TObjArray.h"
+#include <Riostream.h>
+#include <TArrayI.h>
+#include <TObjArray.h>
+#include <TMath.h>
 
 //-----------------------------------------------------------------------------
 /// \class AliMpTrigger
-/// 
-/// A trigger 'slat' object. 
-/// It is to be viewed as a superposition of  
-/// virtual layers of AliMpSlat objects. The need for more than one layer  
-/// arise from the fact that a given local board deals with strips  
-/// located in different detelem. So a given strip (pad) can have several  
+///
+/// A trigger 'slat' object.
+/// It is to be viewed as a superposition of
+/// virtual layers of AliMpSlat objects. The need for more than one layer
+/// arise from the fact that a given local board deals with strips
+/// located in different detelem. So a given strip (pad) can have several
 /// "locations".
 ///
 /// \author Laurent Aphecetche
@@ -52,7 +53,7 @@ namespace
     if (b)
     {
       Double_t diff = TMath::Abs(b-a)/TMath::Abs(b);
-      if ( diff < precision ) 
+      if ( diff < precision )
       {
         return kTRUE;
       }
@@ -67,13 +68,13 @@ namespace
 
 //_____________________________________________________________________________
 AliMpTrigger::AliMpTrigger()
-: TObject(), 
-  fId(""), 
-  fPlaneType(AliMp::kNonBendingPlane), 
+: TObject(),
+  fId(""),
+  fPlaneType(AliMp::kNonBendingPlane),
   fSlats(0),
   fSlatSegmentations(0),
   fMaxNofPadsY(0),
-  fDX(0), 
+  fDX(0),
   fDY(0)
 {
   /// default ctor
@@ -86,13 +87,13 @@ AliMpTrigger::AliMpTrigger()
 
 //_____________________________________________________________________________
 AliMpTrigger::AliMpTrigger(const char* slatType, AliMp::PlaneType bendingOrNot)
-    :  TObject(), 
-       fId(slatType), 
-       fPlaneType(bendingOrNot), 
+    :  TObject(),
+       fId(slatType),
+       fPlaneType(bendingOrNot),
        fSlats(0),
        fSlatSegmentations(0),
-       fMaxNofPadsY(0), 
-       fDX(0), 
+       fMaxNofPadsY(0),
+       fDX(0),
        fDY(0)
 {
   /// normal ctor
@@ -116,16 +117,16 @@ AliMpTrigger::~AliMpTrigger()
 Bool_t
 AliMpTrigger::AdoptLayer(AliMpSlat* slat)
 {
-  /// Adopt (i.e. we become owner of that pointer) a slat, as 
+  /// Adopt (i.e. we become owner of that pointer) a slat, as
   /// a layer of this trigger slat.
 
   AliDebug(2,Form("%s is adopting %s ",
                   GetID(),slat->GetID()));
 
   // Check that we keep our size constant.
-    
-  if ( GetSize() > 0 && 
-       ( !::IsEqual(slat->DX(),fDX,AliMpConstants::LengthTolerance()) || 
+
+  if ( GetSize() > 0 &&
+       ( !::IsEqual(slat->DX(),fDX,AliMpConstants::LengthTolerance()) ||
          !::IsEqual(slat->DY(),fDY,AliMpConstants::LengthTolerance()) )
      )
   {
@@ -163,7 +164,7 @@ AliMpTrigger::DY() const
 }
 
 //_____________________________________________________________________________
-void 
+void
 AliMpTrigger::GetAllLocalBoardNumbers(TArrayI& lbn) const
 {
   /// Fills lbn with the local board numbers we're dealing with
@@ -172,11 +173,11 @@ AliMpTrigger::GetAllLocalBoardNumbers(TArrayI& lbn) const
   {
     n += GetLayer(i)->GetNofElectronicCards();
   }
-  
+
   lbn.Set(n);
 
   Int_t index(0);
-  
+
   for ( Int_t i = 0; i < GetSize(); ++i )
   {
     TArrayI slbn;
@@ -305,12 +306,12 @@ AliMpTrigger::Print(Option_t* opt) const
   {
     cout << " Number of layers : " << GetSize();
   }
-  else 
+  else
   {
     cout << " One layer";
   }
   cout << endl;
-  for ( Int_t i = 0; i < GetSize(); ++i ) 
+  for ( Int_t i = 0; i < GetSize(); ++i )
   {
     cout << "   ";
     GetLayer(i)->Print(opt);

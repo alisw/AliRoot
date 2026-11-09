@@ -22,19 +22,21 @@
 #include "AliMUONVDigit.h"
 #include "AliMUONPad.h"
 #include "AliMpArea.h"
-#include "TVector2.h"
 #include "AliMUONVDigitStore.h"
+
+#include <TVector2.h>
+#include <TMath.h>
 
 //-----------------------------------------------------------------------------
 /// \class AliMUONClusterFinderCOG
 ///
 /// A very basic (and mostly useless, probably) cluster finder.
-/// 
+///
 /// We use AliMUONPreClusterFinder to actually build the cluster,
 /// and then we simply use center-of-gravity to get the coordinates
 /// of the cluster.
 /// Only point to note is that we compute separately both
-/// cathodes when doing, in order to take the positions from the 
+/// cathodes when doing, in order to take the positions from the
 /// direction with the better resolution.
 ///
 /// \author Laurent Aphecetche
@@ -60,22 +62,22 @@ AliMUONClusterFinderCOG::~AliMUONClusterFinderCOG()
 }
 
 //_____________________________________________________________________________
-Bool_t 
+Bool_t
 AliMUONClusterFinderCOG::Prepare(Int_t detElemId,
                                  TObjArray* pads[2],
                                  const AliMpArea& area)
 {
   /// Prepare for clustering
-  
+
   return fPreClusterFinder->Prepare(detElemId,pads,area);
 }
 
 //_____________________________________________________________________________
-AliMUONCluster* 
+AliMUONCluster*
 AliMUONClusterFinderCOG::NextCluster()
 {
   /// Get next cluster
-  
+
   if ( !fPreClusterFinder ) return 0x0;
   AliMUONCluster* cluster = fPreClusterFinder->NextCluster();
   if ( cluster )
@@ -86,28 +88,28 @@ AliMUONClusterFinderCOG::NextCluster()
     {
       // skip that one
       return NextCluster();
-    }    
+    }
   }
   return cluster;
 }
 
 //_____________________________________________________________________________
-void 
+void
 AliMUONClusterFinderCOG::ComputePosition(AliMUONCluster& cluster)
 {
   /// Compute a first estimate of cluster position by a basic center-of-gravity
-  
+
   Double_t xmin = 1E9;
   Double_t ymin = 1E9;
   Double_t xmax = -1E9;
   Double_t ymax = -1E9;
-  
+
   Double_t x[] = { 0.0, 0.0 };
   Double_t y[] = { 0.0, 0.0 };
-  
+
   Double_t xsize[] = { 0.0, 0.0 } ;
   Double_t ysize[] = { 0.0, 0.0 } ;
-  
+
   for ( Int_t cathode = 0; cathode < 2; ++cathode )
   {
     for ( Int_t i = 0; i < cluster.Multiplicity(); ++i )
@@ -138,21 +140,18 @@ AliMUONClusterFinderCOG::ComputePosition(AliMUONCluster& cluster)
       ysize[cathode] /= cluster.Multiplicity(cathode);
     }
   }
-  
+
   Double_t xCOG = 0;
   Double_t yCOG = 0;
 
   // take the positions from the direction with the better resolution
   xCOG = ( xsize[0] < xsize[1] ) ? x[0] : x[1];
   yCOG = ( ysize[0] < ysize[1] ) ? y[0] : y[1];
-  
+
   AliDebug(1,Form("Cluster mult %d (x,y)=(%e,%e) boundaries=(xmin,ymin,xmax,ymax)=(%e,%e,%e,%e)"
                   " (x0,y0,x1,y1)=(%e,%e,%e,%e) ",
                   cluster.Multiplicity(),xCOG,yCOG,xmin,ymin,xmax,ymax,
                   x[0],y[0],x[1],y[1]));
-  
+
   cluster.SetPosition(TVector2(xCOG,yCOG),cluster.Pad(0)->Dimensions()); // FIXME: what to put as an error here ?
 }
-
-
-

@@ -30,15 +30,16 @@
 #include "AliLog.h"
 
 // --- ROOT system ---
-#include <TH1.h> 
+#include <TH1.h>
 #include <TH2.h>
 #include <TGraph.h>
+#include <TMath.h>
 
 //-----------------------------------------------------------------------------
 /// \class AliMUONTriggerDisplay
 ///
 /// MUON base class for converting histos as a function of strip/board/slat number
-/// into display histos showing the detection element position in the 
+/// into display histos showing the detection element position in the
 /// trigger chamber.
 ///
 /// Input histos can be given as:
@@ -51,9 +52,9 @@
 /// \cond CLASSIMP
 ClassImp(AliMUONTriggerDisplay)
 /// \endcond
-           
-//____________________________________________________________________________ 
-AliMUONTriggerDisplay::AliMUONTriggerDisplay() : 
+
+//____________________________________________________________________________
+AliMUONTriggerDisplay::AliMUONTriggerDisplay() :
 TObject()
 {
   /// ctor
@@ -66,7 +67,7 @@ AliMUONTriggerDisplay::~AliMUONTriggerDisplay()
 }
 
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 TH2* AliMUONTriggerDisplay::GetEmptyDisplayHisto(TString displayHistoName, EDisplayType displayType,
 						 Int_t cathode, Int_t chamber,
 						 TString displayHistoTitle)
@@ -76,15 +77,15 @@ TH2* AliMUONTriggerDisplay::GetEmptyDisplayHisto(TString displayHistoName, EDisp
   /// but do not fill it.
   //
   TH2F* displayHisto = new TH2F();
-  
+
   InitOrDisplayTriggerInfo(0x0, displayHisto, displayType,
 			   cathode, chamber, displayHistoName, displayHistoTitle);
-  
+
   return displayHisto;
 }
 
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 TH2* AliMUONTriggerDisplay::GetBoardNumberHisto(TString displayHistoName,
 						Int_t chamber,
 						TString displayHistoTitle)
@@ -102,7 +103,7 @@ TH2* AliMUONTriggerDisplay::GetBoardNumberHisto(TString displayHistoName,
 
   TH2F* displayHisto = (TH2F*)GetEmptyDisplayHisto(displayHistoName, kDisplayBoards, 0, chamber, displayHistoTitle);
   FillDisplayHistogram(inputHisto,displayHisto,kDisplayBoards,0,chamber,kNumbered);
-  
+
   delete inputHisto;
 
   displayHisto->SetStats(kFALSE);
@@ -110,7 +111,7 @@ TH2* AliMUONTriggerDisplay::GetBoardNumberHisto(TString displayHistoName,
 }
 
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 TH2* AliMUONTriggerDisplay::GetDisplayHistogram(TH1* inputHisto, TString displayHistoName,
 						EDisplayType displayType, Int_t cathode,
 						Int_t chamber, TString displayHistoTitle,
@@ -127,7 +128,7 @@ TH2* AliMUONTriggerDisplay::GetDisplayHistogram(TH1* inputHisto, TString display
   return displayHisto;
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 TH2* AliMUONTriggerDisplay::GetDisplayHistogram(TGraph* inputGraph, TString displayHistoName,
 						EDisplayType displayType, Int_t cathode,
 						Int_t chamber, TString displayHistoTitle,
@@ -144,13 +145,13 @@ TH2* AliMUONTriggerDisplay::GetDisplayHistogram(TGraph* inputGraph, TString disp
   return displayHisto;
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 Bool_t AliMUONTriggerDisplay::FillDisplayHistogram(TH1* inputHisto, TH2* displayHisto,
 						   EDisplayType displayType, Int_t cathode,
 						   Int_t chamber, EDisplayOption displayOpt)
 {
   //
-  /// Fill a previously initialized display histogram 
+  /// Fill a previously initialized display histogram
   /// with the information contained in inputHisto.
   /// To get initialized display, please use GetEmptyDisplayHisto method
   //
@@ -158,13 +159,13 @@ Bool_t AliMUONTriggerDisplay::FillDisplayHistogram(TH1* inputHisto, TH2* display
 				  cathode, chamber, "", "",displayOpt);
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 Bool_t AliMUONTriggerDisplay::FillDisplayHistogram(TGraph* inputGraph, TH2* displayHisto,
 						   EDisplayType displayType, Int_t cathode,
 						   Int_t chamber, EDisplayOption displayOpt)
 {
   //
-  /// Fill a previously initialized display histogram 
+  /// Fill a previously initialized display histogram
   /// with the information contained in inputGraph.
   /// To get initialized display, please use GetEmptyDisplayHisto method
   //
@@ -172,7 +173,7 @@ Bool_t AliMUONTriggerDisplay::FillDisplayHistogram(TGraph* inputGraph, TH2* disp
 				  cathode, chamber, "", "",displayOpt);
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 Bool_t AliMUONTriggerDisplay::InitOrDisplayTriggerInfo(TObject* inputObject, TH2* displayHisto,
 						       EDisplayType displayType,
 						       Int_t cathode, Int_t chamber,
@@ -194,25 +195,25 @@ Bool_t AliMUONTriggerDisplay::InitOrDisplayTriggerInfo(TObject* inputObject, TH2
       return kFALSE;
     }
   }
-  
+
   Int_t iCh = (chamber > AliMpConstants::NofTrackingChambers()) ? chamber - 11 : chamber;
   Int_t iCath = cathode;
-  
+
   TArrayD xAxisStrip;
   TArrayD yAxisStrip;
   TArrayD xAxisBoard;
   TArrayD yAxisBoard;
-  
+
   Float_t yOffsetLine, xOffsetLine = 0.;
-  
+
   const Float_t kResetValue=1234567.;
-  
+
   if(!inputObject){
     xAxisBoard.Set(55);
     xAxisBoard.Reset(kResetValue);
     yAxisBoard.Set(50);
     yAxisBoard.Reset(kResetValue);
-    
+
     xAxisStrip.Set(420);
     xAxisStrip.Reset(kResetValue);
     yAxisStrip.Set(710);
@@ -242,39 +243,39 @@ Bool_t AliMUONTriggerDisplay::InitOrDisplayTriggerInfo(TObject* inputObject, TH2
       }
     }
   }
-  
+
   Float_t xWidth, yWidth, yWidthSlat=0., xWidthCol=0.;
   Float_t x1,x2,y1,y2;
   Float_t x1b=0., x2b=0., y1b=0., y2b=0.;
   Float_t xcPad, ycPad;
   Int_t line=0, slat;
   Float_t sign = 1.;
-  
+
   const Float_t kShiftB = 0.5;
   const Float_t kShiftS = 0.1;
-  
+
   const Float_t kShiftX = (iCath==0) ? kShiftB : kShiftS;
   const Float_t kShiftY = (iCath==0) ? kShiftS : kShiftB;
   const Float_t kShiftEl = (displayType==kDisplaySlats) ? 0.01 : kShiftB;
-  
+
   Int_t iChamber = iCh + AliMpConstants::NofTrackingChambers();
   for(Int_t iLoc = 0; iLoc < AliMpConstants::NofLocalBoards(); iLoc++) {
     Int_t iBoard = iLoc+1;
     Int_t detElemId = AliMpDDLStore::Instance()->GetDEfromLocalBoard(iBoard, iChamber);
-    
+
     if (!detElemId) continue;
-    
+
     AliMpLocalBoard* localBoard = AliMpDDLStore::Instance()->GetLocalBoard(iBoard, kFALSE);
-    
+
     // skip copy cards
     if( !localBoard->IsNotified())
       continue;
-    
+
     // get segmentation
     const AliMpVSegmentation* seg[2] = {
       AliMpSegmentation::Instance()->GetMpSegmentation(detElemId, AliMp::GetCathodType(0)),
       AliMpSegmentation::Instance()->GetMpSegmentation(detElemId, AliMp::GetCathodType(1))};
-    
+
     if(iLoc==0){
       AliMpPad pad1 = seg[1]->PadByLocation(iBoard,0,kFALSE);
       yWidthSlat = pad1.GetDimensionY();
@@ -282,7 +283,7 @@ Bool_t AliMUONTriggerDisplay::InitOrDisplayTriggerInfo(TObject* inputObject, TH2
       xOffsetLine = TMath::Abs(pad0.GetPositionX()) + pad0.GetDimensionX();
       xWidthCol = 2.* pad0.GetDimensionX();
     }
-    
+
     // Get ideal global position of DetElemId center
     slat = detElemId%100;
     line = (4 + slat)%18;
@@ -292,25 +293,25 @@ Bool_t AliMUONTriggerDisplay::InitOrDisplayTriggerInfo(TObject* inputObject, TH2
       sign = -1.;
     }
     yOffsetLine = (Float_t)(line - 4) * 2. * yWidthSlat;
-	  
+
     Int_t nLocations = 1;
-    
+
     for(Int_t cath=0; cath<AliMpConstants::NofCathodes(); cath++){
       // Loop on cathodes:
       // necessary because strip info is read for each cathode
       // board info is read only from cathode 0
-      
+
       // loop over strips
       for (Int_t ibitxy = 0; ibitxy < 16; ++ibitxy) {
         // get pad from electronics
-        
+
         Int_t offset = 0;
         if (cath && localBoard->GetSwitch(AliMpLocalBoard::kZeroAllYLSB)) offset = -8;
-        
+
         AliMpPad pad = seg[cath]->PadByLocation(iBoard,ibitxy+offset,kFALSE);
-        
+
         if (!pad.IsValid()) continue;
-                
+
         xWidth = pad.GetDimensionX();
         yWidth = pad.GetDimensionY();
         xcPad = sign * (pad.GetPositionX() + xOffsetLine);
@@ -318,7 +319,7 @@ Bool_t AliMUONTriggerDisplay::InitOrDisplayTriggerInfo(TObject* inputObject, TH2
         ycPad = pad.GetPositionY() + yOffsetLine;
         nLocations = pad.GetNofLocations();
         Int_t iStrip = pad.GetLocalBoardChannel(0);
-        
+
         if(cath==0){
           if(iStrip==0) {
             x1b = xcPad - xWidth + kShiftEl;
@@ -327,41 +328,41 @@ Bool_t AliMUONTriggerDisplay::InitOrDisplayTriggerInfo(TObject* inputObject, TH2
           x2b = xcPad + xWidth - kShiftEl;
           y2b = ycPad + yWidth - kShiftEl;
         }
-        
+
         // For non-bending plane fill only the first board covered by the strip
         // i.e. avoid filling many times the same information
         if ( cath == 1 && pad.GetLocalBoardId(0) != iBoard ) continue;
 
-        
+
         if(cath==iCath){
           x1 = xcPad - xWidth + kShiftX;
           y1 = ycPad - yWidth + kShiftY;
           x2 = xcPad + xWidth - kShiftX;
           y2 = ycPad + yWidth - kShiftY;
-          
+
           if(!inputObject){
             AddSortedPoint(x1, xAxisStrip, kResetValue);
             AddSortedPoint(x2, xAxisStrip, kResetValue);
-            
+
             AddSortedPoint(y1, yAxisStrip, kResetValue);
             AddSortedPoint(y2, yAxisStrip, kResetValue);
           }
           else if(displayType==kDisplayStrips)
             FillBins(inputObject, displayHisto, iBoard, iStrip, x1, x2, y1, y2, kShiftX, kShiftY, displayOpt);
         }
-                
+
       } // loop on strips
-      
+
       // if iCath==0 strip info and board info are both filled -> break!
       // if iCath==1 board info is filled at cath==0. Strip info to be filled at cath==1
       if(iCath==0) break;
     } // loop on cathodes
-    
+
     if(!inputObject){
       // Per board
       AddSortedPoint(x1b, xAxisBoard, kResetValue);
       AddSortedPoint(x2b, xAxisBoard, kResetValue);
-      
+
       AddSortedPoint(y1b, yAxisBoard, kResetValue);
       AddSortedPoint(y2b, yAxisBoard, kResetValue);
     }
@@ -370,14 +371,14 @@ Bool_t AliMUONTriggerDisplay::InitOrDisplayTriggerInfo(TObject* inputObject, TH2
     else if(displayType==kDisplaySlats)
       FillBins(inputObject, displayHisto, slat, -1, x1b, x2b, y1b, y2b, kShiftEl, kShiftEl, displayOpt);
   } // loop on local boards
-  
+
   if ( inputObject ) return kTRUE;
-  
+
   displayHisto->Reset();
-  
+
   // Book histos
   const Float_t kMinDiff = 0.1;
-  
+
   TArrayD* currArray[4] = {&xAxisStrip, &yAxisStrip,
     &xAxisBoard, &yAxisBoard};
   for(Int_t iaxis=0; iaxis<4; iaxis++){
@@ -389,7 +390,7 @@ Bool_t AliMUONTriggerDisplay::InitOrDisplayTriggerInfo(TObject* inputObject, TH2
       AliWarning(Form("Array size (%i) lower than the number of points!", currArray[iaxis]->GetSize()));
     currArray[iaxis]->Set(ipoint);
   }
-  
+
   switch(displayType){
     case kDisplayStrips:
       displayHisto->SetBins(xAxisStrip.GetSize()-1, xAxisStrip.GetArray(),
@@ -401,18 +402,18 @@ Bool_t AliMUONTriggerDisplay::InitOrDisplayTriggerInfo(TObject* inputObject, TH2
                             yAxisBoard.GetSize()-1, yAxisBoard.GetArray());
       break;
   }
-  
+
   displayHisto->SetName(displayHistoName.Data());
   displayHisto->SetTitle(displayHistoTitle.Data());
   displayHisto->SetXTitle("X (cm)");
   displayHisto->SetYTitle("Y (cm)");
   //displayHisto->SetStats(kFALSE);
-  
+
   return kTRUE;
 }
 
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 Bool_t AliMUONTriggerDisplay::AddSortedPoint(Float_t currVal, TArrayD& position, const Float_t kResetValue)
 {
   //
@@ -443,7 +444,7 @@ Bool_t AliMUONTriggerDisplay::AddSortedPoint(Float_t currVal, TArrayD& position,
 }
 
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 void AliMUONTriggerDisplay::FillBins(TObject* inputObject, TH2* displayHisto,
 				     Int_t iElement1, Int_t iElement2,
 				     Float_t x1, Float_t x2, Float_t y1, Float_t y2,
@@ -478,7 +479,7 @@ void AliMUONTriggerDisplay::FillBins(TObject* inputObject, TH2* displayHisto,
       }
     }
     else return;
-  }  
+  }
 
   if(binContent==0) {
     if(displayOpt==kShowZeroes) binContent = 1e-5;
@@ -494,7 +495,7 @@ void AliMUONTriggerDisplay::FillBins(TObject* inputObject, TH2* displayHisto,
     Int_t meanBin = (binX1+binX2)/2;
     binX1 = meanBin;
     binX2 = meanBin;
-    
+
     meanBin = (binY1+binY2)/2;
     binY1 = meanBin;
     binY2 = meanBin;
@@ -502,13 +503,13 @@ void AliMUONTriggerDisplay::FillBins(TObject* inputObject, TH2* displayHisto,
 
   Float_t elementArea = 1.;
   if(displayOpt == kNormalizeToArea) {
-    elementArea = (x2 - x1 + 2*kShiftX) * 
-      (y2 - y1 + 2*kShiftY); // In InitOrDisplayTriggerInfo: 
+    elementArea = (x2 - x1 + 2*kShiftX) *
+      (y2 - y1 + 2*kShiftY); // In InitOrDisplayTriggerInfo:
                              // x2 = x_c + xHalfWidth - kShiftX
                              // x1 = x_c - xHalfWidth + kShiftX
                              // so x2 - x1 + 2*kShiftX returns the element width.
-	  
-	  // If iElement2 is less than 0, then its meaning is the 
+
+	  // If iElement2 is less than 0, then its meaning is the
 	  // number of boards covered by one strip
 	  // the area has therefore to be multiplied accordingly
 	  // This fixes the problem when filling the trigger rate per boards in non-bending plane
@@ -523,4 +524,3 @@ void AliMUONTriggerDisplay::FillBins(TObject* inputObject, TH2* displayHisto,
     }
   }
 }
-

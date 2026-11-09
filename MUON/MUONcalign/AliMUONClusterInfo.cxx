@@ -28,6 +28,7 @@
 #include "AliLog.h"
 
 #include <Riostream.h>
+#include <TMath.h>
 
 using std::cout;
 using std::endl;
@@ -138,9 +139,9 @@ AliMUONClusterInfo& AliMUONClusterInfo::operator=(const AliMUONClusterInfo& clus
 {
   /// Equal operator
   if (this == &clusterInfo) return *this;
-  
+
   TObject::operator=(clusterInfo); // don't forget to invoke the base class' assignment operator
-  
+
   fRunId = clusterInfo.fRunId;
   fEventId = clusterInfo.fEventId;
   fZ = clusterInfo.fZ;
@@ -164,14 +165,14 @@ AliMUONClusterInfo& AliMUONClusterInfo::operator=(const AliMUONClusterInfo& clus
   fTrackNHits = clusterInfo.fTrackNHits;
   fTrackChamberHitMap = clusterInfo.fTrackChamberHitMap;
   fNPads = clusterInfo.fNPads;
-  
+
   fPads->Clear("C");
   AliMUONPadInfo *pad = (AliMUONPadInfo*) clusterInfo.fPads->First();
   while (pad) {
     new ((*fPads)[fPads->GetEntriesFast()]) AliMUONPadInfo(*pad);
     pad = (AliMUONPadInfo*) clusterInfo.fPads->After(pad);
   }
-  
+
   return *this;
 }
 
@@ -195,28 +196,28 @@ void AliMUONClusterInfo::Print(Option_t* option) const
 {
   /// print cluster info content
   /// print also pad info if option=FULL
-  
+
   // global info
   cout<<Form("eventID=%d", GetEventId())<<endl;
-  
+
   // cluster info
   cout<<Form("- clusterID=%u (ch=%d, det=%d, index=%d)",
 	     GetClusterId(), GetChamberId(), GetDetElemId(), GetClusterIndex())<<endl;
-  
+
   cout<<Form("    position=(%5.2f, %5.2f, %5.2f), sigma=(%8.5f, %8.5f, 0.0)",
 	     GetClusterX(), GetClusterY(), GetZ(), GetClusterXErr(), GetClusterYErr())<<endl;
-  
+
   cout<<Form("    charge=%5.2f, chi2=%5.2f", GetClusterCharge(), GetClusterChi2())<<endl;
-  
+
   // track info
   cout<<Form("- trackID=%u", GetTrackId())<<endl;
-  
+
   cout<<Form("    position=(%5.2f, %5.2f, %5.2f), angles=(%5.2f, %5.2f), momentum=%5.2f",
 	     GetTrackX(), GetTrackY(), GetZ(), GetTrackThetaX(), GetTrackThetaY(), GetTrackP())<<endl;
-  
+
   cout<<Form("    sigma_XY=(%8.5f, %8.5f), charge=%d, chi2=%5.2f",
 	     GetTrackXErr(), GetTrackYErr(), GetTrackCharge(), GetTrackChi2())<<endl;
-  
+
   // pad info
   if (strstr(option,"FULL")) {
     AliMUONPadInfo *pad = (AliMUONPadInfo*) fPads->First();
@@ -225,7 +226,7 @@ void AliMUONClusterInfo::Print(Option_t* option) const
       pad = (AliMUONPadInfo*) fPads->After(pad);
     }
   }
-  
+
 }
 
 Double_t AliMUONClusterInfo::GetClusterCharge(Int_t iPlaneType) const
@@ -239,7 +240,7 @@ Double_t AliMUONClusterInfo::GetClusterCharge(Int_t iPlaneType) const
     while (pad) {
       if (pad->GetPadPlaneType()==iPlaneType) lClusterChargeC += pad->GetPadCharge();
       pad = (AliMUONPadInfo*) fPads->After(pad);
-    }    
+    }
   }
   return lClusterChargeC;
 }
@@ -258,7 +259,7 @@ Int_t AliMUONClusterInfo::GetNPads(Int_t iPlaneType) const
 	iNPads++;
       }
       pad = (AliMUONPadInfo*) fPads->After(pad);
-    }   
+    }
   }
   return iNPads;
 }
@@ -285,10 +286,10 @@ Int_t AliMUONClusterInfo::GetNPadsX(Int_t iPlaneType) const
 	if (pad->GetPadX()>lPadXMax){
 	  lPadXMax = pad->GetPadX();
 	  nChangedMax++;
-	}  
-      }    
+	}
+      }
       pad = (AliMUONPadInfo*) fPads->After(pad);
-    }    
+    }
     iNPadsX = TMath::Max(nChangedMin+nChangedMax-1,0);
   }
   return iNPadsX;
@@ -316,12 +317,11 @@ Int_t AliMUONClusterInfo::GetNPadsY(Int_t iPlaneType) const
 	if (pad->GetPadY()>lPadYMax){
 	  lPadYMax = pad->GetPadY();
 	  nChangedMax++;
-	}  
-      }    
+	}
+      }
       pad = (AliMUONPadInfo*) fPads->After(pad);
-    }    
+    }
     iNPadsY = TMath::Max(nChangedMin+nChangedMax-1,0);
   }
   return iNPadsY;
 }
-

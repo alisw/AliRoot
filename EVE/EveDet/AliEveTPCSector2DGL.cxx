@@ -9,11 +9,13 @@
 
 #include "AliEveTPCSector2DGL.h"
 
-#include <AliEveTPCSector2D.h>
+#include "AliEveTPCSector2D.h"
 
+#include "AliEveGLIncludes.h"
+
+#include <TMath.h>
 #include <TGLRnrCtx.h>
 #include <TGLSelectRecord.h>
-#include <TGLIncludes.h>
 
 //______________________________________________________________________________
 //
@@ -342,7 +344,7 @@ void AliEveTPCSector2DGL::DisplayNamedQuads(const AliEveTPCSectorData::SegmentIn
     Int_t   maxPad = seg.GetNMaxPads() - deltaPad;
     UChar_t   *pix = GetRowCol(row + startRow, startCol + deltaPad);
     glPushName(0);
-    for (Int_t pad = deltaPad; pad < maxPad; pad++, pix+=4) 
+    for (Int_t pad = deltaPad; pad < maxPad; pad++, pix+=4)
     {
       x = xOff + pad*padW;
       if (pix[3] != 0 || fSector->fPickEmpty)
