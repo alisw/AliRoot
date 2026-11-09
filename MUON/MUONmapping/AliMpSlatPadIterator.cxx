@@ -24,6 +24,7 @@
 #include "AliMpSlat.h"
 #include "AliMpPCBPadIterator.h"
 
+#include <TMath.h>
 
 //-----------------------------------------------------------------------------
 /// \class AliMpSlatPadIterator
@@ -71,7 +72,7 @@ fCurrentDelegateIndex(0)
   AliDebug(1,Form("this=%p ctor area=(%e,%e,%e,%e)",this,
 									area.LeftBorder(),area.DownBorder(),
                   area.RightBorder(),area.UpBorder()));
-  if (!Prepare(area)) 
+  if (!Prepare(area))
 	{
 		AliError("Iterator invalidated by improper initialization (e.g. incorrect area given ?)");
 	}
@@ -80,7 +81,7 @@ fCurrentDelegateIndex(0)
 
 //_____________________________________________________________________________
 AliMpSlatPadIterator::~AliMpSlatPadIterator()
-{ 
+{
   ///
   /// Dtor.
   ///
@@ -91,21 +92,21 @@ AliMpSlatPadIterator::~AliMpSlatPadIterator()
 //_____________________________________________________________________________
 AliMpArea
 AliMpSlatPadIterator::Intersect(const AliMpArea& a, const AliMpArea& b) const
-{ 
+{
   ///
   /// Returns the common part of a and b.
   ///
   AliDebug(4,Form("a=(%7.2f,%7.2f;%7.2f,%7.2f) b=(%7.2f,%7.2f;%7.2f,%7.2f)",
 									a.LeftBorder(),a.DownBorder(),a.RightBorder(),a.UpBorder(),
 									b.LeftBorder(),b.DownBorder(),b.RightBorder(),b.UpBorder()));
-	
+
 	Double_t xmin = TMath::Max(a.LeftBorder(),b.LeftBorder());
   Double_t xmax = TMath::Min(a.RightBorder(),b.RightBorder());
   Double_t ymin = TMath::Max(a.DownBorder(),b.DownBorder());
   Double_t ymax = TMath::Min(a.UpBorder(),b.UpBorder());
   AliMpArea c( (xmin+xmax)/2.0, (ymin+ymax)/2.0 ,
                (xmax-xmin)/2.0, (ymax-ymin)/2.0 );
-	
+
   AliDebug(4,Form("a intersect b = (%7.2f,%7.2f;%7.2f,%7.2f)",
 									c.LeftBorder(),c.DownBorder(),c.RightBorder(),c.UpBorder()));
   return c;
@@ -118,7 +119,7 @@ AliMpSlatPadIterator::Prepare(const AliMpArea& area)
   ///
   /// Split area into smaller area intersecting pcbs,
   /// and allocate the corresponding delegate iterators.
-	
+
   for ( Int_t i = 0; i < fkSlat->GetSize(); ++i )
 	{
 		const AliMpPCB* pcb = fkSlat->GetPCB(i);
@@ -194,7 +195,7 @@ AliMpSlatPadIterator::IsDone() const
   /// Returns whether the iteration is ended or not.
   ///
   return ( !fCurrentDelegate ||
-					 ( fCurrentDelegateIndex > fDelegates.GetLast() && 
+					 ( fCurrentDelegateIndex > fDelegates.GetLast() &&
 						 fCurrentDelegate->IsDone() ) );
 }
 
@@ -206,9 +207,9 @@ AliMpSlatPadIterator::Next()
   /// Next step of the iteration.
   ///
   if (IsDone()) return;
-	
+
   fCurrentDelegate->Next();
-	
+
   if ( fCurrentDelegate->IsDone() )
 	{
 		AliDebug(3,"Moving to next delegate");

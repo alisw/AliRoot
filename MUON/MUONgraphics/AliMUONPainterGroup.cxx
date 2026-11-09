@@ -20,8 +20,10 @@
 #include "AliMUONVPainter.h"
 #include "AliMUONVTrackerData.h"
 #include "AliLog.h"
+
 #include <Riostream.h>
 #include <TObjArray.h>
+#include <TMath.h>
 #include <float.h>
 
 ///\class AliMUONPainterGroup
@@ -68,7 +70,7 @@ AliMUONPainterGroup::AliMUONPainterGroup(const char* type, Int_t depth)
  fIsOutlined(kTRUE)
 {
    /// ctor
-   if ( fType == "" || fDepth < 0 ) 
+   if ( fType == "" || fDepth < 0 )
    {
      AliFatal("Sorry guy.");
    }
@@ -86,39 +88,39 @@ Bool_t
 AliMUONPainterGroup::Add(AliMUONVPainter* painter)
 {
   /// Add a painter to this group (must be of the correct type)
-  
-   if ( fType != painter->Type() ) 
+
+   if ( fType != painter->Type() )
    {
      AliError(Form("Cannot add painter of type %s to this = %s",
                    painter->Type(), fType.Data()));
      return kFALSE;
    }
-  
+
   if ( fDepth != painter->Depth() )
   {
     AliError(Form("Cannot add painter of depth %d to this = %d",
                   painter->Depth(), fDepth));
     return kFALSE;
   }
-  
+
   if (!fPainters)
   {
     fPainters = new TObjArray;
   }
-  
+
   painter->SetMotherGroup(this);
-  
+
   fPainters->Add(painter);
 
   return kTRUE;
 }
 
 //_____________________________________________________________________________
-Int_t 
+Int_t
 AliMUONPainterGroup::Compare(const TObject* obj) const
 {
   /// Compare with another group (based on type)
-  
+
   const AliMUONPainterGroup* group = static_cast<const AliMUONPainterGroup*>(obj);
   return fType.CompareTo(group->Type());
 }
@@ -130,12 +132,12 @@ AliMUONPainterGroup::ComputeDataRange(Double_t& dataMin, Double_t& dataMax)
   /// Compute the data range spanned by this group
   dataMin = FLT_MAX;
   dataMax = -FLT_MAX;
-  
+
   if ( !fData || fDataIndex < 0 ) return;
 
   TIter next(fPainters);
   AliMUONVPainter* p;
-  
+
   while ( ( p = static_cast<AliMUONVPainter*>(next()) ) )
   {
     Double_t min, max;
@@ -156,14 +158,14 @@ AliMUONPainterGroup::Draw(Option_t* opt)
   {
     o->Draw(opt);
   }
-}  
+}
 
 //_____________________________________________________________________________
-AliMUONVPainter* 
+AliMUONVPainter*
 AliMUONPainterGroup::First() const
 {
   /// Get the first painter in group
-  if ( fPainters ) 
+  if ( fPainters )
   {
     return static_cast<AliMUONVPainter*>(fPainters->First());
   }
@@ -175,7 +177,7 @@ Int_t
 AliMUONPainterGroup::GetLineColor() const
 {
   /// Get line color of this group's painters
-  if ( fPainters ) 
+  if ( fPainters )
   {
     return static_cast<AliMUONVPainter*>(fPainters->First())->GetLineColor();
   }
@@ -187,7 +189,7 @@ Int_t
 AliMUONPainterGroup::GetLineWidth() const
 {
   /// Get line width of this group's painters
-  if ( fPainters ) 
+  if ( fPainters )
   {
     return static_cast<AliMUONVPainter*>(fPainters->First())->GetLineWidth();
   }
@@ -200,7 +202,7 @@ AliMUONPainterGroup::Matches(const char* pattern) const
 {
   /// Whether our type matches "pattern"
   TString spattern(pattern);
-  
+
   if ( spattern == "*" || fType.Contains(pattern) )
   {
     return kTRUE;
@@ -216,28 +218,28 @@ AliMUONPainterGroup::Print(Option_t* opt) const
   cout << "Type " << fType.Data() << " Depth " << fDepth;
   if ( IsResponder() ) cout << " is responder ";
   if ( IsVisible() ) cout << " is visible ";
-  if ( IsPlotter() ) 
+  if ( IsPlotter() )
   {
     cout << Form(" is plotter for data %p %s dimension %d %s plot range = %e, %e",
                  fData,(fData ? fData->Name() : ""),
-                 fDataIndex,( (fData && fDataIndex>=0 ) ? 
+                 fDataIndex,( (fData && fDataIndex>=0 ) ?
                               fData->DimensionName(fDataIndex).Data() : ""),
                  DataMin(),DataMax());
   }
-  if ( IsOutlined() ) 
+  if ( IsOutlined() )
   {
     cout << " is outlined";
   }
-  if ( fPainters ) 
+  if ( fPainters )
   {
     cout << " contains " << fPainters->GetLast()+1 << " painters";
   }
-  
+
   cout << endl;
-  
+
   TString sopt(opt);
   sopt.ToUpper();
-  if ( sopt == "FULL" ) 
+  if ( sopt == "FULL" )
   {
     TIter next(fPainters);
     AliMUONVPainter* painter;
@@ -250,12 +252,12 @@ AliMUONPainterGroup::Print(Option_t* opt) const
 }
 
 //_____________________________________________________________________________
-void 
+void
 AliMUONPainterGroup::SetData(AliMUONVTrackerData* data, Int_t dataIndex)
-{ 
+{
   /// Set the data to be plotted
-  fData = data; 
-  fDataIndex = dataIndex; 
+  fData = data;
+  fDataIndex = dataIndex;
   fDataMax = -FLT_MAX;
   fDataMin = FLT_MAX;
 }
@@ -272,5 +274,4 @@ AliMUONPainterGroup::SetLine(Int_t lineColor, Int_t lineWidth)
     painter->SetLineColor(lineColor);
     painter->SetLineWidth(lineWidth);
   }
-}  
-
+}

@@ -1,7 +1,7 @@
 // $Id$
 
 ///**************************************************************************
-///* This file is property of and copyright by the                          * 
+///* This file is property of and copyright by the                          *
 ///* ALICE Experiment at CERN, All rights reserved.                         *
 ///*                                                                        *
 ///* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *
@@ -17,7 +17,7 @@
 
 /// @file   AliHLTRawReaderPublisherComponent.cxx
 /// @author Matthias Richter
-/// @date   
+/// @date
 /// @brief  Publisher component for raw data blocks through the AliRawReader
 ///         of the offline environment
 
@@ -25,7 +25,9 @@
 #include "AliRawReader.h"
 #include "AliDAQ.h"
 #include "AliLog.h"
-#include "AliHLTCDHWrapper.h" 
+#include "AliHLTCDHWrapper.h"
+
+#include <TMath.h>
 #include <cerrno>
 #include <cassert>
 #include <list>
@@ -89,7 +91,7 @@ int AliHLTRawReaderPublisherComponent::DoInit( int argc, const char** argv )
   if (!fDetector.IsNull()) {
     int ddloffset=-1;
     int ddlcount=-1;
-    if ((ddloffset=AliDAQ::DdlIDOffset(fDetector))<0 || 
+    if ((ddloffset=AliDAQ::DdlIDOffset(fDetector))<0 ||
 	(ddlcount=AliDAQ::NumberOfDdls(fDetector))<0) {
       return -EINVAL;
     }
@@ -219,10 +221,10 @@ int AliHLTRawReaderPublisherComponent::ScanConfigurationArgument(int argc, const
   return -EPROTO;
 }
 
-int AliHLTRawReaderPublisherComponent::GetEvent(const AliHLTComponentEventData& /*evtData*/, 
-						AliHLTComponentTriggerData& /*trigData*/, 
-						AliHLTUInt8_t* outputPtr, 
-						AliHLTUInt32_t& size, 
+int AliHLTRawReaderPublisherComponent::GetEvent(const AliHLTComponentEventData& /*evtData*/,
+						AliHLTComponentTriggerData& /*trigData*/,
+						AliHLTUInt8_t* outputPtr,
+						AliHLTUInt32_t& size,
 						vector<AliHLTComponentBlockData>& outputBlocks)
 {
   /// inherited from AliHLTDataSource: get the event

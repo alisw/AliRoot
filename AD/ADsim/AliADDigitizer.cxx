@@ -257,9 +257,9 @@ Bool_t AliADDigitizer::Init()
   if (!SetupTailVsTotalCharge())
     return kFALSE;
 
-  fTimeSignalShape   = new TF1("ADTimeSignalShape",  this, &AliADDigitizer::TimeSignalShape,  0,200,6, "AliADDigitizer", "TimeSignalShape");
-  fChargeSignalShape = new TF1("ADChargeSignalShape",this, &AliADDigitizer::ChargeSignalShape,0,300,3, "AliADDigitizer", "ChargeSignalShape");
-  fThresholdShape    = new TF1("ADThresholdShape",   this, &AliADDigitizer::ThresholdShape,   0, 50,1, "AliADDigitizer", "ThresholdShape");
+  fTimeSignalShape   = new TF1("ADTimeSignalShape",  this, &AliADDigitizer::TimeSignalShape,  0,200,6);
+  fChargeSignalShape = new TF1("ADChargeSignalShape",this, &AliADDigitizer::ChargeSignalShape,0,300,3);
+  fThresholdShape    = new TF1("ADThresholdShape",   this, &AliADDigitizer::ThresholdShape,   0, 50,1);
 
   fTimeSignalShape->SetParameters(-1.07335e+00,2.16002e+01,-1.26133e-01,
                                   1.41619e+00,5.50334e-01,3.86111e-01);

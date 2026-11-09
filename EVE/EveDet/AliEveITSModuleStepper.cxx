@@ -17,7 +17,7 @@
 #include <TEveTrans.h>
 
 #include <TGLRnrCtx.h>
-#include <TGLIncludes.h>
+#include "AliEveGLIncludes.h"
 #include <TGLSelectRecord.h>
 #include <TGLUtil.h>
 #include <TGLViewer.h>
@@ -394,7 +394,7 @@ void AliEveITSModuleStepper::RenderText(const char* txt, Int_t id, const TGLFont
     glPopMatrix();
     glTranslatef(step, 0, 0);
   }
-  else 
+  else
   {
     glLoadName(id);
     glPushMatrix();

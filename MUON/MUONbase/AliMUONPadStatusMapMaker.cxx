@@ -17,10 +17,10 @@
 
 //-----------------------------------------------------------------------------
 /// \class AliMUONPadStatusMapMaker
-/// 
+///
 /// Convert a pad statuses into pad status maps.
-/// 
-/// A pad status is one 32-bits word describing whether this pad pedestal, lv, 
+///
+/// A pad status is one 32-bits word describing whether this pad pedestal, lv,
 /// hv is correct or not.
 ///
 /// A pad status *map* is one 32-bits (of which 24 only are used)
@@ -72,6 +72,7 @@
 #include <Riostream.h>
 #include <TList.h>
 #include "TRandom.h"
+#include "TMath.h"
 #include <cassert>
 
 /// \cond CLASSIMP
@@ -83,7 +84,7 @@ Int_t AliMUONPadStatusMapMaker::fgkSelfDead = 1;
 //_____________________________________________________________________________
 AliMUONPadStatusMapMaker::AliMUONPadStatusMapMaker(const AliMUONPadStatusMaker& padStatusMaker,
                                                    Int_t mask,
-                                                   Bool_t deferredInitialization) 
+                                                   Bool_t deferredInitialization)
 : TObject(),
 fkStatusMaker(padStatusMaker),
 fMask(mask),
@@ -106,48 +107,48 @@ fComputeOnDemand(deferredInitialization)
       ComputeStatusMap(detElemId,manuId);
     }
   }
-  
-  /// Whatever the deferred flag is, we *have* to compute the reject 
+
+  /// Whatever the deferred flag is, we *have* to compute the reject
   /// probabilities here and now, for *all* channels.
-  
+
   AliMUONRejectList* rl = padStatusMaker.CalibrationData().RejectList();
-  
+
   if (rl)
   {
     AliMpManuIterator it;
     Int_t detElemId;
     Int_t manuId;
-    
+
     while ( it.Next(detElemId,manuId) )
     {
       AliMpDetElement* de = AliMpDDLStore::Instance()->GetDetElement(detElemId);
       Int_t busPatchId = AliMpDDLStore::Instance()->GetBusPatchId(detElemId,manuId);
-      
+
       AliMUONVCalibParam* param = new AliMUONCalibParamNF(1,AliMpConstants::ManuNofChannels(),detElemId,manuId,0);
-      
+
       Int_t n(0);
-      
-      for ( Int_t i = 0; i < AliMpConstants::ManuNofChannels(); ++i ) 
+
+      for ( Int_t i = 0; i < AliMpConstants::ManuNofChannels(); ++i )
       {
         Float_t proba(0.0);
-        
+
         if ( de->IsConnectedChannel(manuId,i) )
         {
           proba = TMath::Max(rl->DetectionElementProbability(detElemId),rl->BusPatchProbability(busPatchId));
-          
+
           proba = TMath::Max(proba,rl->ManuProbability(detElemId,manuId));
-          
+
           proba = TMath::Max(proba,rl->ChannelProbability(detElemId,manuId,i));
-          
-          if ( proba > 0 ) 
+
+          if ( proba > 0 )
           {
             ++n;
             param->SetValueAsFloat(i,0,proba);
           }
         }
       }
-      
-      if ( n > 0 ) 
+
+      if ( n > 0 )
       {
         fRejectProbabilities->Add(param);
       }
@@ -157,7 +158,7 @@ fComputeOnDemand(deferredInitialization)
         delete param;
       }
     }
-  
+
     if ( rl->IsBinary())
     {
       fRejectList = fRejectProbabilities;
@@ -194,42 +195,42 @@ AliMUONPadStatusMapMaker::ComputeStatusMap(Int_t detElemId, Int_t manuId) const
 {
   /// Compute the status map for a given manu, and add it to our internal
   /// fStatusMap internal storage
-  
+
   AliCodeTimerAuto("(Int_t,Int_t)",0)
-    
+
   AliMUONVCalibParam* param = new AliMUONCalibParamNI(1,AliMpConstants::ManuNofChannels(),
-                                                      detElemId,manuId,-1);    
-                                    
+                                                      detElemId,manuId,-1);
+
   Bool_t ok = fStatusMap->Add(param);
   if (!ok)
   {
     AliFatal(Form("Could not add manu %d of de %d",manuId,detElemId));
   }
-                                  
+
   AliMUONVCalibParam* neighbours = fkStatusMaker.Neighbours(detElemId,manuId);
-  
+
   AliMUONVCalibParam* statusParam = fkStatusMaker.PadStatus(detElemId,manuId);
-  
+
   Int_t n = neighbours->Dimension();
-  
+
   for ( Int_t manuChannel = 0; manuChannel < param->Size(); ++manuChannel )
   {
     Int_t statusMap(0);
-    
+
     Int_t x = neighbours->ValueAsIntFast(manuChannel,0);
-    if ( x < 0 ) 
+    if ( x < 0 )
     {
       // channel is not a valid one (i.e. (manuId,manuChannel) is not an existing pad)
       statusMap = -1;//fgkSelfDead;
       continue;
     }
-        
+
     for ( Int_t i = 0; i < n; ++i )
     {
       // Compute the statusmap related to the status of neighbouring
       // pads. An invalid pad means "outside of edges".
-            
-      Int_t y = neighbours->ValueAsIntFast(manuChannel,i);      
+
+      Int_t y = neighbours->ValueAsIntFast(manuChannel,i);
       Int_t m,c;
       neighbours->UnpackValue(y,m,c);
       if ( c < 0 ) continue;
@@ -246,14 +247,14 @@ AliMUONPadStatusMapMaker::ComputeStatusMap(Int_t detElemId, Int_t manuId) const
       {
         statusMap |= (1<<i);
       }
-    }    
+    }
     param->SetValueAsIntFast(manuChannel,0,statusMap);
   }
   return param;
 }
 
 //_____________________________________________________________________________
-void 
+void
 AliMUONPadStatusMapMaker::RefreshRejectProbabilities()
 {
   /// From the (fixed) fRejectProbabilities, compute
@@ -261,34 +262,34 @@ AliMUONPadStatusMapMaker::RefreshRejectProbabilities()
   /// If fRejectProbabilities=0x0 it means we're dealing with
   /// trivial probabilities (0 or 1) and those are assumed to be already
   /// in fRejectList then.
-  
+
   if ( !fRejectProbabilities ) return;
-  
+
   AliCodeTimerAuto("",0);
-  
+
   fRejectList->Clear();
-  
+
   TIter next(fRejectProbabilities->CreateIterator());
   AliMUONVCalibParam* paramProba;
   AliMUONVCalibParam* paramReject;
-  
+
   while ( ( paramProba = static_cast<AliMUONVCalibParam*>(next()) ) )
   {
     paramReject = new AliMUONCalibParamNF(1,paramProba->Size(),paramProba->ID0(),paramProba->ID1(),0.0);
-    
+
     Int_t n(0);
-    
-    for ( Int_t i = 0; i < paramProba->Size(); ++i ) 
+
+    for ( Int_t i = 0; i < paramProba->Size(); ++i )
     {
       Float_t proba = paramProba->ValueAsFloat(i);
       Float_t x(proba);
-      
-      if ( proba > 0.0 && proba < 1.0 ) 
+
+      if ( proba > 0.0 && proba < 1.0 )
       {
         x = gRandom->Rndm();
         proba = ( x < proba ) ? 1.0 : 0.0;
       }
-      
+
       if (proba>0.0)
       {
         ++n;
@@ -301,16 +302,16 @@ AliMUONPadStatusMapMaker::RefreshRejectProbabilities()
 
 //_____________________________________________________________________________
 Int_t
-AliMUONPadStatusMapMaker::StatusMap(Int_t detElemId, Int_t manuId, 
+AliMUONPadStatusMapMaker::StatusMap(Int_t detElemId, Int_t manuId,
                                     Int_t manuChannel) const
-                                      
+
 {
   /// Get the pad status map
-  
+
   AliMUONVCalibParam* param = static_cast<AliMUONVCalibParam*>(fStatusMap->FindObject(detElemId,manuId));
   if (!param)
   {
-    if ( fComputeOnDemand ) 
+    if ( fComputeOnDemand )
     {
       // not yet computed, so do it now
       param = ComputeStatusMap(detElemId,manuId);
@@ -321,23 +322,23 @@ AliMUONPadStatusMapMaker::StatusMap(Int_t detElemId, Int_t manuId,
       return fgkSelfDead;
     }
   }
-  
+
   Int_t statusMap = param->ValueAsInt(manuChannel);
-  
+
   AliMUONVCalibParam* r = static_cast<AliMUONVCalibParam*>(fRejectList->FindObject(detElemId,manuId));
-  
+
   if (r)
   {
     Float_t v= r->ValueAsFloat(manuChannel);
-    
-    assert (v==0.0 || v==1.0 ); 
 
-    if ( v > 0 ) 
+    assert (v==0.0 || v==1.0 );
+
+    if ( v > 0 )
     {
       statusMap |= fgkSelfDead;
     }
   }
-  
+
   return statusMap;
-  
+
 }

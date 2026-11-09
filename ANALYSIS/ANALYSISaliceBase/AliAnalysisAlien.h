@@ -26,9 +26,10 @@
 #include <TMap.h>
 #endif
 
+#include <TGridJDL.h>
+
 class AliAnalysisManager;
 class AliAnalysisTaskCfg;
-class TGridJDL;
 
 class AliAnalysisAlien : public AliAnalysisGrid {
 
@@ -37,9 +38,9 @@ public:
    AliAnalysisAlien();
    AliAnalysisAlien(const char *name);
    virtual ~AliAnalysisAlien();
-   AliAnalysisAlien(const AliAnalysisAlien& other); 
+   AliAnalysisAlien(const AliAnalysisAlien& other);
    AliAnalysisAlien& operator=(const AliAnalysisAlien& other);
-// Setters   
+// Setters
    virtual void        AddAdditionalLibrary(const char *name);
    virtual void        AddIncludePath(const char *path);
    virtual void        AddRunNumber(Int_t run);
@@ -113,7 +114,7 @@ public:
    virtual void        SetOutputToRunNo(Int_t mode=1)                    {fOutputToRunNo = mode;}
    Int_t               GetOutputToRunNoMode() const                      {return fOutputToRunNo;}
    virtual void        SetInputFormat(const char *format="xml-single")   {fInputFormat = format;}
-   const char         *GetInputFormat() const                            {return fInputFormat;}   
+   const char         *GetInputFormat() const                            {return fInputFormat;}
    virtual void        SetMaxInitFailed(Int_t nfail=5)                   {fMaxInitFailed = nfail;}
    Int_t               GetMaxInitFailed() const                          {return fMaxInitFailed;}
    virtual void        SetTerminateFiles(const char *list)               {fTerminateFiles = list;}
@@ -206,7 +207,7 @@ protected:
    Bool_t              CheckInputData();
    void                CheckDataType(const char *lfn, Bool_t &is_collection, Bool_t &is_xml, Bool_t &use_tags);
    virtual Bool_t      Connect();
-   virtual void        SetDefaults();  
+   virtual void        SetDefaults();
    Bool_t              SubmitNext();
 
    Bool_t              IsCollection(const char *lfn) const;

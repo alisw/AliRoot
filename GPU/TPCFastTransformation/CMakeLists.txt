@@ -142,20 +142,20 @@ if(${ALIGPU_BUILD_TYPE} STREQUAL "ALIROOT")
                       ${AliRoot_SOURCE_DIR}/STEER/STEERBase)
 
   # Generate the dictionary
-  get_directory_property(incdirs INCLUDE_DIRECTORIES)
-  generate_dictionary_flat("Ali${MODULE}" "TPCFastTransformationLinkDef_AliRoot.h"
-                      "${HDRS_CINT}" "${incdirs}")
+  # get_directory_property(incdirs INCLUDE_DIRECTORIES)
+  # generate_dictionary_flat("Ali${MODULE}" "TPCFastTransformationLinkDef_AliRoot.h"
+  #                    "${HDRS_CINT}" "${incdirs}")
 
   # Generate the ROOT map Dependecies
   set(LIBDEPS STEERBase HLTbase TPCbase)
-  generate_rootmap(
-    "Ali${MODULE}" "${LIBDEPS}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/TPCFastTransformationLinkDef_AliRoot.h")
+  # generate_rootmap(
+  #   "Ali${MODULE}" "${LIBDEPS}"
+  #   "${CMAKE_CURRENT_SOURCE_DIR}/TPCFastTransformationLinkDef_AliRoot.h")
   # Don't pass Vc to root
   set(LIBDEPS ${LIBDEPS} Vc)
 
   # Add a library to the project using the specified source files
-  add_library_tested(Ali${MODULE} SHARED ${SRCS} G__Ali${MODULE}.cxx)
+  add_library_tested(Ali${MODULE} SHARED ${SRCS})
   target_link_libraries(Ali${MODULE} ${LIBDEPS})
 
   # Additional compilation flags

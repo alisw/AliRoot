@@ -1,48 +1,49 @@
 #ifndef ALIITSALIGNMILLE2MODULE_H
-#define ALIITSALIGNMILLE2MODULE_H 
-/* Copyright(c) 2007-2009 , ALICE Experiment at CERN, All rights reserved. * 
- * See cxx source for full Copyright notice                               */  
- 
-/// \ingroup rec 
+#define ALIITSALIGNMILLE2MODULE_H
+/* Copyright(c) 2007-2009 , ALICE Experiment at CERN, All rights reserved. *
+ * See cxx source for full Copyright notice                               */
+
+/// \ingroup rec
 /// \class AliITSAlignMille2Module
-/// \brief Class for alignment of ITS 
-// 
-// Authors: Marcello Lunardon 
+/// \brief Class for alignment of ITS
+//
+// Authors: Marcello Lunardon
 //
 // RS Converted static arrays fSensVolVolumeID and fSensVolIndex
 // to TArrays in user transparent way.
 //
-/* $Id$  */ 
-//#include <TString.h> 
-//#include <TObject.h> 
-#include <TNamed.h> 
-#include <TArrayI.h> 
-#include <TArrayS.h> 
-#include <TObjArray.h> 
+/* $Id$  */
+//#include <TString.h>
+//#include <TObject.h>
+#include <TNamed.h>
+#include <TMath.h>
+#include <TArrayI.h>
+#include <TArrayS.h>
+#include <TObjArray.h>
 class AliITSAlignMille2;
 
-class AliAlignObjParams; 
-class TGeoHMatrix; 
+class AliAlignObjParams;
+class TGeoHMatrix;
 
-class AliITSAlignMille2Module : public TNamed 
-{ 
-public: 
+class AliITSAlignMille2Module : public TNamed
+{
+public:
   enum {kSPD,kSDD,kSSD};
   enum {kMaxParGeom=6,kMaxParTot=9,kSensDefBit=BIT(14),kGlobalGeomBit=BIT(15),kNotInConfBit=BIT(16),kVdSDDSameLRBit=BIT(17)};
   enum {kDOFTX,kDOFTY,kDOFTZ,kDOFPS,kDOFTH,kDOFPH,kDOFT0,kDOFDVL,kDOFDVR};
   //
-  AliITSAlignMille2Module(); 
+  AliITSAlignMille2Module();
   AliITSAlignMille2Module(UShort_t volid);
   AliITSAlignMille2Module(Int_t index, UShort_t volid, const char* symname, const TGeoHMatrix *m, Int_t nsv=0, const UShort_t *volidsv=NULL);
   AliITSAlignMille2Module(const AliITSAlignMille2Module& rhs); // copy constructor
-  AliITSAlignMille2Module& operator=(const AliITSAlignMille2Module& rhs);  
+  AliITSAlignMille2Module& operator=(const AliITSAlignMille2Module& rhs);
   //
-  virtual ~AliITSAlignMille2Module(); 
+  virtual ~AliITSAlignMille2Module();
   //
-  // geometry methods  
-  Int_t        GetIndex()                             const {return fIndex;} 
-  UShort_t     GetVolumeID()                          const {return fVolumeID;}  
-  Int_t        GetNSensitiveVolumes()                 const {return fNSensVol;} 
+  // geometry methods
+  Int_t        GetIndex()                             const {return fIndex;}
+  UShort_t     GetVolumeID()                          const {return fVolumeID;}
+  Int_t        GetNSensitiveVolumes()                 const {return fNSensVol;}
   Int_t        GetSensVolIndex(Int_t at)              const {return fSensVolIndex[at];}
   Short_t      GetSensVolVolumeID(Int_t at)           const {return fSensVolVolumeID[at];}
   TGeoHMatrix *GetMatrix()                            const {return fMatrix;}
@@ -66,7 +67,7 @@ public:
   AliITSAlignMille2Module* GetChild(Int_t i)          const {return (AliITSAlignMille2Module*)fChildren[i];}
   Int_t        GetNChildren()                         const {return fChildren.GetLast()+1;}
   //
-  void         Print(Option_t* opt="")                const; 
+  void         Print(Option_t* opt="")                const;
   //
   void         EvaluateDOF();
   UShort_t     GetNParTot()                           const {return fNParTot;}
@@ -85,7 +86,7 @@ public:
   void         SetDetType(Int_t tp)                         {fDetType = tp;}
   void         SetParOffset(Int_t par,Int_t offs)           {fParOffs[par] = offs;}
   //
-  void         SetParVals(Double_t *vl,Int_t npar);          
+  void         SetParVals(Double_t *vl,Int_t npar);
   void         SetParVal(Int_t par,Double_t v=0)            {fParVals[par] = v;}
   void         SetParErr(Int_t par,Double_t e=0)            {fParErrs[par] = e;}
   void         SetParConstraint(Int_t par,Double_t s=1e6)   {fParCstr[par] = s>0. ? s:0.0;}
@@ -113,9 +114,9 @@ public:
   //
   TGeoHMatrix *GetSensitiveVolumeMatrix(UShort_t voluid);
   TGeoHMatrix *GetSensitiveVolumeOrigGlobalMatrix(UShort_t voluid);
-  TGeoHMatrix *GetSensitiveVolumeModifiedMatrix(UShort_t voluid, const Double_t *delta,Bool_t local=kTRUE); 
-  AliAlignObjParams *GetSensitiveVolumeMisalignment(UShort_t voluid, const AliAlignObjParams *a); 
-  AliAlignObjParams *GetSensitiveVolumeMisalignment(UShort_t voluid, const Double_t *deltalocal); 
+  TGeoHMatrix *GetSensitiveVolumeModifiedMatrix(UShort_t voluid, const Double_t *delta,Bool_t local=kTRUE);
+  AliAlignObjParams *GetSensitiveVolumeMisalignment(UShort_t voluid, const AliAlignObjParams *a);
+  AliAlignObjParams *GetSensitiveVolumeMisalignment(UShort_t voluid, const Double_t *deltalocal);
   //
   void         GetGlobalParams(Double_t *t, Double_t *r) const;
   void         GetGlobalParams(const Double_t *loct, const Double_t *locr,Double_t *t, Double_t *r);
@@ -133,16 +134,16 @@ public:
   void         CalcDerivDPosDPar(Int_t sensVol,const Double_t *pl,Double_t *deriv);
   //
   // forse non serve...
-  AliAlignObjParams *GetSensitiveVolumeGlobalMisalignment(UShort_t voluid, const Double_t *deltalocal); 
+  AliAlignObjParams *GetSensitiveVolumeGlobalMisalignment(UShort_t voluid, const Double_t *deltalocal);
   // mo' proviamo questo
-  AliAlignObjParams *GetSensitiveVolumeTotalMisalignment(UShort_t voluid, const Double_t *deltalocal); 
+  AliAlignObjParams *GetSensitiveVolumeTotalMisalignment(UShort_t voluid, const Double_t *deltalocal);
   //
   static Int_t    GetIndexFromVolumeID(UShort_t volid);
   static UShort_t GetVolumeIDFromSymname(const Char_t *symname);
   static UShort_t GetVolumeIDFromIndex(Int_t index);
   static Bool_t   IsSensor(UShort_t vid);
-  static Int_t    SensVolMatrix(UShort_t volid, TGeoHMatrix *m); 
-  static Int_t    SensVolOrigGlobalMatrix(UShort_t volid, TGeoHMatrix *m); 
+  static Int_t    SensVolMatrix(UShort_t volid, TGeoHMatrix *m);
+  static Int_t    SensVolOrigGlobalMatrix(UShort_t volid, TGeoHMatrix *m);
 
   //
 protected:
@@ -176,6 +177,6 @@ protected:
   static const Float_t fgkDummyConstraint;        // dummy (lose) contraint on parameter
   //
   ClassDef(AliITSAlignMille2Module, 0)
-}; 
+};
 
-#endif 
+#endif

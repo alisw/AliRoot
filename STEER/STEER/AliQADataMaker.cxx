@@ -18,20 +18,19 @@
 
 //
 //  Base Class
-//  Produces the data needed to calculate the quality assurance. 
+//  Produces the data needed to calculate the quality assurance.
 //  All data must be mergeable objects.
 //  Y. Schutz CERN July 2007
 //
 
 // --- ROOT system ---
-#include <TROOT.h> 
-#include <TSystem.h> 
+#include <TROOT.h>
+#include <TSystem.h>
 #include <TFile.h>
-#include <TList.h> 
+#include <TList.h>
 #include <TTree.h>
 #include <TClonesArray.h>
 #include <TParameter.h>
-#include <TH1K.h>
 #include <TH2C.h>
 #include <TH2F.h>
 #include <TH2F.h>
@@ -61,97 +60,97 @@ TObjArray* AliQADataMaker::fgCloningRequest = 0;
 TObjArray* AliQADataMaker::fgTrigClasses = 0;
 TObjArray  AliQADataMaker::fgEventTrigClasses;
 
-//____________________________________________________________________________ 
-AliQADataMaker::AliQADataMaker(const Char_t * name, const Char_t * title) : 
-  TNamed(name, title), 
+//____________________________________________________________________________
+AliQADataMaker::AliQADataMaker(const Char_t * name, const Char_t * title) :
+  TNamed(name, title),
   fOutput(0x0),
   fDetectorDir(0x0),
-  fDetectorDirName(""), 
-  fCurrentCycle(0), 
-  fCycle(9999999), 
-  fCycleCounter(0), 
+  fDetectorDirName(""),
+  fCurrentCycle(0),
+  fCycle(9999999),
+  fCycleCounter(0),
   fWriteExpert(kFALSE),
-  fParameterList(new TList*[AliRecoParam::kNSpecies]), 
-  fRun(0), 
-  fEventSpecie(AliRecoParam::kDefault), 
-  fDigitsArray(NULL) 
+  fParameterList(new TList*[AliRecoParam::kNSpecies]),
+  fRun(0),
+  fEventSpecie(AliRecoParam::kDefault),
+  fDigitsArray(NULL)
 {
   // ctor
-  fDetectorDirName = GetName() ; 
+  fDetectorDirName = GetName() ;
   for (Int_t specie = 0 ; specie < AliRecoParam::kNSpecies ; specie++) {
-    fParameterList[specie] = NULL ; 
+    fParameterList[specie] = NULL ;
     fEvCountCycle[specie].Set(AliQAv1::kNTASKINDEX);
     fEvCountTotal[specie].Set(AliQAv1::kNTASKINDEX);
   }
-  
+
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 AliQADataMaker::AliQADataMaker(const AliQADataMaker& qadm) :
   TNamed(qadm.GetName(), qadm.GetTitle()),
   fOutput(qadm.fOutput),
   fDetectorDir(qadm.fDetectorDir),
   fDetectorDirName(qadm.fDetectorDirName),
-  fCurrentCycle(qadm.fCurrentCycle), 
-  fCycle(qadm.fCycle), 
-  fCycleCounter(qadm.fCycleCounter), 
+  fCurrentCycle(qadm.fCurrentCycle),
+  fCycle(qadm.fCycle),
+  fCycleCounter(qadm.fCycleCounter),
   fWriteExpert(qadm.fWriteExpert),
-  fParameterList(qadm.fParameterList),  
-  fRun(qadm.fRun), 
+  fParameterList(qadm.fParameterList),
+  fRun(qadm.fRun),
   fEventSpecie(qadm.fEventSpecie),
-  fDigitsArray(NULL) 
+  fDigitsArray(NULL)
 {
   //copy ctor
-  fDetectorDirName = GetName() ; 
+  fDetectorDirName = GetName() ;
   for (Int_t specie = 0 ; specie < AliRecoParam::kNSpecies ; specie++) {
-    fParameterList[specie] = qadm.fParameterList[specie] ; 
+    fParameterList[specie] = qadm.fParameterList[specie] ;
     fEvCountCycle[specie] = qadm.fEvCountCycle[specie];
     fEvCountTotal[specie] = qadm.fEvCountTotal[specie];
-    //  fImage[specie] = qadm.fImage[specie] ; 
+    //  fImage[specie] = qadm.fImage[specie] ;
   }
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 AliQADataMaker::~AliQADataMaker()
 {
   for (Int_t esIndex = 0 ; esIndex < AliRecoParam::kNSpecies ; esIndex++) {
     if (fParameterList[esIndex] )
-      delete fParameterList[esIndex] ; 
+      delete fParameterList[esIndex] ;
   }
-  delete[] fParameterList ; 
+  delete[] fParameterList ;
   if (fDigitsArray) {
-    fDigitsArray->Clear() ; 
+    fDigitsArray->Clear() ;
     delete fDigitsArray ;
   }
 }
 
 //____________________________________________________________________________
-Int_t AliQADataMaker::Add2List(TH1 * hist, const Int_t index, TObjArray ** list, const Bool_t expert, const Bool_t image, const Bool_t saveForCorr) 
-{ 
+Int_t AliQADataMaker::Add2List(TH1 * hist, const Int_t index, TObjArray ** list, const Bool_t expert, const Bool_t image, const Bool_t saveForCorr)
+{
   // Set histograms memory resident and add to the list
   // Maximm allowed is 10000
-  
-  Int_t rv = -1 ; 
+
+  Int_t rv = -1 ;
   TClass * classType = hist->Class() ;
-  TString className(classType->GetName()) ; 
+  TString className(classType->GetName()) ;
   if( ! className.BeginsWith("T") && ! classType->InheritsFrom("TH1") ) {
-    AliError(Form("QA data Object must be a generic ROOT object and derive fom TH1 and not %s", className.Data())) ; 
+    AliError(Form("QA data Object must be a generic ROOT object and derive fom TH1 and not %s", className.Data())) ;
   } else if ( index > AliQAv1::GetMaxQAObj() ) {
-    AliError(Form("Max number of authorized QA objects is %d", AliQAv1::GetMaxQAObj())) ; 
+    AliError(Form("Max number of authorized QA objects is %d", AliQAv1::GetMaxQAObj())) ;
   } else {
-    hist->SetDirectory(0); 
-    if (expert) 
+    hist->SetDirectory(0);
+    if (expert)
       hist->SetBit(AliQAv1::GetExpertBit()) ;
-    if (image) 
-      hist->SetBit(AliQAv1::GetImageBit()) ;  
+    if (image)
+      hist->SetBit(AliQAv1::GetImageBit()) ;
     const Char_t * name = Form("%s_%s", AliRecoParam::GetEventSpecieName(fEventSpecie), hist->GetName()) ;
-    hist->SetName(name) ; 
-    if(saveForCorr) {  
-      const Char_t * cname = Form("%s_%s", list[AliRecoParam::AConvert(AliRecoParam::kDefault)]->GetName(), hist->GetName()) ;  
+    hist->SetName(name) ;
+    if(saveForCorr) {
+      const Char_t * cname = Form("%s_%s", list[AliRecoParam::AConvert(AliRecoParam::kDefault)]->GetName(), hist->GetName()) ;
       TParameter<double> * p = new TParameter<double>(cname, 9999.9999) ;
       if ( fParameterList[AliRecoParam::AConvert(fEventSpecie)] == NULL )
       {
-        fParameterList[AliRecoParam::AConvert(fEventSpecie)] = new TList() ; 
+        fParameterList[AliRecoParam::AConvert(fEventSpecie)] = new TList() ;
 	//        fParameterList[AliRecoParam::AConvert(fEventSpecie)]->SetOwner(kTRUE);
       }
       fParameterList[AliRecoParam::AConvert(fEventSpecie)]->Add(p) ;
@@ -161,16 +160,16 @@ Int_t AliQADataMaker::Add2List(TH1 * hist, const Int_t index, TObjArray ** list,
       AliError(Form("%s - OUPS ! Already got an object (%p,%s) for index=%d => will most probably get a memory leak by replacing it with (%p,%s) !",
                     GetName(),old,old->GetName(),index,hist,hist->GetName()));
     }
-    list[AliRecoParam::AConvert(fEventSpecie)]->AddAtAndExpand(hist, index) ; 
+    list[AliRecoParam::AConvert(fEventSpecie)]->AddAtAndExpand(hist, index) ;
     rv = list[AliRecoParam::AConvert(fEventSpecie)]->GetLast() ;
   }
-  return rv ; 
+  return rv ;
 }
 
 //____________________________________________________________________________
 void AliQADataMaker::ClonePerTrigClassL(TObjArray ** list, AliQAv1::TASKINDEX_t task)
 {
-  // scan the histos of the list, match them to requested histo names to be 
+  // scan the histos of the list, match them to requested histo names to be
   // cloned and create the clones per trigger class
   int spec = AliRecoParam::AConvert(fEventSpecie);
   if (!fgCloningRequest || !GetNTrigClasses()) return;
@@ -203,7 +202,7 @@ void AliQADataMaker::ClonePerTrigClassL(TObjArray ** list, AliQAv1::TASKINDEX_t 
 //____________________________________________________________________________
 Int_t AliQADataMaker::ClonePerTrigClassA(TObjArray * list, const char* hnm, const char* triggers, Bool_t keepOriginal)
 {
-  // substitute the matching histogram by the TObjArray containing clones of 
+  // substitute the matching histogram by the TObjArray containing clones of
   // original histogram for each trigger from the space-separated tiggers string
   // When keepOriginal is requested, the original histo is not deleted and filled for each trigger
   if (!list) return 0;
@@ -226,7 +225,7 @@ Int_t AliQADataMaker::ClonePerTrigClassA(TObjArray * list, const char* hnm, cons
     TObject* alias = fgTrigClasses->FindObject( trigArr->At(i)->GetName() );
     if (!alias) {
       AliError(Form("Cloning for undefined trigger class %s was requested for histogram %s",trigArr->At(i)->GetName(),hnm));
-      delete trigArr->RemoveAt(i); 
+      delete trigArr->RemoveAt(i);
       trigArr->Compress();
       continue;
     }
@@ -240,8 +239,8 @@ Int_t AliQADataMaker::ClonePerTrigClassA(TObjArray * list, const char* hnm, cons
   }
   else {
     histPatt.Prepend(Form("%s_", AliRecoParam::GetEventSpecieName(fEventSpecie)));
-    // 
-    // The histogram name may contain %d formats for histos created in loop. 
+    //
+    // The histogram name may contain %d formats for histos created in loop.
     // Then we expect more than 1 histo matching to name
     TPRegexp rgx("%\\d*d");
     if (histPatt.Contains(rgx)) { // need to convert to perl expression, make sure there are no perl special characters
@@ -285,7 +284,7 @@ Int_t AliQADataMaker::ClonePerTrigClassA(TObjArray * list, const char* hnm, cons
 //____________________________________________________________________________
 Int_t AliQADataMaker::ClonePerTrigClassH(Int_t index, TObjArray* list, TObjArray* trigArr, Bool_t keepOriginal)
 {
-  // substitute the histogram at position index by the TObjArray containing clones of 
+  // substitute the histogram at position index by the TObjArray containing clones of
   // original histogram for each trigger from the trigArr
   // When keepOriginal is requested, the original histo is not deleted and filled for each trigger
   TH1* hist = (TH1*) list->At(index);
@@ -340,7 +339,7 @@ Char_t* AliQADataMaker::GetHistoTrigger(const TH1* h)  const
   TString hnm = h->GetName();
   int idx = hnm.Index(fgkTriggerPrefix);
   if (idx<0) return 0;  // not cloned
-  return (char*) h->GetName() + idx + sizeof(fgkTriggerPrefix) - 1; 
+  return (char*) h->GetName() + idx + sizeof(fgkTriggerPrefix) - 1;
 }
 
 //____________________________________________________________________________
@@ -367,7 +366,7 @@ Int_t AliQADataMaker::SetEventTrigClasses(const char* triggers)
       if ( !triggSet.Contains(tarr->At(itr)->GetName()) ) continue;
       fgEventTrigClasses.Add(pair);
       nTrClasses++;
-      break; 
+      break;
     }
   }
   //
@@ -381,7 +380,7 @@ Int_t AliQADataMaker::SetEventTrigClasses(const char* triggers)
 TH1* AliQADataMaker::GetMatchingHisto(TObjArray ** list, Int_t index, Int_t trigId)
 {
   // get histo with given index matching to trigId-th current trigger class
-  // trigId < 0 means default hist (only if cloning was done) 
+  // trigId < 0 means default hist (only if cloning was done)
   TObject* data = GetData(list,index);
   if (!data) return 0;
   if (trigId<0 || trigId==GetNEventTrigClasses()) { // original histo is requested
@@ -390,7 +389,7 @@ TH1* AliQADataMaker::GetMatchingHisto(TObjArray ** list, Int_t index, Int_t trig
     else if (data->TestBit(AliQAv1::GetOrigHistoKeptBit())) return (TH1*)((TObjArray*)data)->At(GetNTrigClasses());
     return 0;
   }
-  // 
+  //
   if (!data->TestBit(AliQAv1::GetClonedBit())) return 0; // no cloning was done
   if (trigId>GetNEventTrigClasses()) {
     AliError(Form("Current event has %d triggers only, %d-th is requested",GetNEventTrigClasses(),trigId));
@@ -405,7 +404,7 @@ TH1* AliQADataMaker::GetMatchingHisto(TObjArray ** list, Int_t index, Int_t trig
 TObjArray* AliQADataMaker::GetMatchingHistosSet(TObjArray ** list, const Int_t* indexList, Int_t nHist, Int_t trigId)
 {
   // get set of nHist histos with indices from the indexList matching to trigId-th current trigger
-  // Note: a static array is returned, it will be overwritten at the next call  
+  // Note: a static array is returned, it will be overwritten at the next call
   static TObjArray garr;
   garr.Clear();
   for (int ih=0;ih<nHist;ih++) {
@@ -417,12 +416,12 @@ TObjArray* AliQADataMaker::GetMatchingHistosSet(TObjArray ** list, const Int_t* 
 }
 
 //____________________________________________________________________________
-Bool_t AliQADataMaker::CheckCloningConsistency(TObjArray ** list, const Int_t* indexList, Int_t nHist, Bool_t checkTriggers) 
+Bool_t AliQADataMaker::CheckCloningConsistency(TObjArray ** list, const Int_t* indexList, Int_t nHist, Bool_t checkTriggers)
 {
   // Make sure that histograms at slots mentioned in the indexList are either
   // not cloned per trigger or
   // cloned for the same amount of triggers and if original histo was kept, then it is done for all histos.
-  // If checkTriggers is requested, apart from clones count also the trigger names are checked 
+  // If checkTriggers is requested, apart from clones count also the trigger names are checked
   //
   // This consistency check is needed to ensure validity of the operations over the group of histograms in the EndOfDetectorCycle's
   //
@@ -443,10 +442,10 @@ Bool_t AliQADataMaker::CheckCloningConsistency(TObjArray ** list, const Int_t* i
       if (refArr) {AliError(Form("Slot %d is not cloned, slot %d is cloned",slot, refSlot)); return kFALSE;}
       else continue;
     }
-    // 
+    //
     TObjArray* currArr = (TObjArray*) data;  // current slot is cloned
     if (!refArr) {AliError(Form("Slot %d is not cloned, slot %d is cloned",refSlot,slot)); return kFALSE;}
-    // 
+    //
     // both are cloned
     if (refArr->GetEntriesFast()!=currArr->GetEntriesFast()) {
       AliError(Form("Different number of clones: slot %d: %d vs slot %d: %d",
@@ -485,7 +484,7 @@ TObjArray* AliQADataMaker::GetMatchingHistos(TObjArray ** list, Int_t index, TOb
   // In the latter case one should be careful: the content is overwritten at each call
   // If the original histo was cloned but kept, it is also returned
   //
-  // Note: if there are no triggers set, all eventual clones are returned 
+  // Note: if there are no triggers set, all eventual clones are returned
   // (used for EndOfDetectorCycle loop over all histos)
   static TObjArray garr;
   TObjArray *dest = optDest ? optDest : &garr;
@@ -644,43 +643,43 @@ Int_t AliQADataMaker::ResetStatsData(TObjArray ** list, Int_t index)
 }
 
 //____________________________________________________________________________
-TH1 *  AliQADataMaker::CloneMe(TH1 * hist, Int_t specie) const  
+TH1 *  AliQADataMaker::CloneMe(TH1 * hist, Int_t specie) const
 {
-  // clones a histogram 
+  // clones a histogram
   const Char_t * name = Form("%s_%s", AliRecoParam::GetEventSpecieName(specie), hist->GetName()) ;
-  TH1 * hClone = static_cast<TH1 *>(hist->Clone(name)) ; 
+  TH1 * hClone = static_cast<TH1 *>(hist->Clone(name)) ;
   if ( hist->TestBit(AliQAv1::GetExpertBit()) )
-    hClone->SetBit(AliQAv1::GetExpertBit()) ; 
+    hClone->SetBit(AliQAv1::GetExpertBit()) ;
   if ( hist->TestBit(AliQAv1::GetImageBit()) )
-    hClone->SetBit(AliQAv1::GetImageBit()) ; 
-  return hClone ; 
+    hClone->SetBit(AliQAv1::GetImageBit()) ;
+  return hClone ;
 }
 
 //____________________________________________________________________________
-void AliQADataMaker::DefaultEndOfDetectorCycle(AliQAv1::TASKINDEX_t task) 
+void AliQADataMaker::DefaultEndOfDetectorCycle(AliQAv1::TASKINDEX_t task)
 {
   // this method must be oveloaded by detectors
   // sets the QA result to Fatal
   AliQAv1::Instance(AliQAv1::GetDetIndex(GetName())) ;
   AliQAv1 * qa = AliQAv1::Instance(task) ;
-  for (Int_t specie = 0 ; specie < AliRecoParam::kNSpecies ; specie++) 
-    qa->Set(AliQAv1::kFATAL, specie) ; 
-  AliQAv1::GetQAResultFile()->cd() ; 
-  qa->Write(AliQAv1::GetQAName(), kWriteDelete) ;   
-  AliQAv1::GetQAResultFile()->Close() ; 
+  for (Int_t specie = 0 ; specie < AliRecoParam::kNSpecies ; specie++)
+    qa->Set(AliQAv1::kFATAL, specie) ;
+  AliQAv1::GetQAResultFile()->cd() ;
+  qa->Write(AliQAv1::GetQAName(), kWriteDelete) ;
+  AliQAv1::GetQAResultFile()->Close() ;
 }
 
-//____________________________________________________________________________ 
-void AliQADataMaker::Finish() const 
-{ 
+//____________________________________________________________________________
+void AliQADataMaker::Finish() const
+{
   // write to the output File
-  if (fOutput) 
-    fOutput->Close() ; 
-} 
+  if (fOutput)
+    fOutput->Close() ;
+}
 
-//____________________________________________________________________________ 
-TH1* AliQADataMaker::GetData(TObjArray ** list, const Int_t index, int cloneID)  
-{ 
+//____________________________________________________________________________
+TH1* AliQADataMaker::GetData(TObjArray ** list, const Int_t index, int cloneID)
+{
   // get the cloneID-th clone of the histo, -1 for original (if kept)
   TObject* data = GetData(list,index);
   if (!data) return 0;
@@ -696,22 +695,22 @@ TH1* AliQADataMaker::GetData(TObjArray ** list, const Int_t index, int cloneID)
   //
 }
 
-//____________________________________________________________________________ 
-TObjArray* AliQADataMaker::GetDataOfTrigClass(TObjArray ** list, Int_t specieIndex, int cloneID, TObjArray *dest)  
-{ 
-  // get all histos for cloneID-th trigger class (-1 is for original "all-triggers" histos) in 
-  // a single array (if dest is not provided, use its own static array). 
+//____________________________________________________________________________
+TObjArray* AliQADataMaker::GetDataOfTrigClass(TObjArray ** list, Int_t specieIndex, int cloneID, TObjArray *dest)
+{
+  // get all histos for cloneID-th trigger class (-1 is for original "all-triggers" histos) in
+  // a single array (if dest is not provided, use its own static array).
   // Existing histos are attached at their original positions
   if (!list) return 0x0;
   TObjArray* arr = list[specieIndex] ;
   return GetDataOfTrigClass(arr, cloneID, dest);
 }
 
-//____________________________________________________________________________ 
-TObjArray* AliQADataMaker::GetDataOfTrigClass(TObjArray *arr, int cloneID, TObjArray *dest)  
-{ 
-  // get all histos for cloneID-th trigger class (-1 is for original "all-triggers" histos) in 
-  // a single array (if dest is not provided, use its own static array). 
+//____________________________________________________________________________
+TObjArray* AliQADataMaker::GetDataOfTrigClass(TObjArray *arr, int cloneID, TObjArray *dest)
+{
+  // get all histos for cloneID-th trigger class (-1 is for original "all-triggers" histos) in
+  // a single array (if dest is not provided, use its own static array).
   // Existing histos are attached at their original positions
   static TObjArray arrTransf;
   TObjArray* destS = dest ? dest : &arrTransf;
@@ -734,16 +733,16 @@ TObjArray* AliQADataMaker::GetDataOfTrigClass(TObjArray *arr, int cloneID, TObjA
       (*destS)[ih] = ob;
     }
     destS->SetUniqueID(arr->GetUniqueID());
-  } 
+  }
   return destS;
   //
 }
 
-//____________________________________________________________________________ 
-TObjArray* AliQADataMaker::GetDataOfTrigClass(TObjArray ** list, int cloneID, TObjArray *dest)  
-{ 
-  // get all histos for cloneID-th trigger class (-1 is for original "all-triggers" histos) in 
-  // a single array (if dest is not provided, use its own static array). 
+//____________________________________________________________________________
+TObjArray* AliQADataMaker::GetDataOfTrigClass(TObjArray ** list, int cloneID, TObjArray *dest)
+{
+  // get all histos for cloneID-th trigger class (-1 is for original "all-triggers" histos) in
+  // a single array (if dest is not provided, use its own static array).
   // Existing histos are attached at their original positions
   //
   GetData(list,0);  //just to initialize, if needed
@@ -752,59 +751,59 @@ TObjArray* AliQADataMaker::GetDataOfTrigClass(TObjArray ** list, int cloneID, TO
   //
 }
 
-//____________________________________________________________________________ 
-TObject * AliQADataMaker::GetData(TObjArray ** list, const Int_t index)  
-{ 
-  // Returns the QA object at index. Limit is AliQAv1::GetMaxQAObj() 
+//____________________________________________________________________________
+TObject * AliQADataMaker::GetData(TObjArray ** list, const Int_t index)
+{
+  // Returns the QA object at index. Limit is AliQAv1::GetMaxQAObj()
   if ( ! list ) {
-    AliError("Data list is NULL !!") ; 
-    return NULL ; 		
+    AliError("Data list is NULL !!") ;
+    return NULL ;
   }
-  Int_t esindex = AliRecoParam::AConvert(fEventSpecie) ; 
-  TObject* histClone = NULL ; 
-  TObjArray * arr = list[esindex] ; 
+  Int_t esindex = AliRecoParam::AConvert(fEventSpecie) ;
+  TObject* histClone = NULL ;
+  TObjArray * arr = list[esindex] ;
   if (arr) {
     if ( ! arr->GetEntriesFast() ) {
-      // Initializes the histograms 
-      TString arrName(arr->GetName()) ; 
+      // Initializes the histograms
+      TString arrName(arr->GetName()) ;
       if (arrName.Contains(AliQAv1::GetTaskName(AliQAv1::kRAWS)))
-        InitRaws() ; 
+        InitRaws() ;
       else if (arrName.Contains(AliQAv1::GetTaskName(AliQAv1::kHITS)))
-        InitHits() ; 
+        InitHits() ;
       else if (arrName.Contains(AliQAv1::GetTaskName(AliQAv1::kSDIGITS)))
-        InitSDigits() ; 
+        InitSDigits() ;
       else if (arrName.Contains(AliQAv1::GetTaskName(AliQAv1::kDIGITS)))
-        InitDigits() ; 
+        InitDigits() ;
       else if (arrName.Contains(AliQAv1::GetTaskName(AliQAv1::kDIGITSR)))
-        InitDigits() ; 
+        InitDigits() ;
       else if (arrName.Contains(AliQAv1::GetTaskName(AliQAv1::kRECPOINTS)))
-        InitRecPoints() ; 
+        InitRecPoints() ;
       else if (arrName.Contains(AliQAv1::GetTaskName(AliQAv1::kESDS)))
-        InitESDs() ; 
+        InitESDs() ;
     }
     if ( index > AliQAv1::GetMaxQAObj() ) {
-      AliError(Form("Max number of authorized QA objects is %d", AliQAv1::GetMaxQAObj())) ; 
+      AliError(Form("Max number of authorized QA objects is %d", AliQAv1::GetMaxQAObj())) ;
     } else {
       if ( arr->At(index) )  {
-        histClone = arr->At(index); 
-      } 	
+        histClone = arr->At(index);
+      }
     }
   }
-  return histClone ; 		
+  return histClone ;
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 TObjArray*  AliQADataMaker::Init(AliQAv1::TASKINDEX_t task, AliRecoParam::EventSpecie_t es, Int_t cycles)
 {
   // Initialializes and  returns the QAData list for a given event specie
-  TObjArray ** ar = Init(task, cycles) ; 
-  return ar[AliRecoParam::AConvert(es)] ;  
+  TObjArray ** ar = Init(task, cycles) ;
+  return ar[AliRecoParam::AConvert(es)] ;
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 Bool_t AliQADataMaker::IsValidEventSpecie(Int_t eventSpecieIndex, TObjArray ** list)
 {
-  // check if event specie was present in current run or 
+  // check if event specie was present in current run or
   // if histograms of this event specie have been created
   if (! AliQAv1::Instance(AliQAv1::GetDetIndex(GetName()))->IsEventSpecieSet(AliRecoParam::ConvertIndex(eventSpecieIndex)) || ! list[eventSpecieIndex]->GetEntriesFast() )
     return kFALSE ;
@@ -812,7 +811,7 @@ Bool_t AliQADataMaker::IsValidEventSpecie(Int_t eventSpecieIndex, TObjArray ** l
     return kTRUE ;
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 void AliQADataMaker::SetCloningRequest(TObjArray* aliases, TObjArray* histos)
 {
   // set associations {trigger names} <-> {trigger class alias}
@@ -823,7 +822,7 @@ void AliQADataMaker::SetCloningRequest(TObjArray* aliases, TObjArray* histos)
     AliWarningClass("Cloning request is already set");
     return;
   }
-  ResetEventTrigClasses(); 
+  ResetEventTrigClasses();
   if (!aliases || !histos) {
     AliWarningClass("Cloning request is incomplete");
     return;
@@ -844,7 +843,7 @@ void AliQADataMaker::SetCloningRequest(TObjArray* aliases, TObjArray* histos)
     TNamed* histo = (TNamed*)fgCloningRequest->At(ih);
     TString histoReq = histo->GetTitle();    // list of aliases for which the histo must be cloned
     TObjArray* alList = histoReq.Tokenize(" ");
-    // 
+    //
     if (!alList) {
       AliErrorClass(Form("Invalid cloning request is found for histo %s :|%s|",histo->GetName(),histo->GetTitle()));
       fgCloningRequest->RemoveAt(ih);
@@ -904,10 +903,10 @@ void AliQADataMaker::SetCloningRequest(TObjArray* aliases, TObjArray* histos)
     AliInfoClass(Form("%s -> %s %s",item->GetName(),item->GetTitle(),
 		      item->TestBit(AliQAv1::GetOrigHistoKeptBit()) ? " + TriggerBlind":""));
   }
-  // 
+  //
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 void AliQADataMaker::IncEvCountCycle(AliQAv1::TASKINDEX_t task, Int_t diff)
 {
   // incerment by "diff" the cycle counters for the current event trigger classes (+ the global one)
@@ -920,7 +919,7 @@ void AliQADataMaker::IncEvCountCycle(AliQAv1::TASKINDEX_t task, Int_t diff)
   for (int icl=GetNEventTrigClasses();icl--;) fEvCountCycle[isp][task*(1+ncl)+ GetEventTrigClass(icl)->GetUniqueID()] += diff;
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 void AliQADataMaker::IncEvCountTotal(AliQAv1::TASKINDEX_t task, Int_t diff)
 {
   // incerment by "diff" the cycle counters for the current event trigger classes (+ the global one)
@@ -934,7 +933,7 @@ void AliQADataMaker::IncEvCountTotal(AliQAv1::TASKINDEX_t task, Int_t diff)
 }
 
 //____________________________________________________________________________
-void AliQADataMaker::ResetEvCountCycle(AliRecoParam::EventSpecie_t isp, AliQAv1::TASKINDEX_t task) 
+void AliQADataMaker::ResetEvCountCycle(AliRecoParam::EventSpecie_t isp, AliQAv1::TASKINDEX_t task)
 {
   // reset counter for specific trigger class for specific specie (within the cycle)
   int ncl = GetNTrigClasses();
@@ -944,7 +943,7 @@ void AliQADataMaker::ResetEvCountCycle(AliRecoParam::EventSpecie_t isp, AliQAv1:
 }
 
 //____________________________________________________________________________
-void AliQADataMaker::ResetEvCountTotal(AliRecoParam::EventSpecie_t isp, AliQAv1::TASKINDEX_t task) 
+void AliQADataMaker::ResetEvCountTotal(AliRecoParam::EventSpecie_t isp, AliQAv1::TASKINDEX_t task)
 {
   // reset counter for specific trigger class for specific specie (global count)
   int ncl = GetNTrigClasses();
@@ -967,4 +966,3 @@ Int_t AliQADataMaker::GetEvCountTotal(AliRecoParam::EventSpecie_t isp, AliQAv1::
   int ncl = GetNTrigClasses();
   return fEvCountTotal[AliRecoParam::AConvert(isp)][task*(1+ncl) + (trCl<0||trCl>=ncl ? ncl:trCl)];
 }
-

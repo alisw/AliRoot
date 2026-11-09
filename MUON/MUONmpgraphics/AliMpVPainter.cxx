@@ -24,7 +24,7 @@
 // Included in AliRoot: 2003/05/02
 // Authors: David Guez, IPN Orsay
 //-----------------------------------------------------------------------------
-  
+
 #include "AliMpVPainter.h"
 #include "AliMpGraphContext.h"
 #include "AliMpSector.h"
@@ -53,6 +53,7 @@
 #include <TVirtualX.h>
 #include <TPad.h>
 #include <TROOT.h>
+#include <TMath.h>
 
 #include "AliLog.h"
 /// \cond CLASSIMP
@@ -188,13 +189,13 @@ AliMpVPainter *AliMpVPainter::CreatePainter(TObject *object)
       return new AliMpSlatPainter(slatSegmentation->Slat());
     }
   */
-    const AliMpSlat* kSlat 
+    const AliMpSlat* kSlat
       = AliMpSegmentation::Instance()->GetSlat((AliMpVSegmentation*)object);
     if ( kSlat )
     {
       return new AliMpSlatPainter(kSlat);
     }
-    
+
   }
   return painter;
 }

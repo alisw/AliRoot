@@ -2,7 +2,7 @@
 
 /** @file   AliHLTMessage.cxx
     @author Matthias Richter (customization of Root TMessage )
-    @date   
+    @date
     @brief  Serialization of Root objects in the ALICE HLT. */
 
 // This is the original Root TMessage implementation with a few minor
@@ -34,6 +34,7 @@
 #include "TFile.h"
 #include "TProcessID.h"
 #include "TClass.h"
+#include "TMath.h"
 
 #if ROOT_VERSION_CODE < ROOT_VERSION(6, 36, 0)
 extern "C" void R__zip (Int_t cxlevel, Int_t *nin, char *bufin, Int_t *lout, char *bufout, Int_t *nout);
@@ -49,7 +50,7 @@ Bool_t AliHLTMessage::fgEvolution = kFALSE;
 ClassImp(AliHLTMessage)
 
 //______________________________________________________________________________
-AliHLTMessage::AliHLTMessage(UInt_t what) 
+AliHLTMessage::AliHLTMessage(UInt_t what)
   :
 # ifdef ROOT_TBufferFile
   TBufferFile(kWrite),
@@ -558,7 +559,7 @@ TObject* AliHLTMessage::Extract(const char* filename, unsigned verbosity)
    /// Helper function to extract an object from a file containing the streamed object.
    /// The returned object must be cleaned by the caller
   if (!filename) return NULL;
-  
+
   AliHLTLogging log;
   TString input=filename;
   input+="?filetype=raw";

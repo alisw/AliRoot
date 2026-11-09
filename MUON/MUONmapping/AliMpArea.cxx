@@ -31,6 +31,7 @@
 #include "AliMpConstants.h"
 
 #include <Riostream.h>
+#include <TMath.h>
 
 using std::cout;
 using std::endl;
@@ -39,27 +40,27 @@ ClassImp(AliMpArea)
 /// \endcond
 
 //_____________________________________________________________________________
-AliMpArea::AliMpArea(Double_t x, Double_t y, 
+AliMpArea::AliMpArea(Double_t x, Double_t y,
                      Double_t dx, Double_t dy)
   : TObject(),
     fPositionX(x),
     fPositionY(y),
     fDimensionX(dx),
     fDimensionY(dy),
-    fValidity(true) 
+    fValidity(true)
 {
 /// Standard constructor
 
   // Check dimensions
-  if (  fDimensionX < - AliMpConstants::LengthTolerance() || 
-        fDimensionY < - AliMpConstants::LengthTolerance() || 
-      ( fDimensionX < AliMpConstants::LengthTolerance() && 
+  if (  fDimensionX < - AliMpConstants::LengthTolerance() ||
+        fDimensionY < - AliMpConstants::LengthTolerance() ||
+      ( fDimensionX < AliMpConstants::LengthTolerance() &&
         fDimensionY < AliMpConstants::LengthTolerance() ) )
   {
     fDimensionX = 0.;
     fDimensionY = 0.;
     fValidity = false;
-  }  
+  }
 }
 
 //_____________________________________________________________________________
@@ -69,7 +70,7 @@ AliMpArea::AliMpArea()
     fPositionY(0.),
     fDimensionX(0.),
     fDimensionY(0.),
-    fValidity(false) 
+    fValidity(false)
 {
 /// Default constructor
 }
@@ -79,15 +80,15 @@ AliMpArea::AliMpArea(const AliMpArea& rhs):
   TObject(rhs),
   fPositionX(rhs.fPositionX),
   fPositionY(rhs.fPositionY),
-  fDimensionX(rhs.fDimensionX), 
-  fDimensionY(rhs.fDimensionY), 
-  fValidity(rhs.fValidity) 
+  fDimensionX(rhs.fDimensionX),
+  fDimensionY(rhs.fDimensionY),
+  fValidity(rhs.fValidity)
 {
 /// Copy constructor
 }
 
 //_____________________________________________________________________________
-AliMpArea::~AliMpArea() 
+AliMpArea::~AliMpArea()
 {
 /// Destructor
 }
@@ -114,7 +115,7 @@ AliMpArea& AliMpArea::operator = (const AliMpArea& right)
   fValidity = right.fValidity;
 
   return *this;
-} 
+}
 
 //
 // public methods
@@ -159,7 +160,7 @@ void AliMpArea::LeftDownCorner(Double_t& x, Double_t& y) const
 
   x = LeftBorder();
   y = DownBorder();
-}  
+}
 
 //_____________________________________________________________________________
 void AliMpArea::LeftUpCorner(Double_t& x, Double_t& y) const
@@ -168,7 +169,7 @@ void AliMpArea::LeftUpCorner(Double_t& x, Double_t& y) const
 
   x = LeftBorder();
   y = UpBorder();
-}  
+}
 
 //_____________________________________________________________________________
 void AliMpArea::RightDownCorner(Double_t& x, Double_t& y) const
@@ -177,7 +178,7 @@ void AliMpArea::RightDownCorner(Double_t& x, Double_t& y) const
 
   x = RightBorder();
   y = DownBorder();
-}  
+}
 
 
 //_____________________________________________________________________________
@@ -187,13 +188,13 @@ void AliMpArea::RightUpCorner(Double_t& x, Double_t& y) const
 
   x = RightBorder();
   y = UpBorder();
-}  
+}
 
 //_____________________________________________________________________________
 Bool_t AliMpArea::Contains(const AliMpArea& area) const
 {
 /// Whether area is contained within this
-  
+
 //  return
 //    ( area.LeftBorder() > LeftBorder() - AliMpConstants::LengthTolerance() &&
 //      area.RightBorder() < RightBorder() +  AliMpConstants::LengthTolerance() &&
@@ -203,7 +204,7 @@ Bool_t AliMpArea::Contains(const AliMpArea& area) const
   if ( area.LeftBorder() < LeftBorder() ||
        area.RightBorder() > RightBorder() ||
        area.DownBorder() < DownBorder() ||
-       area.UpBorder() > UpBorder() ) 
+       area.UpBorder() > UpBorder() )
   {
     return kFALSE;
   }
@@ -215,7 +216,7 @@ Bool_t AliMpArea::Contains(const AliMpArea& area) const
 
 //_____________________________________________________________________________
 AliMpArea AliMpArea::Intersect(const AliMpArea& area) const
-{ 
+{
 /// Return the common part of area and this
 
   Double_t xmin = TMath::Max(area.LeftBorder(),LeftBorder());
@@ -244,7 +245,7 @@ Bool_t AliMpArea::Overlap(const AliMpArea& area) const
     return kFALSE;
   }
   return kTRUE;
-  
+
 }
 
 //_____________________________________________________________________________
@@ -252,47 +253,46 @@ void
 AliMpArea::Print(Option_t* opt) const
 {
 /// Printing
-/// When option is set to B (borders), the area boreders will be printed 
+/// When option is set to B (borders), the area boreders will be printed
 /// instead of default parameters
 
-  
+
   if ( opt[0] == 'B' ) {
-    cout << "Area x-borders: (" 
-         << LeftBorder() << ", " << RightBorder() << ") " 
-	 << " y-borders: (" 
-         << DownBorder() << ", " << UpBorder() << ") " 
+    cout << "Area x-borders: ("
+         << LeftBorder() << ", " << RightBorder() << ") "
+	 << " y-borders: ("
+         << DownBorder() << ", " << UpBorder() << ") "
 	 << endl;
     return;
 
-  }       
+  }
 
   cout << (*this) << endl;
 }
 
 //_____________________________________________________________________________
-void      
+void
 AliMpArea::GetParameters(Double_t& x, Double_t& y,
                          Double_t& dx, Double_t& dy) const
 {
 /// Fill the parameters: x, y position and dimensions
-                         
+
   x = fPositionX;
   y = fPositionY;
   dx = fDimensionX;
   dy = fDimensionY;
-}  
+}
 
 //_____________________________________________________________________________
 ostream& operator<< (ostream &stream,const AliMpArea& area)
 {
 /// Output streaming
 
-  stream << "Area: position: (" 
-         << area.GetPositionX() << ", " << area.GetPositionY() << ") " 
-	 << " dimensions: (" 
-         << area.GetDimensionX() << ", " << area.GetDimensionY() << ") " 
+  stream << "Area: position: ("
+         << area.GetPositionX() << ", " << area.GetPositionY() << ") "
+	 << " dimensions: ("
+         << area.GetDimensionX() << ", " << area.GetDimensionY() << ") "
   << " valid: " << (area.IsValid()==true ? "YES":"NO")
 	 << endl;
   return stream;
 }
-

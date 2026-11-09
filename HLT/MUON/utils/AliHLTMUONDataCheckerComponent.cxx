@@ -47,6 +47,9 @@
 #include "AliMpSegmentation.h"
 #include "AliMpVSegmentation.h"
 #include "AliMpPad.h"
+
+#include <TMath.h>
+
 #include <cstring>
 #include <cstdlib>
 #include <cmath>
@@ -111,7 +114,7 @@ AliHLTMUONDataCheckerComponent::~AliHLTMUONDataCheckerComponent()
 const char* AliHLTMUONDataCheckerComponent::GetComponentID()
 {
 	/// Inherited from AliHLTComponent. Returns the component ID.
-	
+
 	return AliHLTMUONConstants::DataCheckerComponentId();
 }
 
@@ -121,7 +124,7 @@ void AliHLTMUONDataCheckerComponent::GetInputDataTypes(AliHLTComponentDataTypeLi
 	/// Inherited from AliHLTProcessor. Returns the list of expected input data types.
 	/// At the moment this list is "any data type" origin MUON since it is not known
 	/// before hand what kind of input blocks we will get.
-	
+
 	assert( list.empty() );
 	list.push_back( kAliHLTAnyDataType | kAliHLTDataOriginMUON );
 }
@@ -131,7 +134,7 @@ AliHLTComponentDataType AliHLTMUONDataCheckerComponent::GetOutputDataType()
 {
 	/// Inherited from AliHLTComponent. Returns the output data type of
 	/// "any data type" with MUON origin.
-	
+
 	return kAliHLTAnyDataType | kAliHLTDataOriginMUON;
 }
 
@@ -142,7 +145,7 @@ void AliHLTMUONDataCheckerComponent::GetOutputDataSize(
 {
 	/// Inherited from AliHLTComponent.
 	/// Returns an estimate of the expected output data size.
-	
+
 	// Both of these are zero because we will only ever pass on input data blocks
 	// and never generate data in this component.
 	constBase = 0;
@@ -153,7 +156,7 @@ void AliHLTMUONDataCheckerComponent::GetOutputDataSize(
 AliHLTComponent* AliHLTMUONDataCheckerComponent::Spawn()
 {
 	/// Inherited from AliHLTComponent. Creates a new object instance.
-	
+
 	return new AliHLTMUONDataCheckerComponent;
 }
 
@@ -162,7 +165,7 @@ bool AliHLTMUONDataCheckerComponent::IgnoreArgument(const char* arg) const
 {
 	/// Return true if the argument is -delaysetup
 	/// to prevent the parent class from parsing these arguments in DoInit.
-	
+
 	if (strcmp(arg, "-delaysetup") == 0)
 	{
 		return true;
@@ -178,9 +181,9 @@ int AliHLTMUONDataCheckerComponent::DoInit(int argc, const char** argv)
 {
 	/// Inherited from AliHLTComponent.
 	/// Parses the command line parameters and initialises the component.
-	
+
 	HLTInfo("Initialising dHLT data checker component.");
-	
+
 	// Inherit the parents functionality.
 	int result = AliHLTMUONProcessor::DoInit(argc, argv);
 	if (result != 0) return result;
@@ -240,7 +243,7 @@ int AliHLTMUONDataCheckerComponent::DoInit(int argc, const char** argv)
 			fReturnError = true;
 			continue;
 		}
-		
+
 		HLTError("Unknown option '%s'.", argv[i]);
 		return -EINVAL;
 	}
@@ -252,7 +255,7 @@ int AliHLTMUONDataCheckerComponent::DoInit(int argc, const char** argv)
 int AliHLTMUONDataCheckerComponent::DoDeinit()
 {
 	/// Inherited from AliHLTComponent. Performs a cleanup of the component.
-	
+
 	HLTInfo("Deinitialising dHLT data checker component.");
 	return 0;
 }
@@ -270,13 +273,13 @@ int AliHLTMUONDataCheckerComponent::DoEvent(
 	/// Inherited from AliHLTProcessor. Processes the new event data.
 	/// Here we go through the list of input data blocks and apply extensive
 	/// data integrity checking on the data found.
-	
+
 	if (not IsDataEvent()) return 0;
-	
+
 	HLTDebug("Processing event %llu with %u input data blocks.",
 		evtData.fEventID, evtData.fBlockCnt
 	);
-	
+
 	// Allocate an array of flags indicating if the data block is OK or not,
 	// also arrays to store specific.
 	bool dataProblems = false;
@@ -333,11 +336,11 @@ int AliHLTMUONDataCheckerComponent::DoEvent(
 		if (pairDecisionBlocks != NULL) delete [] pairDecisionBlocks;
 		return -ENOMEM;
 	}
-	
+
 	AliHLTComponentDataType anyPrivateType = AliHLTComponentDataTypeInitializer(
 			kAliHLTAnyDataType, kAliHLTDataOriginPrivate
 		);
-	
+
 	try
 	{
 		// Clear all the flags indicating if the blocks are ok.
@@ -345,15 +348,15 @@ int AliHLTMUONDataCheckerComponent::DoEvent(
 		{
 			blockOk[n] = false;
 		}
-	
+
 		for (AliHLTUInt32_t n = 0; n < evtData.fBlockCnt; n++)
 		{
 			HLTDebug("Handling block: %u, with fDataType = '%s', fPtr = %p and fSize = %u bytes.",
 				n, DataType2Text(blocks[n].fDataType).c_str(), blocks[n].fPtr, blocks[n].fSize
 			);
-			
+
 			AliHLTMUONDataBlockType blockType = kUnknownDataBlock;
-			
+
 			if (fIgnoreType)
 			{
 				// Decode the block type if we must ignore the block type
@@ -438,7 +441,7 @@ int AliHLTMUONDataCheckerComponent::DoEvent(
 #endif
 				}
 			}
-			
+
 			switch (blockType)
 			{
 			case kTriggerRecordsDataBlock:
@@ -491,7 +494,7 @@ int AliHLTMUONDataCheckerComponent::DoEvent(
 				break;
 			}
 		}
-		
+
 		// Apply the global data consistancy checks if not suppressed by the user.
 		if (not fNoGlobalChecks)
 		{
@@ -509,7 +512,7 @@ int AliHLTMUONDataCheckerComponent::DoEvent(
 				pairDecisionBlocks, pairDecisionBlocksCount
 			);
 		}
-		
+
 		// Forward the input data blocks if we have not been asked to drop them.
 		// Also remember to filter for bad blocks if so specified.
 		if (not fDontForward)
@@ -520,7 +523,7 @@ int AliHLTMUONDataCheckerComponent::DoEvent(
 				outputBlocks.push_back(blocks[n]);
 			}
 		}
-		
+
 		// Set dataProblems flag is there was at least one block with problems.
 		for (AliHLTUInt32_t n = 0; n < evtData.fBlockCnt; n++)
 		{
@@ -542,13 +545,13 @@ int AliHLTMUONDataCheckerComponent::DoEvent(
 		delete [] singleDecisionBlocks;
 		delete [] pairDecisionBlocks;
 	)
-	
+
 	// Finally we set the total size of output memory we consumed, which is
 	// zero since we just copied the input descriptors to output if anything.
 	size = 0;
 
 	if (dataProblems and DumpDataOnError()) DumpEvent(evtData, trigData);
-	
+
 	if (fReturnError)
 	{
 		// If we were requested to return errors if there were integrity
@@ -574,7 +577,7 @@ bool AliHLTMUONDataCheckerComponent::IsSpecificationValid(
 
 	if (AliHLTMUONUtils::IsSpecValid(block.fSpecification))
 		return true;
-	
+
 	HLTError("Problem found with data block %d, fDataType = '%s',"
 		 " fPtr = %p and fSize = %u bytes."
 		 " Assuming this is a %s data block."
@@ -603,16 +606,16 @@ bool AliHLTMUONDataCheckerComponent::IsFromTrackerOnly(
 	/// \param  blockNumber The block index number being checked.
 	/// \param  name The name of the type of block being checked.
 	/// \returns true if the specification indicates data is only from tracker.
-	
+
 	bool result = IsSpecificationValid(block, blockNumber, name);
-	
+
 	if (AliHLTMUONUtils::ContainsDataFromTracker(block.fSpecification) and
 	    not AliHLTMUONUtils::ContainsDataFromTrigger(block.fSpecification)
 	   )
 	{
 		return result;
 	}
-	
+
 	HLTError("Problem found with data block %d, fDataType = '%s',"
 		 " fPtr = %p and fSize = %u bytes."
 		 " Assuming this is a %s data block."
@@ -642,16 +645,16 @@ bool AliHLTMUONDataCheckerComponent::IsFromTriggerOnly(
 	/// \param  blockNumber The block index number being checked.
 	/// \param  name The name of the type of block being checked.
 	/// \returns true if the specification indicates data is only from trigger.
-	
+
 	bool result = IsSpecificationValid(block, blockNumber, name);
-	
+
 	if (AliHLTMUONUtils::ContainsDataFromTrigger(block.fSpecification) and
 	    not AliHLTMUONUtils::ContainsDataFromTracker(block.fSpecification)
 	   )
 	{
 		return result;
 	}
-	
+
 	HLTError("Problem found with data block %d, fDataType = '%s',"
 		 " fPtr = %p and fSize = %u bytes."
 		 " Assuming this is a %s data block."
@@ -689,12 +692,12 @@ bool AliHLTMUONDataCheckerComponent::IsMomentumVectorOk(
 	/// \param  py The Y coordinate of the momentum vector (GeV/c).
 	/// \param  pz The Z coordinate of the momentum vector (GeV/c).
 	/// \returns true if the momentum vector is valid and false otherwise.
-	
+
 	// If the momentum vector is nil then ignore it.
 	if (px == 0 and py == 0 and pz == 0) return true;
-	
+
 	bool result = true;
-	
+
 	// If the momentum vector is sane then we should not have a particle with
 	// more energy than 14 TeV and momentum should be in the negative direction.
 	double momentum = sqrt(px*px + py*py + pz*pz);
@@ -718,7 +721,7 @@ bool AliHLTMUONDataCheckerComponent::IsMomentumVectorOk(
 		);
 		result = false;
 	}
-	
+
 	if (pz > 0.)
 	{
 		// Just warn since this is a data sanity problem rather
@@ -739,7 +742,7 @@ bool AliHLTMUONDataCheckerComponent::IsMomentumVectorOk(
 		);
 		result = false;
 	}
-	
+
 	return result;
 }
 
@@ -762,9 +765,9 @@ bool AliHLTMUONDataCheckerComponent::AreMomentumCalcParamsOk(
 	/// \param  zmiddle The z-coordinate of the middle of the magnetic field (cm).
 	/// \param  bl The integrated magnetic field (T.m).
 	/// \returns true if the parameters are valid and false otherwise.
-	
+
 	bool result = true;
-	
+
 	// Check that the value of the fZmiddle value is somewhere
 	// within the tracking / dipole magnetic field area.
 	if (zmiddle < AliMUONConstants::AbsZEnd() or
@@ -790,7 +793,7 @@ bool AliHLTMUONDataCheckerComponent::AreMomentumCalcParamsOk(
 		);
 		result = false;
 	}
-	
+
 	// Also check that the value of the 'bl' value is within a
 	// reasonable range: |bl| < Lmax * Bmax, where
 	// Lmax = max length from vertex to end of spectrometer, and
@@ -816,7 +819,7 @@ bool AliHLTMUONDataCheckerComponent::AreMomentumCalcParamsOk(
 		);
 		result = false;
 	}
-	
+
 	return result;
 }
 
@@ -849,16 +852,16 @@ bool AliHLTMUONDataCheckerComponent::IsHitCoordinateOk(
 	///      check against.
 	/// \param  ddl  The array decoded by AliHLTMUONUtils::UnpackSpecBits.
 	/// \returns true if the hit is valid and false otherwise.
-	
+
 	assert( 0 <= minChamber and minChamber < 14 );
 	assert( 0 <= maxChamber and maxChamber < 14 );
-	
+
 	bool result = true;
-	
+
 	AliHLTUInt8_t chNum = 0xFF;
 	AliHLTUInt16_t detElemId = 0xFFFF;
 	AliHLTMUONUtils::UnpackRecHitFlags(hit.fFlags, chNum, detElemId);
-	
+
 	Int_t chamber = AliMUONConstants::ChamberNumber(hit.fZ, false); // false = do not warn.
 	if (chamber < minChamber or maxChamber < chamber)
 	{
@@ -881,7 +884,7 @@ bool AliHLTMUONDataCheckerComponent::IsHitCoordinateOk(
 		);
 		return false;
 	}
-	
+
 	if (chNum != chamber)
 	{
 		HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -908,7 +911,7 @@ bool AliHLTMUONDataCheckerComponent::IsHitCoordinateOk(
 			chamber = chNum;
 		}
 	}
-	
+
 	if (expectedChamber != -1 and chamber != expectedChamber)
 	{
 		HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -929,7 +932,7 @@ bool AliHLTMUONDataCheckerComponent::IsHitCoordinateOk(
 		);
 		result = false;
 	}
-	
+
 	AliHLTFloat32_t rmin = AliMUONConstants::Rmin(chamber / 2);
 	AliHLTFloat32_t rmax = AliMUONConstants::Rmax(chamber / 2);
 	AliHLTFloat32_t radius = sqrt(hit.fX*hit.fX + hit.fY*hit.fY);
@@ -952,7 +955,7 @@ bool AliHLTMUONDataCheckerComponent::IsHitCoordinateOk(
 		);
 		result = false;
 	}
-	
+
 	if (not fIgnoreSpec and not ChamberMarkedInDDLList(chamber, ddl))
 	{
 		HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -974,7 +977,7 @@ bool AliHLTMUONDataCheckerComponent::IsHitCoordinateOk(
 		);
 		result = false;
 	}
-	
+
 	// Check that the detector element ID is valid and it corresponds to
 	// the chamber number.
 	if (FetchMappingStores() == 0)  // are stores loaded?
@@ -1001,7 +1004,7 @@ bool AliHLTMUONDataCheckerComponent::IsHitCoordinateOk(
 			);
 			result = false;
 		}
-			
+
 		// Check that the chamber number from the detector element number
 		// has the expected value.
 		Int_t ch = AliMpDEManager::GetChamberId(Int_t(detElemId), warn);
@@ -1033,7 +1036,7 @@ bool AliHLTMUONDataCheckerComponent::IsHitCoordinateOk(
 		);
 		result = false;
 	}
-	
+
 	return result;
 }
 
@@ -1056,9 +1059,9 @@ bool AliHLTMUONDataCheckerComponent::IsMansoTrackOk(
 	/// \param  track The Manso track data being checked.
 	/// \param  ddl  The array decoded by AliHLTMUONUtils::UnpackSpecBits.
 	/// \returns true if the Manso track is valid and false otherwise.
-	
+
 	bool result = true;
-	
+
 	// Chi^2 should not be greater than the worst fit possible, estimated
 	// as the diameter of largest chamber times the number of points
 	// findable in a track. Max points is 10 tracker chambers times
@@ -1082,22 +1085,22 @@ bool AliHLTMUONDataCheckerComponent::IsMansoTrackOk(
 		);
 		result = false;
 	}
-	
+
 	// Check if the momentum vector is reasonable.
 	bool momOk = IsMomentumVectorOk(
 			block, blockNumber, name, entryNumber,
 			track.fPx, track.fPy, track.fPz
 		);
 	if (not momOk) result = false;
-	
+
 	AliHLTMUONParticleSign sign;
 	bool hitset[4];
 	AliHLTMUONUtils::UnpackMansoTrackFlags(track.fFlags, sign, hitset);
-	
+
 	// Min and max allowed chamber numbers for hits:
 	Int_t minCh = 0;
 	Int_t maxCh = AliMUONConstants::NTrackingCh() - 1;
-	
+
 	// Check that this hit coordinates are OK.
 	for (AliHLTUInt32_t i = 0; i < 4; i++)
 	{
@@ -1108,7 +1111,7 @@ bool AliHLTMUONDataCheckerComponent::IsMansoTrackOk(
 			);
 		if (not hitOk) result = false;
 	}
-	
+
 	return result;
 }
 
@@ -1131,9 +1134,9 @@ bool AliHLTMUONDataCheckerComponent::IsTrackOk(
 	/// \param  track The track data being checked.
 	/// \param  ddl  The array decoded by AliHLTMUONUtils::UnpackSpecBits.
 	/// \returns true if the full track structure is valid and false otherwise.
-	
+
 	bool result = true;
-	
+
 	// Chi^2 should not be greater than the worst fit possible, estimated
 	// as the diameter of largest chamber times the number of points
 	// findable in a track. Max points is 10 tracker chambers times
@@ -1157,14 +1160,14 @@ bool AliHLTMUONDataCheckerComponent::IsTrackOk(
 		);
 		result = false;
 	}
-	
+
 	// Check if the momentum vector is reasonable.
 	bool momOk = IsMomentumVectorOk(
 			block, blockNumber, name, entryNumber,
 			track.fPx, track.fPy, track.fPz
 		);
 	if (not momOk) result = false;
-	
+
 	// Check that the momentum parameters correspond to the momentum vector.
 	double momvalue = sqrt(track.fPy*track.fPy + track.fPz*track.fPz);
 	double invMom = (momvalue != 0 ? 1. / momvalue : 0);
@@ -1219,7 +1222,7 @@ bool AliHLTMUONDataCheckerComponent::IsTrackOk(
 		);
 		result = false;
 	}
-	
+
 	// Check that the DCA vertex is reasonable. i.e. the vertex is within
 	// a 1 meter cube of the origin.
 	if (TMath::Abs(track.fX) > 100 or TMath::Abs(track.fY) > 100 or TMath::Abs(track.fZ) > 100)
@@ -1240,15 +1243,15 @@ bool AliHLTMUONDataCheckerComponent::IsTrackOk(
 		);
 		result = false;
 	}
-	
+
 	AliHLTMUONParticleSign sign;
 	bool hitset[16];
 	AliHLTMUONUtils::UnpackTrackFlags(track.fFlags, sign, hitset);
-	
+
 	// Min and max allowed chamber numbers for hits:
 	Int_t minCh = 0;
 	Int_t maxCh = AliMUONConstants::NTrackingCh() - 1;
-	
+
 	// Check that this hit coordinates are OK.
 	for (AliHLTUInt32_t i = 0; i < 16; i++)
 	{
@@ -1259,7 +1262,7 @@ bool AliHLTMUONDataCheckerComponent::IsTrackOk(
 			);
 		if (not hitOk) result = false;
 	}
-	
+
 	return result;
 }
 
@@ -1291,16 +1294,16 @@ bool AliHLTMUONDataCheckerComponent::CheckDetElemIds(
 	/// \param  tr  The trigger record structure being checked.
 	/// \returns true if the detector element IDs are the same and false
 	///      otherwise.
-	
+
 	bool result = true;
-	
+
 	for (int i = 0; i < 4; i++)
 	{
 		AliHLTUInt8_t chamber = 0xFF;
 		AliHLTUInt16_t detElemId = 0xFFFF;
 		AliHLTMUONUtils::UnpackRecHitFlags(tr.fHit[i].fFlags, chamber, detElemId);
 		if (info.fDetElemId[i] == detElemId) continue;
-		
+
 		HLTError("Problem found with trigger record debug information %d"
 			" in data block %d (fDataType = '%s', fPtr = %p, fSize"
 			" = %u bytes) and trigger record %d in data block %d"
@@ -1324,7 +1327,7 @@ bool AliHLTMUONDataCheckerComponent::CheckDetElemIds(
 		);
 		result = false;
 	}
-	
+
 	return result;
 }
 
@@ -1356,9 +1359,9 @@ bool AliHLTMUONDataCheckerComponent::CheckDetElemIds(
 	/// \param  hit  The trigger record structure being checked.
 	/// \returns true if the detector element IDs are the same and false
 	///      otherwise.
-	
+
 	bool result = true;
-	
+
 	AliHLTUInt8_t chamber = 0xFF;
 	AliHLTUInt16_t detElemId = 0xFFFF;
 	AliHLTMUONUtils::UnpackRecHitFlags(hit.fFlags, chamber, detElemId);
@@ -1385,7 +1388,7 @@ bool AliHLTMUONDataCheckerComponent::CheckDetElemIds(
 		);
 		result = false;
 	}
-	
+
 	return result;
 }
 
@@ -1398,7 +1401,7 @@ namespace
 	class AliHLTMUONDecoderHandler : public AliHLTLogging
 	{
 	public:
-	
+
 		/// Default constructor
 		AliHLTMUONDecoderHandler() :
 			AliHLTLogging(),
@@ -1407,33 +1410,33 @@ namespace
 			fBlockNumber(0)
 		{
 		}
-		
+
 		/// Default destructor.
 		virtual ~AliHLTMUONDecoderHandler() {}
-		
+
 		/// Sets the DDL raw data block descriptor.
 		void SetDescriptor(const AliHLTComponentBlockData* b) { fDescriptor = b; }
-		
+
 		/// Sets the block number of the raw data block descriptor.
 		void SetBlockNumber(AliHLTUInt32_t n) { fBlockNumber = n; }
-		
+
 		/// Logs an error message describing the problem with the DDL raw data.
 		template <typename ErrorCode, class DecoderHandler>
 		void LogError(ErrorCode code, const void* location, DecoderHandler& handler);
-	
+
 	protected:
 		// Do not allow copying of this class.
 		/// Not implemented
 		AliHLTMUONDecoderHandler(const AliHLTMUONDecoderHandler& rhs); // copy constructor
 		/// Not implemented
 		AliHLTMUONDecoderHandler& operator = (const AliHLTMUONDecoderHandler& rhs); // assignment operator
-		
+
 		const void* fBufferStart; ///< Pointer to the start of the current DDL payload buffer.
 		const AliHLTComponentBlockData* fDescriptor; ///< Descriptor for the DDL raw data block corresponding to the buffer.
 		AliHLTUInt32_t fBlockNumber;  ///< The number / index of the block descriptor.
 	};
-	
-	
+
+
 	template <typename ErrorCode, class DecoderHandler>
 	void AliHLTMUONDecoderHandler::LogError(ErrorCode code, const void* location, DecoderHandler& handler)
 	{
@@ -1442,16 +1445,16 @@ namespace
 		/// \param location  A pointer to the location in the raw data buffer
 		///      where the problem was found.
 		/// \param handler  The decoder handler object.
-		
+
                 long bytepos = long(location) - long(fBufferStart);
-		
+
 		// create data type string.
 		char dataType[kAliHLTComponentDataTypefIDsize+kAliHLTComponentDataTypefOriginSize+2];
 		memset( dataType, 0, kAliHLTComponentDataTypefIDsize+kAliHLTComponentDataTypefOriginSize+2 );
 		strncat( dataType, fDescriptor->fDataType.fOrigin, kAliHLTComponentDataTypefOriginSize );
 		strncat( dataType, ":", 1 );
 		strncat( dataType, fDescriptor->fDataType.fID, kAliHLTComponentDataTypefIDsize );
-		
+
 		HLTError("Problem found with data block %d, fDataType = '%s',"
 			 " fPtr = %p and fSize = %u bytes."
 			 " Assuming this is a DDL raw data block."
@@ -1465,8 +1468,8 @@ namespace
 			bytepos
 		);
 	};
-	
-	
+
+
 	/**
 	 * Class for logging decoding errors when checking tracker raw DDL data.
 	 * Used in the AliHLTMUONDataCheckerComponent::CheckRawDataBlock method.
@@ -1484,77 +1487,77 @@ namespace
 			fCurrentBusPatch(0),
 			fDataProblems(false)
 		{}
-		
+
 		virtual ~AliHLTMUONTrackerDecoderHandler()
 		{
 			if (fDigits != NULL) delete [] fDigits;
 		}
-		
+
 		/// Structure to store raw data words found in the raw data.
 		struct AliDigit
 		{
 			UInt_t fBusPatchId;  ///< Bus patch ID for the data word.
 			UInt_t fDataWord;   ///< Raw data word found in the DDL payload.
 		};
-		
+
 		/// Returns the number of digits found.
 		UInt_t DigitCount() const { return fDigitCount; }
-		
+
 		/// Returns the array of digits found.
 		const AliDigit* Digits() const { return fDigits; }
-		
+
 		/// Returns true if there were problems with the data.
 		bool DataProblems() const { return fDataProblems; }
-		
+
 		// Methods inherited from AliMUONTrackerDDLDecoderEventHandler:
-		
+
 		/// Called for each new buffer.
 		void OnNewBuffer(const void* buffer, UInt_t bufferSize);
-		
+
 		/// Called for each new DSP header.
 		void OnNewDSP(const AliMUONDSPHeaderStruct* header, const void* /*data*/);
-		
+
 		/// Called for each new bus patch. Just marks the current bus patch ID.
 		void OnNewBusPatch(const AliMUONBusPatchHeaderStruct* header, const void* /*data*/)
 		{
 			fCurrentBusPatch = header->fBusPatchId;
 		}
-		
+
 		/// Called for each new data word found.
 		void OnData(UInt_t data, bool /*parityError*/);
-		
+
 		/// Logs an error message if there was a decoding problem with the DDL payload.
 		void OnError(ErrorCode code, const void* location)
 		{
 			fDataProblems = true;
 			LogError(code, location, *this);
 		}
-	
+
 	private:
-	
+
 		// Do not allow copying of this object.
 		/// Not implemented.
 		AliHLTMUONTrackerDecoderHandler(const AliHLTMUONTrackerDecoderHandler& obj);
 		/// Not implemented.
 		AliHLTMUONTrackerDecoderHandler& operator = (const AliHLTMUONTrackerDecoderHandler& obj);
-		
+
 		UInt_t fMaxDigits;  ///< Maximum number of digits that can be stored in fDigits.
 		UInt_t fDigitCount;  ///< The number of digits currently stored in fDigits.
 		AliDigit* fDigits;  ///< The array of digits found in the DDL data.
 		UInt_t fCurrentBusPatch;  ///< The current bus patch ID being processed.
 		bool fDataProblems;  ///< flag indicating there were problems with the data.
 	};
-	
-	
+
+
 	void AliHLTMUONTrackerDecoderHandler::OnNewBuffer(const void* buffer, UInt_t bufferSize)
 	{
 		/// Called for a new buffer. It will reset internal counters and
 		/// resize the digits array if necessary.
-		
+
 		fDataProblems = false;
 		fDigitCount = 0;
 		fBufferStart = buffer;
-		
+
 		// Resize the fDigits array to be able to store
 		// all the digits in the data buffer.
 		UInt_t maxSize = bufferSize / sizeof(UInt_t) + 1;
@@ -1578,8 +1581,8 @@ namespace
 			}
 		}
 	}
-	
-	
+
+
 	void AliHLTMUONTrackerDecoderHandler::OnNewDSP(
 			const AliMUONDSPHeaderStruct* header, const void* /*data*/
 		)
@@ -1592,7 +1595,7 @@ namespace
 			strncat( dataType, fDescriptor->fDataType.fOrigin, kAliHLTComponentDataTypefOriginSize );
 			strncat( dataType, ":", 1 );
 			strncat( dataType, fDescriptor->fDataType.fID, kAliHLTComponentDataTypefIDsize );
-				
+
 			HLTError("Problem found with data block %d, fDataType = '%s',"
 				" fPtr = %p and fSize = %u bytes."
 				" Assuming this is a tracker DDL raw data block."
@@ -1609,15 +1612,15 @@ namespace
 			return;
 		}
 	}
-	
-	
+
+
 	void AliHLTMUONTrackerDecoderHandler::OnData(UInt_t data, bool /*parityError*/)
 	{
 		/// Called for each new data word found. This method will add
 		/// these to the list of digits and check if they are not duplicated.
-		
+
 		assert( fDigits != NULL );
-		
+
 		if ((data & 0x60000000) != 0)
 		{
 			// create data type string.
@@ -1626,7 +1629,7 @@ namespace
 			strncat( dataType, fDescriptor->fDataType.fOrigin, kAliHLTComponentDataTypefOriginSize );
 			strncat( dataType, ":", 1 );
 			strncat( dataType, fDescriptor->fDataType.fID, kAliHLTComponentDataTypefIDsize );
-				
+
 			HLTError("Problem found with data block %d, fDataType = '%s',"
 				" fPtr = %p and fSize = %u bytes."
 				" Assuming this is a tracker DDL raw data block."
@@ -1642,7 +1645,7 @@ namespace
 			fDataProblems = true;
 			return;
 		}
-		
+
 		// Check if the data word + bus patch have been duplicated.
 		for (UInt_t i = 0; i < fDigitCount; i++)
 		{
@@ -1654,7 +1657,7 @@ namespace
 				strncat( dataType, fDescriptor->fDataType.fOrigin, kAliHLTComponentDataTypefOriginSize );
 				strncat( dataType, ":", 1 );
 				strncat( dataType, fDescriptor->fDataType.fID, kAliHLTComponentDataTypefIDsize );
-				
+
 				HLTError("Problem found with data block %d, fDataType = '%s',"
 					" fPtr = %p and fSize = %u bytes."
 					" Assuming this is a tracker DDL raw data block."
@@ -1670,7 +1673,7 @@ namespace
 				return;
 			}
 		}
-		
+
 		// Add the data word + bus patch to the list of decoded digits.
 		if (fDigitCount < fMaxDigits)
 		{
@@ -1679,7 +1682,7 @@ namespace
 			fDigitCount++;
 		}
 	}
-	
+
 	/**
 	 * Class for logging decoding errors when checking trigger raw DDL data.
 	 * Used in the AliHLTMUONDataCheckerComponent::CheckRawDataBlock method.
@@ -1689,20 +1692,20 @@ namespace
 	{
 	public:
 		// Methods inherited from AliMUONTriggerDDLDecoderEventHandler:
-		
+
 		/// Called for each new buffer.
 		void OnNewBuffer(const void* buffer, UInt_t /*bufferSize*/)
 		{
 			fBufferStart = buffer;
 		}
-		
+
 		/// Logs an error message if there was a decoding problem with the DDL payload.
 		void OnError(ErrorCode code, const void* location)
 		{
 			LogError(code, location, *this);
 		}
 	};
-	
+
 } // end of namespace
 
 
@@ -1712,7 +1715,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 	) const
 {
 	/// Checks the validity of a raw data block.
-	
+
 	bool result = true;
 
 	if (fIgnoreSpec)
@@ -1720,22 +1723,22 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 		HLTWarning("Not able to check DDL raw data if -ignorespec is specified.");
 		return false;
 	}
-	
+
 	bool ddl[22];
 	AliHLTMUONUtils::UnpackSpecBits(block.fSpecification, ddl);
-	
+
 	// Check that only one DDL was marked in the specification.
 	int ddlIndex = -1;
 	for (int i = 0; i < 22; i++)
 	{
 		if (not ddl[i]) continue;
-		
+
 		if (ddlIndex == -1)
 		{
 			ddlIndex = i;
 			continue;
 		}
-		
+
 		HLTError("Problem found with data block %d, fDataType = '%s',"
 			 " fPtr = %p and fSize = %u bytes."
 			 " Assuming this is a DDL raw data block."
@@ -1750,7 +1753,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 		);
 		result = false;
 	}
-	
+
 	// Check the DDL common data header.
 	AliHLTUInt32_t totalDDLSize = block.fSize;
 	AliHLTCDHWrapper header(block.fPtr);
@@ -1771,7 +1774,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 		);
 		return false;
 	}
-	
+
 	if (header.GetVersion() < 2)
 	{
 		HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -1787,7 +1790,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 		);
 		result = false;
 	}
-	
+
 	if (header.GetDataSize() != 0xFFFFFFFF and header.GetDataSize() != block.fSize)
 	{
 		HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -1805,12 +1808,12 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 		);
 		result = false;
 	}
-	
+
 	AliHLTUInt32_t payloadSize = block.fSize - header.GetHeaderSize();
 	const AliHLTUInt8_t* payload =
 		reinterpret_cast<const AliHLTUInt8_t*>(block.fPtr);
 	payload += header.GetHeaderSize();
-	
+
 	if (AliHLTMUONUtils::IsTriggerDDL(block.fSpecification))
 	{
 		bool scalarEvent = ((header.GetL1TriggerMessage() & 0x1) == 0x1);
@@ -1834,24 +1837,24 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 		decoder.GetHandler().SetBlockNumber(blockNumber);
 		result = decoder.Decode(payload, payloadSize);
 		if (decoder.GetHandler().DataProblems()) result = false;
-		
+
 		if (FetchMappingStores() == 0)  // are stores loaded?
 		{
 			Bool_t warn = kFALSE;
 			AliMpDDLStore* ddlStore = AliMpDDLStore::Instance(warn);
-			
+
 			// Check that the bus patch, manu ID and channel addresses are valid
 			// for each raw data word.
 			for (UInt_t i = 0; i < decoder.GetHandler().DigitCount(); i++)
 			{
 				UInt_t busPatchId = decoder.GetHandler().Digits()[i].fBusPatchId;
 				UInt_t dataWord = decoder.GetHandler().Digits()[i].fDataWord;
-				
+
 				UShort_t manuId; UChar_t channelId; UShort_t adc;
 				AliMUONTrackerDDLDecoderEventHandler::UnpackADC(
 						dataWord, manuId, channelId, adc
 					);
-				
+
 				// Check if the bus patch is valid.
 				AliMpBusPatch* busPatch = ddlStore->GetBusPatch(busPatchId, warn);
 				if (busPatch == NULL)
@@ -1870,7 +1873,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 					result = false;
 					continue;
 				}
-				
+
 				// We can check that the bus patch is for the DDL
 				// which is also indicated by the specification bits.
 				if (not fIgnoreSpec and busPatch->GetDdlId() != ddlIndex)
@@ -1893,7 +1896,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 					result = false;
 					continue;
 				}
-				
+
 				// Check if the MANU ID is valid.
 				if (not busPatch->HasManu(manuId))
 				{
@@ -1912,7 +1915,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 					result = false;
 					continue;
 				}
-				
+
 				// Now try to fetch the detector element to check the MANU channel.
 				AliMpDetElement* de = ddlStore->GetDetElement(busPatch->GetDEId(), warn);
 				if (de == NULL)
@@ -1931,7 +1934,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 					result = false;
 					continue;
 				}
-				
+
 				if (not de->IsConnectedChannel(manuId, channelId))
 				{
 					// Just a warning because this is marked not
@@ -1952,7 +1955,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 					result = false;
 					continue;
 				}
-				
+
 				// Need to also load the correct segmentation to check the channel.
 				const AliMpVSegmentation* seg =
 					AliMpSegmentation::Instance()->GetMpSegmentationByElectronics(
@@ -1967,7 +1970,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 					result = false;
 					continue;
 				}
-				
+
 #ifndef HAVE_NOT_MUON_ALIMPPAD_GETPOSITION
 				AliMpPad pad = seg->PadByLocation(manuId, channelId, warn);
 #else // old AliMpPad functionality < r 31742
@@ -2017,7 +2020,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRawDataBlock(
 		);
 		result = false;
 	}
-	
+
 	return result;
 }
 
@@ -2031,31 +2034,31 @@ bool AliHLTMUONDataCheckerComponent::CheckTriggerRecordsBlock(
 
 	bool result = true;
 	const char* name = "trigger records";
-	
+
 	if (not fIgnoreSpec)
 	{
 		if (not IsFromTriggerOnly(block, blockNumber, name))
 			result = false;
 	}
-	
+
 	AliHLTMUONTriggerRecordsBlockReader inblock(block.fPtr, block.fSize);
 	if (not CheckBlockIntegrity(block, blockNumber, inblock, name))
 		return false;
-	
+
 	bool ddl[22];
 	AliHLTMUONUtils::UnpackSpecBits(block.fSpecification, ddl);
-	
+
 	// Min and max allowed chamber numbers for hits:
 	Int_t minCh = AliMUONConstants::NCh() - AliMUONConstants::NTriggerCh();
 	Int_t maxCh = AliMUONConstants::NCh() - 1;
-	
+
 	for (AliHLTUInt32_t i = 0; i < inblock.Nentries(); i++)
 	{
 		// Check that each hit in each trigger record has a reasonable coordinate.
 		AliHLTMUONParticleSign sign;
 		bool hitset[4];
 		AliHLTMUONUtils::UnpackTriggerRecordFlags(inblock[i].fFlags, sign, hitset);
-	
+
 		for (Int_t j = 0; j < 4; j++)  // loop over 4 trigger chamber hits.
 		{
 			if (not hitset[i]) continue; // ignore hits that are not initialised.
@@ -2065,7 +2068,7 @@ bool AliHLTMUONDataCheckerComponent::CheckTriggerRecordsBlock(
 				);
 			if (not hitOk) result = false;
 		}
-		
+
 		// We can also check the momentum vector.
 		bool momOk = IsMomentumVectorOk(
 				block, blockNumber, name, i,
@@ -2073,7 +2076,7 @@ bool AliHLTMUONDataCheckerComponent::CheckTriggerRecordsBlock(
 			);
 		if (not momOk) result = false;
 	}
-	
+
 	// Need to check that no entries have duplicated data but with a different
 	// ID number.
 	for (AliHLTUInt32_t i = 0; i < inblock.Nentries(); i++)
@@ -2084,7 +2087,7 @@ bool AliHLTMUONDataCheckerComponent::CheckTriggerRecordsBlock(
 		{
 			AliHLTMUONTriggerRecordStruct tj = inblock[j];
 			tj.fId = ti.fId;
-			
+
 			if (ti == tj)
 			{
 				HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -2103,7 +2106,7 @@ bool AliHLTMUONDataCheckerComponent::CheckTriggerRecordsBlock(
 			}
 		}
 	}
-	
+
 	return result;
 }
 
@@ -2114,23 +2117,23 @@ bool AliHLTMUONDataCheckerComponent::CheckTrigRecsDebugBlock(
 	) const
 {
 	/// Checks the validity of a trigger records debug block.
-	
+
 	bool result = true;
 	const char* name = "trigger records debug information";
-	
+
 	if (not fIgnoreSpec)
 	{
 		if (not IsFromTriggerOnly(block, blockNumber, name))
 			result = false;
 	}
-	
+
 	AliHLTMUONTrigRecsDebugBlockReader inblock(block.fPtr, block.fSize);
 	if (not CheckBlockIntegrity(block, blockNumber, inblock, name))
 		return false;
-	
+
 	bool ddl[22];
 	AliHLTMUONUtils::UnpackSpecBits(block.fSpecification, ddl);
-	
+
 	// Check that each detector element ID is valid and the corresponding DDL
 	// bit is set in the data block specification.
 	if (FetchMappingStores() == 0)  // are stores loaded?
@@ -2161,7 +2164,7 @@ bool AliHLTMUONDataCheckerComponent::CheckTrigRecsDebugBlock(
 				result = false;
 				continue;
 			}
-			
+
 			// Check that the chamber number from the detector element number
 			// has the expected value.
 			Int_t chamber = AliMpDEManager::GetChamberId(trig.fDetElemId[j], warn);
@@ -2185,7 +2188,7 @@ bool AliHLTMUONDataCheckerComponent::CheckTrigRecsDebugBlock(
 				);
 				result = false;
 			}
-			
+
 			if (fIgnoreSpec) continue;
 			if (0 <= de->GetDdlId() and de->GetDdlId() < 22 and not ddl[de->GetDdlId()])
 			{
@@ -2217,7 +2220,7 @@ bool AliHLTMUONDataCheckerComponent::CheckTrigRecsDebugBlock(
 		);
 		result = false;
 	}
-	
+
 	// Need to check that no entries have duplicated data but with a different
 	// ID number.
 	for (AliHLTUInt32_t i = 0; i < inblock.Nentries(); i++)
@@ -2228,7 +2231,7 @@ bool AliHLTMUONDataCheckerComponent::CheckTrigRecsDebugBlock(
 		{
 			AliHLTMUONTrigRecInfoStruct tj = inblock[j];
 			tj.fTrigRecId = ti.fTrigRecId;
-			
+
 			if (ti == tj)
 			{
 				HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -2247,14 +2250,14 @@ bool AliHLTMUONDataCheckerComponent::CheckTrigRecsDebugBlock(
 				result = false;
 			}
 		}
-		
+
 		// Can also check that the value of the fZmiddle and fBl.
 		bool paramsOk = AreMomentumCalcParamsOk(
 				block, blockNumber, name, i, ti.fZmiddle, ti.fBl
 			);
 		if (not paramsOk) result = false;
 	}
-	
+
 	return result;
 }
 
@@ -2268,20 +2271,20 @@ bool AliHLTMUONDataCheckerComponent::CheckRecHitsBlock(
 
 	bool result = true;
 	const char* name = "reconstructed hits";
-	
+
 	if (not fIgnoreSpec)
 	{
 		if (not IsFromTrackerOnly(block, blockNumber, name))
 			result = false;
 	}
-	
+
 	AliHLTMUONRecHitsBlockReader inblock(block.fPtr, block.fSize);
 	if (not CheckBlockIntegrity(block, blockNumber, inblock, name))
 		return false;
-	
+
 	bool ddl[22];
 	AliHLTMUONUtils::UnpackSpecBits(block.fSpecification, ddl);
-	
+
 	// Check that each hit has a reasonable coordinate.
 	Int_t minCh = 0;
 	Int_t maxCh = AliMUONConstants::NTrackingCh() - 1;
@@ -2293,7 +2296,7 @@ bool AliHLTMUONDataCheckerComponent::CheckRecHitsBlock(
 			);
 		if (not hitOk) result = false;
 	}
-	
+
 	return result;
 }
 
@@ -2307,20 +2310,20 @@ bool AliHLTMUONDataCheckerComponent::CheckClustersBlock(
 
 	bool result = true;
 	const char* name = "clusters";
-	
+
 	if (not fIgnoreSpec)
 	{
 		if (not IsFromTrackerOnly(block, blockNumber, name))
 			result = false;
 	}
-	
+
 	AliHLTMUONClustersBlockReader inblock(block.fPtr, block.fSize);
 	if (not CheckBlockIntegrity(block, blockNumber, inblock, name))
 		return false;
-	
+
 	bool ddl[22];
 	AliHLTMUONUtils::UnpackSpecBits(block.fSpecification, ddl);
-	
+
 	if (FetchMappingStores() == 0)  // are stores loaded?
 	{
 		Bool_t warn = kFALSE;
@@ -2328,7 +2331,7 @@ bool AliHLTMUONDataCheckerComponent::CheckClustersBlock(
 		for (AliHLTUInt32_t i = 0; i < inblock.Nentries(); i++)
 		{
 			const AliHLTMUONClusterStruct& cluster = inblock[i];
-			
+
 			// Check that the detector element ID is valid.
 			AliMpDetElement* de = store->GetDetElement(cluster.fDetElemId, warn);
 			if (de == NULL)
@@ -2349,7 +2352,7 @@ bool AliHLTMUONDataCheckerComponent::CheckClustersBlock(
 				result = false;
 				continue;
 			}
-			
+
 			// Check that the chamber number found from the hit coordinate and
 			// that from the detector element number are the same.
 			Int_t chamberFromHit = AliMUONConstants::ChamberNumber(cluster.fHit.fZ, warn);
@@ -2379,7 +2382,7 @@ bool AliHLTMUONDataCheckerComponent::CheckClustersBlock(
 				);
 				result = false;
 			}
-			
+
 			// Make sure the corresponding DDL bit is set in the data
 			// block specification.
 			if (fIgnoreSpec) continue;
@@ -2404,7 +2407,7 @@ bool AliHLTMUONDataCheckerComponent::CheckClustersBlock(
 				);
 				result = false;
 			}
-			
+
 			// Check that the total cluster charge is a reasonable value.
 			if ((cluster.fChargeB + cluster.fChargeNB)< 0 and 1e4 < (cluster.fChargeB + cluster.fChargeNB))
 			{
@@ -2433,11 +2436,11 @@ bool AliHLTMUONDataCheckerComponent::CheckClustersBlock(
 		);
 		result = false;
 	}
-	
+
 	// Min and max chamber numbers allowed for the cluster hits.
 	Int_t minCh = 0;
 	Int_t maxCh = AliMUONConstants::NTrackingCh() - 1;
-	
+
 	for (AliHLTUInt32_t i = 0; i < inblock.Nentries(); i++)
 	{
 		// Need to check that no cluster data has duplicated data but with
@@ -2448,7 +2451,7 @@ bool AliHLTMUONDataCheckerComponent::CheckClustersBlock(
 		{
 			AliHLTMUONClusterStruct cj = inblock[j];
 			cj.fId = ci.fId;
-			
+
 			if (ci == cj)
 			{
 				HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -2466,7 +2469,7 @@ bool AliHLTMUONDataCheckerComponent::CheckClustersBlock(
 				result = false;
 			}
 		}
-		
+
 		// Check that the hit structure in the cluster corresponds
 		// to a tracker chamber.
 		bool hitOk = IsHitCoordinateOk(
@@ -2475,7 +2478,7 @@ bool AliHLTMUONDataCheckerComponent::CheckClustersBlock(
 			);
 		if (not hitOk) result = false;
 	}
-	
+
 	return result;
 }
 
@@ -2489,29 +2492,29 @@ bool AliHLTMUONDataCheckerComponent::CheckChannelsBlock(
 
 	bool result = true;
 	const char* name = "channels";
-	
+
 	if (not fIgnoreSpec)
 	{
 		if (not IsFromTrackerOnly(block, blockNumber, name))
 			result = false;
 	}
-	
+
 	AliHLTMUONChannelsBlockReader inblock(block.fPtr, block.fSize);
 	if (not CheckBlockIntegrity(block, blockNumber, inblock, name))
 		return false;
-	
+
 	bool ddl[22];
 	AliHLTMUONUtils::UnpackSpecBits(block.fSpecification, ddl);
-	
+
 	if (FetchMappingStores() == 0)  // are stores loaded?
 	{
 		Bool_t warn = kFALSE;
 		AliMpDDLStore* store = AliMpDDLStore::Instance(warn);
-		
+
 		for (AliHLTUInt32_t i = 0; i < inblock.Nentries(); i++)
 		{
 			const AliHLTMUONChannelStruct& channel = inblock[i];
-			
+
 			// Check if the bus patch is valid.
 			AliMpBusPatch* busPatch = store->GetBusPatch(channel.fBusPatch, warn);
 			if (busPatch == NULL)
@@ -2531,7 +2534,7 @@ bool AliHLTMUONDataCheckerComponent::CheckChannelsBlock(
 				result = false;
 				continue;
 			}
-			
+
 			// We can check that the bus patch is for a DDL
 			// which is also indicated by the specification bits.
 			if (not fIgnoreSpec and (
@@ -2558,7 +2561,7 @@ bool AliHLTMUONDataCheckerComponent::CheckChannelsBlock(
 				result = false;
 				continue;
 			}
-			
+
 			// Check if the MANU ID is valid.
 			if (not busPatch->HasManu(channel.fManu))
 			{
@@ -2578,7 +2581,7 @@ bool AliHLTMUONDataCheckerComponent::CheckChannelsBlock(
 				result = false;
 				continue;
 			}
-			
+
 			// Now try to fetch the detector element to check the MANU channel.
 			AliMpDetElement* de = store->GetDetElement(busPatch->GetDEId(), warn);
 			if (de == NULL)
@@ -2598,7 +2601,7 @@ bool AliHLTMUONDataCheckerComponent::CheckChannelsBlock(
 				result = false;
 				continue;
 			}
-			
+
 			if (not de->IsConnectedChannel(channel.fManu, channel.fChannelAddress))
 			{
 				// Just a warning because this is marked not
@@ -2620,7 +2623,7 @@ bool AliHLTMUONDataCheckerComponent::CheckChannelsBlock(
 				result = false;
 				continue;
 			}
-			
+
 			// Need to also load the correct segmentation to check the channel.
 			const AliMpVSegmentation* seg =
 				AliMpSegmentation::Instance()->GetMpSegmentationByElectronics(
@@ -2635,7 +2638,7 @@ bool AliHLTMUONDataCheckerComponent::CheckChannelsBlock(
 				result = false;
 				continue;
 			}
-			
+
 			AliMpPad pad = seg->PadByLocation(
 #ifndef HAVE_NOT_MUON_ALIMPPAD_GETPOSITION
 					channel.fManu, channel.fChannelAddress,
@@ -2672,7 +2675,7 @@ bool AliHLTMUONDataCheckerComponent::CheckChannelsBlock(
 		);
 		result = false;
 	}
-	
+
 	// Need to check that no channel data has duplicated data but with
 	// a different cluster ID number.
 	for (AliHLTUInt32_t i = 0; i < inblock.Nentries(); i++)
@@ -2683,7 +2686,7 @@ bool AliHLTMUONDataCheckerComponent::CheckChannelsBlock(
 		{
 			AliHLTMUONChannelStruct cj = inblock[j];
 			cj.fClusterId = ci.fClusterId;
-			
+
 			if (ci == cj)
 			{
 				HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -2702,7 +2705,7 @@ bool AliHLTMUONDataCheckerComponent::CheckChannelsBlock(
 			}
 		}
 	}
-	
+
 	return result;
 }
 
@@ -2716,20 +2719,20 @@ bool AliHLTMUONDataCheckerComponent::CheckMansoTracksBlock(
 
 	bool result = true;
 	const char* name = "Manso tracks";
-	
+
 	if (not fIgnoreSpec)
 	{
 		if (not IsSpecificationValid(block, blockNumber, name))
 			result = false;
 	}
-	
+
 	AliHLTMUONMansoTracksBlockReader inblock(block.fPtr, block.fSize);
 	if (not CheckBlockIntegrity(block, blockNumber, inblock, name))
 		return false;
-	
+
 	bool ddl[22];
 	AliHLTMUONUtils::UnpackSpecBits(block.fSpecification, ddl);
-	
+
 	for (AliHLTUInt32_t i = 0; i < inblock.Nentries(); i++)
 	{
 		// Need to check that no entries have duplicated data but with
@@ -2740,7 +2743,7 @@ bool AliHLTMUONDataCheckerComponent::CheckMansoTracksBlock(
 		{
 			AliHLTMUONMansoTrackStruct tj = inblock[j];
 			tj.fId = ti.fId;
-			
+
 			if (ti == tj)
 			{
 				HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -2758,11 +2761,11 @@ bool AliHLTMUONDataCheckerComponent::CheckMansoTracksBlock(
 				result = false;
 			}
 		}
-		
+
 		bool trackOk = IsMansoTrackOk(block, blockNumber, name, i, ti, ddl);
 		if (not trackOk) result = false;
 	}
-	
+
 	return result;
 }
 
@@ -2776,20 +2779,20 @@ bool AliHLTMUONDataCheckerComponent::CheckMansoCandidatesBlock(
 
 	bool result = true;
 	const char* name = "Manso track candidates";
-	
+
 	if (not fIgnoreSpec)
 	{
 		if (not IsSpecificationValid(block, blockNumber, name))
 			result = false;
 	}
-	
+
 	AliHLTMUONMansoCandidatesBlockReader inblock(block.fPtr, block.fSize);
 	if (not CheckBlockIntegrity(block, blockNumber, inblock, name))
 		return false;
-	
+
 	bool ddl[22];
 	AliHLTMUONUtils::UnpackSpecBits(block.fSpecification, ddl);
-	
+
 	for (AliHLTUInt32_t i = 0; i < inblock.Nentries(); i++)
 	{
 		// Need to check that no entries have duplicated data but with a
@@ -2800,7 +2803,7 @@ bool AliHLTMUONDataCheckerComponent::CheckMansoCandidatesBlock(
 		{
 			AliHLTMUONMansoCandidateStruct tj = inblock[j];
 			tj.fTrack.fId = ti.fTrack.fId;
-			
+
 			if (ti == tj)
 			{
 				HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -2819,17 +2822,17 @@ bool AliHLTMUONDataCheckerComponent::CheckMansoCandidatesBlock(
 				result = false;
 			}
 		}
-		
+
 		bool trackOk = IsMansoTrackOk(block, blockNumber, name, i, ti.fTrack, ddl);
 		if (not trackOk) result = false;
-		
+
 		// Check that each ROI has a centre point somewhere on the correct
 		// corresponding chamber and that the Radius is not bigger thant
 		// the diameter of the chamber which would be pointless.
 		for (AliHLTInt32_t j = 0; j < 4; j++)
 		{
 			if (ti.fRoI[j].fRadius == -1) continue; // Ignore invalid ROIs
-			
+
 			Int_t chamber = AliMUONConstants::ChamberNumber(
 					ti.fRoI[j].fZ, false  // false = do not warn.
 				);
@@ -2852,7 +2855,7 @@ bool AliHLTMUONDataCheckerComponent::CheckMansoCandidatesBlock(
 				);
 				result = false;
 			}
-			
+
 			double x = ti.fRoI[j].fX;
 			double y = ti.fRoI[j].fY;
 			double r = sqrt(x*x + y*y);
@@ -2878,7 +2881,7 @@ bool AliHLTMUONDataCheckerComponent::CheckMansoCandidatesBlock(
 				);
 				result = false;
 			}
-			
+
 			if (ti.fRoI[j].fRadius > AliMUONConstants::Dmax((j+6)/2))
 			{
 				// Just a warning since this is not a data integrity problem
@@ -2903,7 +2906,7 @@ bool AliHLTMUONDataCheckerComponent::CheckMansoCandidatesBlock(
 			}
 		}
 	}
-	
+
 	return result;
 }
 
@@ -2917,20 +2920,20 @@ bool AliHLTMUONDataCheckerComponent::CheckTracksBlock(
 
 	bool result = true;
 	const char* name = "tracks";
-	
+
 	if (not fIgnoreSpec)
 	{
 		if (not IsSpecificationValid(block, blockNumber, name))
 			result = false;
 	}
-	
+
 	AliHLTMUONTracksBlockReader inblock(block.fPtr, block.fSize);
 	if (not CheckBlockIntegrity(block, blockNumber, inblock, name))
 		return false;
-	
+
 	bool ddl[22];
 	AliHLTMUONUtils::UnpackSpecBits(block.fSpecification, ddl);
-	
+
 	for (AliHLTUInt32_t i = 0; i < inblock.Nentries(); i++)
 	{
 		// Need to check that no entries have duplicated data but with
@@ -2941,7 +2944,7 @@ bool AliHLTMUONDataCheckerComponent::CheckTracksBlock(
 		{
 			AliHLTMUONTrackStruct tj = inblock[j];
 			tj.fId = ti.fId;
-			
+
 			if (ti == tj)
 			{
 				HLTError("Problem found with data block %d, fDataType = '%s',"
@@ -2959,11 +2962,11 @@ bool AliHLTMUONDataCheckerComponent::CheckTracksBlock(
 				result = false;
 			}
 		}
-		
+
 		bool trackOk = IsTrackOk(block, blockNumber, name, i, ti, ddl);
 		if (not trackOk) result = false;
 	}
-	
+
 	return result;
 }
 
@@ -2977,17 +2980,17 @@ bool AliHLTMUONDataCheckerComponent::CheckSinglesDecisionBlock(
 
 	bool result = true;
 	const char* name = "singles decision";
-	
+
 	if (not fIgnoreSpec)
 	{
 		if (not IsSpecificationValid(block, blockNumber, name))
 			result = false;
 	}
-	
+
 	AliHLTMUONSinglesDecisionBlockReader inblock(block.fPtr, block.fSize);
 	if (not CheckBlockIntegrity(block, blockNumber, inblock, name))
 		return false;
-	
+
 	return result;
 }
 
@@ -3001,17 +3004,17 @@ bool AliHLTMUONDataCheckerComponent::CheckPairsDecisionBlock(
 
 	bool result = true;
 	const char* name = "pairs decision";
-	
+
 	if (not fIgnoreSpec)
 	{
 		if (not IsSpecificationValid(block, blockNumber, name))
 			result = false;
 	}
-	
+
 	AliHLTMUONPairsDecisionBlockReader inblock(block.fPtr, block.fSize);
 	if (not CheckBlockIntegrity(block, blockNumber, inblock, name))
 		return false;
-	
+
 	return result;
 }
 
@@ -3028,7 +3031,7 @@ bool AliHLTMUONDataCheckerComponent::AreMomentaCompatible(
 	/// Checks to see if the two momenta vectors are compatible or not.
 	/// The vectors should not have an angle more than 10 degrees between
 	/// them and their magnitudes should not be more different than 50%.
-	
+
 	double p1 = sqrt(double(px1)*double(px1) + double(py1)*double(py1) + double(pz1)*double(pz1));
 	double p2 = sqrt(double(px2)*double(px2) + double(py2)*double(py2) + double(pz2)*double(pz2));
 	if (p1 == 0 and p2 == 0) return true;
@@ -3168,7 +3171,7 @@ void AliHLTMUONDataCheckerComponent::MarkBlock(
 {
 	/// Tries to find the 'blockToMark' in the list of blocks and sets the
 	/// corresponding 'blockOk' flag to false.
-	
+
 	for (AliHLTUInt32_t i = 0; i < blockCount; i++)
 	{
 		if (&blocks[i] == blockToMark)
@@ -3221,7 +3224,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 	/// 6) Check that the trigger decision scalars are reasonable.
 	/// 7) Check that the detector element IDs are the same between rec
 	/// hits and clusters / trigger record debug blocks.
-	
+
 	// Check if all the trigger record identifiers and data are unique.
 	for (AliHLTUInt32_t bi = 0; bi < trigRecBlocksCount; bi++)
 	{
@@ -3231,7 +3234,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 		{
 			AliHLTMUONTriggerRecordsBlockReader inblockj(trigRecBlocks[bj]->fPtr, trigRecBlocks[bj]->fSize);
 			if (not inblockj.BufferSizeOk()) continue;
-			
+
 			for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 			for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 			{
@@ -3258,7 +3261,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 					MarkBlock(blocks, blockOk, blockCount, trigRecBlocks[bi]);
 					MarkBlock(blocks, blockOk, blockCount, trigRecBlocks[bj]);
 				}
-				
+
 				AliHLTMUONTriggerRecordStruct a = inblocki[i];
 				AliHLTMUONTriggerRecordStruct b = inblockj[j];
 				a.fId = b.fId = -1;
@@ -3288,28 +3291,28 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 			}
 		}
 	}
-	
+
 	for (AliHLTUInt32_t bi = 0; bi < trigRecDebugBlocksCount; bi++)
 	{
 		AliHLTMUONTrigRecsDebugBlockReader inblocki(trigRecDebugBlocks[bi]->fPtr, trigRecDebugBlocks[bi]->fSize);
 		if (not inblocki.BufferSizeOk()) continue;
-		
+
 		for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 		{
 			// Check if all the trigger record IDs in the debug information structures exist.
 			bool found = false;
-			
+
 			for (AliHLTUInt32_t bj = 0; bj < trigRecBlocksCount and not found; bj++)
 			{
 				AliHLTMUONTriggerRecordsBlockReader inblockj(trigRecBlocks[bj]->fPtr, trigRecBlocks[bj]->fSize);
 				if (not inblockj.BufferSizeOk()) continue;
-				
+
 				for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 				{
 					if (inblocki[i].fTrigRecId == inblockj[j].fId)
 					{
 						found = true;
-						
+
 						// Since we found the corresponding trigger record,
 						// check if the detector element IDs are the same.
 						bool deOk = CheckDetElemIds(
@@ -3321,12 +3324,12 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 							MarkBlock(blocks, blockOk, blockCount, trigRecDebugBlocks[bi]);
 							MarkBlock(blocks, blockOk, blockCount, trigRecBlocks[bj]);
 						}
-						
+
 						break;
 					}
 				}
 			}
-			
+
 			if (not found)
 			{
 				HLTError("Problem found with trigger record debug information"
@@ -3344,13 +3347,13 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				MarkBlock(blocks, blockOk, blockCount, trigRecDebugBlocks[bi]);
 			}
 		}
-		
+
 		// Check if all the trigger record debug information structures are unique.
 		for (AliHLTUInt32_t bj = bi+1; bj < trigRecDebugBlocksCount; bj++)
 		{
 			AliHLTMUONTrigRecsDebugBlockReader inblockj(trigRecDebugBlocks[bj]->fPtr, trigRecDebugBlocks[bj]->fSize);
 			if (not inblockj.BufferSizeOk()) continue;
-			
+
 			for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 			for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 			{
@@ -3385,7 +3388,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 			}
 		}
 	}
-	
+
 	// Check that all the reconstructed hits are unique.
 	for (AliHLTUInt32_t bi = 0; bi < hitBlocksCount; bi++)
 	{
@@ -3395,7 +3398,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 		{
 			AliHLTMUONRecHitsBlockReader inblockj(hitBlocks[bj]->fPtr, hitBlocks[bj]->fSize);
 			if (not inblockj.BufferSizeOk()) continue;
-			
+
 			for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 			for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 			{
@@ -3425,28 +3428,28 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 			}
 		}
 	}
-	
+
 	for (AliHLTUInt32_t bi = 0; bi < clusterBlocksCount; bi++)
 	{
 		AliHLTMUONClustersBlockReader inblocki(clusterBlocks[bi]->fPtr, clusterBlocks[bi]->fSize);
 		if (not inblocki.BufferSizeOk()) continue;
-		
+
 		for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 		{
 			// Check if all the reconstructed hit coordinates in the cluster structures exist.
 			bool found = false;
-			
+
 			for (AliHLTUInt32_t bj = 0; bj < hitBlocksCount and not found; bj++)
 			{
 				AliHLTMUONRecHitsBlockReader inblockj(hitBlocks[bj]->fPtr, hitBlocks[bj]->fSize);
 				if (not inblockj.BufferSizeOk()) continue;
-				
+
 				for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 				{
 					if (inblocki[i].fHit == inblockj[j])
 					{
 						found = true;
-						
+
 						// Since we found the corresponding cluster,
 						// check if the detector element IDs are the same.
 						bool deOk = CheckDetElemIds(
@@ -3458,12 +3461,12 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 							MarkBlock(blocks, blockOk, blockCount, clusterBlocks[bi]);
 							MarkBlock(blocks, blockOk, blockCount, hitBlocks[bj]);
 						}
-						
+
 						break;
 					}
 				}
 			}
-			
+
 			// If the hit was not found then it should be nil.
 			if (not found and (inblocki[i].fHit != AliHLTMUONConstants::NilRecHitStruct()))
 			{
@@ -3483,7 +3486,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				);
 				MarkBlock(blocks, blockOk, blockCount, clusterBlocks[bi]);
 			}
-			
+
 			// Check that the fNchannelsB value is correct.
 			// First count the number of channels found in the channels block that
 			// correspond to the cluster. Do this for the bending and non-bending planes.
@@ -3493,7 +3496,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 			{
 				AliHLTMUONChannelsBlockReader inblockj(channelBlocks[bj]->fPtr, channelBlocks[bj]->fSize);
 				if (not inblockj.BufferSizeOk()) continue;
-				
+
 				for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 				{
 					if (inblocki[i].fId != inblockj[j].fClusterId) continue;
@@ -3503,7 +3506,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 						countNB++;
 				}
 			}
-			
+
 			if (inblocki[i].fNchannelsB != countB)
 			{
 				HLTWarning("Problem found with cluster data block %d,"
@@ -3521,7 +3524,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				);
 				MarkBlock(blocks, blockOk, blockCount, clusterBlocks[bi]);
 			}
-			
+
 			if (inblocki[i].fNchannelsNB != countNB)
 			{
 				HLTWarning("Problem found with cluster data block %d,"
@@ -3540,14 +3543,14 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				MarkBlock(blocks, blockOk, blockCount, clusterBlocks[bi]);
 			}
 		}
-		
+
 		// Check if all the cluster structures are unique up to the identifier
 		// and have unique identifiers.
 		for (AliHLTUInt32_t bj = bi+1; bj < clusterBlocksCount; bj++)
 		{
 			AliHLTMUONClustersBlockReader inblockj(clusterBlocks[bj]->fPtr, clusterBlocks[bj]->fSize);
 			if (not inblockj.BufferSizeOk()) continue;
-			
+
 			for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 			for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 			{
@@ -3574,7 +3577,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 					MarkBlock(blocks, blockOk, blockCount, clusterBlocks[bi]);
 					MarkBlock(blocks, blockOk, blockCount, clusterBlocks[bj]);
 				}
-				
+
 				AliHLTMUONClusterStruct a = inblocki[i];
 				AliHLTMUONClusterStruct b = inblockj[j];
 				a.fId = b.fId = -1;
@@ -3604,22 +3607,22 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 			}
 		}
 	}
-	
+
 	for (AliHLTUInt32_t bi = 0; bi < channelBlocksCount; bi++)
 	{
 		AliHLTMUONChannelsBlockReader inblocki(channelBlocks[bi]->fPtr, channelBlocks[bi]->fSize);
 		if (not inblocki.BufferSizeOk()) continue;
-		
+
 		// Check if all the cluster IDs in the channel structures exist.
 		for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 		{
 			bool found = false;
-			
+
 			for (AliHLTUInt32_t bj = 0; bj < clusterBlocksCount and not found; bj++)
 			{
 				AliHLTMUONClustersBlockReader inblockj(clusterBlocks[bj]->fPtr, clusterBlocks[bj]->fSize);
 				if (not inblockj.BufferSizeOk()) continue;
-				
+
 				for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 				{
 					if (inblocki[i].fClusterId == inblockj[j].fId)
@@ -3629,7 +3632,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 					}
 				}
 			}
-			
+
 			if (not found)
 			{
 				HLTError("Problem found with channel"
@@ -3647,13 +3650,13 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				MarkBlock(blocks, blockOk, blockCount, channelBlocks[bi]);
 			}
 		}
-		
+
 		// Check if all the channel structures are unique up to the cluster ID.
 		for (AliHLTUInt32_t bj = bi+1; bj < channelBlocksCount; bj++)
 		{
 			AliHLTMUONChannelsBlockReader inblockj(channelBlocks[bj]->fPtr, channelBlocks[bj]->fSize);
 			if (not inblockj.BufferSizeOk()) continue;
-			
+
 			for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 			for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 			{
@@ -3686,27 +3689,27 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 			}
 		}
 	}
-	
+
 	// Will need the total number of tracks later for comparison to trigger scalars.
 	AliHLTUInt32_t totalTrackCount = 0;
-	
+
 	for (AliHLTUInt32_t bi = 0; bi < mansoTrackBlocksCount; bi++)
 	{
 		AliHLTMUONMansoTracksBlockReader inblocki(mansoTrackBlocks[bi]->fPtr, mansoTrackBlocks[bi]->fSize);
 		if (not inblocki.BufferSizeOk()) continue;
-		
+
 		totalTrackCount += inblocki.Nentries();
-		
+
 		// Check if all the trigger record IDs in the Manso track structures exist.
 		for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 		{
 			bool found = false;
-			
+
 			for (AliHLTUInt32_t bj = 0; bj < trigRecBlocksCount and not found; bj++)
 			{
 				AliHLTMUONTriggerRecordsBlockReader inblockj(trigRecBlocks[bj]->fPtr, trigRecBlocks[bj]->fSize);
 				if (not inblockj.BufferSizeOk()) continue;
-				
+
 				for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 				{
 					if (inblocki[i].fTrigRec == inblockj[j].fId)
@@ -3735,13 +3738,13 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 							);
 							MarkBlock(blocks, blockOk, blockCount, mansoTrackBlocks[bi]);
 						}
-						
+
 						found = true;
 						break;
 					}
 				}
 			}
-			
+
 			if (not found)
 			{
 				HLTError("Problem found with Manso track"
@@ -3759,24 +3762,24 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				MarkBlock(blocks, blockOk, blockCount, mansoTrackBlocks[bi]);
 			}
 		}
-		
+
 		// Check if all the hits in the Manso track structures exist.
 		for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 		{
 			AliHLTMUONParticleSign sign;
 			bool hitset[4];
 			AliHLTMUONUtils::UnpackMansoTrackFlags(inblocki[i].fFlags, sign, hitset);
-			
+
 			for (AliHLTUInt32_t n = 0; n < 4; n++)
 			{
 				if (not hitset[n]) continue;
 				bool found = false;
-				
+
 				for (AliHLTUInt32_t bj = 0; bj < hitBlocksCount and not found; bj++)
 				{
 					AliHLTMUONRecHitsBlockReader inblockj(hitBlocks[bj]->fPtr, hitBlocks[bj]->fSize);
 					if (not inblockj.BufferSizeOk()) continue;
-					
+
 					for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 					{
 						if (inblocki[i].fHit[n] == inblockj[j])
@@ -3786,7 +3789,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 						}
 					}
 				}
-				
+
 				if (not found)
 				{
 					HLTError("Problem found with Manso track"
@@ -3805,14 +3808,14 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				}
 			}
 		}
-		
+
 		// Check if all the Manso track structures are unique up to the ID and
 		// have unique identifiers.
 		for (AliHLTUInt32_t bj = bi+1; bj < mansoTrackBlocksCount; bj++)
 		{
 			AliHLTMUONMansoTracksBlockReader inblockj(mansoTrackBlocks[bj]->fPtr, mansoTrackBlocks[bj]->fSize);
 			if (not inblockj.BufferSizeOk()) continue;
-			
+
 			for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 			for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 			{
@@ -3839,7 +3842,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 					MarkBlock(blocks, blockOk, blockCount, mansoTrackBlocks[bi]);
 					MarkBlock(blocks, blockOk, blockCount, mansoTrackBlocks[bj]);
 				}
-				
+
 				AliHLTMUONMansoTrackStruct a = inblocki[i];
 				AliHLTMUONMansoTrackStruct b = inblockj[j];
 				a.fId = b.fId = -1;
@@ -3869,22 +3872,22 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 			}
 		}
 	}
-	
+
 	for (AliHLTUInt32_t bi = 0; bi < mansoCandidateBlocksCount; bi++)
 	{
 		AliHLTMUONMansoCandidatesBlockReader inblocki(mansoCandidateBlocks[bi]->fPtr, mansoCandidateBlocks[bi]->fSize);
 		if (not inblocki.BufferSizeOk()) continue;
-		
+
 		// Check if all the trigger record IDs in the Manso track candidate structures exist.
 		for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 		{
 			bool found = false;
-			
+
 			for (AliHLTUInt32_t bj = 0; bj < trigRecBlocksCount and not found; bj++)
 			{
 				AliHLTMUONTriggerRecordsBlockReader inblockj(trigRecBlocks[bj]->fPtr, trigRecBlocks[bj]->fSize);
 				if (not inblockj.BufferSizeOk()) continue;
-				
+
 				for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 				{
 					if (inblocki[i].fTrack.fTrigRec == inblockj[j].fId)
@@ -3914,13 +3917,13 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 							);
 							MarkBlock(blocks, blockOk, blockCount, mansoTrackBlocks[bi]);
 						}
-						
+
 						found = true;
 						break;
 					}
 				}
 			}
-			
+
 			if (not found)
 			{
 				HLTError("Problem found with Manso track candidate"
@@ -3938,24 +3941,24 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				MarkBlock(blocks, blockOk, blockCount, mansoCandidateBlocks[bi]);
 			}
 		}
-		
+
 		// Check if all the hits in the Manso track candidate structures exist.
 		for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 		{
 			AliHLTMUONParticleSign sign;
 			bool hitset[4];
 			AliHLTMUONUtils::UnpackMansoTrackFlags(inblocki[i].fTrack.fFlags, sign, hitset);
-			
+
 			for (AliHLTUInt32_t n = 0; n < 4; n++)
 			{
 				if (not hitset[n]) continue;
 				bool found = false;
-				
+
 				for (AliHLTUInt32_t bj = 0; bj < hitBlocksCount and not found; bj++)
 				{
 					AliHLTMUONRecHitsBlockReader inblockj(hitBlocks[bj]->fPtr, hitBlocks[bj]->fSize);
 					if (not inblockj.BufferSizeOk()) continue;
-					
+
 					for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 					{
 						if (inblocki[i].fTrack.fHit[n] == inblockj[j])
@@ -3965,7 +3968,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 						}
 					}
 				}
-				
+
 				if (not found)
 				{
 					HLTError("Problem found with Manso track candidate"
@@ -3984,14 +3987,14 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				}
 			}
 		}
-		
+
 		// Check if all the Manso track candidate structures are unique up to the
 		// track ID and have unique identifiers.
 		for (AliHLTUInt32_t bj = bi+1; bj < mansoCandidateBlocksCount; bj++)
 		{
 			AliHLTMUONMansoCandidatesBlockReader inblockj(mansoCandidateBlocks[bj]->fPtr, mansoCandidateBlocks[bj]->fSize);
 			if (not inblockj.BufferSizeOk()) continue;
-			
+
 			for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 			for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 			{
@@ -4018,7 +4021,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 					MarkBlock(blocks, blockOk, blockCount, mansoCandidateBlocks[bi]);
 					MarkBlock(blocks, blockOk, blockCount, mansoCandidateBlocks[bj]);
 				}
-				
+
 				AliHLTMUONMansoCandidateStruct a = inblocki[i];
 				AliHLTMUONMansoCandidateStruct b = inblockj[j];
 				a.fTrack.fId = b.fTrack.fId = -1;
@@ -4048,24 +4051,24 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 			}
 		}
 	}
-	
+
 	for (AliHLTUInt32_t bi = 0; bi < trackBlocksCount; bi++)
 	{
 		AliHLTMUONTracksBlockReader inblocki(trackBlocks[bi]->fPtr, trackBlocks[bi]->fSize);
 		if (not inblocki.BufferSizeOk()) continue;
-		
+
 		totalTrackCount += inblocki.Nentries();
-		
+
 		// Check if all the trigger record IDs in the track structures exist.
 		for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 		{
 			bool found = false;
-			
+
 			for (AliHLTUInt32_t bj = 0; bj < trigRecBlocksCount and not found; bj++)
 			{
 				AliHLTMUONTriggerRecordsBlockReader inblockj(trigRecBlocks[bj]->fPtr, trigRecBlocks[bj]->fSize);
 				if (not inblockj.BufferSizeOk()) continue;
-				
+
 				for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 				{
 					if (inblocki[i].fTrigRec == inblockj[j].fId)
@@ -4094,13 +4097,13 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 							);
 							MarkBlock(blocks, blockOk, blockCount, trackBlocks[bi]);
 						}
-						
+
 						found = true;
 						break;
 					}
 				}
 			}
-			
+
 			if (not found)
 			{
 				HLTError("Problem found with track"
@@ -4118,24 +4121,24 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				MarkBlock(blocks, blockOk, blockCount, trackBlocks[bi]);
 			}
 		}
-		
+
 		// Check if all the hits in the track structures exist.
 		for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 		{
 			AliHLTMUONParticleSign sign;
 			bool hitset[16];
 			AliHLTMUONUtils::UnpackTrackFlags(inblocki[i].fFlags, sign, hitset);
-			
+
 			for (AliHLTUInt32_t n = 0; n < 16; n++)
 			{
 				if (not hitset[n]) continue;
 				bool found = false;
-				
+
 				for (AliHLTUInt32_t bj = 0; bj < hitBlocksCount and not found; bj++)
 				{
 					AliHLTMUONRecHitsBlockReader inblockj(hitBlocks[bj]->fPtr, hitBlocks[bj]->fSize);
 					if (not inblockj.BufferSizeOk()) continue;
-					
+
 					for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 					{
 						if (inblocki[i].fHit[n] == inblockj[j])
@@ -4145,7 +4148,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 						}
 					}
 				}
-				
+
 				if (not found)
 				{
 					HLTError("Problem found with track"
@@ -4164,14 +4167,14 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				}
 			}
 		}
-		
+
 		// Check if all the track structures are unique up to the ID and
 		// have unique identifiers.
 		for (AliHLTUInt32_t bj = bi+1; bj < trackBlocksCount; bj++)
 		{
 			AliHLTMUONTracksBlockReader inblockj(trackBlocks[bj]->fPtr, trackBlocks[bj]->fSize);
 			if (not inblockj.BufferSizeOk()) continue;
-			
+
 			for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 			for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 			{
@@ -4198,7 +4201,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 					MarkBlock(blocks, blockOk, blockCount, trackBlocks[bi]);
 					MarkBlock(blocks, blockOk, blockCount, trackBlocks[bj]);
 				}
-				
+
 				AliHLTMUONTrackStruct a = inblocki[i];
 				AliHLTMUONTrackStruct b = inblockj[j];
 				a.fId = b.fId = -1;
@@ -4228,12 +4231,12 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 			}
 		}
 	}
-	
+
 	for (AliHLTUInt32_t bi = 0; bi < singleDecisionBlocksCount; bi++)
 	{
 		AliHLTMUONSinglesDecisionBlockReader inblocki(singleDecisionBlocks[bi]->fPtr, singleDecisionBlocks[bi]->fSize);
 		if (not inblocki.BufferSizeOk()) continue;
-		
+
 		// Check that the scalars are within reasonable limits.
 		const AliHLTMUONSinglesDecisionBlockStruct& hdr = inblocki.BlockHeader();
 		const AliHLTComponentBlockData* block = singleDecisionBlocks[bi];
@@ -4244,17 +4247,17 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 		{
 			MarkBlock(blocks, blockOk, blockCount, block);
 		}
-		
+
 		// Check if all the Manso track IDs in the trigger decision structures exist.
 		for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 		{
 			bool found = false;
-			
+
 			for (AliHLTUInt32_t bj = 0; bj < mansoTrackBlocksCount and not found; bj++)
 			{
 				AliHLTMUONMansoTracksBlockReader inblockj(mansoTrackBlocks[bj]->fPtr, mansoTrackBlocks[bj]->fSize);
 				if (not inblockj.BufferSizeOk()) continue;
-				
+
 				for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 				{
 					if (inblocki[i].fTrackId == inblockj[j].fId)
@@ -4264,7 +4267,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 					}
 				}
 			}
-			
+
 			if (not found)
 			{
 				HLTError("Problem found with single track trigger decision"
@@ -4282,14 +4285,14 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				MarkBlock(blocks, blockOk, blockCount, singleDecisionBlocks[bi]);
 			}
 		}
-		
+
 		// Check if all the trigger decision structures are unique up to the ID and
 		// have unique Manso track identifiers.
 		for (AliHLTUInt32_t bj = bi+1; bj < singleDecisionBlocksCount; bj++)
 		{
 			AliHLTMUONSinglesDecisionBlockReader inblockj(singleDecisionBlocks[bj]->fPtr, singleDecisionBlocks[bj]->fSize);
 			if (not inblockj.BufferSizeOk()) continue;
-			
+
 			for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 			for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 			{
@@ -4317,7 +4320,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 					MarkBlock(blocks, blockOk, blockCount, singleDecisionBlocks[bi]);
 					MarkBlock(blocks, blockOk, blockCount, singleDecisionBlocks[bj]);
 				}
-				
+
 				AliHLTMUONTrackDecisionStruct a = inblocki[i];
 				AliHLTMUONTrackDecisionStruct b = inblockj[j];
 				a.fTrackId = b.fTrackId = -1;
@@ -4348,12 +4351,12 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 			}
 		}
 	}
-	
+
 	for (AliHLTUInt32_t bi = 0; bi < pairDecisionBlocksCount; bi++)
 	{
 		AliHLTMUONPairsDecisionBlockReader inblocki(pairDecisionBlocks[bi]->fPtr, pairDecisionBlocks[bi]->fSize);
 		if (not inblocki.BufferSizeOk()) continue;
-		
+
 		AliHLTUInt32_t maxPairs = totalTrackCount * (totalTrackCount-1) / 2;
 		const AliHLTMUONPairsDecisionBlockStruct& hdr = inblocki.BlockHeader();
 		const AliHLTComponentBlockData* block = pairDecisionBlocks[bi];
@@ -4376,17 +4379,17 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 		{
 			MarkBlock(blocks, blockOk, blockCount, block);
 		}
-		
+
 		// Check if all the Manso track IDs in the trigger decision structures exist.
 		for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 		{
 			bool found = false;
-			
+
 			for (AliHLTUInt32_t bj = 0; bj < mansoTrackBlocksCount and not found; bj++)
 			{
 				AliHLTMUONMansoTracksBlockReader inblockj(mansoTrackBlocks[bj]->fPtr, mansoTrackBlocks[bj]->fSize);
 				if (not inblockj.BufferSizeOk()) continue;
-				
+
 				for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 				{
 					if (inblocki[i].fTrackAId == inblockj[j].fId)
@@ -4396,7 +4399,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 					}
 				}
 			}
-			
+
 			if (not found)
 			{
 				HLTError("Problem found with track pair trigger decision"
@@ -4413,14 +4416,14 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				);
 				MarkBlock(blocks, blockOk, blockCount, pairDecisionBlocks[bi]);
 			}
-			
+
 			found = false;
-			
+
 			for (AliHLTUInt32_t bj = 0; bj < mansoTrackBlocksCount and not found; bj++)
 			{
 				AliHLTMUONMansoTracksBlockReader inblockj(mansoTrackBlocks[bj]->fPtr, mansoTrackBlocks[bj]->fSize);
 				if (not inblockj.BufferSizeOk()) continue;
-				
+
 				for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 				{
 					if (inblocki[i].fTrackBId == inblockj[j].fId)
@@ -4430,7 +4433,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 					}
 				}
 			}
-			
+
 			if (not found)
 			{
 				HLTError("Problem found with track pair trigger decision"
@@ -4448,14 +4451,14 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 				MarkBlock(blocks, blockOk, blockCount, pairDecisionBlocks[bi]);
 			}
 		}
-		
+
 		// Check if all the trigger decision structures are unique up to the ID and
 		// have unique Manso track identifier pairs.
 		for (AliHLTUInt32_t bj = bi+1; bj < pairDecisionBlocksCount; bj++)
 		{
 			AliHLTMUONPairsDecisionBlockReader inblockj(pairDecisionBlocks[bj]->fPtr, pairDecisionBlocks[bj]->fSize);
 			if (not inblockj.BufferSizeOk()) continue;
-			
+
 			for (AliHLTUInt32_t i = 0; i < inblocki.Nentries(); i++)
 			for (AliHLTUInt32_t j = 0; j < inblockj.Nentries(); j++)
 			{
@@ -4485,7 +4488,7 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 					MarkBlock(blocks, blockOk, blockCount, pairDecisionBlocks[bi]);
 					MarkBlock(blocks, blockOk, blockCount, pairDecisionBlocks[bj]);
 				}
-				
+
 				AliHLTMUONPairDecisionStruct a = inblocki[i];
 				AliHLTMUONPairDecisionStruct b = inblockj[j];
 				a.fTrackAId = a.fTrackBId = b.fTrackAId = b.fTrackBId = -1;
@@ -4517,4 +4520,3 @@ void AliHLTMUONDataCheckerComponent::MakeGlobalChecks(
 		}
 	}
 }
-

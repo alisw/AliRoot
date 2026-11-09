@@ -1,6 +1,6 @@
 #ifndef ALIEVENTPOOLOTF_H
 #define ALIEVENTPOOLOTF_H
- 
+
 /* Copyright(c) 1998-1999, ALICE Experiment at CERN, All rights reserved. *
  * See cxx source for full Copyright notice                               */
 
@@ -12,12 +12,13 @@
 /// \author Andreas Morsch
 
 #include <AliVEventPool.h>
+#include <TGridResult.h>
+
 class AliRunTagCuts;
 class AliLHCTagCuts;
 class AliDetectorTagCuts;
 class AliEventTagCuts;
 class AliTagAnalysis;
-class TGridResult;
 
 typedef enum {kMultiplicity, kZVertex, kEventPlane, kLeadingParticleEta, kLeadingParticlePhi, kUser1, kUser2}  EventPoolAxis_t;
 
@@ -51,12 +52,12 @@ class AliEventPoolOTF : public AliVEventPool
     void SetTagDirectory(const char* dirname) {fTagDirectory = dirname;};
     void SetGridResult(TGridResult*  gridTag) {fGridTags = gridTag;};
     virtual Int_t BinNumber() const {return fBinNumber;}
-	    
+
  private:
     AliEventPoolOTF(const AliEventPoolOTF& obj);
     AliEventPoolOTF& operator=(const AliEventPoolOTF& other);
     void InitArrays();
-    
+
  protected:
     AliTagAnalysis*      fTagAnalysis;   ///< Pointer to tag analysis
     AliRunTagCuts*       fRunCuts;       ///< Run      cuts
@@ -75,8 +76,8 @@ class AliEventPoolOTF : public AliVEventPool
     //
     Int_t                fBinNumber;    ///< Current bin number
     Bool_t               fNoMore;       ///< No more bins
-    
-    ClassDef(AliEventPoolOTF, 0); 
+
+    ClassDef(AliEventPoolOTF, 0);
 };
- 
+
 #endif

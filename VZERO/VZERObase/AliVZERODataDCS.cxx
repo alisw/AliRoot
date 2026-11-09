@@ -27,6 +27,7 @@
 #include <TString.h>
 #include <TObjString.h>
 #include <TH1F.h>
+#include <TMath.h>
 
 class TH2;
 class AliCDBMetaData;
@@ -300,4 +301,3 @@ void AliVZERODataDCS::Draw(const Option_t* /*option*/)
   }
 
 }
-

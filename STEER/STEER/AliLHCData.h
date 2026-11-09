@@ -30,7 +30,10 @@
 ********************************************************************************/
 
 #include "AliLHCDipValT.h"
-#include "TObject.h"
+
+#include <TObject.h>
+#include <TMath.h>
+
 class TObjArray;
 //class AliLHCDipValT;
 
@@ -72,7 +75,7 @@ class AliLHCData : public TObject
 	kALIBackground,
 	kALILumiSourceName,
 	kLHCBetaStarActive,
-	kLHCBetaStarTargetOptic,	
+	kLHCBetaStarTargetOptic,
 	kNRecordTypes};
   //
   //le
@@ -151,19 +154,19 @@ class AliLHCData : public TObject
   AliLHCDipValF* GetCrossAngle(int lr, int i=0)           const;
   AliLHCDipValC* GetInjectionScheme(int i=0)              const;
   AliLHCDipValF* GetRCBetaStar(int i=0)                   const;
-  AliLHCDipValF* GetRCAngleH(int i=0)                     const; 
-  AliLHCDipValF* GetRCAngleV(int i=0)                     const; 
+  AliLHCDipValF* GetRCAngleH(int i=0)                     const;
+  AliLHCDipValF* GetRCAngleV(int i=0)                     const;
   AliLHCDipValF* GetCollimJawPos(int coll, int jaw, int i=0) const;
   //
-  AliLHCDipValF* GetLumiAlice(int i=0)                    const; 
-  AliLHCDipValF* GetLumiAliceSBDelivered(int i=0)         const; 
-  AliLHCDipValF* GetLumiAliceBunch(int i=0)               const; 
+  AliLHCDipValF* GetLumiAlice(int i=0)                    const;
+  AliLHCDipValF* GetLumiAliceSBDelivered(int i=0)         const;
+  AliLHCDipValF* GetLumiAliceBunch(int i=0)               const;
   AliLHCDipValF* GetBckgAlice(int bg, int i=0)            const;
 
   AliLHCDipValC* GetLumiAliceSrc(int i=0)                 const;
   AliLHCDipValC* GetLHCBetaStarTargetOptic(int i=0)       const;
-  AliLHCDipValI* GetLHCBetaStarActive(int i=0)            const; 
-  
+  AliLHCDipValI* GetLHCBetaStarActive(int i=0)            const;
+
   //
   AliLHCDipValF* GetBPTXdeltaTB1B2(int i=0)               const;
   AliLHCDipValF* GetBPTXdeltaTRMSB1B2(int i=0)            const;
@@ -268,7 +271,7 @@ class AliLHCData : public TObject
   Int_t           fRCBeta[2];                         // target beta                                   : Float  |kRCBeta
   Int_t           fRCAngH[2];                         // horisontal angle                              : Float  |kRCCrossAng
   Int_t           fRCAngV[2];                         // vertical angle                                : Float  |kRCVang
-  Int_t           fBunchConfDecl[2][2];               // declared beam configuration                   : Float  |kBunchConf                
+  Int_t           fBunchConfDecl[2][2];               // declared beam configuration                   : Float  |kBunchConf
   //
   //              measured information
   Int_t           fBunchConfMeas[2][2];               // measured beam configuration                   : Int    |kBunchLgtFillB
@@ -302,7 +305,7 @@ class AliLHCData : public TObject
   Int_t           fBPTXdTRMSB1B2[2];                  // BPTX_deltaTRMS_B1_B2                          : Float  |kBPTXdeltaTRMSB1B2,
   Int_t           fBPTXPhase[2][2];                   // BPTX_Phase_B1, and BPTX_Phase_B2              : Float  |kBPTXPhase
   Int_t           fBPTXPhaseRMS[2][2];                // BPTX_PhaseRMS_B1, and BPTX_PhaseRMS_B2        : Float  |kBPTXPhaseRMS
-  Int_t           fBPTXPhaseShift[2][2];              // BPTX_Phase_Shift_B1 and BPTX_Phase_Shift_B2   : Float  |kBPTXPhaseShift 
+  Int_t           fBPTXPhaseShift[2][2];              // BPTX_Phase_Shift_B1 and BPTX_Phase_Shift_B2   : Float  |kBPTXPhaseShift
   //
   Int_t           fCollimators[kNCollimators][kNJaws][2];// collimator jaws positions                  : Float  |kCollPos
   //
@@ -315,7 +318,7 @@ class AliLHCData : public TObject
  private:
   // non-persistent objects used at the filling time
   const Char_t*   fkFile2Process;                      //! name of DCS file
-  const TMap*     fkMap2Process;                       //! DCS map to process 
+  const TMap*     fkMap2Process;                       //! DCS map to process
 
   ClassDef(AliLHCData,5)
 };
@@ -403,7 +406,7 @@ inline AliLHCDipValF* AliLHCData::GetRCAngleV(int i) const { // get record
 }
 
 inline AliLHCDipValF* AliLHCData::GetCollimJawPos(int coll, int jaw, int i) const { // get record
-  return (coll>=0 && coll<kNCollimators && jaw>=0 && jaw<kNJaws && 
+  return (coll>=0 && coll<kNCollimators && jaw>=0 && jaw<kNJaws &&
 	  i>=0 && i<fCollimators[coll][jaw][kNStor]) ? (AliLHCDipValF*)fData[fCollimators[coll][jaw][kStart]+i]:0;
 }
 
@@ -436,23 +439,23 @@ inline AliLHCDipValF* AliLHCData::GetBckgAlice(int bg, int i) const { // get rec
   return (bg>=0&&bg<kNBGs&&i>=0&&i<fBckgAlice[bg][kNStor]) ? (AliLHCDipValF*)fData[fBckgAlice[bg][kStart]+i]:0;
 }
 
-inline AliLHCDipValF* AliLHCData::GetBPTXdeltaTB1B2(int i) const { // get record 
+inline AliLHCDipValF* AliLHCData::GetBPTXdeltaTB1B2(int i) const { // get record
   return (i>=0 && i<fBPTXdTB1B2[kNStor]) ? (AliLHCDipValF*)fData[fBPTXdTB1B2[kStart]+i]:0;
 }
 
-inline AliLHCDipValF* AliLHCData::GetBPTXdeltaTRMSB1B2(int i) const { // get record 
+inline AliLHCDipValF* AliLHCData::GetBPTXdeltaTRMSB1B2(int i) const { // get record
   return (i>=0 && i<fBPTXdTRMSB1B2[kNStor]) ? (AliLHCDipValF*)fData[fBPTXdTRMSB1B2[kStart]+i]:0;
 }
 
-inline AliLHCDipValF* AliLHCData::GetBPTXPhase(int bm, int i) const { // get record 
+inline AliLHCDipValF* AliLHCData::GetBPTXPhase(int bm, int i) const { // get record
   return (GoodPairID(bm) && i>=0 && i<fBPTXPhase[bm][kNStor]) ? (AliLHCDipValF*)fData[fBPTXPhase[bm][kStart]+i]:0;
 }
 
-inline AliLHCDipValF* AliLHCData::GetBPTXPhaseRMS(int bm, int i) const { // get record 
+inline AliLHCDipValF* AliLHCData::GetBPTXPhaseRMS(int bm, int i) const { // get record
   return (GoodPairID(bm) && i>=0 && i<fBPTXPhaseRMS[bm][kNStor]) ? (AliLHCDipValF*)fData[fBPTXPhaseRMS[bm][kStart]+i]:0;
 }
 
-inline AliLHCDipValF* AliLHCData::GetBPTXPhaseShift(int bm, int i) const { // get record 
+inline AliLHCDipValF* AliLHCData::GetBPTXPhaseShift(int bm, int i) const { // get record
   return (GoodPairID(bm) && i>=0 && i<fBPTXPhaseShift[bm][kNStor]) ? (AliLHCDipValF*)fData[fBPTXPhaseShift[bm][kStart]+i]:0;
 }
 

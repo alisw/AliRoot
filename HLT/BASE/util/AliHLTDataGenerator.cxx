@@ -1,7 +1,7 @@
 // $Id$
 
 //**************************************************************************
-//* This file is property of and copyright by the                          * 
+//* This file is property of and copyright by the                          *
 //* ALICE Experiment at CERN, All rights reserved.                         *
 //*                                                                        *
 //* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *
@@ -18,13 +18,14 @@
 
 /// @file   AliHLTDataGenerator.cxx
 /// @author Matthias Richter
-/// @date   
+/// @date
 /// @brief  HLT file publisher component implementation.
 
 #include "AliHLTDataGenerator.h"
 #include "TString.h"
 #include "TRandom.h"
 #include "TDatime.h"
+#include "TMath.h"
 
 using namespace std;
 
@@ -313,9 +314,9 @@ int AliHLTDataGenerator::DoDeinit()
 }
 
 int AliHLTDataGenerator::DoEvent( const AliHLTComponentEventData& evtData,
-				  const AliHLTComponentBlockData* blocks, 
+				  const AliHLTComponentBlockData* blocks,
 				  AliHLTComponentTriggerData& /*trigData*/,
-				  AliHLTUInt8_t* outputPtr, 
+				  AliHLTUInt8_t* outputPtr,
 				  AliHLTUInt32_t& size,
 				  AliHLTComponentBlockDataList& outputBlocks )
 {

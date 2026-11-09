@@ -80,7 +80,7 @@ AliVZERO::AliVZERO(): AliDetector(),
           fRecoParam(NULL)
 {
 /// Default Constructor
-    
+
     AliDebug(1,Form("default (empty) ctor this=%p",this));
     fIshunt          = 0;
 
@@ -105,27 +105,27 @@ AliVZERO::AliVZERO(const char *name, const char *title)
          fSignalShape(NULL),
 	 fRecoParam(NULL)
 {
-  
+
   // Standard constructor for VZERO Detector
-  
+
   AliDebug(1,Form("ctor this=%p",this));
-  
-  //  fIshunt       =  1;  // All hits are associated with primary particles  
-   
+
+  //  fIshunt       =  1;  // All hits are associated with primary particles
+
   fHits         =  new TClonesArray("AliVZEROhit", 400);
-  fDigits       =  new TClonesArray("AliVZEROdigit",400); 
-   
+  fDigits       =  new TClonesArray("AliVZEROdigit",400);
+
   gAlice->GetMCApp()->AddHitList(fHits);
 
 //   fThickness    =  4.4;   // total thickness of the V0R box in cm
 //   fThickness1   =  2.0;   // thickness of scintillating cells in cm
-//   
-//   fMaxStepQua   =  0.05; 
-//   fMaxStepAlu   =  0.01; 
-//   
+//
+//   fMaxStepQua   =  0.05;
+//   fMaxStepAlu   =  0.01;
+//
 //   fMaxDestepQua =  -1.0;
 //   fMaxDestepAlu =  -1.0;
-  
+
   for(Int_t i = 0 ; i < 64; ++i) {
     fNBins[i] = 0;
     fBinSize[i] = 0;
@@ -138,12 +138,12 @@ AliVZERO::~AliVZERO()
   //
   // Default destructor for VZERO Detector
   //
-  
+
     if (fHits) {
         fHits->Delete();
         delete fHits;
 	fHits=0; }
-    
+
     if (fDigits) {
         fDigits->Delete();
         delete fDigits;
@@ -162,14 +162,14 @@ AliVZERO::~AliVZERO()
 void AliVZERO::CreateGeometry()
 {
   //
-  // Builds simple Geant3 geometry 
+  // Builds simple Geant3 geometry
   //
 }
 //_____________________________________________________________________________
 void AliVZERO::CreateMaterials()
 {
   //
-  // Creates materials used for Geant3 geometry 
+  // Creates materials used for Geant3 geometry
   //
 }
 
@@ -195,7 +195,7 @@ void AliVZERO::SetMaxStepQua(Float_t p1)
 void AliVZERO::SetMaxStepAlu(Float_t p1)
 {
   //
-  // Possible parametrisation of steps in Aluminum foils (not used in 
+  // Possible parametrisation of steps in Aluminum foils (not used in
   // version v2)
   //
     fMaxStepAlu = p1;
@@ -214,7 +214,7 @@ void AliVZERO::SetMaxDestepQua(Float_t p1)
 void AliVZERO::SetMaxDestepAlu(Float_t p1)
 {
   //
-  // Possible parametrisation of steps in Aluminum (not used in 
+  // Possible parametrisation of steps in Aluminum (not used in
   // version v2)
   //
     fMaxDestepAlu = p1;
@@ -222,13 +222,13 @@ void AliVZERO::SetMaxDestepAlu(Float_t p1)
 
 //_____________________________________________________________________________
 AliLoader* AliVZERO::MakeLoader(const char* topfoldername)
-{ 
+{
   //
   // Builds VZEROgetter (AliLoader type)
   // if detector wants to use customized getter, it must overload this method
   //
-//  Info("MakeLoader","Creating AliVZEROLoader. Top folder is %s.",topfoldername); 
- 
+//  Info("MakeLoader","Creating AliVZEROLoader. Top folder is %s.",topfoldername);
+
   AliDebug(1,Form("Creating AliVZEROLoader, Top folder is %s ",topfoldername));
   fLoader = new AliVZEROLoader(GetName(),topfoldername);
   return fLoader;
@@ -260,7 +260,7 @@ void AliVZERO::Hits2Digits(){
   //
   // Converts hits to digits
   //
-  // Creates the VZERO digitizer 
+  // Creates the VZERO digitizer
   AliVZERODigitizer* dig = new AliVZERODigitizer(this,AliVZERODigitizer::kHits2Digits);
 
   // Creates the digits
@@ -275,7 +275,7 @@ void AliVZERO::Hits2SDigits(){
   //
   // Converts hits to summable digits
   //
-  // Creates the VZERO digitizer 
+  // Creates the VZERO digitizer
   AliVZERODigitizer* dig = new AliVZERODigitizer(this,AliVZERODigitizer::kHits2SDigits);
 
   // Creates the sdigits
@@ -291,7 +291,7 @@ void AliVZERO::Digits2Raw()
    //
    //  Converts digits of the current event to raw data
    //
-  
+
    AliVZERO *fVZERO = (AliVZERO*)gAlice->GetDetector("VZERO");
    fLoader->LoadDigits();
    TTree* digits = fLoader->TreeD();
@@ -300,16 +300,16 @@ void AliVZERO::Digits2Raw()
       return;
    }
    TClonesArray * VZEROdigits = new TClonesArray("AliVZEROdigit",1000);
-   fVZERO->SetTreeAddress();  		
-   digits->GetBranch("VZERODigit")->SetAddress(&VZEROdigits); 
-  
+   fVZERO->SetTreeAddress();
+   digits->GetBranch("VZERODigit")->SetAddress(&VZEROdigits);
+
    const char *fileName    = AliDAQ::DdlFileName("VZERO",0);
    AliVZEROBuffer* buffer  = new AliVZEROBuffer(fileName);
-  
+
    // Get Trigger information first
    // Read trigger inputs from trigger-detector object
    AliDataLoader * dataLoader = fLoader->GetDigitsDataLoader();
-   if( !dataLoader->IsFileOpen() ) 
+   if( !dataLoader->IsFileOpen() )
         dataLoader->OpenFile( "READ" );
    AliTriggerDetector* trgdet = (AliTriggerDetector*)dataLoader->GetDirectory()->Get( "Trigger" );
    UInt_t triggerInfo = 0;
@@ -320,10 +320,10 @@ void AliVZERO::Digits2Raw()
       AliError(Form("There is no trigger object for %s",fLoader->GetName()));
    }
 
-   buffer->WriteTriggerInfo((UInt_t)triggerInfo); 
-   buffer->WriteTriggerScalers(); 
-   buffer->WriteBunchNumbers(); 
-  
+   buffer->WriteTriggerInfo((UInt_t)triggerInfo);
+   buffer->WriteTriggerScalers();
+   buffer->WriteBunchNumbers();
+
    Int_t aBBflagsV0A = 0;
    Int_t aBBflagsV0C = 0;
    Int_t aBGflagsV0A = 0;
@@ -353,7 +353,7 @@ void AliVZERO::Digits2Raw()
    else
      AliWarning("V0C beam-gas flags not found in digits tree UserInfo! The flags will not be written to the raw-data stream!");
 
-   // Now retrieve the channel information: charge smaples + time and 
+   // Now retrieve the channel information: charge smaples + time and
    // dump it into ADC and Time arrays
    Int_t nEntries = Int_t(digits->GetEntries());
    Short_t aADC[64][AliVZEROdigit::kNClocks];
@@ -362,12 +362,12 @@ void AliVZERO::Digits2Raw()
    Bool_t  aIntegrator[64];
    Bool_t  aBBflag[64];
    Bool_t  aBGflag[64];
-  
+
    for (Int_t i = 0; i < nEntries; i++) {
      fVZERO->ResetDigits();
      digits->GetEvent(i);
-     Int_t ndig = VZEROdigits->GetEntriesFast(); 
-   
+     Int_t ndig = VZEROdigits->GetEntriesFast();
+
      if(ndig == 0) continue;
      for(Int_t k=0; k<ndig; k++){
          AliVZEROdigit* fVZERODigit = (AliVZEROdigit*) VZEROdigits->At(k);
@@ -387,36 +387,36 @@ void AliVZERO::Digits2Raw()
 	   aBGflag[iChannel] = (aBGflagsV0A >> (fVZERODigit->PMNumber()-32)) & 0x1;
 	 }
          AliDebug(1,Form("DDL: %s\tdigit number: %d\tPM number: %d\tADC: %d\tTime: %f",
-			 fileName,k,fVZERODigit->PMNumber(),aADC[iChannel][AliVZEROdigit::kNClocks/2],aTime[iChannel])); 
-     }        
+			 fileName,k,fVZERODigit->PMNumber(),aADC[iChannel][AliVZEROdigit::kNClocks/2],aTime[iChannel]));
+     }
    }
 
    // Now fill raw data
-          
-   for (Int_t  iCIU = 0; iCIU < 8; iCIU++) { 
- 
+
+   for (Int_t  iCIU = 0; iCIU < 8; iCIU++) {
+
    // decoding of one Channel Interface Unit numbered iCIU - there are 8 channels per CIU (and 8 CIUs) :
-  
-      for(Int_t iChannel_Offset = iCIU*8; iChannel_Offset < (iCIU*8)+8; iChannel_Offset=iChannel_Offset+4) { 
+
+      for(Int_t iChannel_Offset = iCIU*8; iChannel_Offset < (iCIU*8)+8; iChannel_Offset=iChannel_Offset+4) {
          for(Int_t iChannel = iChannel_Offset; iChannel < iChannel_Offset+4; iChannel++) {
-             buffer->WriteChannel(iChannel, aADC[iChannel], aIntegrator[iChannel]);       
+             buffer->WriteChannel(iChannel, aADC[iChannel], aIntegrator[iChannel]);
          }
-         buffer->WriteBeamFlags(&aBBflag[iChannel_Offset],&aBGflag[iChannel_Offset]); 
-         buffer->WriteMBInfo(); 
-         buffer->WriteMBFlags();   
-         buffer->WriteBeamScalers(); 
-      } 
+         buffer->WriteBeamFlags(&aBBflag[iChannel_Offset],&aBGflag[iChannel_Offset]);
+         buffer->WriteMBInfo();
+         buffer->WriteMBFlags();
+         buffer->WriteBeamScalers();
+      }
 
       for(Int_t iChannel = iCIU*8 + 7; iChannel >= iCIU*8; iChannel--) {
-          buffer->WriteTiming(aTime[iChannel], aWidth[iChannel]); 
+          buffer->WriteTiming(aTime[iChannel], aWidth[iChannel]);
       }
 
     // End of decoding of one CIU card
-    
+
   } // end of decoding the eight CIUs
-     
+
   delete buffer;
-  fLoader->UnloadDigits();  
+  fLoader->UnloadDigits();
 }
 
 //_____________________________________________________________________________
@@ -438,12 +438,12 @@ Bool_t AliVZERO::Raw2SDigits(AliRawReader* rawReader){
   TTree* treeS  = fLoader->TreeS();
 
   TClonesArray *sdigits = new TClonesArray("AliVZEROSDigit", 64);
-  treeS->Branch("VZEROSDigit", &sdigits); 
+  treeS->Branch("VZEROSDigit", &sdigits);
 
   {
     rawReader->Reset();
-    AliVZERORawStream rawStream(rawReader);    
-     
+    AliVZERORawStream rawStream(rawReader);
+
     if (!rawStream.Next()) return kFALSE; // No VZERO data found
 
     GetCalibData();
@@ -507,7 +507,7 @@ Bool_t AliVZERO::Raw2SDigits(AliRawReader* rawReader){
       memset(charges,0,nbins*sizeof(Float_t));
 
       // Now lets produce SDigit
-      if ((correctedTime > (AliVZEROReconstructor::kInvalidTime + 1e-6)) &&
+      if ((correctedTime > (+AliVZEROReconstructor::kInvalidTime + 1e-6)) &&
 	  (adc > 1e-6)) {
 	for(Int_t iBin = 0; iBin < nbins; ++iBin) {
 	  Float_t t = fBinSize[offlineCh]*Float_t(iBin);
@@ -517,16 +517,16 @@ Bool_t AliVZERO::Raw2SDigits(AliRawReader* rawReader){
 	}
       }
 
-      TClonesArray &sdigitsref = *sdigits;  
+      TClonesArray &sdigitsref = *sdigits;
       new (sdigitsref[nSDigits++]) AliVZEROSDigit(offlineCh,fNBins[offlineCh],charges);
     }
     if (charges) delete [] charges;
   }
-  
+
   treeS->Fill();
   fLoader->WriteSDigits("OVERWRITE");
-  fLoader->UnloadSDigits();	
-	
+  fLoader->UnloadSDigits();
+
   timer.Stop();
   timer.Print();
   return kTRUE;
@@ -555,7 +555,7 @@ void AliVZERO::GetCalibData()
     fBinSize[i] = fCalibData->GetTimeResolution(board);
   }
 
-  fSignalShape = new TF1("VZEROSDigitSignalShape",this,&AliVZERO::SignalShape,0,200,6,"AliVZERO","SignalShape");
+  fSignalShape = new TF1("VZEROSDigitSignalShape",this,&AliVZERO::SignalShape,0,200,6);
   fSignalShape->SetParameters(0,1.57345e1,-4.25603e-1,
 			      2.9,6.40982,3.69339e-01);
 

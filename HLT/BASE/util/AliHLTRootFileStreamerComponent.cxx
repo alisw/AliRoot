@@ -1,7 +1,7 @@
 // $Id$
 
 //**************************************************************************
-//* This file is property of and copyright by the                          * 
+//* This file is property of and copyright by the                          *
 //* ALICE Experiment at CERN, All rights reserved.                         *
 //*                                                                        *
 //* Primary Authors: Matthias Richter <Matthias.Richter@ift.uib.no>        *
@@ -18,12 +18,14 @@
 
 /// @file   AliHLTRootFileStreamerComponent.cxx
 /// @author Matthias Richter
-/// @date   
+/// @date
 /// @brief  Save objects in a ROOT memory file
 ///
 
 #include "AliHLTRootFileStreamerComponent.h"
-#include "TString.h"
+
+#include <TString.h>
+#include <TMath.h>
 
 /** ROOT macro for the implementation of ROOT specific class methods */
 ClassImp(AliHLTRootFileStreamerComponent)
@@ -130,7 +132,7 @@ int AliHLTRootFileStreamerComponent::DoEvent( const AliHLTComponentEventData& /*
       iResult=Write(pFile, pObj);
       if (iResult) {
 	count++;
-	HLTDebug("wrote object of class %s, data type %s", pObj->ClassName(), (DataType2Text(GetDataType(pObj)).c_str())); 
+	HLTDebug("wrote object of class %s, data type %s", pObj->ClassName(), (DataType2Text(GetDataType(pObj)).c_str()));
       }
     }
     HLTInfo("wrote %d object(s) from %d input blocks to file", count, GetNumberOfInputBlocks());

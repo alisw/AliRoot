@@ -40,17 +40,17 @@
 
 //_________________________________________________________________________
 // This is a TTask that makes SDigits out of Hits
-// The name of the TTask is also the title of the branch that will contain 
+// The name of the TTask is also the title of the branch that will contain
 // the created SDigits
 // The title of the TTAsk is the name of the file that contains the hits from
 // which the SDigits are created
-// A Summable Digits is the sum of all hits originating 
+// A Summable Digits is the sum of all hits originating
 // from one primary in one active cell
-// A threshold for assignment of the primary to SDigit is applied 
+// A threshold for assignment of the primary to SDigit is applied
 // SDigits are written to TreeS, branch "PHOS"
-// AliPHOSSDigitizer with all current parameters is written 
+// AliPHOSSDigitizer with all current parameters is written
 // to TreeS branch "AliPHOSSDigitizer".
-// Both branches have the same title. If necessary one can produce 
+// Both branches have the same title. If necessary one can produce
 // another set of SDigits with different parameters. Two versions
 // can be distunguished using titles of the branches.
 // User case:
@@ -68,18 +68,19 @@
 //             deb all  - print # and list of produced SDigits
 //             tim - print benchmarking information
 //
-//-- Author :  Dmitri Peressounko (SUBATECH & KI) 
+//-- Author :  Dmitri Peressounko (SUBATECH & KI)
 //////////////////////////////////////////////////////////////////////////////
 
 
 // --- ROOT system ---
 #include "TBenchmark.h"
+#include "TMath.h"
 
 // --- Standard library ---
 
 // --- AliRoot header files ---
 #include "AliLog.h"
-#include "AliPHOSGeometry.h" 
+#include "AliPHOSGeometry.h"
 #include "AliPHOSDigit.h"
 #include "AliPHOSLoader.h"
 #include "AliPHOSHit.h"
@@ -87,9 +88,9 @@
 
 ClassImp(AliPHOSSDigitizer)
 
-           
-//____________________________________________________________________________ 
-AliPHOSSDigitizer::AliPHOSSDigitizer() : 
+
+//____________________________________________________________________________
+AliPHOSSDigitizer::AliPHOSSDigitizer() :
   TNamed("",""),
   fPrimThreshold(0.f),
   fDefaultInit(kTRUE),
@@ -100,11 +101,11 @@ AliPHOSSDigitizer::AliPHOSSDigitizer() :
   fLastEvent(0)
 {
   // ctor
-  // Intialize the quality assurance data maker 	
+  // Intialize the quality assurance data maker
 }
 
-//____________________________________________________________________________ 
-AliPHOSSDigitizer::AliPHOSSDigitizer(const char * alirunFileName, 
+//____________________________________________________________________________
+AliPHOSSDigitizer::AliPHOSSDigitizer(const char * alirunFileName,
 				     const char * eventFolderName):
   TNamed("PHOSSDigitizer", alirunFileName),
   fPrimThreshold(0.f),
@@ -116,9 +117,9 @@ AliPHOSSDigitizer::AliPHOSSDigitizer(const char * alirunFileName,
   fLastEvent(0)
 {
   // ctor
-  InitParameters() ; 
+  InitParameters() ;
   Init();
-  fDefaultInit = kFALSE ; 
+  fDefaultInit = kFALSE ;
 }
 
 //____________________________________________________________________________
@@ -131,7 +132,7 @@ AliPHOSSDigitizer::AliPHOSSDigitizer(const AliPHOSSDigitizer& sd) :
   fSDigitsInRun(sd.fSDigitsInRun),
   fFirstEvent(sd.fFirstEvent),
   fLastEvent(sd.fLastEvent)
-{ 
+{
   // cpy ctor
 }
 
@@ -145,35 +146,35 @@ AliPHOSSDigitizer& AliPHOSSDigitizer::operator = (const AliPHOSSDigitizer& qa)
   return *this;
 }
 
-//____________________________________________________________________________ 
-AliPHOSSDigitizer::~AliPHOSSDigitizer() 
+//____________________________________________________________________________
+AliPHOSSDigitizer::~AliPHOSSDigitizer()
 {
   //dtor
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 void AliPHOSSDigitizer::Init()
 {
   // Uses the Loader to access the required files
-  
-  fInit = kTRUE ; 
-  
+
+  fInit = kTRUE ;
+
   //to prevent cleaning of this object while GetEvent is called
   AliRunLoader* rl = AliRunLoader::GetRunLoader(fEventFolderName) ;
-  if (!rl) AliRunLoader::Open(GetTitle(), fEventFolderName) ; 
+  if (!rl) AliRunLoader::Open(GetTitle(), fEventFolderName) ;
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 void AliPHOSSDigitizer::InitParameters()
-{ 
+{
   // initializes the parameters for digitization
   fPrimThreshold = 0.01 ;
   fSDigitsInRun  = 0 ;
 }
 
 //____________________________________________________________________________
-void AliPHOSSDigitizer::Digitize(Option_t *option) 
-{ 
+void AliPHOSSDigitizer::Digitize(Option_t *option)
+{
   // Steering method to produce summable digits for events
   // in the range from fFirstEvent to fLastEvent.
   // This range is optionally set by SetEventRange().
@@ -181,18 +182,18 @@ void AliPHOSSDigitizer::Digitize(Option_t *option)
   //
   // Summable digit is a sum of all hits in the same active
   // volume into digit
-  
+
   if (strstr(option, "print") ) {
-    Print() ; 
-    return ; 
+    Print() ;
+    return ;
   }
 
   if(strstr(option,"tim"))
     gBenchmark->Start("PHOSSDigitizer");
-  
+
 /*
 	// check the QA result for RAWS
-  AliQAv1 * qa = AliQAv1::Instance(AliQAv1::kPHOS) ; 
+  AliQAv1 * qa = AliQAv1::Instance(AliQAv1::kPHOS) ;
   if ( qa->IsSet(AliQAv1::kPHOS, AliQAv1::kRAW, AliQAv1::kFATAL)) {
 	AliFatal("QA status in RAW was Fatal") ;
   } else if ( qa->IsSet(AliQAv1::kPHOS, AliQAv1::kRAW, AliQAv1::kERROR)) {
@@ -205,84 +206,84 @@ void AliPHOSSDigitizer::Digitize(Option_t *option)
 */
   AliRunLoader* rl = AliRunLoader::GetRunLoader(fEventFolderName) ;
   AliPHOSLoader * phosLoader = static_cast<AliPHOSLoader*>(rl->GetLoader("PHOSLoader"));
-  
+
   //switch off reloading of this task while getting event
   if (!fInit) { // to prevent overwrite existing file
     AliError( Form("Give a version name different from %s", fEventFolderName.Data()) ) ;
     return ;
   }
-  
-  if (fLastEvent == -1) 
+
+  if (fLastEvent == -1)
     fLastEvent = rl->GetNumberOfEvents() - 1 ;
-  else 
-    fLastEvent = TMath::Min(fFirstEvent, rl->GetNumberOfEvents()); // only one event at the time 
+  else
+    fLastEvent = TMath::Min(fFirstEvent, rl->GetNumberOfEvents()); // only one event at the time
   Int_t nEvents   = fLastEvent - fFirstEvent + 1;
-  
+
   Int_t ievent, i;
 
-  for (ievent = fFirstEvent; ievent <= fLastEvent; ievent++) {    
+  for (ievent = fFirstEvent; ievent <= fLastEvent; ievent++) {
     rl->GetEvent(ievent) ;
-    TTree * treeS = phosLoader->TreeS(); 
+    TTree * treeS = phosLoader->TreeS();
     if(!treeS){
       phosLoader->MakeTree("S");
       treeS = phosLoader->TreeS();
     }
 
-    phosLoader->CleanHits() ; 
+    phosLoader->CleanHits() ;
     phosLoader->LoadHits("READ") ;
 
     TClonesArray * hits    = phosLoader->Hits() ;
     TClonesArray * sdigits = phosLoader->SDigits() ;
     if( !sdigits ) {
-      phosLoader->MakeSDigitsArray() ; 
+      phosLoader->MakeSDigitsArray() ;
       sdigits = phosLoader->SDigits() ;
     }
     sdigits->Clear();
     Int_t nSdigits = 0 ;
 
-    //Now make SDigits from hits, for PHOS it is the same, so just copy    
+    //Now make SDigits from hits, for PHOS it is the same, so just copy
     for ( i = 0 ; i < hits->GetEntries() ; i++ ) {
-      
+
       AliPHOSHit * hit = static_cast<AliPHOSHit *>(hits->At(i)) ;
       // Assign primary number only if contribution is significant
-      
+
       if( hit->GetEnergy() > fPrimThreshold)
 	new((*sdigits)[nSdigits]) AliPHOSDigit(hit->GetPrimary(),hit->GetId(),
 					       hit->GetEnergy() ,hit->GetTime()) ;
       else
-	new((*sdigits)[nSdigits]) AliPHOSDigit(-1               ,hit->GetId(), 
+	new((*sdigits)[nSdigits]) AliPHOSDigit(-1               ,hit->GetId(),
 					       hit->GetEnergy() ,hit->GetTime()) ;
-      nSdigits++ ;	
-      
+      nSdigits++ ;
+
     }
- 
+
     sdigits->Sort() ;
 
     nSdigits = sdigits->GetEntriesFast() ;
 
-    fSDigitsInRun += nSdigits ;  
+    fSDigitsInRun += nSdigits ;
     sdigits->Expand(nSdigits) ;
-    
-    for (i = 0 ; i < nSdigits ; i++) {       
+
+    for (i = 0 ; i < nSdigits ; i++) {
       AliPHOSDigit * digit = static_cast<AliPHOSDigit *>(sdigits->At(i)) ;
-      digit->SetIndexInList(i) ;     
+      digit->SetIndexInList(i) ;
     }
-    
+
 //    // make Quality Assurance data
 //
 //    if (GetQADataMaker()->IsCycleDone() ) {
-//      GetQADataMaker()->EndOfCycle(AliQAv1::kHITS) ; 
-//	  GetQADataMaker()->EndOfCycle(AliQAv1::kSDIGITS) ; 
-//      GetQADataMaker()->StartOfCycle(AliQAv1::kHITS) ; 
-//	  GetQADataMaker()->StartOfCycle(AliQAv1::kSDIGITS, kTRUE) ; 
+//      GetQADataMaker()->EndOfCycle(AliQAv1::kHITS) ;
+//	  GetQADataMaker()->EndOfCycle(AliQAv1::kSDIGITS) ;
+//      GetQADataMaker()->StartOfCycle(AliQAv1::kHITS) ;
+//	  GetQADataMaker()->StartOfCycle(AliQAv1::kSDIGITS, kTRUE) ;
 //   }
-//    GetQADataMaker()->Exec(AliQAv1::kHITS, hits) ; 
-//    GetQADataMaker()->Exec(AliQAv1::kSDIGITS, sdigits) ; 
+//    GetQADataMaker()->Exec(AliQAv1::kHITS, hits) ;
+//    GetQADataMaker()->Exec(AliQAv1::kSDIGITS, sdigits) ;
 //    GetQADataMaker()->Increment() ;
-	
+
     //Now write SDigits
 
-    
+
     //First list of sdigits
 
     Int_t bufferSize = 32000 ;
@@ -293,12 +294,12 @@ void AliPHOSSDigitizer::Digitize(Option_t *option)
 
     if(strstr(option,"deb"))
       PrintSDigits(option) ;
-      
+
   }// event loop
-  
-//  //Write the quality assurance data 
-//  GetQADataMaker()->EndOfCycle(AliQAv1::kHITS) ;    
-//  GetQADataMaker()->EndOfCycle(AliQAv1::kSDIGITS) ;    
+
+//  //Write the quality assurance data
+//  GetQADataMaker()->EndOfCycle(AliQAv1::kHITS) ;
+//  GetQADataMaker()->EndOfCycle(AliQAv1::kSDIGITS) ;
 //  GetQADataMaker()->Finish() ;
 
   Unload();
@@ -306,21 +307,21 @@ void AliPHOSSDigitizer::Digitize(Option_t *option)
   if(strstr(option,"tim")){
     gBenchmark->Stop("PHOSSDigitizer");
     Info("Exec","   took %f seconds for SDigitizing  %f seconds per event",
-	 gBenchmark->GetCpuTime("PHOSSDigitizer"), 
+	 gBenchmark->GetCpuTime("PHOSSDigitizer"),
 	 gBenchmark->GetCpuTime("PHOSSDigitizer")/nEvents) ;
   }
-  
+
 }
 
 //__________________________________________________________________
 void AliPHOSSDigitizer::Print(const Option_t *)const
 {
   // Prints parameters of SDigitizer
-  Info("Print", "\n------------------- %s -------------", GetName() ) ; 
+  Info("Print", "\n------------------- %s -------------", GetName() ) ;
   printf("   Writing SDigits to branch with title  %s\n", fEventFolderName.Data()) ;
-  printf("   Threshold for Primary assignment= %f\n", fPrimThreshold)  ; 
+  printf("   Threshold for Primary assignment= %f\n", fPrimThreshold)  ;
   printf("---------------------------------------------------\n") ;
-  
+
 }
 
 //__________________________________________________________________
@@ -345,64 +346,64 @@ void AliPHOSSDigitizer::PrintSDigits(Option_t * option)
 
   // Get PHOS Geometry object
   AliPHOSGeometry *geom;
-  if (!(geom = AliPHOSGeometry::GetInstance())) 
+  if (!(geom = AliPHOSGeometry::GetInstance()))
         geom = AliPHOSGeometry::GetInstance("IHEP","");
 
   const TClonesArray * sdigits = phosLoader->SDigits() ;
-  
-  Info( "\nPrintSDigits", "event # %d %d sdigits", 
-	gAlice->GetEvNumber(), sdigits->GetEntriesFast() ) ; 
+
+  Info( "\nPrintSDigits", "event # %d %d sdigits",
+	gAlice->GetEvNumber(), sdigits->GetEntriesFast() ) ;
 
   if(strstr(option,"all")||strstr(option,"EMC")){
-    
+
     //loop over digits
     AliPHOSDigit * digit;
-    printf("\nEMC sdigits\n") ; 
+    printf("\nEMC sdigits\n") ;
     Int_t maxEmc = geom->GetNModules() * geom->GetNCristalsInModule() ;
     Int_t index ;
-    for (index = 0 ; (index < sdigits->GetEntriesFast()) && 
+    for (index = 0 ; (index < sdigits->GetEntriesFast()) &&
 	 ((static_cast<AliPHOSDigit *> (sdigits->At(index)))->GetId() <= maxEmc) ; index++) {
       digit = static_cast<AliPHOSDigit *>( sdigits->At(index) ) ;
-      //  if(digit->GetNprimary() == 0) 
+      //  if(digit->GetNprimary() == 0)
       // 	continue;
 //       printf("%6d  %8d    %6.5e %4d      %2d :\n", // YVK
       printf("%6d  %.4f    %6.5e %4d      %2d :\n",
-  	      digit->GetId(), digit->GetEnergy(), digit->GetTime(), digit->GetIndexInList(), digit->GetNprimary()) ;  
+  	      digit->GetId(), digit->GetEnergy(), digit->GetTime(), digit->GetIndexInList(), digit->GetNprimary()) ;
       Int_t iprimary;
       for (iprimary=0; iprimary<digit->GetNprimary(); iprimary++) {
-	printf("%d ",digit->GetPrimary(iprimary+1) ) ; 
-      }  
-    }    
+	printf("%d ",digit->GetPrimary(iprimary+1) ) ;
+      }
+    }
   }
 
   if(strstr(option,"all")||strstr(option,"CPV")){
-    
+
     //loop over CPV digits
     AliPHOSDigit * digit;
-    printf("\nCPV sdigits\n") ; 
+    printf("\nCPV sdigits\n") ;
     Int_t maxEmc = geom->GetNModules() * geom->GetNCristalsInModule() ;
     Int_t index ;
     for (index = 0 ; index < sdigits->GetEntriesFast(); index++) {
       digit = static_cast<AliPHOSDigit *>( sdigits->At(index) ) ;
       if(digit->GetId() > maxEmc){
 	printf("\n%6d  %8d    %4d      %2d :",
-		digit->GetId(), digit->GetAmp(), digit->GetIndexInList(), digit->GetNprimary()) ;  
+		digit->GetId(), digit->GetAmp(), digit->GetIndexInList(), digit->GetNprimary()) ;
 	Int_t iprimary;
 	for (iprimary=0; iprimary<digit->GetNprimary(); iprimary++) {
-	  printf("%d ",digit->GetPrimary(iprimary+1) ) ; 
+	  printf("%d ",digit->GetPrimary(iprimary+1) ) ;
 	}
-      }    
+      }
     }
   }
 }
 
-//____________________________________________________________________________ 
+//____________________________________________________________________________
 void AliPHOSSDigitizer::Unload() const
 {
   // Unloads the objects from the folder
   AliRunLoader* rl = AliRunLoader::GetRunLoader(fEventFolderName) ;
   AliPHOSLoader * phosLoader = static_cast<AliPHOSLoader*>(rl->GetLoader("PHOSLoader"));
-  
-  phosLoader->UnloadHits() ; 
-  phosLoader->UnloadSDigits() ; 
+
+  phosLoader->UnloadHits() ;
+  phosLoader->UnloadSDigits() ;
 }

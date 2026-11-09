@@ -1,11 +1,11 @@
 /*
-  NDimensional formula browser. 
+  NDimensional formula browser.
   Create browser  (set of sliders) for the formula visualization.
-  
+
   Current status:
     Working prototype
         Used e.g for browsing of the TPC space charge distortion maps
-    To do ? 
+    To do ?
         Interface THn and TTree ?
 
   Example usage:
@@ -63,7 +63,7 @@ ClassImp(AliNDFormulaBrowser)
 
 TLatex *AliNDFormulaBrowser::fgkLatex = 0;
 TLegend *AliNDFormulaBrowser::fgkLegend = 0;
-std::map<std::string,TFormula*>   AliNDFormulaBrowser::fgkFormulaMap;   // map of registered formulas 
+std::map<std::string,TFormula*>   AliNDFormulaBrowser::fgkFormulaMap;   // map of registered formulas
 
 /// To be replaced by CSS
 void AliNDFormulaBrowser::SetDefaultStyle(){
@@ -327,13 +327,13 @@ void AliNDFormulaBrowser::DoSlider(Int_t pos) {
 
 void AliNDFormulaBrowser::UpdateFormula(){
   //
-  // 
+  //
   //
   for (Int_t iPar=0; iPar<fFormula->GetNpar(); iPar++){
     TGTextEntry * text = (TGTextEntry *)fCurrentEntry->At(iPar);
     (*fFormulaParams)[iPar]=atof(text->GetBuffer()->GetString());
   }
-  Double_t value= fFormula->EvalPar(0,fFormulaParams->GetMatrixArray());
+  Double_t value= fFormula->EvalPar(nullptr,fFormulaParams->GetMatrixArray());
   TGTextBuffer * buffer = fFormulaEval->GetBuffer();
   buffer->Clear();
   buffer->AddText(0, TString::Format("%f",value).Data());
@@ -343,7 +343,7 @@ void AliNDFormulaBrowser::UpdateFormula(){
 
 void  AliNDFormulaBrowser::UpdateCanvas(){
   //
-  // 
+  //
   //
   Int_t nPoints=200;
   Int_t nLines=3;
@@ -403,7 +403,7 @@ void  AliNDFormulaBrowser::UpdateCanvas(){
             vecX[i]=minPosT+i*(maxPosT-minPosT)/nPoints;
             (fFormulaParams->GetMatrixArray())[iPar]= vecX[i];
             if (jPar>0) (fFormulaParams->GetMatrixArray())[jPar]=parZ;
-            vecY[i]=drawFormula->EvalPar(0,fFormulaParams->GetMatrixArray());
+            vecY[i]=drawFormula->EvalPar(nullptr,fFormulaParams->GetMatrixArray());
           }
           TGraph *gr = new TGraph(nPoints, vecX.GetMatrixArray(), vecY.GetMatrixArray());
           fCanvas->GetCanvas()->cd();
@@ -475,8 +475,3 @@ void  AliNDFormulaBrowser::UpdateCanvas(){
   gClient->NeedRedraw(fCanvas);
   delete formulaArray;
 }
-
-
-
-
-

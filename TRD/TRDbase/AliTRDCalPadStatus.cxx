@@ -22,6 +22,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <TStyle.h>
+#include <TMath.h>
 #include <TCanvas.h>
 #include <TH1F.h>
 #include <TH2F.h>
@@ -142,12 +143,12 @@ Bool_t AliTRDCalPadStatus::CheckStatus(Int_t d, Int_t col, Int_t row, Int_t bitM
 
 //_____________________________________________________________________________
 AliTRDCalSingleChamberStatus* AliTRDCalPadStatus::GetCalROC(Int_t p, Int_t c, Int_t s) const
-{ 
+{
   //
   // Returns the readout chamber of this pad
   //
 
-  return fROC[AliTRDgeometry::GetDetector(p,c,s)];   
+  return fROC[AliTRDgeometry::GetDetector(p,c,s)];
 
 }
 
@@ -168,7 +169,7 @@ TH1F *AliTRDCalPadStatus::MakeHisto1D()
   his->GetXaxis()->SetBinLabel(5,"ReadSecond");
   his->GetXaxis()->SetBinLabel(6,"NotConnected");
 
-  for (Int_t idet = 0; idet < kNdet; idet++) 
+  for (Int_t idet = 0; idet < kNdet; idet++)
     {
       if (fROC[idet])
 	{
@@ -221,7 +222,7 @@ TH2F *AliTRDCalPadStatus::MakeHisto2DSmPl(Int_t sm, Int_t pl)
 	  Int_t krow     = calRoc->GetNrows()-1-irow;
 	  Int_t kcol     = calRoc->GetNcols()-1-icol;
 	  if(kb > 2) binz = 16*(kb-1)+12+krow+1+2*(kb+1);
-	  else binz = 16*kb+krow+1+2*(kb+1); 
+	  else binz = 16*kb+krow+1+2*(kb+1);
 	  Int_t biny = kcol+1+2;
 	  Float_t value = calRoc->GetStatus(icol,irow);
 	  his->SetBinContent(binz,biny,value);
@@ -232,7 +233,7 @@ TH2F *AliTRDCalPadStatus::MakeHisto2DSmPl(Int_t sm, Int_t pl)
 	  Int_t binz     = 0;
 	  Int_t kb       = kNcham-1-k;
 	  if(kb > 2) binz = 16*(kb-1)+12+1+2*(kb+1)-(l+1);
-	  else binz = 16*kb+1+2*(kb+1)-(l+1); 
+	  else binz = 16*kb+1+2*(kb+1)-(l+1);
 	  his->SetBinContent(binz,icol,50.0);
 	}
       }
