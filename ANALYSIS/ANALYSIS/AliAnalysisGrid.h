@@ -38,9 +38,7 @@ enum EPluginBits {
    kUseCopy    = BIT(0),
    kCheckCopy  = BIT(1),
    kKeepLogs   = BIT(2),
-   kClearPackages = BIT(3),
    kUseSubmitPolicy = BIT(4),
-   kProofConnectGrid = BIT(5),
    kOneStageMerging = BIT(6),
    kUseMCchain = BIT(7),
    kLocalTest  = BIT(8),
@@ -131,19 +129,6 @@ enum EPluginBits {
    Bool_t              IsMergeAOD() const {return TestSpecialBit(kMergeAOD);}
    virtual void        SetMergeAOD(Bool_t flag=kTRUE) {SetSpecialBit(kMergeAOD,flag);}
 
-// PROOF mode
-   virtual void        SetProofCluster(const char *cluster)              = 0;
-   virtual void        SetProofDataSet(const char *dataset)              = 0;
-   virtual const char *GetProofDataSet() const                           = 0;
-   virtual void        SetProofReset(Int_t mode)                         = 0;
-   virtual void        SetClearPackages(Bool_t flag=kTRUE) {SetSpecialBit(kClearPackages,flag);}
-   virtual void        SetProofConnectGrid(Bool_t flag=kTRUE) {SetSpecialBit(kProofConnectGrid,flag);}
-   virtual void        SetNproofWorkers(Int_t nworkers)                  = 0;
-   virtual void        SetNproofWorkersPerSlave(Int_t nworkers)          = 0;
-   virtual void        SetRootVersionForProof(const char *version)       = 0;
-   virtual void        SetAliRootMode(const char *mode)                  = 0;
-   virtual void        SetProofProcessOpt(const char *proofOpt="")       = 0;
-   virtual TString     GetProofProcessOpt()                              = 0;
    // .txt file containing the list of files to be chained in test mode
    virtual void        SetFileForTestMode(const char *filename)          = 0;
    virtual TChain     *GetChainForTestMode(const char *treeName) const   = 0;

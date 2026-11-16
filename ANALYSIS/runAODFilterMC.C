@@ -1,6 +1,6 @@
-void runAODFilterMC()
+void runAODFilterMC(const char *inputFile="AliESDs.root")
 {
-  // PROOF example
+  // Local analysis example
 
       gSystem->Load("libTree");
       gSystem->Load("libPhysics");
@@ -8,23 +8,11 @@ void runAODFilterMC()
       gSystem->Load("libVMC");
 
       bool bKineFilter = true;
-      //      TProof::Mgr("alicecaf")->SetROOTVersion("v5-21-01-alice_dbg");
-      TProof::Open("alicecaf");
-      //      gProof->SetParallel(1);
+      for (const char *lib : {"STEERBase", "ESD", "AOD", "ANALYSIS", "ANALYSISalice"})
+        gSystem->Load(Form("lib%s", lib));
+      TChain *chain = new TChain("esdTree");
+      chain->Add(inputFile);
 
-      char *dataset = "/COMMON/COMMON/LHC08c11_10TeV_0.5T";
-      //      char *dataset = "/PWG4/kleinb/LHC08q_jetjet100";
-      // gProof->ClearPackages();
-      gProof->UploadPackage("${ALICE_ROOT}/STEERBase.par");
-      gProof->EnablePackage("STEERBase");
-      gProof->UploadPackage("${ALICE_ROOT}/ESD.par");
-      gProof->EnablePackage("ESD");
-      gProof->UploadPackage("${ALICE_ROOT}/AOD.par");
-      gProof->EnablePackage("AOD");
-      gProof->UploadPackage("${ALICE_ROOT}/ANALYSIS.par");
-      gProof->EnablePackage("ANALYSIS");
-      gProof->UploadPackage("${ALICE_ROOT}/ANALYSISalice.par");
-      gProof->EnablePackage("ANALYSISalice");
       
       //
       if (gApplication) gApplication->InitializeGraphics();
@@ -109,7 +97,7 @@ void runAODFilterMC()
       //    
       mgr->InitAnalysis();
       mgr->PrintStatus();
-      mgr->StartAnalysis("proof",dataset,10000);
+      mgr->StartAnalysis("local",chain,10000);
 
 }
 

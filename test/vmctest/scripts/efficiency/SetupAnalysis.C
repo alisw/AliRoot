@@ -44,7 +44,7 @@ void SetupAnalysis(TString mode,
   // Run analysis
   mgr->InitAnalysis();
   
-  if ((!mode.CompareTo("proof")) ||(!mode.CompareTo("local"))) {
+  if (!mode.CompareTo("local")) {
     mgr->StartAnalysis(mode.Data(),nEvents,nEventsSkip);
   }
   else {
@@ -54,38 +54,6 @@ void SetupAnalysis(TString mode,
   
 }
 
-
-TString GetFormatFromDataSet(TString dataset) {
-  
-  TString dsTreeName;
-  if (dataset.Contains("#")) {
-    Info("runSKAF.C",Form("Detecting format from dataset name '%s' ...",dataset.Data()));
-    dsTreeName=dataset(dataset.Last('#'),dataset.Length());
-  } else {
-    Info("runSKAF.C",Form("Detecting format from dataset '%s' (may take while, depends on network connection) ...",
-			  dataset.Data()));
-    TFileCollection *ds = gProof->GetDataSet(dataset.Data());
-    if (!ds) {
-      Error(Form("Dataset %s doesn't exist on proof cluster!!!!",dataset.Data()));
-      return "";
-    }
-    dsTreeName = ds->GetDefaultTreeName();
-  }
-  
-  if (dsTreeName.Contains("esdTree")) {
-    Info("runSKAF.C","ESD input format detected ...");
-    return "ESD";
-  } else if (dsTreeName.Contains("aodTree"))  {
-    Info("runSKAF.C","AOD input format detected ...");
-    return "AOD";
-  } else {
-    Error("runSKAF.C",Form("Tree %s is not supported !!!",dsTreeName.Data()));
-    Error("runSKAF.C",Form("Maybe set your DS to %s#esdTree or %s#aodTree",
-			   dataset.Data(),dataset.Data()));
-  }
-  
-  return "";
-}
 
 Bool_t InputHandlerSetup(TString format = "esd", Bool_t useKine = kTRUE)
 {

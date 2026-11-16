@@ -111,7 +111,6 @@ void TestChainCosmicDedx(){
   
   TCut cutS("cutS","Orig0.fIp.fP[1]*Orig1.fIp.fP[1]>0");
 
-  if (gProof) chainCosmic->SetProof(kTRUE);
   //
   //
   //

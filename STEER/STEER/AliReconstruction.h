@@ -66,7 +66,6 @@ public:
 
   void           SetGAliceFile(const char* fileName);
   void           SetInput(const char* input);
-  void           SetOutput(const char* output);
 
   void           SetEquipmentIdMap(const char *mapFile) {fEquipIdMap = mapFile;};
   void           SetEventRange(Int_t firstEvent = 0, Int_t lastEvent = -1) 
@@ -287,7 +286,6 @@ private:
   AliTrackleter* CreateMultFinder();
   void           CleanUp();
 
-  Bool_t         ParseOutput();
 
   //==========================================//
   void           WriteAlignmentData(AliESDEvent* esd);
@@ -353,11 +351,6 @@ private:
   TString        fUseTrackingErrorsForAlignment; // for these detectors
   TString        fGAliceFileName;     // name of the galice file
   TString        fRawInput;           // name of input raw-data file or directory
-  TString        fESDOutput;          //! name of output ESD file
-  TString        fProofOutputFileName;//! name of output file in PROOF mode
-  TString        fProofOutputLocation;//! output location in PROOF mode
-  Bool_t         fProofOutputDataset; //! keep output file in PROOF mode in dataset or merge
-  TString        fProofOutputArchive; //! list of file to be kept in output zip archive in PROOF mode
   TString        fEquipIdMap;         // name of file with equipment id map
   Int_t          fFirstEvent;         // index of first event to be reconstr.
   Int_t          fLastEvent;          // index of last event to be reconstr.

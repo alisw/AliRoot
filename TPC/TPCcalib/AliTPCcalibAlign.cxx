@@ -80,7 +80,6 @@
   .x $ALICE_ROOT/macros/loadlibsREC.C
 
   gSystem->Load("$ROOTSYS/lib/libXrdClient.so");
-  gSystem->Load("libProof");
   gSystem->Load("libANALYSIS");
   gSystem->Load("libSTAT");
   gSystem->Load("libTPCcalib");

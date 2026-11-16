@@ -11,7 +11,6 @@ Int_t loadlibsrec ()
 
   if ( gSystem->Load("libPhysics") < 0 ) return ret; ret--;
   if ( gSystem->Load("libMinuit") < 0 ) return ret; ret--;
-  if ( gSystem->Load("libProof") < 0 ) return ret; ret--;
 
   if ( gSystem->Load("libGeom") < 0 ) return ret; ret--;
   if ( gSystem->Load("libVMC") < 0 ) return ret; ret--;

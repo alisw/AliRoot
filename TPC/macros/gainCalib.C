@@ -9,7 +9,6 @@
 /// .L $ALICE_ROOT/TPC/macros/AliXRDPROOFtoolkit.cxx+
 /// AliXRDPROOFtoolkit tool;
 /// gSystem->Load("/usr/local/grid/XRootd/GSI/lib/libXrdClient");
-/// TProof * proof = TProof::Open("miranov@lxgrid2.gsi.de");
 /// ~~~
 
 TChain * chain = 0;

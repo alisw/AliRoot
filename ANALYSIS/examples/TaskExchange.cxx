@@ -55,8 +55,8 @@ TaskProducer::TaskProducer(const char *name) // All data members should be initi
 TaskProducer::~TaskProducer()
 {
    // Destructor. Clean-up the output list, but not the histograms that are put inside
-   // (the list is owner and will clean-up these histograms). Protect in PROOF case.
-   if (fOutput && !AliAnalysisManager::GetAnalysisManager()->IsProofMode()) {
+   // (the list is owner and will clean-up these histograms).
+   if (fOutput) {
       delete fOutput;
    }
    delete fExchangedData;
@@ -143,8 +143,8 @@ TaskConsumer::TaskConsumer(const char *name) // All data members should be initi
 TaskConsumer::~TaskConsumer()
 {
    // Destructor. Clean-up the output list, but not the histograms that are put inside
-   // (the list is owner and will clean-up these histograms). Protect in PROOF case.
-   if (fOutput && !AliAnalysisManager::GetAnalysisManager()->IsProofMode()) {
+   // (the list is owner and will clean-up these histograms).
+   if (fOutput) {
       delete fOutput;
    }
    // Do not delete the imported data - we are not owners

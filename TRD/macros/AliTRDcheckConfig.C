@@ -38,7 +38,7 @@
 // Make the macro compile.
 #if !defined(__CINT__) || defined(__MAKECINT__)
 // Compile me in aliroot with .L AliTRDcheckConfig.C+ or with
-// clang -lXMLParser -lGui -lProof -lRAWDatabase -lVMC -lMinuit -lSTEERbase -lANALYSIS -lSTEER -lESD -L$ALICE_BUILD/lib/tgt_`root-config --arch` -lTRDbase -lCDB -lstdc++ `root-config --libs` -I`root-config --incdir` -I$ALICE_ROOT/include AliTRDcheckConfig.C
+// clang -lXMLParser -lGui -lRAWDatabase -lVMC -lMinuit -lSTEERbase -lANALYSIS -lSTEER -lESD -L$ALICE_BUILD/lib/tgt_`root-config --arch` -lTRDbase -lCDB -lstdc++ `root-config --libs` -I`root-config --incdir` -I$ALICE_ROOT/include AliTRDcheckConfig.C
 #include <iostream>
 #include <fstream>
 #include <TMath.h>

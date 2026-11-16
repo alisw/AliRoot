@@ -153,7 +153,7 @@ Bool_t AliAODTagCreator::ReadCAFCollection(const char *filename) {
   AliInfo(Form("AOD chain created......."));	
   AliInfo(Form("Chain entries: %lld",fChain->GetEntries()));	
 
-  CreateTag(fChain, "proof");
+  CreateTag(fChain, "local");
 
   return kTRUE;
 }

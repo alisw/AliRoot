@@ -72,10 +72,9 @@ if test "x$have_root" = "x1"; then
   # - from Nov 1 2006 TTreeFormula is needed by AliTagAnalysis and requires
   #   libTreePlayer.so
   # - from Jan 07 libESD also depends on libXMLIO
-  # - libSTEER depends on libProofPlayer since Oct 2007 (after v4-07-Release)
   # - libCDB.so depends on libXMLParser since Mar 11 2009 r 31411
   # - libCDB.so depends on libGui.so since May 14 2010 r 41238
-  ROOT_CHECKLIBS='Geom Minuit EG VMC TreePlayer XMLIO Thread Proof ProofPlayer XMLParser Gui'
+  ROOT_CHECKLIBS='Geom Minuit EG VMC TreePlayer XMLIO Thread XMLParser Gui'
   for CHECKLIB in $ROOT_CHECKLIBS ; do
     LDFLAGS="$save_LDFLAGS -L${ROOTLIBDIR}"
     LIBS="$save_LIBS $ROOTLIBS $ADD_ROOTLIBS"

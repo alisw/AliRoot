@@ -120,9 +120,8 @@ function(add_target_parfile PARMODULE PARSOURCES PARHEADERS PARLINKDEF PARLIBDEP
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
-  # Target to check if the PARfile works. This uses PROOF Lite with an isolated sandbox in order to
-  # reproduce the actual usage scenario. Note that the environment to run ROOT and to find ALICE
-  # libraries does not need to be set: it is set properly according to the CMake variables
+  # Build and load the PARfile locally in an isolated directory. The ROOT and ALICE
+  # library environment is supplied from the CMake configuration.
   add_custom_target("check-${PARMODULE}.par"
 
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${PARTESTDIR}

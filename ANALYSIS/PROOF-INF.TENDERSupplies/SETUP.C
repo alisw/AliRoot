@@ -19,7 +19,6 @@ void SETUP()
   CheckLoadLibrary("libCDB");
   CheckLoadLibrary("libTENDER");
   //Load libs needed for TOF
-  CheckLoadLibrary("libProof");
   CheckLoadLibrary("libRAWDatabase");
   CheckLoadLibrary("libSTEER");
   CheckLoadLibrary("libTOFbase");

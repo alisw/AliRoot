@@ -4,7 +4,6 @@
 /// .x ~/UliStyle.C
 /// .x ~/NimStyle.C
 /// .x ~/rootlogon.C
-/// TProof::Open("");
 /// gSystem->Load("libSTAT");
 /// gSystem->Load("libANALYSIS");
 /// gSystem->Load("libTPCcalib");
@@ -15,7 +14,6 @@
 /// AliXRDPROOFtoolkit tool; 
 /// TChain * chain = tool.MakeChain("cosmic.txt","Track0",0,1000000);
 /// chain->Lookup();
-/// chain->SetProof(kTRUE);
 /// 
 /// .L $ALICE_ROOT/TPC/CalibMacros/CosmicPerformance.C+
 /// chainCosmic=chain;

@@ -178,7 +178,7 @@ AliAnalysisTaskJetsHMPID::~AliAnalysisTaskJetsHMPID()
   //destructor
   //
   Info("~AliAnalysisTaskJetsHMPID","Calling Destructor");
-  if (fHistList && !AliAnalysisManager::GetAnalysisManager()->IsProofMode()) delete fHistList;
+  if (fHistList) delete fHistList;
 }
 
 //__________________________________________________________________________

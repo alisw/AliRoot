@@ -76,8 +76,8 @@ AliAnalysisTaskExampleV::AliAnalysisTaskExampleV(const char *name) // All data m
 AliAnalysisTaskExampleV::~AliAnalysisTaskExampleV()
 {
     // Destructor. Clean-up the output list, but not the histograms that are put inside
-    // (the list is owner and will clean-up these histograms). Protect in PROOF case.
-    if (fOutput && !AliAnalysisManager::GetAnalysisManager()->IsProofMode()) {
+    // (the list is owner and will clean-up these histograms).
+    if (fOutput) {
         delete fOutput;
     }
 }

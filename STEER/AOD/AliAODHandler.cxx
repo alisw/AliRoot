@@ -155,16 +155,7 @@ Bool_t AliAODHandler::Init(Option_t* opt)
   option.ToLower();
   if (createStdAOD) {
     TDirectory *owd = gDirectory;
-    if (option.Contains("proof")) {
-      // proof
-      // Merging via files. Need to access analysis manager via interpreter.
-      gROOT->ProcessLine(Form("AliAnalysisDataContainer *c_common_out = AliAnalysisManager::GetAnalysisManager()->GetCommonOutputContainer();"));
-      gROOT->ProcessLine(Form("AliAnalysisManager::GetAnalysisManager()->OpenProofFile(c_common_out, \"RECREATE\");"));
-      fFileA = gFile;
-    } else {
-      // local and grid
-      fFileA = new TFile(fFileName.Data(), "RECREATE");
-    }
+    fFileA = new TFile(fFileName.Data(), "RECREATE");
     CreateTree(1);
     owd->cd();
   }  

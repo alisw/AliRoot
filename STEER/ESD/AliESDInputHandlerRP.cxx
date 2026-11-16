@@ -90,7 +90,7 @@ Bool_t AliESDInputHandlerRP::Init(Option_t* opt)
     //
     // Initialize input
     //
-    if (!(strcmp(opt, "proof")) || !(strcmp(opt, "local"))) return kTRUE;
+    if (!(strcmp(opt, "local"))) return kTRUE;
     //
     TIter next(fDetectors);
     TNamed* det;

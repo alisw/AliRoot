@@ -195,19 +195,6 @@ public:
    virtual void        WriteProductionFile(const char *filename) const;
    virtual void        WriteValidationScript(Bool_t merge=kFALSE);
 
-// PROOF mode
-   virtual void        SetProofCluster(const char *cluster)              {fProofCluster = cluster;}
-   virtual void        SetProofDataSet(const char *dataset)              {fProofDataSet = dataset;}
-   virtual const char *GetProofDataSet() const                           {return fProofDataSet;}
-   virtual void        SetProofParameter(const char *pname, const char *value);
-   const char         *GetProofParameter(const char *pname) const;
-   virtual void        SetProofReset(Int_t mode)                         {fProofReset = mode;}
-   virtual void        SetNproofWorkers(Int_t nworkers)                  {fNproofWorkers = nworkers;}
-   virtual void        SetNproofWorkersPerSlave(Int_t nworkers)          {fNproofWorkersPerSlave = nworkers;}
-   virtual void        SetRootVersionForProof(const char *version);
-   virtual void        SetAliRootMode(const char *mode)                  {fAliRootMode = mode;}
-   virtual void        SetProofProcessOpt(const char *proofOpt="")       {fProofProcessOpt = proofOpt;}
-   virtual TString     GetProofProcessOpt()                              {return fProofProcessOpt;}
    // .txt file containing the list of files to be chained in test mode
    virtual void        SetFileForTestMode(const char *filename)          {fFileForTestMode = filename;}
    const char         *GetFileForTestMode() const                        {return fFileForTestMode;}
@@ -250,9 +237,6 @@ private:
    Int_t            fFastReadOption;  ///< Use xrootd tweaks to reduce timeouts in file access
    Int_t            fOverwriteMode;   ///< Overwrite existing files if any
    Int_t            fNreplicas;       ///< Number of replicas for the output files
-   Int_t            fNproofWorkers;   ///< Number of workers in proof mode
-   Int_t            fNproofWorkersPerSlave; ///< Max number of workers per slave in proof mode
-   Int_t            fProofReset;      ///< Proof reset mode: 0=no reset, 1=soft, 2=hard
    Int_t            fNMCevents;       ///< Number of MC events in MC loop mode
    Int_t            fNMCjobs;         ///< Number of MC jobs in MC loop mode
    TString          fRunNumbers;      ///< List of runs to be processed
@@ -291,16 +275,11 @@ private:
    TString          fJobTag;          ///< Job tag
    TString          fOutputSingle;    ///< Directory name for the output when split is per file
    TString          fRunPrefix;       ///< Run prefix to be applied to run numbers
-   TString          fProofCluster;    ///< Proof cluster name
-   TString          fProofDataSet;    ///< Proof dataset to be used
-   TString          fFileForTestMode; ///< .txt file for the chain to be used in PROOF test mode
-   TString          fAliRootMode;     ///< AliRoot mode among the list supported by the proof cluster
-   TString          fProofProcessOpt; ///< Option passed to proof process
+   TString          fFileForTestMode; ///< .txt file for the chain to be used in local test mode
    TString          fMergeDirName;    ///< Name of the directory that should be added to the output directory
    TObjArray       *fInputFiles;      ///< List of input files to be processed by the job
    TObjArray       *fPackages;        ///< List of packages to be used
    TObjArray       *fModules;         ///< List of AliAnalysisTaskCfg modules
-   TMap             fProofParam;      ///< Key-value pairs for proof mode
    Bool_t           fDropToShell;     ///< If true, execute aliensh on start
    Bool_t           fMCLoop;          ///< MC loop flag
    TString          fGridJobIDs;      ///< List of last committed jobs
@@ -308,6 +287,6 @@ private:
    TString          fFriendLibs;      ///< List of libs (separated by blacs) needed for friends processing
    TString          fTreeName;        ///< Name of the tree to be analyzed
 
-   ClassDef(AliAnalysisAlien, 27)   // Class providing some AliEn utilities
+   ClassDef(AliAnalysisAlien, 28)   // Class providing some AliEn utilities
 };
 #endif

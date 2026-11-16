@@ -22,47 +22,21 @@ void RunTOFqa(const char* plugin_mode="full") {
 	gSystem->SetIncludePath("-I. -I$ROOTSYS/include -I$ALICE_ROOT/include -I$ALICE_ROOT -I$ALICE_ROOT/ITS -I$ALICE_ROOT/TRD -I$ALICE_ROOT/PWGPP");
 	//
 	TString trainName = "TOFqa";
-	TString analysisMode = "grid"; // "local", "grid", or "proof"
+	TString analysisMode = "grid"; // "local", "grid"
 	TString inputMode    = "list"; // "list", "xml", or "dataset"
 	Long64_t nentries=123567890,firstentry=0;
-	Bool_t saveProofToAlien=kFALSE;
-	TString proofOutdir = "";
 	if(analysisMode=="grid") {
 		// Connect to AliEn
 		TGrid::Connect("alien://");
 	} 
-	else if(analysisMode=="proof") {
-		// Connect to the PROOF cluster
-		if(inputMode!="dataset") {printf("Input mode must be dataset, for proof analysis\n"); return;}
-		gEnv->SetValue("XSec.GSI.DelegProxy","2");
-		TProof::Open("alicecaf");
-		if(saveProofToAlien) {
-			TGrid::Connect("alien://");
-			if(gGrid) {
-				TString homedir = gGrid->GetHomeDirectory();
-				TString workdir = homedir + trainName;
-				if(!gGrid->Cd(workdir)) {
-					gGrid->Cd(homedir);
-					if(gGrid->Mkdir(workdir)) {
-						gGrid->Cd(trainName);
-						::Info("TOFqa::Connect()", "Directory %s created", gGrid->Pwd());
-					}
-				}	   
-				gGrid->Mkdir("proof_output");
-				gGrid->Cd("proof_output");
-				proofOutdir = Form("alien://%s", gGrid->Pwd());
-			} 
-		}
-	}
+
 	
 
 	// AliRoot libraries
 	if(analysisMode=="local" || analysisMode=="grid") {
 		LoadLibraries();
 	} 
-	else if (analysisMode=="proof") {
-		// do nothing now
-	}
+
 
 	if(analysisMode!="grid") {printf("Analysis mode must be grid, to use alien plugin\n"); return;}
 	AliAnalysisAlien *alienHandler = CreateAlienHandler(plugin_mode);  
@@ -80,7 +54,6 @@ void RunTOFqa(const char* plugin_mode="full") {
 	esdHandler->SetReadFriends(kFALSE);
 	mgr->SetInputEventHandler(esdHandler);
 	mgr->SetDebugLevel(debug_level);
-	if(saveProofToAlien) mgr->SetSpecialOutputLocation(proofOutdir);
   
 	// Physics Selection
 	gROOT->LoadMacro("$ALICE_ROOT/OADB/macros/AddTaskPhysicsSelection.C");

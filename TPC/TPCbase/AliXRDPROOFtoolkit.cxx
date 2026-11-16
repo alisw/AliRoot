@@ -44,7 +44,6 @@
 #include <TTree.h>
 #include <TFile.h>
 #include <TChain.h>
-#include <TDSet.h>
 #include <TH1.h>
 #include <TGraph.h>
 #include <TMath.h>
@@ -142,7 +141,7 @@ TChain* AliXRDPROOFtoolkit::MakeChain(const char*fileIn, const char * treeName, 
 
 TChain* AliXRDPROOFtoolkit::MakeChainRandom(const char*fileIn, const char * treeName,const char *fName, Int_t maxFiles, Int_t startFile, Int_t checkLevel)
 {
-  /// Create a TDSet - files are in random order
+  /// Create a TChain - files are in random order
   ///
   /// filein    - input list text file
   /// treename  - containg tree
@@ -199,88 +198,10 @@ TChain* AliXRDPROOFtoolkit::MakeChainRandom(const char*fileIn, const char * tree
 
 
 
-TDSet* AliXRDPROOFtoolkit::MakeSet(const char*fileIn, const char * treeName, const char *fName, Int_t maxFiles)
-{
-  /// Create the TDSet out of list
-  /// filein    - input list text file
-  /// treename  - containg tree
-  /// maxFiles  - maximum number of files included
-
-  TDSet* chain = new TDSet(treeName);
-
-  // Open the input stream
-  ifstream in;
-  in.open(fileIn);
-
-  // Read the input list of files and add them to the chain
-  TString currentFile;
-  Int_t counter=0;
-  while(in.good()) {
-    in >> currentFile;
-    if (fName) {
-      currentFile+="#";
-      currentFile+=fName;
-    }
-    if (!currentFile.Contains("root")) continue; // protection
-    counter++;
-    if (maxFiles>0 && counter>maxFiles) break;
-    chain->Add(currentFile.Data());
-  }
-
-  in.close();
-  chain->Validate();
-  return chain;
-}
 
 
-TDSet* AliXRDPROOFtoolkit::MakeSetRandom(const char*fileIn, const char * treeName, const char *fName, Int_t maxFiles)
-{
-  /// Create a TDSet - files are in random order
-  ///
-  /// filein    - input list text file
-  /// treename  - containg tree
-  /// maxFiles  - maximum number of files included
-
-  TObjArray array(10000);
-
-  TDSet* chain = new TDSet(treeName);
-
-  // Open the input stream
-  ifstream in;
-  in.open(fileIn);
-
-  // Read the input list of files and add them to the chain
-  TString currentFile;
-  Int_t counter=0;
-  while(in.good()) {
-    in >> currentFile;
-    if (fName) {
-      currentFile+="#";
-      currentFile+=fName;
-    }
-    if (!currentFile.Contains("root")) continue; // protection
-    counter++;
-    //    chain->Add(currentFile.Data());
-    array.AddLast(new TObjString(currentFile));
-  }
-  in.close();
-  Int_t entries = array.GetEntries();
-  printf("Number of entries\t%d",entries);
-  if (maxFiles<0) maxFiles=entries;
-  if (maxFiles>entries) maxFiles=entries;
-  for (Int_t i=0; i<maxFiles; i++){
-    Int_t ifile = TMath::Nint(gRandom->Rndm()*Float_t(entries));
-    if (ifile<entries && (array.At(ifile)) &&  array.At(ifile)->TestBit(TObject::kCannotPick)==kFALSE){
-      printf("%d\t%d\t%s\n",i, ifile, array.At(ifile)->GetName());
-      chain->Add(array.At(ifile)->GetName());
-      array.At(ifile)->SetBit(TObject::kCannotPick);
-    }
-  }
 
 
-  chain->Validate();
-  return chain;
-}
 
 
 

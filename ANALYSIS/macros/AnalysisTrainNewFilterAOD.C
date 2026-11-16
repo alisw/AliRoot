@@ -4,11 +4,8 @@
 //    root[0] .L AnalysisTrain.C
 // Grid full mode as below (other modes: test, offline, submit, terminate)
 //    root[1] AnalysisTrainNew("grid", "full")
-// CAF mode (requires root v5-23-02 + aliroot v4-16-Rev08)
-//    root[2] AnalysisTrainNew("proof")
 // Local mode requires AliESds.root or AliAOD.root in ./data directory
 //    root[3] AnalysisTrainNew("local")
-// In proof and grid modes, a token is needed and sourcing the produced environment file.
 //
 // If 'saveTrain' flag is set, the train will generate a directory name and run
 // in this directory. A configuration file 'ConfigTrain.C' will be generated. 
@@ -26,14 +23,7 @@ TString     job_comment        = "tenders w. TOF corrections, centrality, AODstd
 TString     job_tag            = Form("%s: %s", visible_name.Data(), job_comment.Data());
 //==============================================================================
 
-// ### Settings that make sense in PROOF only
 //==============================================================================
-TString     proof_cluster      = "alice-caf.cern.ch";
-Bool_t      useAFPAR           = kFALSE;  // use AF special par file
-TString     AFversion          = "AF-v4-17";
-// Change CAF dataset here
-TString     proof_dataset      = "/COMMON/COMMON/LHC09a4_run8100X#/esdTree";
-TString     proof_outdir       = "";
 
 // ### Settings that make sense when using the Alien plugin
 //==============================================================================
@@ -103,7 +93,6 @@ Bool_t      useCORRFW           = kFALSE; // do not change
 Bool_t      useAODTAGS          = kFALSE; // use AOD tags
 Bool_t      saveTrain           = kTRUE;  // save train configuration as: 
 Bool_t      saveCanvases        = kFALSE;  // save canvases created in Terminate
-Bool_t      saveProofToAlien    = kFALSE; // save proof outputs in AliEn
 
 // ### Analysis modules to be included. Some may not be yet fully implemented.
 //==============================================================================
@@ -277,7 +266,6 @@ void AnalysisTrainNew(const char *analysis_mode="grid",
     
    // Make the analysis manager and connect event handlers
    AliAnalysisManager *mgr  = new AliAnalysisManager("Analysis Train", "Production train");
-   if (saveProofToAlien) mgr->SetSpecialOutputLocation(proof_outdir);
    if (!strcmp(plugin_mode, "test")) mgr->SetNSysInfo(1);
    // Load analysis specific libraries
    if (!LoadAnalysisLibraries(smode)) {
@@ -689,7 +677,6 @@ void StartAnalysis(const char *mode, TChain *chain) {
    Int_t imode = -1;
    AliAnalysisManager *mgr = AliAnalysisManager::GetAnalysisManager();
    if (!strcmp(mode, "LOCAL")) imode = 0;
-   if (!strcmp(mode, "PROOF")) imode = 1;
    if (!strcmp(mode, "GRID"))  imode = 2;
    switch (imode) {
       case 0:
@@ -700,13 +687,6 @@ void StartAnalysis(const char *mode, TChain *chain) {
        mgr->SetNSysInfo(1);
        mgr->StartAnalysis(mode, chain);
        AliCodeTimer::Instance()->Print();
-         return;
-      case 1:
-         if (!proof_dataset.Length()) {
-            ::Error("AnalysisTrainNew.C::StartAnalysis", "proof_dataset is empty");
-            return;
-         }   
-         mgr->StartAnalysis(mode, proof_dataset, 1000);
          return;
       case 2:
          if (usePLUGIN) {
@@ -731,15 +711,9 @@ void CheckModuleFlags(const char *mode) {
 // Checks selected modules and insure compatibility
    Int_t imode = -1;
    if (!strcmp(mode, "LOCAL")) imode = 0;
-   if (!strcmp(mode, "PROOF")) imode = 1;
    if (!strcmp(mode, "GRID"))  imode = 2;
    if (!iJETAN) iJETANdelta = 0;
-   if (imode==1) {
-      if (!usePAR) {
-         ::Info("AnalysisTrainNew.C::CheckModuleFlags", "PAR files enabled due to PROOF analysis");
-         usePAR = kTRUE;
-      }   
-   }  
+
    if (imode != 2) {
       ::Info("AnalysisTrainNew.C::CheckModuleFlags", "AliEn plugin disabled since not in GRID mode");
       usePLUGIN = kFALSE; 
@@ -827,44 +801,10 @@ Bool_t Connect(const char *mode) {
 // Connect <username> to the back-end system.
    Int_t imode = -1;
    if (!strcmp(mode, "LOCAL")) imode = 0;
-   if (!strcmp(mode, "PROOF")) imode = 1;
    if (!strcmp(mode, "GRID"))  imode = 2;
    TString username = gSystem->Getenv("alien_API_USER");
    switch (imode) {
       case 0:
-         break;
-      case 1:
-         if  (!username.Length()) {
-            ::Error(Form("AnalysisTrainNew.C::Connect <%s>", mode), "Make sure you:\n \
-                           1. Have called: alien-token-init <username>\n \
-                           2. Have called: >source /tmp/gclient_env_$UID");
-            return kFALSE;
-         }
-         ::Info("AnalysisTrainNew.C::Connect", "Connecting user <%s> to PROOF cluster <%s>", 
-                username.Data(), proof_cluster.Data());
-         gEnv->SetValue("XSec.GSI.DelegProxy", "2");
-//         TProof::Open(Form("%s@%s:31093", username.Data(), proof_cluster.Data()));       
-         TProof::Open(Form("%s@%s", username.Data(), proof_cluster.Data()));       
-         if (!gProof) {
-            if (strcmp(gSystem->Getenv("XrdSecGSISRVNAMES"), "lxfsrd0506.cern.ch"))
-               ::Error(Form("AnalysisTrainNew.C::Connect <%s>", mode), "Environment XrdSecGSISRVNAMES different from lxfsrd0506.cern.ch");
-            return kFALSE;
-         }
-         TGrid::Connect("alien://");
-         if (gGrid) {
-            TString homedir = gGrid->GetHomeDirectory();
-            TString workdir = homedir + train_name;
-            if (!gGrid->Cd(workdir)) {
-               gGrid->Cd(homedir);
-               if (gGrid->Mkdir(workdir)) {
-                  gGrid->Cd(train_name);
-                  ::Info("AnalysisTrainNew::Connect()", "Directory %s created", gGrid->Pwd());
-               }
-            }
-            gGrid->Mkdir("proof_output");
-            gGrid->Cd("proof_output");
-            proof_outdir = Form("alien://%s", gGrid->Pwd());
-         }   
          break;
       case 2:      
          if (usePLUGIN && !gSystem->Getenv("alien_CLOSE_SE")) {
@@ -892,7 +832,6 @@ Bool_t LoadCommonLibraries(const char *mode)
 // Load common analysis libraries.
    Int_t imode = -1;
    if (!strcmp(mode, "LOCAL")) imode = 0;
-   if (!strcmp(mode, "PROOF")) imode = 1;
    if (!strcmp(mode, "GRID"))  imode = 2;
    if (!gSystem->Getenv("ALICE_ROOT")) {
       ::Error("AnalysisTrainNew.C::LoadCommonLibraries", "Analysis train requires that analysis libraries are compiled with a local AliRoot"); 
@@ -927,22 +866,6 @@ Bool_t LoadCommonLibraries(const char *mode)
             gROOT->ProcessLine(".include $ALICE_ROOT/include");
          }   
          break;
-      case 1:
-         Int_t ires = -1;
-         if (useAFPAR && !gSystem->AccessPathName(AFversion)) ires = gProof->UploadPackage(AFversion);
-         if (ires < 0) {
-            success &= LoadLibrary("STEERBase", mode);
-            success &= LoadLibrary("ESD", mode);
-            success &= LoadLibrary("AOD", mode);
-            success &= LoadLibrary("ANALYSIS", mode);
-            success &= LoadLibrary("ANALYSISalice", mode);
-            if (useCORRFW) success &= LoadLibrary("CORRFW", mode);
-         } else { 
-            ires = gProof->EnablePackage(AFversion);
-            if (ires<0) success = kFALSE;
-            if (useCORRFW) success &= LoadLibrary("CORRFW", mode);
-         }
-         break;         
       default:
          ::Error("AnalysisTrainNew.C::LoadCommonLibraries", "Unknown run mode: %s", mode);
          return kFALSE;
@@ -1061,7 +984,6 @@ Bool_t LoadLibrary(const char *module, const char *mode, Bool_t rec=kFALSE)
    Int_t result;
    TString smodule(module);
    if (!strcmp(mode, "LOCAL")) imode = 0;
-   if (!strcmp(mode, "PROOF")) imode = 1;
    if (!strcmp(mode, "GRID"))  imode = 2;
    TString mod(module);
    if (!mod.Length()) {
@@ -1093,17 +1015,6 @@ Bool_t LoadLibrary(const char *module, const char *mode, Bool_t rec=kFALSE)
             if (rec) anaLibs += Form("lib%s.so ", module);
          }   
          break;
-      case 1:
-         result = gProof->UploadPackage(module);
-         if (result<0) {
-            result = gProof->UploadPackage(gSystem->ExpandPathName(Form("$ALICE_ROOT/%s.par", module)));
-            if (result<0) {
-               ::Error("AnalysisTrainNew.C::LoadLibrary", "Could not find module %s.par in current directory nor in $ALICE_ROOT", module);
-               return kFALSE;
-            }
-         }   
-         result = gProof->EnablePackage(module);
-         break;
       default:
          return kFALSE;
    }         
@@ -1121,7 +1032,6 @@ TChain *CreateChain(const char *mode, const char *plugin_mode)
 // Create the input chain
    Int_t imode = -1;
    if (!strcmp(mode, "LOCAL")) imode = 0;
-   if (!strcmp(mode, "PROOF")) imode = 1;
    if (!strcmp(mode, "GRID"))  imode = 2;
    TChain *chain = NULL;
    // Local chain
@@ -1156,8 +1066,6 @@ TChain *CreateChain(const char *mode, const char *plugin_mode)
                chain = CreateChainSingle(local_xmldataset, "esdTree");
             }   
          }
-         break;
-      case 1:
          break;
       case 2:
          if (usePLUGIN) {
@@ -1430,11 +1338,6 @@ void WriteConfig()
    }
    out << "{" << endl;
    out << "   train_name      = " << "\"" << train_name.Data() << "\";" << endl;
-   out << "   proof_cluster   = " << "\"" << proof_cluster.Data() << "\";" << endl;
-   out << "   useAFPAR        = " << useAFPAR << ";" << endl;
-   if (useAFPAR) 
-      out << "   AFversion       = " << AFversion.Data() << ";" << endl;
-   out << "   proof_dataset   = " << "\"" << proof_dataset.Data() << "\";" << endl;
    out << "   usePLUGIN       = " << usePLUGIN << ";" << endl;
    out << "   usePAR          = " << usePAR << ";" << endl;
    out << "   useCPAR         = " << useCPAR << ";" << endl;

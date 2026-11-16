@@ -112,34 +112,8 @@ AliAnalysisGrid* CreateAnalysisPlugin(TString analysisMode="full")
   plugin->SetSplitMode("se"); 
    
    
-  //++++++++++++++++ PROOF ++++++++++++++++
-  //    Proof cluster
-   
-  plugin->SetProofCluster("alice-caf");
-  //plugin->SetProofCluster("skaf.saske.sk");
-  //   plugin->SetProofCluster("skaf-test.saske.sk");
-  // Dataset to be used
-  //     plugin->SetProofDataSet("/alice/sim/LHC10a12_104316#esdTree");
-  //       plugin->SetProofDataSet("/alice/sim/LHC10a12_104157#esdTree");
-  //     plugin->SetProofDataSet("ds.txt");
-  plugin->SetProofDataSet("g4g.txt");
-  // May need to reset proof. Supported modes: 0-no reset, 1-soft, 2-hard
-  plugin->SetProofReset(0);
-  // May limit the number of workers per slave. If used with SetNproofWorkers, SetParallel(nproofworkers) will be called after connection
-  //plugin->SetNproofWorkersPerSlave(1);
-  // May request connection to alien upon connection to grid
-  //     plugin->SetProofConnectGrid(kTRUE);
-    
-  // plugin->SetNproofWorkers(51);
-  // May use a specific version of root installed in proof
-  //     plugin->SetRootVersionForProof("current");
-  // May set the aliroot mode. Check http://aaf.cern.ch/node/83
-  plugin->SetAliRootMode("default"); // Loads AF libs by default
-  // May request ClearPackages (individual ClearPackage not supported)
-  plugin->SetClearPackages(kFALSE);
-  // Plugin test mode works only providing a file containing test file locations
-  //    plugin->SetFileForTestMode("AOD.txt");
-  plugin->SetFileForTestMode("test.txt");
-  //++++++++++++++ end PROOF ++++++++++++++++
+  // Input files for local test mode
+  plugin->SetFileForTestMode("files.txt");
+
   return plugin; 
 } 

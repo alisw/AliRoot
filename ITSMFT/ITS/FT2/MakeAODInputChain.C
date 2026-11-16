@@ -189,7 +189,7 @@ TFileCollection* MakeRootArchFileCollection(const char* collectionfileAOD,
   TGridResult *tagResultAOD = collectionAOD->GetGridResult("",0,0);
 
   Int_t nmaxentr;
-  TFileCollection *proofColl=new TFileCollection("proofColl","proofColl");
+  TFileCollection *fileColl=new TFileCollection("fileColl","fileColl");
   
   nmaxentr=tagResultAOD->GetEntries();
   printf("Number of files %d\n",nmaxentr);
@@ -217,35 +217,12 @@ TFileCollection* MakeRootArchFileCollection(const char* collectionfileAOD,
       }
       aodlfn.Append("aod_archive.zip");      
       printf("Adding file %s\n",aodlfn.Data());
-      proofColl->Add(r->GetKey(0,"turl"));
+      fileColl->Add(r->GetKey(0,"turl"));
     }
-    return proofColl;
+    return fileColl;
 }
 //----------------------------------------------------------------------------
-void StageToCAF(TString xmlcoll="collAODLHC08x.xml",
-		TString datasetname="AODVertexingHF_LHC08x_10files",
-		Int_t nfiles=-1) {
-  //
-  // Staging a dataset to CAF
-  // andrea.dainese@pd.infn.it
-  //
 
-  //gROOT->LoadMacro("MakeAODInputChain.C");
-
-  TGrid::Connect("alien://");
-
-  // find -x collAODLHC08x -z /alice/cern.ch/user/r/rbala/newtrain/out_lhc08x/* AliAOD.root > collAODLHC08x.xml
-
-  TFileCollection *proofColl = MakeRootArchFileCollection(xmlcoll.Data(),nfiles,KTRUE);
-  proofColl->SetAnchor("AliAOD.root");
-
-  gEnv->SetValue("XSec.GSI.DelegProxy","2");
-  TProof::Open("dainesea:PWG3@alicecaf"); 
-  gProof->RegisterDataSet(datasetname.Data(),proofColl);
-  gProof->ShowDataSets();
-
-  return;
-}
 //---------------------------------------------------------------------------
 Bool_t CheckStdout(TString aodlfn) {
   

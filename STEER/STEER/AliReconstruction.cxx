@@ -121,9 +121,8 @@
 #include <TPRegexp.h>
 #include <TParameter.h>
 #include <TPluginManager.h>
-#include <TProof.h>
-#include <TProofOutputFile.h>
 #include <TROOT.h>
+#include <TRegexp.h>
 #include <TSystem.h>
 #include <THashTable.h>
 #include <TGrid.h>
@@ -263,11 +262,6 @@ AliReconstruction::AliReconstruction(const char* gAliceFilename) :
   fUseTrackingErrorsForAlignment(""),
   fGAliceFileName(gAliceFilename),
   fRawInput(""),
-  fESDOutput(""),
-  fProofOutputFileName(""),
-  fProofOutputLocation(""),
-  fProofOutputDataset(kFALSE),
-  fProofOutputArchive(""),
   fEquipIdMap(""),
   fFirstEvent(0),
   fLastEvent(-1),
@@ -415,11 +409,6 @@ AliReconstruction::AliReconstruction(const AliReconstruction& rec) :
   fUseTrackingErrorsForAlignment(rec.fUseTrackingErrorsForAlignment),
   fGAliceFileName(rec.fGAliceFileName),
   fRawInput(rec.fRawInput),
-  fESDOutput(rec.fESDOutput),
-  fProofOutputFileName(rec.fProofOutputFileName),
-  fProofOutputLocation(rec.fProofOutputLocation),
-  fProofOutputDataset(rec.fProofOutputDataset),
-  fProofOutputArchive(rec.fProofOutputArchive),
   fEquipIdMap(rec.fEquipIdMap),
   fFirstEvent(rec.fFirstEvent),
   fLastEvent(rec.fLastEvent),
@@ -537,7 +526,6 @@ AliReconstruction::AliReconstruction(const AliReconstruction& rec) :
 AliReconstruction& AliReconstruction::operator = (const AliReconstruction& rec)
 {
 // assignment operator
-// Used in PROOF mode
 // Be very careful while modifing it!
 // Simple rules to follow:
 // for persistent data members - use their assignment operators
@@ -587,11 +575,6 @@ AliReconstruction& AliReconstruction::operator = (const AliReconstruction& rec)
   fUseTrackingErrorsForAlignment = rec.fUseTrackingErrorsForAlignment;
   fGAliceFileName                = rec.fGAliceFileName;
   fRawInput                      = rec.fRawInput;
-  fESDOutput                     = rec.fESDOutput;
-  fProofOutputFileName           = rec.fProofOutputFileName;
-  fProofOutputLocation           = rec.fProofOutputLocation;
-  fProofOutputDataset            = rec.fProofOutputDataset;
-  fProofOutputArchive            = rec.fProofOutputArchive;
   fEquipIdMap                    = rec.fEquipIdMap;
   fFirstEvent                    = rec.fFirstEvent;
   fLastEvent                     = rec.fLastEvent;
@@ -752,7 +735,6 @@ void AliReconstruction::InitQA()
   
   if (fGRPData) AliQADataMaker::SetCloningRequest( fGRPData->GetQATrigClasses(), fGRPData->GetQACloningRequest());
 
-
   AliQAManager * qam = AliQAManager::QAManager(AliQAv1::kRECMODE) ; 
   qam->SetSaveData(kTRUE); 
   qam->SetCycleLength(AliQAv1::kITS, 5) ; 
@@ -789,7 +771,7 @@ void AliReconstruction::InitQA()
     qam->SetCycleLength(AliQAv1::DETECTORINDEX_t(det), fQACycles[det]) ;  
     qam->SetWriteExpert(AliQAv1::DETECTORINDEX_t(det)) ;
   }
-  if (!fRawReader && !fInput && IsInTasks(AliQAv1::kRAWS))
+  if (!fRawReader && IsInTasks(AliQAv1::kRAWS))
     fQATasks.ReplaceAll(Form("%d",AliQAv1::kRAWS), "") ;
   qam->SetTasks(fQATasks) ; 
   qam->InitQADataMaker(AliCDBManager::Instance()->GetRun()) ; 
@@ -1140,13 +1122,7 @@ void AliReconstruction::SetInput(const char* input)
 }
 
 //_____________________________________________________________________________
-void AliReconstruction::SetOutput(const char* output) 
-{
-  // Set the output ESD filename
-  // 'output' is a normalt ROOT url
-  // The method is used in case of raw-data reco with PROOF
-  if (output) fESDOutput = output;
-}
+
 
 //_____________________________________________________________________________
 void AliReconstruction::SetOption(const char* detector, const char* option)
@@ -1252,7 +1228,6 @@ Bool_t AliReconstruction::InitGRP() {
 
   fRunInfo = new AliRunInfo(lhcState, beamType, beamEnergy, runType, activeDetectors);
   fRunInfo->Dump();
-
 
   // Process the list of active detectors
   if (activeDetectors) {
@@ -1420,7 +1395,6 @@ Bool_t AliReconstruction::LoadCDB()
     AliWarning("Can not get list of cosmic triggers from OCDB! Cosmic event specie will rely on aliases if defined");
   }
 
-
   return kTRUE;
 }
 //_____________________________________________________________________________
@@ -1527,7 +1501,6 @@ Bool_t AliReconstruction::ReadIntensityInfoCDB()
   //
 }
 
-
 //_____________________________________________________________________________
 Bool_t AliReconstruction::Run(const char* input)
 {
@@ -1541,28 +1514,7 @@ Bool_t AliReconstruction::Run(const char* input)
   if (fRawReader && (chain = fRawReader->GetChain())) {
     ProcessTriggerAliases();
     Long64_t nEntries = (fLastEvent < 0) ? (TChain::kBigNumber) : (fLastEvent - fFirstEvent + 1);
-    // Proof mode
-    if (gProof) {
-      // Temporary fix for long raw-data runs (until socket timeout handling in PROOF is revised)
-      gProof->Exec("gEnv->SetValue(\"Proof.SocketActivityTimeout\",-1)", kTRUE);
-
-      if (gGrid)
-	gProof->Exec("TGrid::Connect(\"alien://\")",kTRUE);
-
-      TMessage::EnableSchemaEvolutionForAll(kTRUE);
-      gProof->Exec("TMessage::EnableSchemaEvolutionForAll(kTRUE)",kTRUE);
-
-      gProof->AddInput(this);
-
-      if (!ParseOutput()) return kFALSE;
-
-      gProof->SetParameter("PROOF_MaxSlavesPerNode", 9999);
-      chain->SetProof();
-      chain->Process("AliReconstruction","",nEntries,fFirstEvent);
-    }
-    else {
-      chain->Process(this,"",nEntries,fFirstEvent);
-    }
+    chain->Process(this,"",nEntries,fFirstEvent);
   }
   else {
     Begin(NULL);
@@ -1664,14 +1616,6 @@ void AliReconstruction::Begin(TTree *)
   // Should follow the TSelector convention
   // i.e. initialize only the object on the client side
   AliCodeTimerAuto("",0);
-
-  AliReconstruction *reco = NULL;
-  if (fInput) {
-    if ((reco = (AliReconstruction*)fInput->FindObject("AliReconstruction"))) {
-      *this = *reco;
-    }
-    AliSysInfo::AddStamp("ReadInputInBegin");
-  }
 
   // Import ideal TGeo geometry and apply misalignment
   if (!AliGeomManager::GetGeometry()) {
@@ -1781,23 +1725,6 @@ void AliReconstruction::Begin(TTree *)
       exit(0);
   }
 
-  if (fInput && gProof) {
-    if (reco) *reco = *this;
-
-    gGeoManager->SetName("Geometry");
-    gProof->AddInputData(gGeoManager,kTRUE);
-    gGeoManager = NULL;
-    gProof->AddInputData(const_cast<TMap*>(AliCDBManager::Instance()->GetEntryCache()),kTRUE);
-    fInput->Add(new TParameter<Int_t>("RunNumber",AliCDBManager::Instance()->GetRun()));
-    AliMagF *magFieldMap = (AliMagF*)TGeoGlobalMagField::Instance()->GetField();
-    magFieldMap->SetName("MagneticFieldMap");
-    gProof->AddInputData(magFieldMap,kTRUE);
-    if (fAnalysis) {
-      fAnalysis->SetName("Analysis");
-      gProof->AddInputData(fAnalysis,kTRUE);
-    }  
-  }
-
 }
 
 //_____________________________________________________________________________
@@ -1805,65 +1732,8 @@ void AliReconstruction::SlaveBegin(TTree*)
 {
   // Initialization related to run-loader,
   // vertexer, trackers, recontructors
-  // In proof mode it is executed on the slave
   AliCodeTimerAuto("",0);
-  TProofOutputFile *outProofFile = NULL;
-  if (fInput) {
-    if (AliDebugLevel() > 0) fInput->Print();
-    if (AliDebugLevel() > 10) fInput->Dump();
-    if (AliReconstruction *reco = (AliReconstruction*)fInput->FindObject("AliReconstruction")) {
-      *this = *reco;
-    }
-    if (TGeoManager *tgeo = (TGeoManager*)fInput->FindObject("Geometry")) {
-      gGeoManager = tgeo;
-      AliGeomManager::SetGeometry(tgeo);
-    }
-    if (TMap *entryCache = (TMap*)fInput->FindObject("CDBEntryCache")) {
-      Int_t runNumber = -1;
-      if (TProof::GetParameter(fInput,"RunNumber",runNumber) == 0) {
-	AliCDBManager *man = AliCDBManager::Instance(entryCache,runNumber);
-	man->SetCacheFlag(kTRUE);
-	man->SetLock(kTRUE);
-	man->Print();
-      }
-    }
-    if (AliMagF *map = (AliMagF*)fInput->FindObject("MagneticFieldMap")) {
-      AliMagF *newMap = new AliMagF(*map);
-      if (!newMap->LoadParameterization()) {
-	Abort("AliMagF::LoadParameterization", TSelector::kAbortProcess);
-	return;
-      }
-      TGeoGlobalMagField::Instance()->SetField(newMap);
-      TGeoGlobalMagField::Instance()->Lock();
-    }
-    if (!fAnalysis) {
-       // Attempt to get the analysis manager from the input list
-       fAnalysis = (AliAnalysisManager*)fInput->FindObject("Analysis");
-       if (fAnalysis) AliInfo("==== Analysis manager retrieved from input list ====");
-    }   
-    if (TNamed *outputFileName = (TNamed*)fInput->FindObject("PROOF_OUTPUTFILE"))
-      fProofOutputFileName = outputFileName->GetTitle();
-    if (TNamed *outputLocation = (TNamed*)fInput->FindObject("PROOF_OUTPUTFILE_LOCATION"))
-      fProofOutputLocation = outputLocation->GetTitle();
-    if (fInput->FindObject("PROOF_OUTPUTFILE_DATASET"))
-      fProofOutputDataset = kTRUE;
-    if (TNamed *archiveList = (TNamed*)fInput->FindObject("PROOF_OUTPUTFILE_ARCHIVE"))
-      fProofOutputArchive = archiveList->GetTitle();
-    if (!fProofOutputFileName.IsNull() &&
-	!fProofOutputLocation.IsNull() &&
-	fProofOutputArchive.IsNull()) {
-      if (!fProofOutputDataset) {
-	outProofFile = new TProofOutputFile(fProofOutputFileName.Data(),"M");
-	outProofFile->SetOutputFileName(Form("%s%s",fProofOutputLocation.Data(),fProofOutputFileName.Data()));
-      }
-      else {
-	outProofFile = new TProofOutputFile(fProofOutputFileName.Data(),"DROV",fProofOutputLocation.Data());
-      }
-      if (AliDebugLevel() > 0) outProofFile->Dump();
-      fOutput->Add(outProofFile);
-    }
-    AliSysInfo::AddStamp("ReadInputInSlaveBegin");
-  }
+
   // Check if analysis was requested in the reconstruction event loop
   if (!fAnalysis) {
     // Attempt to connect in-memory singleton
@@ -1899,24 +1769,12 @@ void AliReconstruction::SlaveBegin(TTree*)
   AliSysInfo::AddStamp("CreateTrackers");
 
   // create the ESD output file and tree
-  if (!outProofFile) {
-    ffile = TFile::Open("AliESDs.root", "RECREATE");
-    ffile->SetCompressionLevel(2);
-    if (!ffile->IsOpen()) {
-      Abort("OpenESDFile", TSelector::kAbortProcess);
-      return;
-    }
+  ffile = TFile::Open("AliESDs.root", "RECREATE");
+  if (!ffile || !ffile->IsOpen()) {
+    Abort("OpenESDFile", TSelector::kAbortProcess);
+    return;
   }
-  else {
-    AliInfo(Form("Opening output PROOF file: %s/%s",
-		 outProofFile->GetDir(), outProofFile->GetFileName()));
-    if (!(ffile = outProofFile->OpenFile("RECREATE"))) {
-      Abort(Form("Problems opening output PROOF file: %s/%s",
-		 outProofFile->GetDir(), outProofFile->GetFileName()),
-	    TSelector::kAbortProcess);
-      return;
-    }
-  }
+  ffile->SetCompressionLevel(2);
 
   ftree = new TTree("esdTree", "Tree with ESD objects");
   fesd = new AliESDEvent();
@@ -2080,7 +1938,6 @@ Bool_t AliReconstruction::ProcessEvent(Int_t iEvent)
   // run the reconstruction over a single event
   // The event loop is steered in Run method
 
-
   static Long_t oldMres=0;
   static Long_t oldMvir=0;
   static Float_t oldCPU=0;
@@ -2106,7 +1963,6 @@ Bool_t AliReconstruction::ProcessEvent(Int_t iEvent)
 
   iEvent -= fNAbandonedEv;
 
-
   AliSysInfo::AddStamp(Form("StartEv_%d",iEvent), 0,0,iEvent);
 
   if (iEvent >= fRunLoader->GetNumberOfEvents()) {
@@ -2123,7 +1979,6 @@ Bool_t AliReconstruction::ProcessEvent(Int_t iEvent)
   if ((iEvent < fFirstEvent) || ((fLastEvent >= 0) && (iEvent > fLastEvent))) {
     return kTRUE;
   }
-
 
   fRunLoader->GetEvent(iEvent);
   
@@ -2149,7 +2004,6 @@ Bool_t AliReconstruction::ProcessEvent(Int_t iEvent)
   }
   AliInfo(Form("================================= Processing event %d of type %-10s ==================================", iEvent,fRecoParam.PrintEventSpecie()));
   fEventInfo.Print();
-
 
   AliSysInfo::AddStamp(Form("StartReco_%d",iEvent), 0,0,iEvent);
   // Set the reco-params
@@ -2303,7 +2157,6 @@ Bool_t AliReconstruction::ProcessEvent(Int_t iEvent)
       }
     }
 
-  
     //
     // Set most probable pt, for B=0 tracking
     // Get the global reco-params. They are atposition 16 inside the array of detectors in fRecoParam
@@ -2718,7 +2571,6 @@ void AliReconstruction::CleanProcessedEvent()
     }
  
     AliInfo("======================= End Event ===================");
-    
 
     for (Int_t iDet = 0; iDet < kNDetectors; iDet++) {
       if (fReconstructor[iDet]) {
@@ -2791,7 +2643,6 @@ void AliReconstruction::SlaveTerminate()
 #endif
    sVersion += "; metadata ";
    sVersion += getenv("PRODUCTION_METADATA");
-		    
 
    TNamed * alirootVersion = new TNamed("alirootVersion",sVersion.Data());
    ftree->GetUserInfo()->Add(alirootVersion); // The list becomes owner of alirootVersion
@@ -2819,50 +2670,12 @@ void AliReconstruction::SlaveTerminate()
 
   if (fRunQA || fRunGlobalQA) {
     AliQAManager::QAManager()->EndOfCycle() ;
-    if (fInput &&
-	!fProofOutputLocation.IsNull() &&
-	fProofOutputArchive.IsNull() &&
-	!fProofOutputDataset) {
-      TString qaOutputFile(Form("%sMerged.%s.Data.root",
-				fProofOutputLocation.Data(),
-				AliQAv1::GetQADataFileName()));
-      TProofOutputFile *qaProofFile = new TProofOutputFile(Form("Merged.%s.Data.root",
-								AliQAv1::GetQADataFileName()));
-      qaProofFile->SetOutputFileName(qaOutputFile.Data());
-      if (AliDebugLevel() > 0) qaProofFile->Dump();
-      fOutput->Add(qaProofFile);
-      MergeQA(qaProofFile->GetFileName());
-    }
-    else {
-      MergeQA();
-    }
+    MergeQA();
   }
 
   gROOT->cd();
   CleanUp();
 
-  if (fInput) {
-    if (!fProofOutputFileName.IsNull() &&
-	!fProofOutputLocation.IsNull() &&
-	fProofOutputDataset &&
-	!fProofOutputArchive.IsNull()) {
-      TProofOutputFile *zipProofFile = new TProofOutputFile(fProofOutputFileName.Data(),
-							    "DROV",
-							    fProofOutputLocation.Data());
-      if (AliDebugLevel() > 0) zipProofFile->Dump();
-      fOutput->Add(zipProofFile);
-      TString fileList(fProofOutputArchive.Data());
-      fileList.ReplaceAll(","," ");
-      TString command;
-#if ROOT_SVN_REVISION >= 30174
-      command.Form("zip -n root %s/%s %s",zipProofFile->GetDir(kTRUE),zipProofFile->GetFileName(),fileList.Data());
-#else
-      command.Form("zip -n root %s/%s %s",zipProofFile->GetDir(),zipProofFile->GetFileName(),fileList.Data());
-#endif
-      AliInfo(Form("Executing: %s",command.Data()));
-      gSystem->Exec(command.Data());
-    }
-  }
 }
     
 //_____________________________________________________________________________
@@ -2872,12 +2685,9 @@ void AliReconstruction::Terminate()
   // In case of empty events the tags will contain dummy values
   AliCodeTimerAuto("",0);
 
-  // Do not call the ESD tag creator in case of PROOF-based reconstruction
-  if (!fInput) {
-    AliESDTagCreator *esdtagCreator = new AliESDTagCreator();
-    esdtagCreator->CreateESDTags(fFirstEvent,fLastEvent,fGRPData, AliQAv1::Instance()->GetQA(), AliQAv1::Instance()->GetEventSpecies(), AliQAv1::kNDET, AliRecoParam::kNSpecies);
-    delete esdtagCreator;
-  }
+  AliESDTagCreator *esdtagCreator = new AliESDTagCreator();
+  esdtagCreator->CreateESDTags(fFirstEvent,fLastEvent,fGRPData, AliQAv1::Instance()->GetQA(), AliQAv1::Instance()->GetEventSpecies(), AliQAv1::kNDET, AliRecoParam::kNSpecies);
+  delete esdtagCreator;
 
   // Cleanup of CDB manager: cache and active storages!
   AliCDBManager::Instance()->ClearCache();
@@ -3157,7 +2967,6 @@ Bool_t AliReconstruction::RunMuonTracking(AliESDEvent*& esd)
   AliReconstructor *reconstructor = GetReconstructor(iDet);
   if (!reconstructor) return kFALSE;
 
-  
   TString detName = fgkDetectorName[iDet];
   AliDebug(1, Form("%s tracking", detName.Data()));
   AliTracker *tracker =  reconstructor->CreateTracker();
@@ -3185,7 +2994,6 @@ Bool_t AliReconstruction::RunMuonTracking(AliESDEvent*& esd)
   
   return kTRUE;
 }
-
 
 //_____________________________________________________________________________
 Bool_t AliReconstruction::RunMFTTrackingMU(AliESDEvent*& esd) {
@@ -3611,7 +3419,6 @@ Bool_t AliReconstruction::FillMCEventHeaderESD(AliESDEvent*& esd)
   return kTRUE;
 }
 
-
 //_____________________________________________________________________________
 Bool_t AliReconstruction::IsSelected(TString detName, TString& detectors) const
 {
@@ -3699,7 +3506,6 @@ Bool_t AliReconstruction::InitRunLoader()
     fRunLoader->LoadHeader();
     fRunLoader->LoadKinematics();
 
-    
   } else {               // galice.root does not exist
     if (!fRawReader) {
       AliError(Form("the file %s does not exist", fGAliceFileName.Data()));
@@ -4460,7 +4266,6 @@ Bool_t AliReconstruction::GetEventInfo()
   // We have to fill also the HLT decision here!!
   // ...
   // check if event has cosmic or laser alias
-  
 
   return kTRUE;
 }
@@ -4569,70 +4374,6 @@ Bool_t AliReconstruction::ProcessEvent(void* event)
 }
 
 //______________________________________________________________________________
-Bool_t AliReconstruction::ParseOutput()
-{
-  // The method parses the output file
-  // location string in order to steer
-  // properly the selector
-
-  TPMERegexp re1("(\\w+\\.zip#\\w+\\.root):([,*\\w+\\.root,*]+)@dataset://(\\w++)");
-  TPMERegexp re2("(\\w+\\.root)?@?dataset://(\\w++)");
-
-  if (re1.Match(fESDOutput) == 4) {
-    // root archive with output files stored and regustered
-    // in proof dataset
-    gProof->AddInput(new TNamed("PROOF_OUTPUTFILE",re1[1].Data()));
-    gProof->AddInput(new TNamed("PROOF_OUTPUTFILE_LOCATION",re1[3].Data()));
-    gProof->AddInput(new TNamed("PROOF_OUTPUTFILE_DATASET",""));
-    gProof->AddInput(new TNamed("PROOF_OUTPUTFILE_ARCHIVE",re1[2].Data()));
-    AliInfo(Form("%s files will be stored within %s in dataset %s",
-		 re1[2].Data(),
-		 re1[1].Data(),
-		 re1[3].Data()));
-  }
-  else if (re2.Match(fESDOutput) == 3) {
-    // output file stored and registered
-    // in proof dataset
-    gProof->AddInput(new TNamed("PROOF_OUTPUTFILE",(re2[1].IsNull()) ? "AliESDs.root" : re2[1].Data()));
-    gProof->AddInput(new TNamed("PROOF_OUTPUTFILE_LOCATION",re2[2].Data()));
-    gProof->AddInput(new TNamed("PROOF_OUTPUTFILE_DATASET",""));
-    AliInfo(Form("%s will be stored in dataset %s",
-		 (re2[1].IsNull()) ? "AliESDs.root" : re2[1].Data(),
-		 re2[2].Data()));
-  }
-  else {
-    if (fESDOutput.IsNull()) {
-      // Output location not given.
-      // Assuming xrootd has been already started and
-      // the output file has to be sent back
-      // to the client machine
-      TString esdUrl(Form("root://%s/%s/",
-			  TUrl(gSystem->HostName()).GetHostFQDN(),
-			  gSystem->pwd()));
-      gProof->AddInput(new TNamed("PROOF_OUTPUTFILE","AliESDs.root"));
-      gProof->AddInput(new TNamed("PROOF_OUTPUTFILE_LOCATION",esdUrl.Data()));
-      AliInfo(Form("AliESDs.root will be stored in %s",
-		   esdUrl.Data()));
-    }
-    else {
-      // User specified an output location.
-      // Ones has just to parse it here
-      TUrl outputUrl(fESDOutput.Data());
-      TString outputFile(gSystem->BaseName(outputUrl.GetFile()));
-      gProof->AddInput(new TNamed("PROOF_OUTPUTFILE",outputFile.IsNull() ? "AliESDs.root" : outputFile.Data()));
-      TString outputLocation(outputUrl.GetUrl());
-      outputLocation.ReplaceAll(outputFile.Data(),"");
-      gProof->AddInput(new TNamed("PROOF_OUTPUTFILE_LOCATION",outputLocation.Data()));
-      AliInfo(Form("%s will be stored in %s",
-		   outputFile.IsNull() ? "AliESDs.root" : outputFile.Data(),
-		   outputLocation.Data()));
-    }
-  }
-
-  return kTRUE;
-}
-
-//______________________________________________________________________________
 Bool_t AliReconstruction::IsHighPt() const {
   // Selection of events containing "high" pT tracks
   // If at least one track is found within 1.5 and 100 GeV (pT)
@@ -4700,7 +4441,6 @@ Bool_t AliReconstruction::IsCosmicOrCalibSpecie() const {
   }
   return isOK;
 }
-
 
 //______________________________________________________________________________
 void AliReconstruction::ResetFriends() 

@@ -1,23 +1,17 @@
 // Automatically generated CheckPar@PARMODULE@.C for @PARMODULE@
+#include <TROOT.h>
+#include <TSystem.h>
+#include <TString.h>
 
 void CheckPar@PARMODULE@() {
-
-  gEnv->SetValue("ProofLite.Sandbox", "@PARTESTDIR@");
-
-  if ( TProof::Open("workers=1") == NULL ) {
-    gSystem->Exit(1);
-  }
-
-  if ( gProof->UploadPackage("@PARFILE@") != 0 ) {
-    gSystem->Exit(2);
-  }
-
-  if ( gProof->EnablePackage("@PARMODULE@") != 0 ) {
-    gSystem->Exit(3);
-  }
-
+  if (!gSystem->ChangeDirectory("@PARTESTDIR@")) gSystem->Exit(1);
+  if (gSystem->Exec("tar -xzf \"@PARFILE@\"") != 0) gSystem->Exit(2);
+  if (!gSystem->ChangeDirectory("@PARMODULE@")) gSystem->Exit(2);
+  if (gSystem->Exec("sh PROOF-INF/BUILD.sh") != 0) gSystem->Exit(3);
+  Int_t error = 0;
+  Longptr_t result = gROOT->Macro("PROOF-INF/SETUP.C", &error);
+  if (error || result != 0) gSystem->Exit(4);
+  if (gSystem->Load("./lib@PARMODULE@") < 0) gSystem->Exit(4);
   gSystem->ListLibraries();
-
-  // All OK
   gSystem->Exit(0);
 }

@@ -1,5 +1,5 @@
 /*
-g++ makeTRDdEdxOADB.C  -g -O3 -Wall -Werror -I$ROOTSYS/include -I$ALICE_BUILD/include -I$ALICE_ROOT/TRD -I$ALICE_ROOT/TRD/Cal  -L$ROOTSYS/lib -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -lMinuit -lEG -lGeom -lVMC -lProof -lProofPlayer -lXMLParser -lXMLIO -lSpectrum -lTreePlayer -lMLP -lGui -L$ALICE_BUILD/lib/tgt_linuxx8664gcc -lCDB -lSTEER -lRAWDatarec -lESD -lSTEERBase -lANALYSIS -lRAWDatabase  -lANALYSISalice -lAOD -lTPCrec -lTPCbase -lTRDbase -lTRDrec -lSTAT   -o makeTRDdEdxOADB
+g++ makeTRDdEdxOADB.C  -g -O3 -Wall -Werror -I$ROOTSYS/include -I$ALICE_BUILD/include -I$ALICE_ROOT/TRD -I$ALICE_ROOT/TRD/Cal  -L$ROOTSYS/lib -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic -lMinuit -lEG -lGeom -lVMC -lXMLParser -lXMLIO -lSpectrum -lTreePlayer -lMLP -lGui -L$ALICE_BUILD/lib/tgt_linuxx8664gcc -lCDB -lSTEER -lRAWDatarec -lESD -lSTEERBase -lANALYSIS -lRAWDatabase  -lANALYSISalice -lAOD -lTPCrec -lTPCbase -lTRDbase -lTRDrec -lSTAT   -o makeTRDdEdxOADB
 
 #generate OADB
 makeTRDdEdxOADB 1

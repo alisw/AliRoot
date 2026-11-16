@@ -31,15 +31,9 @@
 /// 2. Initialization of proof
 ///
 /// ~~~{.cpp}
-/// TProofMgr * proofmgr = TProof::Mgr("lxgrid5.gsi.de");
-/// TProof * proof = proofmgr->CreateSession();
 /// proof->SetParameter("PROOF_MaxSlavesPerNode", (Long_t)1000);
 /// .L /u/miranov/macros/ProofEnableAliRoot.C
 /// ProofEnableAliRoot("/usr/local/grid/AliRoot/HEAD0108");
-/// gProof->Exec("gSystem->Load(\"libANALYSIS\")",kTRUE);
-/// gProof->Exec("gSystem->Load(\"libSTAT\")",kTRUE);
-/// gProof->Exec("gSystem->Load(\"libTPCcalib\")",kTRUE);
-/// gProof->Exec(".x $ALICE_ROOT/TPC/macros/ConfigOCDB.C");
 /// ~~~
 ///
 /// 3. Run analysis on PROOF
@@ -55,7 +49,6 @@
 /// AliXRDPROOFtoolkit tool;
 /// TChain * chain = tool.MakeChain("list.txt","Kr",0,1000);
 /// chain->Lookup();
-/// chain->SetProof(kTRUE);
 ///
 /// TCut cutR0("cutR0","fADCcluster/fSize<200");        // adjust it according v seetings -
 /// TCut cutR1("cutR1","fADCcluster/fSize>7");          // cosmic tracks and noise removal
@@ -86,7 +79,7 @@
 
 TChain * chain = 0;
 
-void RunAliTPCCalibKrTask(Bool_t bProof = kFALSE)
+void RunAliTPCCalibKrTask()
 {
   ///
 
@@ -126,10 +119,7 @@ void RunAliTPCCalibKrTask(Bool_t bProof = kFALSE)
   mgr->PrintStatus();
   mgr->SetDebugLevel(1);
 
-  if(bProof) {
-    mgr->StartAnalysis("proof", chain);
-  }
-  else mgr->StartAnalysis("local", chain);
+  mgr->StartAnalysis("local", chain);
 }
 
 

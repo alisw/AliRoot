@@ -155,7 +155,7 @@ AliAnalysisTaskPIDqa::~AliAnalysisTaskPIDqa()
   delete fV0kaons;
   delete fV0protons;
 
-  if (!AliAnalysisManager::GetAnalysisManager()->IsProofMode()) delete fListQA;
+  delete fListQA;
 }
 
 //______________________________________________________________________________

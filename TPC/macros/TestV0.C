@@ -38,7 +38,7 @@
 /// mgr->SetNSysInfo(100);
 ///
 /// mgr->SetDebugLevel(1);
-/// mgr->StartAnalysis("proof",chain);
+/// mgr->StartAnalysis("local",chain);
 /// //mgr->StartAnalysis("local",chain);
 /// // delete manager
 ///

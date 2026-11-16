@@ -445,7 +445,6 @@ void LoadLibs()
   
   CheckLoadLibrary("libNet");
   CheckLoadLibrary("libTree");
-  CheckLoadLibrary("libProof");
   
   CheckLoadLibrary("libSTEERBase");
   CheckLoadLibrary("libESD");
